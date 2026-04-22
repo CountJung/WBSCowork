@@ -15,6 +15,7 @@
 - Preserve a task-centric model. Do not drift into generic board or forum features.
 - Keep all configuration in environment variables. Do not hardcode secrets, URLs, or deployment-specific paths.
 - Never use sensitive environment files such as `.env`, `.env.local`, or `.env.*` as AI working context, prompt context, or review input. Treat them as out-of-scope unless the user explicitly asks for secret management outside the repository workflow.
+- Treat responsive behavior as a repository-level requirement. UI work must function cleanly across mobile and desktop layouts unless the task explicitly scopes otherwise.
 
 ## Quality Gates
 

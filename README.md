@@ -15,13 +15,15 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 - `npm run dev:debug` starts Next.js with the Node inspector enabled.
 - Use `.vscode/launch.json` and select `Next.js: debug full stack` to open a Chrome debugging window automatically.
+- If the browser popup does not open reliably from the server-ready action, use `Next.js: debug full stack (Chrome popup)` to launch the server and a new Chrome window together.
 - Use `Next.js: debug client-side` when the server is already running and you only want the browser debugger.
 
 ## App Shell
 
 - The app now includes a global MUI app bar with route navigation for `/`, `/admin`, and `/admin/database` when the signed-in user is a superuser.
-- Light and dark theme modes can be toggled from the app bar and are persisted in local storage.
+- `system`, `light`, and `dark` theme modes can be selected from the app shell and are persisted in local storage.
 - The app bar also exposes Google sign-in and sign-out actions through the shared session provider.
+- The navigation shell is designed to work across desktop and mobile layouts, including a mobile drawer menu.
 
 ## Authentication And Admin Access
 

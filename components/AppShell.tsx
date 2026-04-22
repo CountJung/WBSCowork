@@ -8,14 +8,19 @@ import {
   Button,
   Chip,
   Container,
+  Divider,
+  Drawer,
+  NoSsr,
   Stack,
-  Switch,
+  ToggleButton,
+  ToggleButtonGroup,
   Toolbar,
   Typography,
 } from "@mui/material";
+import { useColorScheme } from "@mui/material/styles";
 import { signIn, signOut, useSession } from "next-auth/react";
-import type { ReactNode } from "react";
-import { useAppThemeMode } from "@/components/AppProviders";
+import { type MouseEvent, type ReactNode, useState } from "react";
+import type { AppThemeMode } from "@/lib/theme";
 
 type AppShellProps = {
   appName: string;
@@ -41,7 +46,8 @@ function isActivePath(currentPath: string, href: string) {
 export default function AppShell({ appName, authProvidersConfigured, children }: AppShellProps) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const { mode, toggleMode } = useAppThemeMode();
+  const { mode, setMode, systemMode } = useColorScheme();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const navItems = [...defaultNavItems];
 
   if (session?.user?.isSuperuser) {
@@ -51,100 +57,221 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
     );
   }
 
+  const selectedMode: AppThemeMode = mode ?? "system";
+  const effectiveMode = selectedMode === "system" ? systemMode ?? "light" : selectedMode;
+  const sessionChipLabel = `${session?.user?.name ?? "사용자"} · ${session?.user?.isSuperuser ? "슈퍼유저" : "멤버"}`;
+
+  function handleModeChange(_event: MouseEvent<HTMLElement>, value: AppThemeMode | null) {
+    if (!value) {
+      return;
+    }
+
+    setMode(value);
+  }
+
+  function closeMobileNav() {
+    setMobileNavOpen(false);
+  }
+
+  const authAction =
+    status === "authenticated" && session?.user ? (
+      <Button variant="outlined" onClick={() => signOut({ callbackUrl: "/" })}>
+        로그아웃
+      </Button>
+    ) : (
+      <Button
+        variant="outlined"
+        disabled={!authProvidersConfigured}
+        onClick={() => signIn("google", { callbackUrl: "/admin" })}
+      >
+        Google 로그인
+      </Button>
+    );
+
   return (
     <Box
       sx={{
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        background:
-          mode === "dark"
-            ? "radial-gradient(circle at top, rgba(110, 212, 196, 0.12), transparent 36%), linear-gradient(180deg, #0d1513 0%, #101816 100%)"
-            : "radial-gradient(circle at top, rgba(20, 99, 86, 0.12), transparent 34%), linear-gradient(180deg, #f7f4ea 0%, #f1ede1 100%)",
+        background: "var(--app-shell-gradient)",
       }}
     >
       <AppBar position="sticky">
         <Container maxWidth="lg">
-          <Toolbar disableGutters sx={{ minHeight: { xs: 96, md: 88 }, py: 1.5, gap: 2 }}>
-            <Stack
-              direction={{ xs: "column", lg: "row" }}
-              spacing={2}
-              sx={{ width: "100%", justifyContent: "space-between" }}
-            >
-              <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "center" } }}>
-                <Stack spacing={0.25}>
-                  <Typography
-                    component={Link}
-                    href="/"
-                    variant="h6"
-                    sx={{ fontWeight: 800, letterSpacing: "0.04em", width: "fit-content" }}
-                  >
-                    {appName}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Task 기반 WBS 협업 시스템
-                  </Typography>
-                </Stack>
+          <Toolbar disableGutters sx={{ minHeight: 78, py: 1.5, gap: 2, justifyContent: "space-between" }}>
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0 }}>
+              <Button
+                variant="text"
+                onClick={() => setMobileNavOpen(true)}
+                sx={{ display: { xs: "inline-flex", md: "none" }, minWidth: 0, px: 1.25 }}
+              >
+                메뉴
+              </Button>
 
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ flexWrap: "wrap" }}>
-                  {navItems.map((item) => {
-                    const active = isActivePath(pathname, item.href);
-
-                    return (
-                      <Button
-                        key={item.href}
-                        component={Link}
-                        href={item.href}
-                        variant={active ? "contained" : "text"}
-                        color={active ? "primary" : "inherit"}
-                      >
-                        {item.label}
-                      </Button>
-                    );
-                  })}
-                </Stack>
+              <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+                <Typography
+                  component={Link}
+                  href="/"
+                  variant="h6"
+                  sx={{ fontWeight: 800, letterSpacing: "0.04em", width: "fit-content" }}
+                >
+                  {appName}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }}>
+                  Task 기반 WBS 협업 시스템
+                </Typography>
               </Stack>
+            </Stack>
 
-              <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ alignItems: { md: "center" } }}>
-                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Theme
-                  </Typography>
-                  <Switch
-                    checked={mode === "dark"}
-                    onChange={toggleMode}
-                    slotProps={{ input: { "aria-label": "theme mode toggle" } }}
-                  />
-                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: 38 }}>
-                    {mode === "dark" ? "Dark" : "Light"}
-                  </Typography>
-                </Stack>
+            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", display: { xs: "none", md: "flex" } }}>
+              {navItems.map((item) => {
+                const active = isActivePath(pathname, item.href);
 
-                {status === "authenticated" && session.user ? (
-                  <>
-                    <Chip
-                      label={`${session.user.name ?? "사용자"} · ${session.user.isSuperuser ? "슈퍼유저" : "멤버"}`}
-                      color={session.user.isSuperuser ? "primary" : "default"}
-                      variant={session.user.isSuperuser ? "filled" : "outlined"}
-                    />
-                    <Button variant="outlined" onClick={() => signOut({ callbackUrl: "/" })}>
-                      로그아웃
-                    </Button>
-                  </>
-                ) : (
+                return (
                   <Button
-                    variant="outlined"
-                    disabled={!authProvidersConfigured}
-                    onClick={() => signIn("google", { callbackUrl: "/admin" })}
+                    key={item.href}
+                    component={Link}
+                    href={item.href}
+                    variant={active ? "contained" : "text"}
+                    color={active ? "primary" : "inherit"}
                   >
-                    Google 로그인
+                    {item.label}
                   </Button>
-                )}
-              </Stack>
+                );
+              })}
+            </Stack>
+
+            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", justifyContent: "flex-end" }}>
+              <NoSsr fallback={<Box sx={{ display: { xs: "none", md: "block" }, width: 212, height: 36 }} />}>
+                <ToggleButtonGroup
+                  exclusive
+                  value={selectedMode}
+                  onChange={handleModeChange}
+                  size="small"
+                  color="primary"
+                  aria-label="theme mode selector"
+                  sx={{ display: { xs: "none", md: "inline-flex" } }}
+                >
+                  <ToggleButton value="system">System</ToggleButton>
+                  <ToggleButton value="light">Light</ToggleButton>
+                  <ToggleButton value="dark">Dark</ToggleButton>
+                </ToggleButtonGroup>
+              </NoSsr>
+
+              {status === "authenticated" && session?.user ? (
+                <Chip
+                  label={sessionChipLabel}
+                  color={session.user.isSuperuser ? "primary" : "default"}
+                  variant={session.user.isSuperuser ? "filled" : "outlined"}
+                  sx={{ display: { xs: "none", lg: "inline-flex" } }}
+                />
+              ) : null}
+
+              <Box sx={{ display: { xs: "none", md: "block" } }}>{authAction}</Box>
+              <NoSsr
+                fallback={<Chip label="표시 모드" variant="outlined" size="small" sx={{ display: { xs: "inline-flex", md: "none" } }} />}
+              >
+                <Chip
+                  label={`표시 ${effectiveMode}`}
+                  variant="outlined"
+                  size="small"
+                  sx={{ display: { xs: "inline-flex", md: "none" } }}
+                />
+              </NoSsr>
             </Stack>
           </Toolbar>
         </Container>
       </AppBar>
+
+      <Drawer
+        anchor="left"
+        open={mobileNavOpen}
+        onClose={closeMobileNav}
+        slotProps={{
+          paper: {
+            sx: {
+              width: 320,
+              maxWidth: "86vw",
+              backgroundColor: "background.paper",
+            },
+          },
+        }}
+      >
+        <Stack spacing={2} sx={{ p: 2.5 }}>
+          <Stack spacing={0.5}>
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              {appName}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              모바일과 데스크탑에서 모두 동작하는 공통 내비게이션입니다.
+            </Typography>
+          </Stack>
+
+          <Divider />
+
+          <Stack spacing={1}>
+            {navItems.map((item) => {
+              const active = isActivePath(pathname, item.href);
+
+              return (
+                <Button
+                  key={item.href}
+                  component={Link}
+                  href={item.href}
+                  variant={active ? "contained" : "outlined"}
+                  onClick={closeMobileNav}
+                  sx={{ justifyContent: "flex-start" }}
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
+          </Stack>
+
+          <Divider />
+
+          <Stack spacing={1.25}>
+            <Typography variant="body2" color="text.secondary">
+              Theme mode
+            </Typography>
+            <NoSsr>
+              <ToggleButtonGroup
+                exclusive
+                value={selectedMode}
+                onChange={handleModeChange}
+                size="small"
+                color="primary"
+                aria-label="mobile theme mode selector"
+                fullWidth
+              >
+                <ToggleButton value="system">System</ToggleButton>
+                <ToggleButton value="light">Light</ToggleButton>
+                <ToggleButton value="dark">Dark</ToggleButton>
+              </ToggleButtonGroup>
+            </NoSsr>
+            <NoSsr fallback={<Typography variant="body2" color="text.secondary">현재 표시 테마: system</Typography>}>
+              <Typography variant="body2" color="text.secondary">
+                현재 표시 테마: {effectiveMode}
+              </Typography>
+            </NoSsr>
+          </Stack>
+
+          <Divider />
+
+          {status === "authenticated" && session?.user ? (
+            <Chip
+              label={sessionChipLabel}
+              color={session.user.isSuperuser ? "primary" : "default"}
+              variant={session.user.isSuperuser ? "filled" : "outlined"}
+            />
+          ) : null}
+
+          <Box onClick={closeMobileNav} sx={{ display: "flex" }}>
+            {authAction}
+          </Box>
+        </Stack>
+      </Drawer>
 
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>{children}</Box>
     </Box>

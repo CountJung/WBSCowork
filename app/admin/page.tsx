@@ -1,5 +1,6 @@
 import { Alert, Button, Chip, Container, Paper, Stack, Typography } from "@mui/material";
 import { redirect } from "next/navigation";
+import { getAdminOverview } from "@/lib/admin-overview";
 import { getAuthSession, getSignInPath } from "@/lib/auth";
 import { getRuntimeEnv } from "@/lib/env";
 
@@ -17,6 +18,7 @@ export default async function AdminPage() {
   }
 
   const runtimeEnv = getRuntimeEnv();
+  const adminOverview = runtimeEnv.database.configured ? await getAdminOverview() : null;
 
   return (
     <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
@@ -41,6 +43,59 @@ export default async function AdminPage() {
           <Alert severity="warning">
             DB env가 아직 완전하지 않습니다. DB 관리 페이지 진입 전 DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME을 확인해야 합니다.
           </Alert>
+        ) : null}
+
+        {adminOverview ? (
+          <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
+            <Stack spacing={2}>
+              <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ alignItems: { md: "center" } }}>
+                <Typography variant="h5">Stage 2 운영 요약</Typography>
+                <Chip label={`사용자 ${adminOverview.userCount}`} color={adminOverview.ready ? "success" : "default"} />
+                <Chip label={`프로젝트 ${adminOverview.projectCount}`} color={adminOverview.ready ? "primary" : "default"} />
+              </Stack>
+              <Typography variant="body2" color="text.secondary">
+                {adminOverview.message}
+              </Typography>
+              <Stack direction={{ xs: "column", lg: "row" }} spacing={3}>
+                <Paper elevation={0} sx={{ flex: 1, p: 2.5, borderRadius: 4, border: "1px solid", borderColor: "divider" }}>
+                  <Stack spacing={1}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      최근 사용자
+                    </Typography>
+                    {adminOverview.recentUsers.length > 0 ? (
+                      adminOverview.recentUsers.map((user) => (
+                        <Typography key={user.id} variant="body2" color="text.secondary">
+                          {user.name} · {user.email} · {user.role}
+                        </Typography>
+                      ))
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        아직 저장된 사용자 레코드가 없습니다.
+                      </Typography>
+                    )}
+                  </Stack>
+                </Paper>
+                <Paper elevation={0} sx={{ flex: 1, p: 2.5, borderRadius: 4, border: "1px solid", borderColor: "divider" }}>
+                  <Stack spacing={1}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      최근 프로젝트
+                    </Typography>
+                    {adminOverview.recentProjects.length > 0 ? (
+                      adminOverview.recentProjects.map((project) => (
+                        <Typography key={project.id} variant="body2" color="text.secondary">
+                          {project.name} · {project.startDate.toISOString().slice(0, 10)} ~ {project.endDate.toISOString().slice(0, 10)}
+                        </Typography>
+                      ))
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        아직 저장된 프로젝트 레코드가 없습니다.
+                      </Typography>
+                    )}
+                  </Stack>
+                </Paper>
+              </Stack>
+            </Stack>
+          </Paper>
         ) : null}
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={3} sx={{ alignItems: "stretch" }}>

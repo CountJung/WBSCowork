@@ -16,7 +16,7 @@ const stageOneItems = [
   "MUI theme and provider wired into the root layout",
   "Auth.js route foundation added for Google OAuth",
   "VS Code Chrome debugging flow configured",
-  "Global app bar, route navigation, and theme mode toggle added",
+  "Responsive app shell with system/light/dark theme mode added",
 ];
 
 const nextMilestones = [

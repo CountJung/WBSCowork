@@ -19,15 +19,15 @@ Update it whenever stage scope, validation steps, or blocking issues change.
 - [x] Repository workflow: Forbid `.env*` files as AI work context
 - [x] Repository workflow: Add VS Code-friendly debug script and launch setup
 - [x] Repository workflow: Switch VS Code full-stack debugging popup to Chrome
-- [x] Repository workflow: Add global app bar, theme mode toggle, and route navigation shell
+- [x] Repository workflow: Add responsive app shell, route navigation, and three-mode theme switching
 
 ## Stage 2 Next Work
 
-- [ ] Stage 2: Persist Google-authenticated users into MariaDB
-- [ ] Stage 2: Add repository functions for Project and User reads/writes
+- [x] Stage 2: Persist Google-authenticated users into MariaDB
+- [x] Stage 2: Add repository functions for Project and User reads/writes
 - [x] Stage 2: Surface database health inside an authenticated admin flow
 - [x] Stage 2: Add env-based superuser login and admin-only DB management pages
-- [ ] Stage 2: Persist admin-approved users into the users table after DB initialization
+- [x] Stage 2: Persist initialized superuser data into the users table after DB initialization
 
 ## Remaining Stages
 

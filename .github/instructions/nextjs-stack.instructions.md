@@ -34,6 +34,7 @@ Apply the repository-wide guidance from ../copilot-instructions.md to all applic
 - Use MUI as the primary component system.
 - Centralize theme configuration so the same palette, typography, and spacing rules apply across routes.
 - Keep data fetching boundaries clear. Server-render what can stay on the server, and use client-side fetching only where interactivity requires it.
+- Build UI so it works cleanly across mobile and desktop breakpoints. Treat responsive layout behavior as part of the done criteria for route and component work.
 
 ## Auth and API
 

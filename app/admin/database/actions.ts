@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireSuperuserSession } from "@/lib/auth";
 import { getDatabaseAdminStatus, initializeDatabaseSchema, type DatabaseAdminStatus } from "@/lib/database-admin";
+import { upsertUser } from "@/lib/repositories/user-repository";
 
 export type DatabaseAdminActionState = {
   success: boolean | null;
@@ -26,11 +27,20 @@ export async function initializeDatabaseAction(
   try {
     const status = await initializeDatabaseSchema();
 
+    if (session.user.email) {
+      await upsertUser({
+        email: session.user.email,
+        name: session.user.name ?? session.user.email,
+        role: session.user.role,
+      });
+    }
+
     revalidatePath("/admin/database");
+    revalidatePath("/admin");
 
     return {
       success: true,
-      message: "DB 및 기본 테이블 생성 작업이 완료되었습니다.",
+      message: "DB 및 기본 테이블 생성 작업이 완료되었고 현재 슈퍼유저 계정도 users 테이블에 동기화했습니다.",
       status,
     };
   } catch (error) {

@@ -2,6 +2,18 @@ html {
   height: 100%;
 }
 
+:root {
+  --app-shell-gradient:
+    radial-gradient(circle at top, rgba(20, 99, 86, 0.12), transparent 34%),
+    linear-gradient(180deg, #f7f4ea 0%, #f1ede1 100%);
+}
+
+[data-mui-color-scheme="dark"] {
+  --app-shell-gradient:
+    radial-gradient(circle at top, rgba(110, 212, 196, 0.12), transparent 36%),
+    linear-gradient(180deg, #0d1513 0%, #101816 100%);
+}
+
 html,
 body {
   max-width: 100vw;
@@ -10,7 +22,7 @@ body {
 body {
   min-height: 100%;
   margin: 0;
-  background: var(--mui-palette-background-default, #f6f4ec);
+  background: var(--app-shell-gradient);
   color: var(--mui-palette-text-primary, #1b2b25);
   font-family: var(--font-roboto), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;

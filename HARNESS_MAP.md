@@ -7,8 +7,8 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 
 - Stage 2 auth and admin foundation implemented and validated.
 - Superuser login and admin-only DB management routes are ready.
-- Global app bar, route navigation, and theme mode toggle are ready.
-- Prepare MariaDB-backed repositories and auth persistence.
+- Responsive app shell, route navigation, and three-mode theme switching are ready.
+- Stage 2 user/project repositories and Google login persistence are ready.
 
 ## Live Rules
 
@@ -23,11 +23,13 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 | --- | --- | --- | --- |
 | Bootstrap | npx create-next-app@latest wbs-task-bootstrap --ts --app --eslint --use-npm --import-alias "@/*" --no-tailwind --no-src-dir --disable-git --yes | Next.js workspace created and moved into repository root | Passed |
 | Debug | npm run dev:debug | Next.js dev server starts with Node inspector enabled for VS Code attach on localhost | Ready |
+| Debug | VS Code `Next.js: debug full stack (Chrome popup)` | Starts the dev server and opens a new Chrome popup window together | Ready |
 | Debug | VS Code `Next.js: debug full stack` | Chrome debugging window opens automatically when the server is ready | Ready |
 | Database Env | npm run db:check -- --validate-only | Database env values load and validate without opening a real MariaDB connection | Passed |
 | Database Connect | npm run db:check | MariaDB connection succeeds once the target DB exists | Admin initialization required |
 | Admin Auth | Google login with `SUPERUSER_EMAIL` account | Matching Google account receives superuser session and can open `/admin` | Passed by build and route wiring |
 | Admin DB | `/admin/database` | Superuser can inspect DB existence and trigger DB plus core table creation from the web UI | Passed by build and route wiring |
+| Auth Persistence | Google login after DB init | The signed-in user is upserted into `users` when the schema is ready | Passed by build and route wiring |
 | Lint | npm run lint | Zero unresolved warnings or errors for touched files | Passed |
 | Build | npm run build | Production build succeeds | Passed |
 
@@ -56,7 +58,8 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 - `scripts/check-db.ts` loads Next.js env files and validates or tests MariaDB connectivity from the command line.
 - `lib/auth.ts` maps the env-configured `SUPERUSER_EMAIL` into the NextAuth session so the first administrator can operate without a pre-existing database.
 - `/admin` and `/admin/database` provide superuser-only admin entry points and DB lifecycle controls.
-- `components/AppShell.tsx` adds the global app bar, session-aware navigation routes, and persisted light/dark theme mode switching.
+- `components/AppShell.tsx` adds the responsive global app bar, mobile drawer navigation, and persisted system/light/dark theme mode switching.
+- `lib/repositories/user-repository.ts` and `lib/repositories/project-repository.ts` provide the Stage 2 read/write repository layer.
 
 ## Known Blockers
 

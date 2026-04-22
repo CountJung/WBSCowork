@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { getRuntimeEnv } from "@/lib/env";
+import { syncAuthenticatedUserIfPossible } from "@/lib/repositories/user-repository";
 import type { UserRole } from "@/models/user";
 
 const runtimeEnv = getRuntimeEnv();
@@ -34,6 +35,15 @@ export const authOptions = {
     strategy: "jwt",
   },
   callbacks: {
+    async signIn({ user }) {
+      await syncAuthenticatedUserIfPossible({
+        email: user.email,
+        name: user.name,
+        role: getRoleForEmail(user.email),
+      });
+
+      return true;
+    },
     jwt({ token, profile, user }) {
       const email = user?.email ?? token.email ?? (typeof profile?.email === "string" ? profile.email : undefined);
 
