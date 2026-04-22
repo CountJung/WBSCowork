@@ -5,7 +5,8 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 
 ## Current Objective
 
-- Stage 4 project-scoped gantt integration is implemented and validated.
+- Stage 5 task submission flow is implemented and validated.
+- Home now shows a simplified authenticated project overview with selected-project gantt and task list.
 - Admin-only settings management for file logging and env editing is ready.
 - Rolling file logs are written into `/logs` with env-driven retention and file-size policies.
 - Superuser login and admin-only DB management routes are ready.
@@ -35,7 +36,9 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 | Auth Persistence | Google login after DB init | The signed-in user is upserted into `users` when the schema is ready | Passed by build and route wiring |
 | User Roles | `/admin/users` | Superuser can inspect signed-in users and change `guest/member` roles while `SUPERUSER_EMAIL` remains reserved | Passed by lint and route wiring |
 | Task CRUD | `/tasks` | Authenticated users can read project tasks, while `member/admin/superuser` can create, edit, delete projects and tasks | Passed by lint and route wiring |
-| Gantt | `/tasks` | Selected project tasks render in a frappe-gantt timeline with Day/Week/Month switching | Passed by build and route wiring |
+| Submission | `/tasks` | Writable users can register, edit, and delete Markdown submissions per task, and all authenticated users can read them | Passed by lint and route wiring |
+| Gantt | `/tasks` | Selected project tasks render in a frappe-gantt timeline with Day/Week/Month switching, richer popup details, and auto-height refresh behavior | Passed by lint and route wiring |
+| Home | `/` | Authenticated users see the selected project's gantt and simplified task list instead of stage-progress scaffolding | Passed by lint and route wiring |
 | Lint | npm run lint | Zero unresolved warnings or errors for touched files | Passed |
 | Build | npm run build | Production build succeeds | Passed |
 
@@ -44,6 +47,8 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 - Direct root bootstrap failed because the repository folder name `WBSTask` violates npm package naming rules due to capital letters.
 - The workaround was to create the app in a lowercase temporary folder and move the generated files into the repository root.
 - Installed `next-auth` resolved to v4.24.14, so the auth foundation uses `NextAuthOptions` and an App Router route handler instead of the Auth.js v5 helper pattern.
+- In the macOS external-drive environment, AppleDouble metadata files (`._*`) were being written into `.next/dev/cache/turbopack`, causing Turbopack persistence startup to fail with `Failed to open database`.
+- `next.config.ts` now sets `experimental.turbopackFileSystemCacheForDev = false` so `npm run dev:debug` can start reliably on the external drive.
 
 ## Environment Assumptions
 
@@ -83,12 +88,19 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 - `instrumentation.ts` and `lib/logger.ts` initialize rolling file logging under `/logs` and capture request errors, console output, and major admin/task mutations.
 - The previous project-create `NEXT_REDIRECT` failure was fixed by moving successful redirects outside `try/catch` blocks in server actions.
 
+## Stage 5 Submission Flow
+
+- `models/submission.ts` and `lib/repositories/submission-repository.ts` provide the MariaDB-backed submission domain and CRUD accessors.
+- `/tasks` now renders task-scoped Markdown submission panels with create, update, and delete forms for writable users.
+- `react-markdown` and `remark-gfm` are installed to render submission content safely with GFM support.
+- The home route now focuses on the selected project's gantt and concise task list rather than implementation-progress scaffolding.
+
 ## Known Blockers
 
 - None recorded.
 
 ## Next Update Trigger
 
-- When submission CRUD and markdown flow are added
+- When comment CRUD is added on top of submissions
 - If auth provider secrets are provisioned
 - After each new validation command or blocker appears

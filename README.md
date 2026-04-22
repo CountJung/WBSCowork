@@ -1,5 +1,7 @@
 WBS Task는 Next.js App Router 기반의 Task 중심 WBS 협업 시스템입니다.
 
+현재 구현 범위는 프로젝트/작업 CRUD, 프로젝트 삭제, 간트 시각화, 태스크별 Markdown 제출물, 관리자 설정, 파일 로그, 그리고 홈 대시보드 요약 화면까지 포함합니다.
+
 ## Getting Started
 
 Install dependencies and run the development server:
@@ -25,6 +27,13 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - `system`, `light`, and `dark` theme modes can be selected from the app shell and are persisted in local storage.
 - The app bar also exposes Google sign-in and sign-out actions through the shared session provider.
 - The navigation shell is designed to work across desktop and mobile layouts, including a mobile drawer menu.
+
+## Project Workspace
+
+- `/` now acts as a concise overview page for authenticated users, showing the selected project's gantt and simplified task list.
+- `/tasks` remains the main workspace for project selection, project/task CRUD, gantt review, and task-scoped submission management.
+- Writable users (`member`, `admin`, and superuser) can delete projects directly from the selected project card on `/tasks`.
+- Each task on `/tasks` now includes a Stage 5 submission area where Markdown content can be created, edited, deleted, and rendered with GFM support.
 
 ## Authentication And Admin Access
 

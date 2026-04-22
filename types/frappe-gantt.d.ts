@@ -6,6 +6,15 @@ declare module "frappe-gantt" {
     end: string;
     progress?: number;
     dependencies?: string;
+    description?: string;
+    assigneeName?: string;
+  };
+
+  export type GanttPopupContext = {
+    task: GanttTask;
+    set_title: (value: string) => void;
+    set_subtitle: (value: string) => void;
+    set_details: (value: string) => void;
   };
 
   export type GanttOptions = {
@@ -15,11 +24,13 @@ declare module "frappe-gantt" {
     readonly_dates?: boolean;
     readonly_progress?: boolean;
     container_height?: number | "auto";
-    popup?: (context: { task: GanttTask }) => string | false | undefined;
+    popup?: (context: GanttPopupContext) => string | false | void;
   };
 
   export default class Gantt {
     constructor(target: string | HTMLElement, tasks: GanttTask[], options?: GanttOptions);
     change_view_mode(viewMode: GanttOptions["view_mode"], maintainPosition?: boolean): void;
+    refresh(tasks: GanttTask[]): void;
+    update_options(options: GanttOptions): void;
   }
 }

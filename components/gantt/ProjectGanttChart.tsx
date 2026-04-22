@@ -5,6 +5,7 @@ import { Alert, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from
 import Gantt from "frappe-gantt";
 import type { Project } from "@/models/project";
 import type { Task } from "@/models/task";
+import type { GanttOptions, GanttTask } from "frappe-gantt";
 
 type ProjectGanttChartProps = {
   project: Project;
@@ -12,6 +13,11 @@ type ProjectGanttChartProps = {
 };
 
 type ViewMode = "Day" | "Week" | "Month";
+
+type WbsGanttTask = GanttTask & {
+  description: string;
+  assigneeName: string;
+};
 
 function formatDate(value: Date) {
   return value.toISOString().slice(0, 10);
@@ -30,53 +36,119 @@ function calculateProgress(startDate: Date, endDate: Date) {
   return Math.max(0, Math.min(100, Math.round(progress)));
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function createChartOptions(viewMode: ViewMode): GanttOptions {
+  return {
+    view_mode: viewMode,
+    view_mode_select: false,
+    readonly: true,
+    readonly_dates: true,
+    readonly_progress: true,
+    container_height: "auto",
+    popup: ({ task, set_title, set_subtitle, set_details }) => {
+      const ganttTask = task as WbsGanttTask;
+
+      set_title(escapeHtml(ganttTask.name));
+      set_subtitle(escapeHtml(ganttTask.description || "세부 설명이 아직 없습니다."));
+      set_details(
+        [
+          `<strong>기간</strong> ${escapeHtml(ganttTask.start)} ~ ${escapeHtml(ganttTask.end)}`,
+          `<strong>진행률</strong> ${ganttTask.progress ?? 0}%`,
+          `<strong>담당자</strong> ${escapeHtml(ganttTask.assigneeName || "미지정")}`,
+        ].join("<br />"),
+      );
+    },
+  };
+}
+
 export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const ganttRef = useRef<Gantt | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("Week");
   const [renderError, setRenderError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current || tasks.length === 0) {
+    const container = containerRef.current;
+
+    if (!container) {
       return;
     }
 
-    const chartTasks = tasks.map((task) => ({
+    if (tasks.length === 0) {
+      container.innerHTML = "";
+      ganttRef.current = null;
+      return;
+    }
+
+    const chartTasks: WbsGanttTask[] = tasks.map((task) => ({
       id: String(task.id),
       name: task.title,
       start: formatDate(task.startDate),
       end: formatDate(task.endDate),
       progress: calculateProgress(task.startDate, task.endDate),
       dependencies: task.parentId ? String(task.parentId) : "",
+      description: task.description,
+      assigneeName: task.assigneeName ?? "미지정",
     }));
 
-    containerRef.current.innerHTML = "";
+    let frameId = 0;
 
-    try {
-      new Gantt(containerRef.current, chartTasks, {
-        view_mode: viewMode,
-        view_mode_select: false,
-        readonly: true,
-        readonly_dates: true,
-        readonly_progress: true,
-        container_height: 420,
-        popup: ({ task }) => {
-          return `
-            <div class="details-container">
-              <h5>${task.name}</h5>
-              <p>${task.start} ~ ${task.end}</p>
-              <p>진행률 ${task.progress}%</p>
-            </div>
-          `;
-        },
-      });
-      startTransition(() => {
-        setRenderError(null);
-      });
-    } catch (error) {
-      startTransition(() => {
-        setRenderError(error instanceof Error ? error.message : "간트 차트를 렌더링하지 못했습니다.");
-      });
-    }
+    const syncChart = () => {
+      try {
+        if (!ganttRef.current) {
+          container.innerHTML = "";
+          ganttRef.current = new Gantt(container, chartTasks, createChartOptions(viewMode));
+        } else {
+          ganttRef.current.refresh(chartTasks);
+          ganttRef.current.update_options(createChartOptions(viewMode));
+          ganttRef.current.change_view_mode(viewMode, true);
+        }
+
+        startTransition(() => {
+          setRenderError(null);
+        });
+      } catch (error) {
+        startTransition(() => {
+          setRenderError(error instanceof Error ? error.message : "간트 차트를 렌더링하지 못했습니다.");
+        });
+      }
+    };
+
+    const scheduleSync = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(syncChart);
+    };
+
+    syncChart();
+
+    const resizeObserver = new ResizeObserver(() => {
+      scheduleSync();
+    });
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          scheduleSync();
+        }
+      },
+      { threshold: 0.05 },
+    );
+
+    resizeObserver.observe(container);
+    intersectionObserver.observe(container);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+      intersectionObserver.disconnect();
+    };
   }, [tasks, viewMode]);
 
   if (tasks.length === 0) {

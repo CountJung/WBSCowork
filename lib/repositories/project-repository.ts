@@ -67,3 +67,15 @@ export async function createProject(input: CreateProjectInput): Promise<Project>
 
   return project;
 }
+
+export async function deleteProject(projectId: number): Promise<Project> {
+  const existingProject = await getProjectById(projectId);
+
+  if (!existingProject) {
+    throw new Error("삭제할 프로젝트를 찾을 수 없습니다.");
+  }
+
+  await getDatabasePool().query("DELETE FROM projects WHERE id = ?", [projectId]);
+
+  return existingProject;
+}

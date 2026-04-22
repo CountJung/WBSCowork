@@ -14,13 +14,26 @@ import { getAuthSession, getSignInPath } from "@/lib/auth";
 import { getDatabaseAdminStatus } from "@/lib/database-admin";
 import { getRuntimeEnv } from "@/lib/env";
 import { listAllProjects } from "@/lib/repositories/project-repository";
+import { listSubmissionsByProject } from "@/lib/repositories/submission-repository";
 import { listTasksByProject } from "@/lib/repositories/task-repository";
+import { formatDate, getOrderedTasks, getSelectedProject } from "@/lib/task-view";
 import { listAllUsers } from "@/lib/repositories/user-repository";
 import ProjectGanttChart from "@/components/gantt/ProjectGanttChart";
+import TaskSubmissionPanel from "@/components/task/TaskSubmissionPanel";
 import type { Project } from "@/models/project";
+import type { Submission } from "@/models/submission";
 import type { Task } from "@/models/task";
 import { canWriteTaskContent, getUserRoleLabel } from "@/models/user";
-import { createProjectAction, createTaskAction, deleteTaskAction, updateTaskAction } from "./actions";
+import {
+  createProjectAction,
+  createSubmissionAction,
+  createTaskAction,
+  deleteProjectAction,
+  deleteSubmissionAction,
+  deleteTaskAction,
+  updateSubmissionAction,
+  updateTaskAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -36,58 +49,17 @@ function getSingleSearchParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function formatDate(value: Date) {
-  return value.toISOString().slice(0, 10);
-}
+function groupSubmissionsByTaskId(submissions: Submission[]) {
+  const submissionsByTaskId = new Map<number, Submission[]>();
 
-function getOrderedTasks(tasks: Task[]) {
-  const tasksById = new Map(tasks.map((task) => [task.id, task]));
-  const tasksByParentId = new Map<number | null, Task[]>();
+  for (const submission of submissions) {
+    const group = submissionsByTaskId.get(submission.taskId) ?? [];
 
-  for (const task of tasks) {
-    const parentId = task.parentId && tasksById.has(task.parentId) ? task.parentId : null;
-    const group = tasksByParentId.get(parentId) ?? [];
-
-    group.push(task);
-    tasksByParentId.set(parentId, group);
+    group.push(submission);
+    submissionsByTaskId.set(submission.taskId, group);
   }
 
-  for (const group of tasksByParentId.values()) {
-    group.sort((leftTask, rightTask) => {
-      if (leftTask.orderIndex !== rightTask.orderIndex) {
-        return leftTask.orderIndex - rightTask.orderIndex;
-      }
-
-      return leftTask.id - rightTask.id;
-    });
-  }
-
-  const orderedTasks: Task[] = [];
-
-  function visit(parentId: number | null) {
-    for (const task of tasksByParentId.get(parentId) ?? []) {
-      orderedTasks.push(task);
-      visit(task.id);
-    }
-  }
-
-  visit(null);
-
-  return orderedTasks;
-}
-
-function getSelectedProject(projects: Project[], projectIdParam?: string) {
-  const projectId = Number(projectIdParam);
-
-  if (Number.isInteger(projectId) && projectId > 0) {
-    const selectedProject = projects.find((project) => project.id === projectId);
-
-    if (selectedProject) {
-      return selectedProject;
-    }
-  }
-
-  return projects[0] ?? null;
+  return submissionsByTaskId;
 }
 
 function TaskWritePolicy({ canWrite }: { canWrite: boolean }) {
@@ -169,11 +141,13 @@ function TaskList({
   canWrite,
   orderedTasks,
   project,
+  submissionsByTaskId,
   users,
 }: {
   canWrite: boolean;
   orderedTasks: Task[];
   project: Project;
+  submissionsByTaskId: Map<number, Submission[]>;
   users: Awaited<ReturnType<typeof listAllUsers>>;
 }) {
   if (orderedTasks.length === 0) {
@@ -266,6 +240,17 @@ function TaskList({
                 </Stack>
               </Stack>
             )}
+
+            <TaskSubmissionPanel
+              canWrite={canWrite}
+              createSubmissionAction={createSubmissionAction}
+              deleteSubmissionAction={deleteSubmissionAction}
+              projectId={project.id}
+              submissions={submissionsByTaskId.get(task.id) ?? []}
+              taskId={task.id}
+              taskTitle={task.title}
+              updateSubmissionAction={updateSubmissionAction}
+            />
           </Stack>
         </Paper>
       ))}
@@ -333,7 +318,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const [projects, users] = await Promise.all([listAllProjects(), listAllUsers()]);
   const selectedProject = getSelectedProject(projects, projectIdParam);
   const tasks = selectedProject ? await listTasksByProject(selectedProject.id) : [];
+  const submissions = selectedProject ? await listSubmissionsByProject(selectedProject.id) : [];
   const orderedTasks = getOrderedTasks(tasks);
+  const submissionsByTaskId = groupSubmissionsByTaskId(submissions);
 
   return (
     <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
@@ -349,6 +336,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             <Chip label={`현재 권한 ${getUserRoleLabel(session.user.role, session.user.isSuperuser)}`} color={canWrite ? "success" : "default"} />
             <Chip label={`프로젝트 ${projects.length}`} color="primary" />
             <Chip label={`작업 ${orderedTasks.length}`} />
+            <Chip label={`제출 ${submissions.length}`} />
           </Stack>
         </Stack>
 
@@ -394,12 +382,22 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
         {selectedProject ? (
           <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
-            <Stack spacing={1.5}>
-              <Typography variant="h5">선택된 프로젝트</Typography>
-              <Typography variant="h6">{selectedProject.name}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                기간 {formatDate(selectedProject.startDate)} ~ {formatDate(selectedProject.endDate)}
-              </Typography>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
+              <Stack spacing={1.5}>
+                <Typography variant="h5">선택된 프로젝트</Typography>
+                <Typography variant="h6">{selectedProject.name}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  기간 {formatDate(selectedProject.startDate)} ~ {formatDate(selectedProject.endDate)}
+                </Typography>
+              </Stack>
+              {!canWrite ? null : (
+                <Stack component="form" action={deleteProjectAction} sx={{ alignItems: { md: "flex-end" } }}>
+                  <input type="hidden" name="projectId" value={String(selectedProject.id)} />
+                  <Button type="submit" color="error" variant="outlined">
+                    프로젝트 삭제
+                  </Button>
+                </Stack>
+              )}
             </Stack>
           </Paper>
         ) : null}
@@ -409,7 +407,13 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         {selectedProject ? <ProjectGanttChart project={selectedProject} tasks={orderedTasks} /> : null}
 
         {selectedProject ? (
-          <TaskList canWrite={canWrite} orderedTasks={orderedTasks} project={selectedProject} users={users} />
+          <TaskList
+            canWrite={canWrite}
+            orderedTasks={orderedTasks}
+            project={selectedProject}
+            submissionsByTaskId={submissionsByTaskId}
+            users={users}
+          />
         ) : (
           <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
             <Typography variant="body2" color="text.secondary">

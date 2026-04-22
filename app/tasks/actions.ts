@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAuthSession, getSignInPath } from "@/lib/auth";
 import { logError, logInfo, serializeError } from "@/lib/logger";
-import { createProject } from "@/lib/repositories/project-repository";
+import { createProject, deleteProject } from "@/lib/repositories/project-repository";
+import { createSubmission, deleteSubmission, getSubmissionById, updateSubmission } from "@/lib/repositories/submission-repository";
 import { createTask, deleteTask, updateTask } from "@/lib/repositories/task-repository";
+import { getUserByEmail } from "@/lib/repositories/user-repository";
 import { canWriteTaskContent } from "@/models/user";
 
 function buildTasksPath(status: "success" | "error", message: string, projectId?: number) {
@@ -80,6 +82,26 @@ async function requireWritableSession(projectId?: number) {
   }
 
   return session;
+}
+
+async function requirePersistedUser(projectId?: number) {
+  const session = await requireWritableSession(projectId);
+  const email = session.user.email?.trim().toLowerCase();
+
+  if (!email) {
+    throw new Error("현재 로그인 사용자의 이메일을 확인할 수 없습니다.");
+  }
+
+  const user = await getUserByEmail(email);
+
+  if (!user) {
+    throw new Error("제출 기능을 사용하려면 현재 로그인 사용자가 DB 사용자 테이블에 존재해야 합니다.");
+  }
+
+  return {
+    session,
+    user,
+  };
 }
 
 export async function createProjectAction(formData: FormData) {
@@ -256,6 +278,175 @@ export async function deleteTaskAction(formData: FormData) {
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "작업 삭제 중 알 수 없는 오류가 발생했습니다.",
+      projectId,
+    );
+  }
+
+  redirect(redirectPath);
+}
+
+export async function deleteProjectAction(formData: FormData) {
+  const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
+  const session = await requireWritableSession(projectId);
+
+  let redirectPath = "/tasks";
+
+  try {
+    const project = await deleteProject(projectId);
+
+    revalidatePath("/");
+    revalidatePath("/admin");
+    revalidatePath("/tasks");
+
+    await logInfo("tasks", "Project deleted", {
+      actorEmail: session.user.email ?? null,
+      projectId: project.id,
+      projectName: project.name,
+    });
+
+    redirectPath = buildTasksPath("success", `${project.name} 프로젝트를 삭제했습니다.`);
+  } catch (error) {
+    await logError("tasks", "Project deletion failed", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      error: serializeError(error),
+    });
+
+    redirectPath = buildTasksPath(
+      "error",
+      error instanceof Error ? error.message : "프로젝트 삭제 중 알 수 없는 오류가 발생했습니다.",
+      projectId,
+    );
+  }
+
+  redirect(redirectPath);
+}
+
+export async function createSubmissionAction(formData: FormData) {
+  const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
+  const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
+  const { session, user } = await requirePersistedUser(projectId);
+
+  let redirectPath: string;
+
+  try {
+    const submission = await createSubmission({
+      taskId,
+      authorId: user.id,
+      content: getSingleValue(formData.get("content")),
+    });
+
+    revalidatePath("/");
+    revalidatePath("/tasks");
+
+    await logInfo("tasks", "Submission created", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      taskId,
+      submissionId: submission.id,
+    });
+
+    redirectPath = buildTasksPath("success", "제출물을 등록했습니다.", projectId);
+  } catch (error) {
+    await logError("tasks", "Submission creation failed", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      taskId,
+      error: serializeError(error),
+    });
+
+    redirectPath = buildTasksPath(
+      "error",
+      error instanceof Error ? error.message : "제출물 등록 중 알 수 없는 오류가 발생했습니다.",
+      projectId,
+    );
+  }
+
+  redirect(redirectPath);
+}
+
+export async function updateSubmissionAction(formData: FormData) {
+  const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
+  const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
+  const session = await requireWritableSession(projectId);
+
+  let redirectPath: string;
+
+  try {
+    const submission = await updateSubmission({
+      id: parseRequiredPositiveInteger(formData.get("submissionId"), "제출물"),
+      content: getSingleValue(formData.get("content")),
+    });
+
+    revalidatePath("/");
+    revalidatePath("/tasks");
+
+    await logInfo("tasks", "Submission updated", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      taskId,
+      submissionId: submission.id,
+    });
+
+    redirectPath = buildTasksPath("success", "제출물을 수정했습니다.", projectId);
+  } catch (error) {
+    await logError("tasks", "Submission update failed", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      taskId,
+      error: serializeError(error),
+    });
+
+    redirectPath = buildTasksPath(
+      "error",
+      error instanceof Error ? error.message : "제출물 수정 중 알 수 없는 오류가 발생했습니다.",
+      projectId,
+    );
+  }
+
+  redirect(redirectPath);
+}
+
+export async function deleteSubmissionAction(formData: FormData) {
+  const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
+  const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
+  const session = await requireWritableSession(projectId);
+
+  let redirectPath: string;
+
+  try {
+    const submissionId = parseRequiredPositiveInteger(formData.get("submissionId"), "제출물");
+    const existingSubmission = await getSubmissionById(submissionId);
+
+    if (!existingSubmission) {
+      throw new Error("삭제할 제출물을 찾을 수 없습니다.");
+    }
+
+    const submission = await deleteSubmission(submissionId);
+
+    revalidatePath("/");
+    revalidatePath("/tasks");
+
+    await logInfo("tasks", "Submission deleted", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      taskId,
+      submissionId: submission.id,
+      submissionAuthorEmail: existingSubmission.authorEmail,
+    });
+
+    redirectPath = buildTasksPath("success", "제출물을 삭제했습니다.", projectId);
+  } catch (error) {
+    await logError("tasks", "Submission deletion failed", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      taskId,
+      error: serializeError(error),
+    });
+
+    redirectPath = buildTasksPath(
+      "error",
+      error instanceof Error ? error.message : "제출물 삭제 중 알 수 없는 오류가 발생했습니다.",
       projectId,
     );
   }
