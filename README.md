@@ -21,6 +21,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ## App Shell
 
 - The app now includes a global MUI app bar with route navigation for `/`, `/admin`, and `/admin/database` when the signed-in user is a superuser.
+- Superusers also get a dedicated `/admin/users` route for role control.
 - `system`, `light`, and `dark` theme modes can be selected from the app shell and are persisted in local storage.
 - The app bar also exposes Google sign-in and sign-out actions through the shared session provider.
 - The navigation shell is designed to work across desktop and mobile layouts, including a mobile drawer menu.
@@ -29,6 +30,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 - Users sign in with Google OAuth through NextAuth.
 - Set `SUPERUSER_EMAIL` in `.env.local` to promote the matching Google account to the initial superuser role without any database dependency.
+- New Google logins are persisted as `guest` by default once the schema is ready.
+- A superuser can use `/admin/users` to promote a signed-in user to `member` or keep them as `guest`.
 - After signing in with the superuser account, use `/admin` for administrator-only access and `/admin/database` for DB creation and status management.
 
 ## Environment Setup

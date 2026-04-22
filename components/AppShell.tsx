@@ -21,6 +21,7 @@ import { useColorScheme } from "@mui/material/styles";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { type MouseEvent, type ReactNode, useState } from "react";
 import type { AppThemeMode } from "@/lib/theme";
+import { getUserRoleLabel } from "@/models/user";
 
 type AppShellProps = {
   appName: string;
@@ -53,13 +54,17 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
   if (session?.user?.isSuperuser) {
     navItems.push(
       { href: "/admin", label: "관리자" },
+      { href: "/admin/users", label: "사용자 관리" },
       { href: "/admin/database", label: "DB 관리" },
     );
   }
 
   const selectedMode: AppThemeMode = mode ?? "system";
   const effectiveMode = selectedMode === "system" ? systemMode ?? "light" : selectedMode;
-  const sessionChipLabel = `${session?.user?.name ?? "사용자"} · ${session?.user?.isSuperuser ? "슈퍼유저" : "멤버"}`;
+  const sessionChipLabel = `${session?.user?.name ?? "사용자"} · ${getUserRoleLabel(
+    session?.user?.role ?? "guest",
+    Boolean(session?.user?.isSuperuser),
+  )}`;
 
   function handleModeChange(_event: MouseEvent<HTMLElement>, value: AppThemeMode | null) {
     if (!value) {

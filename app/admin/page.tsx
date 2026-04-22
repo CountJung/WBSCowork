@@ -113,9 +113,21 @@ export default async function AdminPage() {
 
           <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 4 }}>
             <Stack spacing={2}>
-              <Typography variant="h5">다음 관리자 작업</Typography>
+              <Typography variant="h5">사용자 관리</Typography>
               <Typography variant="body2" color="text.secondary">
-                이후 단계에서는 Google 로그인 사용자 저장, 프로젝트/사용자 repository, 관리자용 운영 대시보드를 이어서 구현할 수 있습니다.
+                Google 로그인으로 생성된 사용자 목록을 확인하고 게스트 또는 일반사용자 권한을 직접 지정합니다.
+              </Typography>
+              <Button href="/admin/users" variant="contained">
+                사용자 관리 페이지 이동
+              </Button>
+            </Stack>
+          </Paper>
+
+          <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 4 }}>
+            <Stack spacing={2}>
+              <Typography variant="h5">기타 이동</Typography>
+              <Typography variant="body2" color="text.secondary">
+                홈 화면으로 돌아가 현재 세션과 기본 진입 흐름을 확인할 수 있습니다.
               </Typography>
               <Button href="/" variant="outlined">
                 홈으로 돌아가기

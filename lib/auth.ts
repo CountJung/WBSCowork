@@ -2,8 +2,8 @@ import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { getRuntimeEnv } from "@/lib/env";
-import { syncAuthenticatedUserIfPossible } from "@/lib/repositories/user-repository";
-import type { UserRole } from "@/models/user";
+import { resolveUserRoleForSession, syncAuthenticatedUserIfPossible } from "@/lib/repositories/user-repository";
+import { getDefaultUserRole } from "@/models/user";
 
 const runtimeEnv = getRuntimeEnv();
 const googleClientId = runtimeEnv.auth.googleClientId;
@@ -17,8 +17,8 @@ export function isSuperuserEmail(email?: string | null) {
   return Boolean(email && superuserEmail && email.toLowerCase() === superuserEmail);
 }
 
-function getRoleForEmail(email?: string | null): UserRole {
-  return isSuperuserEmail(email) ? "admin" : "member";
+function getRoleForEmail(email?: string | null) {
+  return getDefaultUserRole(email, superuserEmail);
 }
 
 export const authOptions = {
@@ -44,12 +44,12 @@ export const authOptions = {
 
       return true;
     },
-    jwt({ token, profile, user }) {
+    async jwt({ token, profile, user }) {
       const email = user?.email ?? token.email ?? (typeof profile?.email === "string" ? profile.email : undefined);
 
       token.email = email;
-      token.role = getRoleForEmail(email);
       token.isSuperuser = isSuperuserEmail(email);
+      token.role = await resolveUserRoleForSession(email);
 
       return token;
     },

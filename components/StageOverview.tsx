@@ -17,13 +17,14 @@ const stageOneItems = [
   "Auth.js route foundation added for Google OAuth",
   "VS Code Chrome debugging flow configured",
   "Responsive app shell with system/light/dark theme mode added",
+  "Google login users default to guest and can be managed by a superuser",
 ];
 
 const nextMilestones = [
   "MariaDB-backed repository usage in project flows",
-  "Google login persistence into the users table",
   "Task tree CRUD and ordering",
   "Gantt integration, submissions, comments, and uploads",
+  "Role-aware task and submission permissions",
 ];
 
 export default function StageOverview({

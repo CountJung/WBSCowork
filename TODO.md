@@ -28,11 +28,12 @@ Update it whenever stage scope, validation steps, or blocking issues change.
 - [x] Stage 2: Surface database health inside an authenticated admin flow
 - [x] Stage 2: Add env-based superuser login and admin-only DB management pages
 - [x] Stage 2: Persist initialized superuser data into the users table after DB initialization
+- [x] Stage 2: Default new Google logins to guest and add superuser-driven user role management
 
 ## Remaining Stages
 
 - [x] Stage 2: Connect MariaDB and define User/Project models
-- [ ] Stage 3: Implement Task (WBS) CRUD
+- [ ] Stage 3: Implement Task (WBS) CRUD with guest/member write policy integration
 - [ ] Stage 4: Integrate gantt chart
 - [ ] Stage 5: Implement submission feature
 - [ ] Stage 6: Implement comment feature

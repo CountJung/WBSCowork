@@ -9,6 +9,7 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 - Superuser login and admin-only DB management routes are ready.
 - Responsive app shell, route navigation, and three-mode theme switching are ready.
 - Stage 2 user/project repositories and Google login persistence are ready.
+- New Google logins default to guest, and superuser-driven user role management is ready.
 
 ## Live Rules
 
@@ -30,6 +31,7 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 | Admin Auth | Google login with `SUPERUSER_EMAIL` account | Matching Google account receives superuser session and can open `/admin` | Passed by build and route wiring |
 | Admin DB | `/admin/database` | Superuser can inspect DB existence and trigger DB plus core table creation from the web UI | Passed by build and route wiring |
 | Auth Persistence | Google login after DB init | The signed-in user is upserted into `users` when the schema is ready | Passed by build and route wiring |
+| User Roles | `/admin/users` | Superuser can inspect signed-in users and change `guest/member` roles while `SUPERUSER_EMAIL` remains reserved | Passed by lint and route wiring |
 | Lint | npm run lint | Zero unresolved warnings or errors for touched files | Passed |
 | Build | npm run build | Production build succeeds | Passed |
 
@@ -58,6 +60,7 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 - `scripts/check-db.ts` loads Next.js env files and validates or tests MariaDB connectivity from the command line.
 - `lib/auth.ts` maps the env-configured `SUPERUSER_EMAIL` into the NextAuth session so the first administrator can operate without a pre-existing database.
 - `/admin` and `/admin/database` provide superuser-only admin entry points and DB lifecycle controls.
+- `/admin/users` provides a superuser-only user role management entry point for guest/member control.
 - `components/AppShell.tsx` adds the responsive global app bar, mobile drawer navigation, and persisted system/light/dark theme mode switching.
 - `lib/repositories/user-repository.ts` and `lib/repositories/project-repository.ts` provide the Stage 2 read/write repository layer.
 

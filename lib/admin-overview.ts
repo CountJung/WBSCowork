@@ -50,7 +50,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
 
     return {
       ready: true,
-      message: "Google 로그인 사용자 동기화와 Project/User repository 읽기 경로가 활성화되어 있습니다.",
+      message: "Google 로그인 사용자 동기화, 기본 guest 권한 부여, Project/User repository 읽기 경로가 활성화되어 있습니다.",
       userCount,
       projectCount,
       recentUsers,

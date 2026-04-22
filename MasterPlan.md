@@ -103,10 +103,14 @@ users (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   email VARCHAR(255),
   name VARCHAR(255),
-  role ENUM('admin','member'),
+  role ENUM('admin','member','guest'),
   created_at DATETIME
 )
 ```
+
+- `admin`: env의 `SUPERUSER_EMAIL`과 연결되는 슈퍼관리자 계정
+- `member`: 업무 게시 읽기/쓰기 가능
+- `guest`: 읽기 전용
 
 ## Task (WBS)
 ```sql
@@ -200,6 +204,8 @@ uploads
 ## 1. 인증
 - Google OAuth 로그인
 - 최초 로그인 시 user 생성
+- 새 로그인 사용자는 기본 `guest` 권한으로 저장
+- `SUPERUSER_EMAIL`과 일치하는 계정은 슈퍼관리자로 처리
 
 ---
 
@@ -238,6 +244,7 @@ uploads
 
 ## Dashboard
 - 프로젝트 목록
+- 슈퍼관리자 전용 사용자 권한 관리
 - 진행률
 
 ## Project Detail

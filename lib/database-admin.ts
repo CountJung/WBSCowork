@@ -24,7 +24,7 @@ const createSchemaStatements = [
     id BIGINT NOT NULL AUTO_INCREMENT,
     email VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'member') NOT NULL DEFAULT 'member',
+    role ENUM('admin', 'member', 'guest') NOT NULL DEFAULT 'guest',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY users_email_unique (email)
@@ -192,6 +192,10 @@ export async function initializeDatabaseSchema() {
     for (const statement of createSchemaStatements) {
       await connection.query(statement);
     }
+
+    await connection.query(
+      "ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'member', 'guest') NOT NULL DEFAULT 'guest'",
+    );
   });
 
   return getDatabaseAdminStatus();
