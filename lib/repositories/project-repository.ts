@@ -35,6 +35,14 @@ export async function listProjects(limit = 10): Promise<Project[]> {
   return rows.map(mapProjectRow);
 }
 
+export async function listAllProjects(): Promise<Project[]> {
+  const rows = (await getDatabasePool().query(
+    "SELECT id, name, start_date, end_date, created_at FROM projects ORDER BY created_at DESC, id DESC",
+  )) as ProjectRow[];
+
+  return rows.map(mapProjectRow);
+}
+
 export async function getProjectCount(): Promise<number> {
   const rows = (await getDatabasePool().query("SELECT COUNT(*) AS count FROM projects")) as Array<{
     count: number;

@@ -29,6 +29,10 @@ export function getUserRoleLabel(role: UserRole, isSuperuser = false) {
   }
 }
 
+export function canWriteTaskContent(role: UserRole, isSuperuser = false) {
+  return isSuperuser || role === "admin" || role === "member";
+}
+
 export type UserRow = {
   id: number;
   email: string;

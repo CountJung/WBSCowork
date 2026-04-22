@@ -5,11 +5,11 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 
 ## Current Objective
 
-- Stage 2 auth and admin foundation implemented and validated.
+- Stage 3 project-scoped task CRUD is implemented and validated.
+- Guest/member write policy integration is active on the task management route.
 - Superuser login and admin-only DB management routes are ready.
 - Responsive app shell, route navigation, and three-mode theme switching are ready.
 - Stage 2 user/project repositories and Google login persistence are ready.
-- New Google logins default to guest, and superuser-driven user role management is ready.
 
 ## Live Rules
 
@@ -32,6 +32,7 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 | Admin DB | `/admin/database` | Superuser can inspect DB existence and trigger DB plus core table creation from the web UI | Passed by build and route wiring |
 | Auth Persistence | Google login after DB init | The signed-in user is upserted into `users` when the schema is ready | Passed by build and route wiring |
 | User Roles | `/admin/users` | Superuser can inspect signed-in users and change `guest/member` roles while `SUPERUSER_EMAIL` remains reserved | Passed by lint and route wiring |
+| Task CRUD | `/tasks` | Authenticated users can read project tasks, while `member/admin/superuser` can create, edit, delete projects and tasks | Passed by lint and route wiring |
 | Lint | npm run lint | Zero unresolved warnings or errors for touched files | Passed |
 | Build | npm run build | Production build succeeds | Passed |
 
@@ -64,12 +65,19 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 - `components/AppShell.tsx` adds the responsive global app bar, mobile drawer navigation, and persisted system/light/dark theme mode switching.
 - `lib/repositories/user-repository.ts` and `lib/repositories/project-repository.ts` provide the Stage 2 read/write repository layer.
 
+## Stage 3 Task Flow
+
+- `/tasks` provides the first project-facing WBS management view with project selection and task tree editing.
+- `lib/repositories/task-repository.ts` provides MariaDB-backed task CRUD with parent-child validation and depth normalization.
+- `models/task.ts` defines the Stage 3 task domain shape.
+- Login actions now return users to `/tasks` so guest/member workflows land on the primary task screen.
+
 ## Known Blockers
 
 - None recorded.
 
 ## Next Update Trigger
 
-- When MariaDB-backed repositories are added
+- When gantt chart rendering is added
 - If auth provider secrets are provisioned
 - After each new validation command or blocker appears

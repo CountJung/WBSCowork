@@ -36,6 +36,8 @@ type NavItem = {
 
 const defaultNavItems: NavItem[] = [{ href: "/", label: "홈" }];
 
+const taskNavItem: NavItem = { href: "/tasks", label: "작업" };
+
 function isActivePath(currentPath: string, href: string) {
   if (href === "/") {
     return currentPath === href;
@@ -49,7 +51,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
   const { data: session, status } = useSession();
   const { mode, setMode, systemMode } = useColorScheme();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const navItems = [...defaultNavItems];
+  const navItems = [...defaultNavItems, taskNavItem];
 
   if (session?.user?.isSuperuser) {
     navItems.push(
@@ -87,7 +89,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
       <Button
         variant="outlined"
         disabled={!authProvidersConfigured}
-        onClick={() => signIn("google", { callbackUrl: "/admin" })}
+        onClick={() => signIn("google", { callbackUrl: "/tasks" })}
       >
         Google 로그인
       </Button>

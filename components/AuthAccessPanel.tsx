@@ -50,7 +50,7 @@ export default function AuthAccessPanel({
               <Button
                 variant="contained"
                 disabled={!authProvidersConfigured}
-                onClick={() => signIn("google", { callbackUrl: "/admin" })}
+                onClick={() => signIn("google", { callbackUrl: "/tasks" })}
               >
                 Google로 로그인
               </Button>
@@ -81,9 +81,14 @@ export default function AuthAccessPanel({
               </Alert>
             )}
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-              <Button component={Link} href="/admin" variant="contained">
-                관리자 페이지 이동
+              <Button component={Link} href="/tasks" variant="contained">
+                작업 페이지 이동
               </Button>
+              {session.user.isSuperuser ? (
+                <Button component={Link} href="/admin" variant="outlined">
+                  관리자 페이지 이동
+                </Button>
+              ) : null}
               <Button variant="outlined" onClick={() => signOut({ callbackUrl: "/" })}>
                 로그아웃
               </Button>

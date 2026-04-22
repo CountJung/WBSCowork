@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Box, Chip, Container, Divider, List, ListItem, ListItemText, Paper, Stack, Typography } from "@mui/material";
 import AuthAccessPanel from "@/components/AuthAccessPanel";
 
@@ -10,7 +11,7 @@ type StageOverviewProps = {
   superuserConfigured: boolean;
 };
 
-const stageOneItems = [
+const completedItems = [
   "Next.js App Router workspace initialized",
   "TypeScript strict mode enabled",
   "MUI theme and provider wired into the root layout",
@@ -18,13 +19,13 @@ const stageOneItems = [
   "VS Code Chrome debugging flow configured",
   "Responsive app shell with system/light/dark theme mode added",
   "Google login users default to guest and can be managed by a superuser",
+  "Project-scoped WBS task CRUD added with guest/member write policy integration",
 ];
 
 const nextMilestones = [
-  "MariaDB-backed repository usage in project flows",
-  "Task tree CRUD and ordering",
-  "Gantt integration, submissions, comments, and uploads",
-  "Role-aware task and submission permissions",
+  "Gantt integration and task timeline visualization",
+  "Submission, comment, and upload flows",
+  "Task ordering drag-and-drop and richer project detail layout",
 ];
 
 export default function StageOverview({
@@ -42,15 +43,21 @@ export default function StageOverview({
             spacing={1.5}
             sx={{ alignItems: { xs: "flex-start", sm: "center" } }}
           >
-            <Chip label="Stage 2 foundation" color="primary" />
+            <Chip label="Stage 3 task workflow" color="primary" />
             <Chip label={authProvidersConfigured ? "Google OAuth ready" : "Google OAuth env pending"} color={authProvidersConfigured ? "success" : "warning"} variant="outlined" />
             <Chip label={databaseConfigured ? "MariaDB env ready" : "MariaDB env pending"} color={databaseConfigured ? "success" : "warning"} variant="outlined" />
           </Stack>
 
           <Stack spacing={1}>
-            <Typography variant="h2">{appName}의 Stage 2 기반 구성이 준비되었습니다.</Typography>
+            <Typography variant="h2">{appName}의 Stage 3 작업 관리 구성이 준비되었습니다.</Typography>
             <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
-              현재 저장소는 Next.js App Router, TypeScript, Material UI, Auth.js 기반 위에 중앙 env 검증 계층과 MariaDB 연결 모듈을 갖추고 있습니다. 다음 단계는 이 기반을 실제 프로젝트, 사용자, 작업 흐름에 연결하는 작업입니다.
+              현재 저장소는 프로젝트 단위 WBS 작업 생성, 수정, 삭제와 역할 기반 읽기/쓰기 정책을 포함합니다. guest는 읽기 전용으로 작업 트리를 확인할 수 있고, member와 슈퍼유저는 같은 화면에서 프로젝트와 작업을 직접 관리할 수 있습니다.
+            </Typography>
+          </Stack>
+
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+            <Typography component={Link} href="/tasks" sx={{ textDecoration: "none" }}>
+              작업 페이지로 이동
             </Typography>
           </Stack>
 
@@ -60,7 +67,7 @@ export default function StageOverview({
                 완료된 기반
               </Typography>
               <List disablePadding>
-                {stageOneItems.map((item) => (
+                {completedItems.map((item) => (
                   <ListItem key={item} disableGutters>
                     <ListItemText primary={item} />
                   </ListItem>
