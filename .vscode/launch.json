@@ -8,6 +8,13 @@
       "command": "npm run dev:debug"
     },
     {
+      "name": "Next.js: debug client-side",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
       "name": "Next.js: debug full stack",
       "type": "node",
       "request": "launch",
@@ -19,7 +26,7 @@
         "<node_internals>/**"
       ],
       "serverReadyAction": {
-        "action": "debugWithEdge",
+        "action": "debugWithChrome",
         "killOnServerStop": true,
         "pattern": "- Local:.+(https?://.+)",
         "uriFormat": "%s",

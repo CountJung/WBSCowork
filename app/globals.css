@@ -10,10 +10,12 @@ body {
 body {
   min-height: 100%;
   margin: 0;
-  background: #f6f4ec;
+  background: var(--mui-palette-background-default, #f6f4ec);
+  color: var(--mui-palette-text-primary, #1b2b25);
   font-family: var(--font-roboto), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 180ms ease, color 180ms ease;
 }
 
 * {

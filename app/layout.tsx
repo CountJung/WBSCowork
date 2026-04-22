@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import AppProviders from "@/components/AppProviders";
+import AppShell from "@/components/AppShell";
+import { authProvidersConfigured } from "@/lib/auth";
+import { getRuntimeEnv } from "@/lib/env";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -23,10 +26,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const runtimeEnv = getRuntimeEnv();
+
   return (
     <html lang="ko" className={roboto.variable}>
       <body>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <AppShell appName={runtimeEnv.appName} authProvidersConfigured={authProvidersConfigured}>
+            {children}
+          </AppShell>
+        </AppProviders>
       </body>
     </html>
   );

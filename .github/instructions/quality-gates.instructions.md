@@ -21,6 +21,11 @@ Apply the repository-wide guidance from ../copilot-instructions.md to every task
 - Re-run the same focused validation after each fix until the touched slice is clean.
 - Use broader validation only after the narrow validation succeeds.
 
+## Sensitive Context Policy
+
+- Never use `.env`, `.env.local`, `.env.*`, or other secret-bearing local environment files as AI working context, review input, or prompt material during normal repository tasks.
+- Treat environment files as runtime-only local configuration unless the user explicitly requests secret-management work outside normal code changes.
+
 ## Living Documents
 
 - Keep TODO.md current with stage status and unresolved issues.

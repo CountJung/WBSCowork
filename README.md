@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+WBS Task는 Next.js App Router 기반의 Task 중심 WBS 협업 시스템입니다.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies and run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## VS Code Debugging
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev:debug` starts Next.js with the Node inspector enabled.
+- Use `.vscode/launch.json` and select `Next.js: debug full stack` to open a Chrome debugging window automatically.
+- Use `Next.js: debug client-side` when the server is already running and you only want the browser debugger.
 
-## Learn More
+## App Shell
 
-To learn more about Next.js, take a look at the following resources:
+- The app now includes a global MUI app bar with route navigation for `/`, `/admin`, and `/admin/database` when the signed-in user is a superuser.
+- Light and dark theme modes can be toggled from the app bar and are persisted in local storage.
+- The app bar also exposes Google sign-in and sign-out actions through the shared session provider.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Authentication And Admin Access
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Users sign in with Google OAuth through NextAuth.
+- Set `SUPERUSER_EMAIL` in `.env.local` to promote the matching Google account to the initial superuser role without any database dependency.
+- After signing in with the superuser account, use `/admin` for administrator-only access and `/admin/database` for DB creation and status management.
 
-## Deploy on Vercel
+## Environment Setup
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Copy the variables from `.env.example` into your local `.env.local` and provide real values for Google OAuth and MariaDB.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Required MariaDB variables:
+
+- `DB_HOST`
+- `DB_PORT`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_NAME`
+- `DB_CONNECTION_LIMIT`
+- `DB_CONNECT_TIMEOUT_MS`
+
+Required auth variables:
+
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `NEXTAUTH_SECRET`
+- `NEXTAUTH_URL`
+- `SUPERUSER_EMAIL`
+
+## Stage 2 Checks
+
+Validate that the database-related environment variables are loaded correctly:
+
+```bash
+npm run db:check -- --validate-only
+```
+
+Attempt a real MariaDB connection with the current env values:
+
+```bash
+npm run db:check
+```
+
+From the admin UI, the superuser can also create the configured database and the core `users`, `projects`, `tasks`, `submissions`, and `comments` tables from the web interface.

@@ -5,8 +5,10 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 
 ## Current Objective
 
-- Stage 1 completed and validated.
-- Prepare Stage 2 database and model foundation.
+- Stage 2 auth and admin foundation implemented and validated.
+- Superuser login and admin-only DB management routes are ready.
+- Global app bar, route navigation, and theme mode toggle are ready.
+- Prepare MariaDB-backed repositories and auth persistence.
 
 ## Live Rules
 
@@ -21,6 +23,11 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 | --- | --- | --- | --- |
 | Bootstrap | npx create-next-app@latest wbs-task-bootstrap --ts --app --eslint --use-npm --import-alias "@/*" --no-tailwind --no-src-dir --disable-git --yes | Next.js workspace created and moved into repository root | Passed |
 | Debug | npm run dev:debug | Next.js dev server starts with Node inspector enabled for VS Code attach on localhost | Ready |
+| Debug | VS Code `Next.js: debug full stack` | Chrome debugging window opens automatically when the server is ready | Ready |
+| Database Env | npm run db:check -- --validate-only | Database env values load and validate without opening a real MariaDB connection | Passed |
+| Database Connect | npm run db:check | MariaDB connection succeeds once the target DB exists | Admin initialization required |
+| Admin Auth | Google login with `SUPERUSER_EMAIL` account | Matching Google account receives superuser session and can open `/admin` | Passed by build and route wiring |
+| Admin DB | `/admin/database` | Superuser can inspect DB existence and trigger DB plus core table creation from the web UI | Passed by build and route wiring |
 | Lint | npm run lint | Zero unresolved warnings or errors for touched files | Passed |
 | Build | npm run build | Production build succeeds | Passed |
 
@@ -33,20 +40,30 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 ## Environment Assumptions
 
 - Google OAuth remains inactive until GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_SECRET, and NEXTAUTH_URL are provided in `.env.local`.
-- Upload storage and MariaDB settings are staged in `.env.example` but not connected until Stage 2.
+- MariaDB access uses DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, DB_CONNECTION_LIMIT, and DB_CONNECT_TIMEOUT_MS from `.env.local` or the shell environment.
 - Sensitive `.env*` files may exist locally for runtime only, but they are excluded from AI task context and should not be opened as part of normal repository work.
 
 ## VS Code Debugging
 
 - Use `.vscode/launch.json` and `npm run dev:debug` for server-side or full-stack debugging in VS Code.
-- The server launch path follows the current Next.js App Router debugging guide and starts `next dev` with `--inspect`.
+- The full-stack launch path follows the current Next.js App Router debugging guide and now opens Chrome via `debugWithChrome`.
+
+## Stage 2 Foundation
+
+- `lib/env.ts` centralizes env parsing and readiness checks for auth and MariaDB.
+- `lib/db.ts` creates a shared MariaDB pool from validated env values.
+- `models/user.ts` and `models/project.ts` define the initial Stage 2 domain shapes.
+- `scripts/check-db.ts` loads Next.js env files and validates or tests MariaDB connectivity from the command line.
+- `lib/auth.ts` maps the env-configured `SUPERUSER_EMAIL` into the NextAuth session so the first administrator can operate without a pre-existing database.
+- `/admin` and `/admin/database` provide superuser-only admin entry points and DB lifecycle controls.
+- `components/AppShell.tsx` adds the global app bar, session-aware navigation routes, and persisted light/dark theme mode switching.
 
 ## Known Blockers
 
-- None recorded yet.
+- None recorded.
 
 ## Next Update Trigger
 
-- When Stage 2 database wiring begins
+- When MariaDB-backed repositories are added
 - If auth provider secrets are provisioned
 - After each new validation command or blocker appears
