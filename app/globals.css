@@ -1,3 +1,5 @@
+@import "../node_modules/frappe-gantt/dist/frappe-gantt.css";
+
 html {
   height: 100%;
 }
@@ -43,4 +45,18 @@ a {
 
 main {
   flex: 1;
+}
+
+.wbs-gantt-surface {
+  min-height: 420px;
+  overflow-x: auto;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(32, 64, 54, 0.08);
+  padding: 12px;
+}
+
+[data-mui-color-scheme="dark"] .wbs-gantt-surface {
+  background: rgba(11, 18, 16, 0.82);
+  border-color: rgba(154, 199, 188, 0.12);
 }

@@ -3,7 +3,6 @@ import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
 import { Roboto } from "next/font/google";
 import AppProviders from "@/components/AppProviders";
 import AppShell from "@/components/AppShell";
-import { authProvidersConfigured } from "@/lib/auth";
 import { getRuntimeEnv } from "@/lib/env";
 import "./globals.css";
 
@@ -38,7 +37,7 @@ export default function RootLayout({
           colorSchemeStorageKey="wbs-task-color-scheme"
         />
         <AppProviders>
-          <AppShell appName={runtimeEnv.appName} authProvidersConfigured={authProvidersConfigured}>
+          <AppShell appName={runtimeEnv.appName} authProvidersConfigured={runtimeEnv.auth.googleProviderConfigured}>
             {children}
           </AppShell>
         </AppProviders>

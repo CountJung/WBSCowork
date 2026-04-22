@@ -1,5 +1,6 @@
 type RuntimeEnv = {
   appName: string;
+  uploadDir: string;
   auth: {
     googleClientId?: string;
     googleClientSecret?: string;
@@ -18,6 +19,11 @@ type RuntimeEnv = {
     connectionLimit: number;
     connectTimeoutMs: number;
     configured: boolean;
+  };
+  logging: {
+    directory: string;
+    retentionDays: number;
+    maxFileSizeMb: number;
   };
 };
 
@@ -80,9 +86,11 @@ export function getRuntimeEnv(): RuntimeEnv {
   const databaseUser = readOptionalEnv("DB_USER");
   const databasePassword = readOptionalEnv("DB_PASSWORD", { allowEmpty: true, trim: false });
   const databaseName = readOptionalEnv("DB_NAME");
+  const uploadDir = readOptionalEnv("UPLOAD_DIR") ?? "./uploads";
 
   cachedRuntimeEnv = {
     appName: readOptionalEnv("NEXT_PUBLIC_APP_NAME") ?? "WBS Task",
+    uploadDir,
     auth: {
       googleClientId,
       googleClientSecret,
@@ -102,9 +110,18 @@ export function getRuntimeEnv(): RuntimeEnv {
       connectTimeoutMs: readPositiveIntegerEnv("DB_CONNECT_TIMEOUT_MS", 10000),
       configured: Boolean(databaseHost && databaseUser && databasePassword !== undefined && databaseName),
     },
+    logging: {
+      directory: readOptionalEnv("LOG_DIR") ?? "./logs",
+      retentionDays: readPositiveIntegerEnv("LOG_RETENTION_DAYS", 5),
+      maxFileSizeMb: readPositiveIntegerEnv("LOG_MAX_FILE_SIZE_MB", 100),
+    },
   };
 
   return cachedRuntimeEnv;
+}
+
+export function resetRuntimeEnvCache() {
+  cachedRuntimeEnv = undefined;
 }
 
 export function requireDatabaseEnv(): DatabaseEnv {

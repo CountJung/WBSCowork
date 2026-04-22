@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireSuperuserSession } from "@/lib/auth";
 import { getDatabaseAdminStatus, initializeDatabaseSchema, type DatabaseAdminStatus } from "@/lib/database-admin";
+import { logError, logInfo, serializeError } from "@/lib/logger";
 import { upsertUser } from "@/lib/repositories/user-repository";
 
 export type DatabaseAdminActionState = {
@@ -38,12 +39,23 @@ export async function initializeDatabaseAction(
     revalidatePath("/admin/database");
     revalidatePath("/admin");
 
+    await logInfo("admin.database", "Database initialization completed", {
+      actorEmail: session.user.email ?? null,
+      databaseName: status.databaseName,
+      tableCount: status.existingTableCount,
+    });
+
     return {
       success: true,
       message: "DB 및 기본 테이블 생성 작업이 완료되었고 현재 슈퍼유저 계정도 users 테이블에 동기화했습니다.",
       status,
     };
   } catch (error) {
+    await logError("admin.database", "Database initialization failed", {
+      actorEmail: session.user.email ?? null,
+      error: serializeError(error),
+    });
+
     return {
       ...previousState,
       success: false,
@@ -68,12 +80,23 @@ export async function refreshDatabaseStatusAction(
   try {
     const status = await getDatabaseAdminStatus();
 
+    await logInfo("admin.database", "Database status refreshed", {
+      actorEmail: session.user.email ?? null,
+      databaseName: status.databaseName,
+      databaseExists: status.databaseExists,
+    });
+
     return {
       success: true,
       message: "DB 상태를 새로고침했습니다.",
       status,
     };
   } catch (error) {
+    await logError("admin.database", "Database status refresh failed", {
+      actorEmail: session.user.email ?? null,
+      error: serializeError(error),
+    });
+
     return {
       ...previousState,
       success: false,

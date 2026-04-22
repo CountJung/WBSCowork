@@ -56,6 +56,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
   if (session?.user?.isSuperuser) {
     navItems.push(
       { href: "/admin", label: "관리자" },
+      { href: "/admin/settings", label: "세팅" },
       { href: "/admin/users", label: "사용자 관리" },
       { href: "/admin/database", label: "DB 관리" },
     );

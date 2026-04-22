@@ -20,12 +20,14 @@ const completedItems = [
   "Responsive app shell with system/light/dark theme mode added",
   "Google login users default to guest and can be managed by a superuser",
   "Project-scoped WBS task CRUD added with guest/member write policy integration",
+  "Project timeline Gantt rendering added with frappe-gantt",
+  "Admin-only settings page added for env editing and file log policy control",
 ];
 
 const nextMilestones = [
-  "Gantt integration and task timeline visualization",
   "Submission, comment, and upload flows",
   "Task ordering drag-and-drop and richer project detail layout",
+  "Deployment hardening and operational backup flow",
 ];
 
 export default function StageOverview({
@@ -43,15 +45,15 @@ export default function StageOverview({
             spacing={1.5}
             sx={{ alignItems: { xs: "flex-start", sm: "center" } }}
           >
-            <Chip label="Stage 3 task workflow" color="primary" />
+            <Chip label="Stage 4 timeline workflow" color="primary" />
             <Chip label={authProvidersConfigured ? "Google OAuth ready" : "Google OAuth env pending"} color={authProvidersConfigured ? "success" : "warning"} variant="outlined" />
             <Chip label={databaseConfigured ? "MariaDB env ready" : "MariaDB env pending"} color={databaseConfigured ? "success" : "warning"} variant="outlined" />
           </Stack>
 
           <Stack spacing={1}>
-            <Typography variant="h2">{appName}의 Stage 3 작업 관리 구성이 준비되었습니다.</Typography>
+            <Typography variant="h2">{appName}의 Stage 4 작업 관리 구성이 준비되었습니다.</Typography>
             <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
-              현재 저장소는 프로젝트 단위 WBS 작업 생성, 수정, 삭제와 역할 기반 읽기/쓰기 정책을 포함합니다. guest는 읽기 전용으로 작업 트리를 확인할 수 있고, member와 슈퍼유저는 같은 화면에서 프로젝트와 작업을 직접 관리할 수 있습니다.
+              현재 저장소는 프로젝트 단위 WBS 작업 CRUD, 역할 기반 읽기/쓰기 정책, 간트 시각화, 관리자 전용 env 편집, 그리고 롤링 파일 로그 기록을 포함합니다. guest는 읽기 전용으로 작업 트리와 간트를 확인할 수 있고, member와 슈퍼유저는 같은 화면에서 작업 흐름을 직접 관리할 수 있습니다.
             </Typography>
           </Stack>
 

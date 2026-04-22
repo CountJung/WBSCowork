@@ -49,7 +49,7 @@ export default async function AdminPage() {
           <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
             <Stack spacing={2}>
               <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ alignItems: { md: "center" } }}>
-                <Typography variant="h5">Stage 2 운영 요약</Typography>
+                <Typography variant="h5">Stage 4 운영 요약</Typography>
                 <Chip label={`사용자 ${adminOverview.userCount}`} color={adminOverview.ready ? "success" : "default"} />
                 <Chip label={`프로젝트 ${adminOverview.projectCount}`} color={adminOverview.ready ? "primary" : "default"} />
               </Stack>
@@ -119,6 +119,18 @@ export default async function AdminPage() {
               </Typography>
               <Button href="/admin/users" variant="contained">
                 사용자 관리 페이지 이동
+              </Button>
+            </Stack>
+          </Paper>
+
+          <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 4 }}>
+            <Stack spacing={2}>
+              <Typography variant="h5">시스템 세팅</Typography>
+              <Typography variant="body2" color="text.secondary">
+                파일 로그 롤링 정책과 전체 env 설정을 편집합니다. 문제 분석용 로그 파일도 여기서 관리합니다.
+              </Typography>
+              <Button href="/admin/settings" variant="contained">
+                세팅 페이지 이동
               </Button>
             </Stack>
           </Paper>

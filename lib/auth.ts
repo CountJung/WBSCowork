@@ -2,27 +2,26 @@ import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { getRuntimeEnv } from "@/lib/env";
+import { logError, logInfo, serializeError } from "@/lib/logger";
 import { resolveUserRoleForSession, syncAuthenticatedUserIfPossible } from "@/lib/repositories/user-repository";
 import { getDefaultUserRole } from "@/models/user";
 
 const runtimeEnv = getRuntimeEnv();
 const googleClientId = runtimeEnv.auth.googleClientId;
 const googleClientSecret = runtimeEnv.auth.googleClientSecret;
-const superuserEmail = runtimeEnv.auth.superuserEmail;
-
-export const authProvidersConfigured = runtimeEnv.auth.googleProviderConfigured;
-export const superuserConfigured = runtimeEnv.auth.superuserConfigured;
 
 export function isSuperuserEmail(email?: string | null) {
+  const superuserEmail = getRuntimeEnv().auth.superuserEmail;
+
   return Boolean(email && superuserEmail && email.toLowerCase() === superuserEmail);
 }
 
 function getRoleForEmail(email?: string | null) {
-  return getDefaultUserRole(email, superuserEmail);
+  return getDefaultUserRole(email, getRuntimeEnv().auth.superuserEmail);
 }
 
 export const authOptions = {
-  providers: authProvidersConfigured
+  providers: runtimeEnv.auth.googleProviderConfigured
     ? [
         GoogleProvider({
           clientId: googleClientId!,
@@ -36,11 +35,25 @@ export const authOptions = {
   },
   callbacks: {
     async signIn({ user }) {
-      await syncAuthenticatedUserIfPossible({
-        email: user.email,
-        name: user.name,
-        role: getRoleForEmail(user.email),
-      });
+      try {
+        await syncAuthenticatedUserIfPossible({
+          email: user.email,
+          name: user.name,
+          role: getRoleForEmail(user.email),
+        });
+
+        await logInfo("auth", "Authenticated user sign-in completed", {
+          email: user.email ?? null,
+          role: getRoleForEmail(user.email),
+        });
+      } catch (error) {
+        await logError("auth", "Authenticated user sign-in failed", {
+          email: user.email ?? null,
+          error: serializeError(error),
+        });
+
+        throw error;
+      }
 
       return true;
     },

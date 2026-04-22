@@ -1,5 +1,4 @@
 import StageOverview from "@/components/StageOverview";
-import { authProvidersConfigured } from "@/lib/auth";
 import { getRuntimeEnv } from "@/lib/env";
 
 export default function Home() {
@@ -8,7 +7,7 @@ export default function Home() {
   return (
     <StageOverview
       appName={runtimeEnv.appName}
-      authProvidersConfigured={authProvidersConfigured}
+      authProvidersConfigured={runtimeEnv.auth.googleProviderConfigured}
       databaseConfigured={runtimeEnv.database.configured}
       superuserConfigured={runtimeEnv.auth.superuserConfigured}
     />

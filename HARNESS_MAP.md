@@ -5,8 +5,9 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 
 ## Current Objective
 
-- Stage 3 project-scoped task CRUD is implemented and validated.
-- Guest/member write policy integration is active on the task management route.
+- Stage 4 project-scoped gantt integration is implemented and validated.
+- Admin-only settings management for file logging and env editing is ready.
+- Rolling file logs are written into `/logs` with env-driven retention and file-size policies.
 - Superuser login and admin-only DB management routes are ready.
 - Responsive app shell, route navigation, and three-mode theme switching are ready.
 - Stage 2 user/project repositories and Google login persistence are ready.
@@ -30,9 +31,11 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 | Database Connect | npm run db:check | MariaDB connection succeeds once the target DB exists | Admin initialization required |
 | Admin Auth | Google login with `SUPERUSER_EMAIL` account | Matching Google account receives superuser session and can open `/admin` | Passed by build and route wiring |
 | Admin DB | `/admin/database` | Superuser can inspect DB existence and trigger DB plus core table creation from the web UI | Passed by build and route wiring |
+| Admin Settings | `/admin/settings` | Superuser can edit env values and rolling file log policy, and inspect recent log files | Passed by lint and build |
 | Auth Persistence | Google login after DB init | The signed-in user is upserted into `users` when the schema is ready | Passed by build and route wiring |
 | User Roles | `/admin/users` | Superuser can inspect signed-in users and change `guest/member` roles while `SUPERUSER_EMAIL` remains reserved | Passed by lint and route wiring |
 | Task CRUD | `/tasks` | Authenticated users can read project tasks, while `member/admin/superuser` can create, edit, delete projects and tasks | Passed by lint and route wiring |
+| Gantt | `/tasks` | Selected project tasks render in a frappe-gantt timeline with Day/Week/Month switching | Passed by build and route wiring |
 | Lint | npm run lint | Zero unresolved warnings or errors for touched files | Passed |
 | Build | npm run build | Production build succeeds | Passed |
 
@@ -46,6 +49,7 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 
 - Google OAuth remains inactive until GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_SECRET, and NEXTAUTH_URL are provided in `.env.local`.
 - MariaDB access uses DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, DB_CONNECTION_LIMIT, and DB_CONNECT_TIMEOUT_MS from `.env.local` or the shell environment.
+- Rolling file logs use LOG_DIR, LOG_RETENTION_DAYS, and LOG_MAX_FILE_SIZE_MB from `.env.local` or the shell environment.
 - Sensitive `.env*` files may exist locally for runtime only, but they are excluded from AI task context and should not be opened as part of normal repository work.
 
 ## VS Code Debugging
@@ -72,12 +76,19 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 - `models/task.ts` defines the Stage 3 task domain shape.
 - Login actions now return users to `/tasks` so guest/member workflows land on the primary task screen.
 
+## Stage 4 Timeline And Observability
+
+- `components/gantt/ProjectGanttChart.tsx` renders project tasks in frappe-gantt on the main `/tasks` route.
+- `app/admin/settings` and `components/admin/SettingsAdminPanel.tsx` provide superuser-only editing for log policy and all env entries stored in `.env.local`.
+- `instrumentation.ts` and `lib/logger.ts` initialize rolling file logging under `/logs` and capture request errors, console output, and major admin/task mutations.
+- The previous project-create `NEXT_REDIRECT` failure was fixed by moving successful redirects outside `try/catch` blocks in server actions.
+
 ## Known Blockers
 
 - None recorded.
 
 ## Next Update Trigger
 
-- When gantt chart rendering is added
+- When submission CRUD and markdown flow are added
 - If auth provider secrets are provisioned
 - After each new validation command or blocker appears

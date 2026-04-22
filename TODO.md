@@ -34,7 +34,7 @@ Update it whenever stage scope, validation steps, or blocking issues change.
 
 - [x] Stage 2: Connect MariaDB and define User/Project models
 - [x] Stage 3: Implement Task (WBS) CRUD with guest/member write policy integration
-- [ ] Stage 4: Integrate gantt chart
+- [x] Stage 4: Integrate gantt chart
 - [ ] Stage 5: Implement submission feature
 - [ ] Stage 6: Implement comment feature
 - [ ] Stage 7: Implement file upload flow

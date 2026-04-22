@@ -16,6 +16,7 @@ import { getRuntimeEnv } from "@/lib/env";
 import { listAllProjects } from "@/lib/repositories/project-repository";
 import { listTasksByProject } from "@/lib/repositories/task-repository";
 import { listAllUsers } from "@/lib/repositories/user-repository";
+import ProjectGanttChart from "@/components/gantt/ProjectGanttChart";
 import type { Project } from "@/models/project";
 import type { Task } from "@/models/task";
 import { canWriteTaskContent, getUserRoleLabel } from "@/models/user";
@@ -404,6 +405,8 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         ) : null}
 
         {canWrite && selectedProject ? <TaskCreateForm orderedTasks={orderedTasks} project={selectedProject} users={users} /> : null}
+
+        {selectedProject ? <ProjectGanttChart project={selectedProject} tasks={orderedTasks} /> : null}
 
         {selectedProject ? (
           <TaskList canWrite={canWrite} orderedTasks={orderedTasks} project={selectedProject} users={users} />
