@@ -54,3 +54,17 @@ export function getSelectedProject(projects: Project[], projectIdParam?: string)
 
   return projects[0] ?? null;
 }
+
+export function getSelectedTask(tasks: Task[], taskIdParam?: string) {
+  const taskId = Number(taskIdParam);
+
+  if (Number.isInteger(taskId) && taskId > 0) {
+    const selectedTask = tasks.find((task) => task.id === taskId);
+
+    if (selectedTask) {
+      return selectedTask;
+    }
+  }
+
+  return null;
+}

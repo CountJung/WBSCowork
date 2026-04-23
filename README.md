@@ -13,6 +13,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+Set `APP_PORT` in `.env` if the application should run on a different port. The production `build` and `start` scripts both load the same env file, and `start` serves Next.js on that configured port.
+
 ## VS Code Debugging
 
 - `npm run dev:debug` starts Next.js with the Node inspector enabled.
@@ -24,7 +26,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 - The app now includes a global MUI app bar that serves as the primary cross-page navigation surface.
 - Superusers also get a dedicated `/admin/users` route for role control.
-- Superusers can also reach `/admin/settings` and `/admin/database` directly from the app bar.
+- Superusers can also reach `/admin/logs`, `/admin/settings`, and `/admin/database` directly from the grouped admin menu in the app bar.
 - `system`, `light`, and `dark` theme modes can be selected from the app shell and are persisted in local storage.
 - The app bar also exposes Google sign-in and sign-out actions through the shared session provider.
 - The navigation shell is designed to work across desktop and mobile layouts, including a mobile drawer menu.
@@ -32,9 +34,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ## Project Workspace
 
 - `/` now acts as a concise overview page for authenticated users, showing the selected project's gantt and simplified task list.
-- `/tasks` remains the main workspace for project selection, project/task CRUD, gantt review, and task-scoped submission management.
+- `/tasks` remains the main workspace for project selection, project/task CRUD, gantt review, task-detail focus routing, and task-scoped submission management.
 - Writable users (`member`, `admin`, and superuser) can delete projects directly from the selected project card on `/tasks`.
 - Each task on `/tasks` now includes Markdown submission and comment areas, plus optional attachment upload and authenticated download sharing.
+- Home task cards now route directly into the corresponding focused task card on `/tasks`, so users can continue submission and comment work without re-finding the task manually.
 
 ## Authentication And Admin Access
 
@@ -49,6 +52,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 Copy the variables from `.env.example` into your local `.env` and provide real values for Google OAuth and MariaDB.
 
 If `.env.local` already exists from earlier runs, the admin settings page now warns about overlapping managed keys and removes those managed overrides on the next save so `.env` becomes the single managed source.
+
+If you change `APP_PORT`, update `NEXTAUTH_URL` to the matching origin when the app is accessed directly on that port.
 
 Required MariaDB variables:
 
@@ -67,6 +72,10 @@ Required auth variables:
 - `NEXTAUTH_SECRET`
 - `NEXTAUTH_URL`
 - `SUPERUSER_EMAIL`
+
+Required app/runtime variables:
+
+- `APP_PORT`
 - `UPLOAD_DIR`
 - `UPLOAD_MAX_FILE_SIZE_MB`
 
@@ -85,3 +94,5 @@ npm run db:check
 ```
 
 From the admin UI, the superuser can also create the configured database and the core `users`, `projects`, `tasks`, `submissions`, and `comments` tables from the web interface.
+
+The superuser can also inspect recent structured user-action history and raw rolling log tails from `/admin/logs`.

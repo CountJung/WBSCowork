@@ -1,5 +1,6 @@
 type RuntimeEnv = {
   appName: string;
+  appPort: number;
   uploadDir: string;
   uploadMaxFileSizeMb: number;
   auth: {
@@ -92,6 +93,7 @@ export function getRuntimeEnv(): RuntimeEnv {
 
   cachedRuntimeEnv = {
     appName: readOptionalEnv("NEXT_PUBLIC_APP_NAME") ?? "WBS Task",
+    appPort: readPositiveIntegerEnv("APP_PORT", 3000),
     uploadDir,
     uploadMaxFileSizeMb,
     auth: {

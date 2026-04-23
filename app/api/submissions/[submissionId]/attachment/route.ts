@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
+import { logUserAction, logUserActionFailure } from "@/lib/logger";
 import { getSubmissionById } from "@/lib/repositories/submission-repository";
 import { readStoredSubmissionAttachment } from "@/lib/submission-files";
 
@@ -32,6 +33,18 @@ export async function GET(_request: Request, context: RouteContext) {
   try {
     const attachment = await readStoredSubmissionAttachment(submission.filePath);
 
+    await logUserAction("submissions.attachment", {
+      actorEmail: session.user.email ?? null,
+      action: "submission.attachment.download",
+      entityType: "submission",
+      entityId: submission.id,
+      submissionId: submission.id,
+      taskId: submission.taskId,
+      metadata: {
+        fileName: submission.fileName,
+      },
+    });
+
     return new NextResponse(attachment.buffer, {
       headers: {
         "Cache-Control": "private, no-store",
@@ -40,7 +53,20 @@ export async function GET(_request: Request, context: RouteContext) {
         "Content-Type": submission.fileMimeType ?? "application/octet-stream",
       },
     });
-  } catch {
+  } catch (error) {
+    await logUserActionFailure(
+      "submissions.attachment",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "submission.attachment.download",
+        entityType: "submission",
+        entityId: submission.id,
+        submissionId: submission.id,
+        taskId: submission.taskId,
+      },
+      error,
+    );
+
     return NextResponse.json({ message: "첨부파일을 불러오지 못했습니다." }, { status: 404 });
   }
 }

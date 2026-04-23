@@ -19,8 +19,8 @@ export type EditableEnvGroup = {
 const editableEnvGroups: EditableEnvGroup[] = [
   {
     title: "앱 설정",
-    description: "기본 앱 이름과 공개적으로 사용되는 클라이언트 설정입니다.",
-    keys: ["NEXT_PUBLIC_APP_NAME", "NEXTAUTH_URL"],
+    description: "기본 앱 이름, 런타임 포트, 공개적으로 사용되는 클라이언트 설정입니다.",
+    keys: ["NEXT_PUBLIC_APP_NAME", "APP_PORT", "NEXTAUTH_URL"],
   },
   {
     title: "인증 설정",
@@ -41,6 +41,7 @@ const editableEnvGroups: EditableEnvGroup[] = [
 
 const defaultEnvValues: Record<string, string> = {
   NEXT_PUBLIC_APP_NAME: "WBS Task",
+  APP_PORT: "3000",
   DB_HOST: "localhost",
   DB_PORT: "3306",
   DB_USER: "root",

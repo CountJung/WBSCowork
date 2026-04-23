@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAuthSession, getSignInPath } from "@/lib/auth";
-import { logError, logInfo, serializeError } from "@/lib/logger";
+import { logUserAction, logUserActionFailure } from "@/lib/logger";
 import { createComment, deleteComment, getCommentById, updateComment } from "@/lib/repositories/comment-repository";
 import { createProject, deleteProject } from "@/lib/repositories/project-repository";
 import { createSubmission, deleteSubmission, getSubmissionById, updateSubmission } from "@/lib/repositories/submission-repository";
@@ -12,14 +12,22 @@ import { getUserByEmail } from "@/lib/repositories/user-repository";
 import { deleteStoredSubmissionAttachment, saveUploadedSubmissionAttachment, type StoredSubmissionAttachment } from "@/lib/submission-files";
 import { canWriteTaskContent } from "@/models/user";
 
-function buildTasksPath(status: "success" | "error", message: string, projectId?: number) {
+function buildTasksPath(
+  status: "success" | "error",
+  message: string,
+  options?: { projectId?: number; taskId?: number },
+) {
   const searchParams = new URLSearchParams({
     status,
     message,
   });
 
-  if (projectId) {
-    searchParams.set("projectId", String(projectId));
+  if (options?.projectId) {
+    searchParams.set("projectId", String(options.projectId));
+  }
+
+  if (options?.taskId) {
+    searchParams.set("taskId", String(options.taskId));
   }
 
   return `/tasks?${searchParams.toString()}`;
@@ -88,7 +96,7 @@ async function requireWritableSession(projectId?: number) {
   }
 
   if (!canWriteTaskContent(session.user.role, session.user.isSuperuser)) {
-    redirect(buildTasksPath("error", "게스트 계정은 작업과 프로젝트를 수정할 수 없습니다.", projectId));
+    redirect(buildTasksPath("error", "게스트 계정은 작업과 프로젝트를 수정할 수 없습니다.", { projectId }));
   }
 
   return session;
@@ -139,18 +147,26 @@ export async function createProjectAction(formData: FormData) {
     revalidatePath("/admin");
     revalidatePath("/tasks");
 
-    await logInfo("tasks", "Project created", {
+    await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
+      action: "project.create",
+      entityType: "project",
+      entityId: project.id,
+      entityLabel: project.name,
       projectId: project.id,
-      projectName: project.name,
     });
 
-    redirectPath = buildTasksPath("success", `${project.name} 프로젝트를 생성했습니다.`, project.id);
+    redirectPath = buildTasksPath("success", `${project.name} 프로젝트를 생성했습니다.`, { projectId: project.id });
   } catch (error) {
-    await logError("tasks", "Project creation failed", {
-      actorEmail: session.user.email ?? null,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "tasks",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "project.create",
+        entityType: "project",
+      },
+      error,
+    );
 
     redirectPath = buildTasksPath(
       "error",
@@ -185,25 +201,33 @@ export async function createTaskAction(formData: FormData) {
 
     revalidatePath("/tasks");
 
-    await logInfo("tasks", "Task created", {
+    await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
+      action: "task.create",
+      entityType: "task",
+      entityId: task.id,
+      entityLabel: task.title,
       projectId,
       taskId: task.id,
-      taskTitle: task.title,
     });
 
-    redirectPath = buildTasksPath("success", `${task.title} 작업을 생성했습니다.`, projectId);
+    redirectPath = buildTasksPath("success", `${task.title} 작업을 생성했습니다.`, { projectId, taskId: task.id });
   } catch (error) {
-    await logError("tasks", "Task creation failed", {
-      actorEmail: session.user.email ?? null,
-      projectId,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "tasks",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "task.create",
+        entityType: "task",
+        projectId,
+      },
+      error,
+    );
 
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "작업 생성 중 알 수 없는 오류가 발생했습니다.",
-      projectId,
+      { projectId },
     );
   }
 
@@ -234,25 +258,33 @@ export async function updateTaskAction(formData: FormData) {
 
     revalidatePath("/tasks");
 
-    await logInfo("tasks", "Task updated", {
+    await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
+      action: "task.update",
+      entityType: "task",
+      entityId: task.id,
+      entityLabel: task.title,
       projectId,
       taskId: task.id,
-      taskTitle: task.title,
     });
 
-    redirectPath = buildTasksPath("success", `${task.title} 작업을 수정했습니다.`, projectId);
+    redirectPath = buildTasksPath("success", `${task.title} 작업을 수정했습니다.`, { projectId, taskId: task.id });
   } catch (error) {
-    await logError("tasks", "Task update failed", {
-      actorEmail: session.user.email ?? null,
-      projectId,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "tasks",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "task.update",
+        entityType: "task",
+        projectId,
+      },
+      error,
+    );
 
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "작업 수정 중 알 수 없는 오류가 발생했습니다.",
-      projectId,
+      { projectId },
     );
   }
 
@@ -270,25 +302,33 @@ export async function deleteTaskAction(formData: FormData) {
 
     revalidatePath("/tasks");
 
-    await logInfo("tasks", "Task deleted", {
+    await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
+      action: "task.delete",
+      entityType: "task",
+      entityId: task.id,
+      entityLabel: task.title,
       projectId,
       taskId: task.id,
-      taskTitle: task.title,
     });
 
-    redirectPath = buildTasksPath("success", `${task.title} 작업을 삭제했습니다.`, projectId);
+    redirectPath = buildTasksPath("success", `${task.title} 작업을 삭제했습니다.`, { projectId });
   } catch (error) {
-    await logError("tasks", "Task deletion failed", {
-      actorEmail: session.user.email ?? null,
-      projectId,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "tasks",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "task.delete",
+        entityType: "task",
+        projectId,
+      },
+      error,
+    );
 
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "작업 삭제 중 알 수 없는 오류가 발생했습니다.",
-      projectId,
+      { projectId },
     );
   }
 
@@ -308,24 +348,33 @@ export async function deleteProjectAction(formData: FormData) {
     revalidatePath("/admin");
     revalidatePath("/tasks");
 
-    await logInfo("tasks", "Project deleted", {
+    await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
+      action: "project.delete",
+      entityType: "project",
+      entityId: project.id,
+      entityLabel: project.name,
       projectId: project.id,
-      projectName: project.name,
     });
 
     redirectPath = buildTasksPath("success", `${project.name} 프로젝트를 삭제했습니다.`);
   } catch (error) {
-    await logError("tasks", "Project deletion failed", {
-      actorEmail: session.user.email ?? null,
-      projectId,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "tasks",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "project.delete",
+        entityType: "project",
+        entityId: projectId,
+        projectId,
+      },
+      error,
+    );
 
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "프로젝트 삭제 중 알 수 없는 오류가 발생했습니다.",
-      projectId,
+      { projectId },
     );
   }
 
@@ -363,31 +412,41 @@ export async function createSubmissionAction(formData: FormData) {
     revalidatePath("/");
     revalidatePath("/tasks");
 
-    await logInfo("tasks", "Submission created", {
+    await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
+      action: "submission.create",
+      entityType: "submission",
+      entityId: submission.id,
       projectId,
       taskId,
-      fileName: submission.fileName,
       submissionId: submission.id,
+      metadata: {
+        fileName: submission.fileName,
+      },
     });
 
-    redirectPath = buildTasksPath("success", "제출물을 등록했습니다.", projectId);
+    redirectPath = buildTasksPath("success", "제출물을 등록했습니다.", { projectId, taskId });
   } catch (error) {
     if (storedAttachment) {
       await deleteStoredSubmissionAttachment(storedAttachment.filePath).catch(() => undefined);
     }
 
-    await logError("tasks", "Submission creation failed", {
-      actorEmail: session.user.email ?? null,
-      projectId,
-      taskId,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "tasks",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "submission.create",
+        entityType: "submission",
+        projectId,
+        taskId,
+      },
+      error,
+    );
 
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "제출물 등록 중 알 수 없는 오류가 발생했습니다.",
-      projectId,
+      { projectId, taskId },
     );
   }
 
@@ -433,45 +492,63 @@ export async function updateSubmissionAction(formData: FormData) {
 
     if (replaceAttachment && existingSubmission.filePath && existingSubmission.filePath !== storedAttachment?.filePath) {
       await deleteStoredSubmissionAttachment(existingSubmission.filePath).catch(async (cleanupError) => {
-        await logError("tasks", "Submission attachment cleanup failed", {
-          actorEmail: session.user.email ?? null,
-          filePath: existingSubmission.filePath,
-          projectId,
-          submissionId,
-          taskId,
-          error: serializeError(cleanupError),
-        });
+        await logUserActionFailure(
+          "tasks",
+          {
+            actorEmail: session.user.email ?? null,
+            action: "submission.attachment.cleanup",
+            entityType: "submission",
+            entityId: submissionId,
+            projectId,
+            taskId,
+            submissionId,
+            metadata: {
+              filePath: existingSubmission.filePath,
+            },
+          },
+          cleanupError,
+        );
       });
     }
 
     revalidatePath("/");
     revalidatePath("/tasks");
 
-    await logInfo("tasks", "Submission updated", {
+    await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
+      action: "submission.update",
+      entityType: "submission",
+      entityId: submission.id,
       projectId,
       taskId,
-      fileName: submission.fileName,
       submissionId: submission.id,
+      metadata: {
+        fileName: submission.fileName,
+      },
     });
 
-    redirectPath = buildTasksPath("success", "제출물을 수정했습니다.", projectId);
+    redirectPath = buildTasksPath("success", "제출물을 수정했습니다.", { projectId, taskId });
   } catch (error) {
     if (storedAttachment) {
       await deleteStoredSubmissionAttachment(storedAttachment.filePath).catch(() => undefined);
     }
 
-    await logError("tasks", "Submission update failed", {
-      actorEmail: session.user.email ?? null,
-      projectId,
-      taskId,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "tasks",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "submission.update",
+        entityType: "submission",
+        projectId,
+        taskId,
+      },
+      error,
+    );
 
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "제출물 수정 중 알 수 없는 오류가 발생했습니다.",
-      projectId,
+      { projectId, taskId },
     );
   }
 
@@ -497,42 +574,60 @@ export async function deleteSubmissionAction(formData: FormData) {
 
     if (existingSubmission.filePath) {
       await deleteStoredSubmissionAttachment(existingSubmission.filePath).catch(async (cleanupError) => {
-        await logError("tasks", "Submission attachment delete failed", {
-          actorEmail: session.user.email ?? null,
-          filePath: existingSubmission.filePath,
-          projectId,
-          submissionId,
-          taskId,
-          error: serializeError(cleanupError),
-        });
+        await logUserActionFailure(
+          "tasks",
+          {
+            actorEmail: session.user.email ?? null,
+            action: "submission.attachment.delete",
+            entityType: "submission",
+            entityId: submissionId,
+            projectId,
+            taskId,
+            submissionId,
+            metadata: {
+              filePath: existingSubmission.filePath,
+            },
+          },
+          cleanupError,
+        );
       });
     }
 
     revalidatePath("/");
     revalidatePath("/tasks");
 
-    await logInfo("tasks", "Submission deleted", {
+    await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
+      action: "submission.delete",
+      entityType: "submission",
+      entityId: submission.id,
       projectId,
       taskId,
-      fileName: existingSubmission.fileName,
       submissionId: submission.id,
-      submissionAuthorEmail: existingSubmission.authorEmail,
+      targetEmail: existingSubmission.authorEmail,
+      metadata: {
+        fileName: existingSubmission.fileName,
+      },
     });
 
-    redirectPath = buildTasksPath("success", "제출물을 삭제했습니다.", projectId);
+    redirectPath = buildTasksPath("success", "제출물을 삭제했습니다.", { projectId, taskId });
   } catch (error) {
-    await logError("tasks", "Submission deletion failed", {
-      actorEmail: session.user.email ?? null,
-      projectId,
-      taskId,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "tasks",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "submission.delete",
+        entityType: "submission",
+        projectId,
+        taskId,
+      },
+      error,
+    );
 
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "제출물 삭제 중 알 수 없는 오류가 발생했습니다.",
-      projectId,
+      { projectId, taskId },
     );
   }
 
@@ -557,28 +652,36 @@ export async function createCommentAction(formData: FormData) {
     revalidatePath("/");
     revalidatePath("/tasks");
 
-    await logInfo("tasks", "Comment created", {
+    await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
+      action: "comment.create",
+      entityType: "comment",
+      entityId: comment.id,
       projectId,
       taskId,
       submissionId,
       commentId: comment.id,
     });
 
-    redirectPath = buildTasksPath("success", "댓글을 등록했습니다.", projectId);
+    redirectPath = buildTasksPath("success", "댓글을 등록했습니다.", { projectId, taskId });
   } catch (error) {
-    await logError("tasks", "Comment creation failed", {
-      actorEmail: session.user.email ?? null,
-      projectId,
-      taskId,
-      submissionId,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "tasks",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "comment.create",
+        entityType: "comment",
+        projectId,
+        taskId,
+        submissionId,
+      },
+      error,
+    );
 
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "댓글 등록 중 알 수 없는 오류가 발생했습니다.",
-      projectId,
+      { projectId, taskId },
     );
   }
 
@@ -602,28 +705,36 @@ export async function updateCommentAction(formData: FormData) {
     revalidatePath("/");
     revalidatePath("/tasks");
 
-    await logInfo("tasks", "Comment updated", {
+    await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
+      action: "comment.update",
+      entityType: "comment",
+      entityId: comment.id,
       projectId,
       taskId,
       submissionId,
       commentId: comment.id,
     });
 
-    redirectPath = buildTasksPath("success", "댓글을 수정했습니다.", projectId);
+    redirectPath = buildTasksPath("success", "댓글을 수정했습니다.", { projectId, taskId });
   } catch (error) {
-    await logError("tasks", "Comment update failed", {
-      actorEmail: session.user.email ?? null,
-      projectId,
-      taskId,
-      submissionId,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "tasks",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "comment.update",
+        entityType: "comment",
+        projectId,
+        taskId,
+        submissionId,
+      },
+      error,
+    );
 
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "댓글 수정 중 알 수 없는 오류가 발생했습니다.",
-      projectId,
+      { projectId, taskId },
     );
   }
 
@@ -651,29 +762,37 @@ export async function deleteCommentAction(formData: FormData) {
     revalidatePath("/");
     revalidatePath("/tasks");
 
-    await logInfo("tasks", "Comment deleted", {
+    await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
+      action: "comment.delete",
+      entityType: "comment",
+      entityId: comment.id,
       projectId,
       taskId,
       submissionId,
       commentId: comment.id,
-      commentAuthorEmail: existingComment.authorEmail,
+      targetEmail: existingComment.authorEmail,
     });
 
-    redirectPath = buildTasksPath("success", "댓글을 삭제했습니다.", projectId);
+    redirectPath = buildTasksPath("success", "댓글을 삭제했습니다.", { projectId, taskId });
   } catch (error) {
-    await logError("tasks", "Comment deletion failed", {
-      actorEmail: session.user.email ?? null,
-      projectId,
-      taskId,
-      submissionId,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "tasks",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "comment.delete",
+        entityType: "comment",
+        projectId,
+        taskId,
+        submissionId,
+      },
+      error,
+    );
 
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "댓글 삭제 중 알 수 없는 오류가 발생했습니다.",
-      projectId,
+      { projectId, taskId },
     );
   }
 

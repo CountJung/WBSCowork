@@ -13,9 +13,12 @@
 - Read MasterPlan.md before changing architecture, folder structure, or stage scope.
 - Prefer the smallest change that satisfies the current stage.
 - Preserve a task-centric model. Do not drift into generic board or forum features.
+- Treat the gantt timeline as the signature surface of the product. Route and layout decisions should keep it visually dominant on home and task workspace screens.
+- Gantt popup actions and task-area mutations should preserve focused task context. When the user opens or edits a task, route or scroll them back to that task instead of resetting the workspace to the top.
 - Keep all configuration in environment variables. Do not hardcode secrets, URLs, or deployment-specific paths.
 - Never use sensitive environment files such as `.env`, `.env.local`, or `.env.*` as AI working context, prompt context, or review input. Treat them as out-of-scope unless the user explicitly asks for secret management outside the repository workflow.
 - Treat responsive behavior as a repository-level requirement. UI work must function cleanly across mobile and desktop layouts unless the task explicitly scopes otherwise.
+- Light and dark theme modes must both maintain strong visual contrast. Selected cards, nested panels, upload states, and gantt surfaces must not invert the intended hierarchy or obscure readable content in either mode.
 
 ## Quality Gates
 

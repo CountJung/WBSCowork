@@ -3,7 +3,9 @@ import { createTheme, type PaletteMode } from "@mui/material/styles";
 export type AppThemeMode = "system" | PaletteMode;
 
 const theme = createTheme({
-  cssVariables: true,
+  cssVariables: {
+    colorSchemeSelector: "data-mui-color-scheme",
+  },
   colorSchemes: {
     light: {
       palette: {

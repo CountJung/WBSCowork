@@ -26,13 +26,13 @@ export default async function AdminSettingsPage() {
           <Stack spacing={1}>
             <Typography variant="h3">시스템 세팅</Typography>
             <Typography variant="body1" color="text.secondary">
-              슈퍼유저 전용 페이지입니다. 파일 로그 롤링 정책과 환경 변수를 편집할 수 있습니다.
+              슈퍼유저 전용 페이지입니다. 파일 로그 롤링 정책, 앱 포트, 환경 변수를 편집할 수 있습니다.
             </Typography>
           </Stack>
         </Stack>
 
         <Alert severity="info">
-          세팅은 {initialSnapshot.envFilePath} 파일에 저장됩니다. 다른 관리자 화면 이동은 상단 앱바를 사용합니다. NextAuth 공급자나 DB 연결처럼 모듈 초기화 시점에 고정되는 설정은 저장 후 서버 재시작이 필요할 수 있습니다.
+          세팅은 {initialSnapshot.envFilePath} 파일에 저장됩니다. 다른 관리자 화면 이동은 상단 앱바를 사용합니다. APP_PORT는 build와 start 스크립트가 참조하며, NextAuth 공급자나 DB 연결처럼 모듈 초기화 시점에 고정되는 설정은 저장 후 서버 재시작이 필요할 수 있습니다.
         </Alert>
 
         {initialSnapshot.legacyOverrideKeys.length > 0 ? (

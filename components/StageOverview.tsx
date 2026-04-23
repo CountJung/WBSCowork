@@ -95,7 +95,7 @@ export default function StageOverview({
             <Stack spacing={2}>
               <Typography variant="h5">환경 변수 체크</Typography>
               <Typography variant="body2" color="text.secondary">
-                Google OAuth와 MariaDB를 실제로 활성화하려면 .env.local에 GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_SECRET, NEXTAUTH_URL, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME 값을 채워야 합니다.
+                Google OAuth와 MariaDB를 실제로 활성화하려면 `.env`에 GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_SECRET, NEXTAUTH_URL, APP_PORT, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME 값을 채워야 합니다.
               </Typography>
               <Divider />
               <Typography variant="body2" color="text.secondary">

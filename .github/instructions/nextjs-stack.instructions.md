@@ -37,6 +37,11 @@ Apply the repository-wide guidance from ../copilot-instructions.md to all applic
 - Build UI so it works cleanly across mobile and desktop breakpoints. Treat responsive layout behavior as part of the done criteria for route and component work.
 - For third-party global styles, prefer importing the concrete CSS file from the root layout or another root entry module. Avoid `@import` from `node_modules` inside global CSS when Turbopack resolution is involved.
 - Prefer the shared app bar as the primary cross-page navigation surface. Avoid duplicating page-to-page route links inside content panels unless they are part of a local workflow that cannot be expressed through the global navigation.
+- When multiple superuser-only destinations exist, group them under a single `관리자` app-bar menu with submenu items instead of exposing each admin page as a separate top-level navigation button.
+- Treat the gantt timeline as the product's primary focal surface. On overview and workspace screens, give the gantt more visual space and prominence than secondary forms or summaries.
+- When overview screens link into task work, prefer focused routing that lands the user directly on the relevant task detail context instead of forcing them to reselect the item manually.
+- When gantt popups, task saves, or submission uploads keep the user within the same workspace, preserve the focused task context with explicit routing or scroll restoration instead of returning them to the top of the page.
+- Maintain clear contrast in both light and dark themes. Highlighted task cards, nested submission/comment panels, and upload-related states must reinforce the visual hierarchy rather than flipping it between modes.
 
 ## Auth and API
 

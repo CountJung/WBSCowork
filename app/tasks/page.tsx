@@ -17,9 +17,10 @@ import { listCommentsByProject } from "@/lib/repositories/comment-repository";
 import { listAllProjects } from "@/lib/repositories/project-repository";
 import { listSubmissionsByProject } from "@/lib/repositories/submission-repository";
 import { listTasksByProject } from "@/lib/repositories/task-repository";
-import { formatDate, getOrderedTasks, getSelectedProject } from "@/lib/task-view";
+import { formatDate, getOrderedTasks, getSelectedProject, getSelectedTask } from "@/lib/task-view";
 import { listAllUsers } from "@/lib/repositories/user-repository";
 import ProjectGanttChart from "@/components/gantt/ProjectGanttChart";
+import TaskFocusController from "@/components/task/TaskFocusController";
 import TaskSubmissionPanel from "@/components/task/TaskSubmissionPanel";
 import type { Comment } from "@/models/comment";
 import type { Project } from "@/models/project";
@@ -47,6 +48,7 @@ type TasksPageProps = {
     message?: string | string[];
     projectId?: string | string[];
     status?: string | string[];
+    taskId?: string | string[];
   }>;
 };
 
@@ -68,13 +70,13 @@ function groupSubmissionsByTaskId(submissions: Submission[]) {
 }
 
 function groupCommentsBySubmissionId(comments: Comment[]) {
-  const commentsBySubmissionId = new Map<number, Comment[]>();
+  const commentsBySubmissionId: Record<number, Comment[]> = {};
 
   for (const comment of comments) {
-    const group = commentsBySubmissionId.get(comment.submissionId) ?? [];
+    const group = commentsBySubmissionId[comment.submissionId] ?? [];
 
     group.push(comment);
-    commentsBySubmissionId.set(comment.submissionId, group);
+    commentsBySubmissionId[comment.submissionId] = group;
   }
 
   return commentsBySubmissionId;
@@ -160,13 +162,15 @@ function TaskList({
   commentsBySubmissionId,
   orderedTasks,
   project,
+  selectedTaskId,
   submissionsByTaskId,
   users,
 }: {
   canWrite: boolean;
-  commentsBySubmissionId: Map<number, Comment[]>;
+  commentsBySubmissionId: Record<number, Comment[]>;
   orderedTasks: Task[];
   project: Project;
+  selectedTaskId: number | null;
   submissionsByTaskId: Map<number, Submission[]>;
   users: Awaited<ReturnType<typeof listAllUsers>>;
 }) {
@@ -182,23 +186,32 @@ function TaskList({
 
   return (
     <Stack spacing={2}>
-      {orderedTasks.map((task) => (
-        <Paper
-          key={task.id}
-          elevation={0}
-          sx={{
-            p: 3,
-            borderRadius: 4,
-            borderLeft: "4px solid",
-            borderColor: "primary.main",
-            ml: { xs: 0, md: task.depth * 3 },
-          }}
-        >
+      {orderedTasks.map((task) => {
+        const isSelectedTask = selectedTaskId === task.id;
+
+        return (
+          <Paper
+            id={`task-${task.id}`}
+            key={task.id}
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 4,
+              borderLeft: "4px solid",
+              borderColor: isSelectedTask ? "secondary.main" : "primary.main",
+              ml: { xs: 0, md: task.depth * 3 },
+              scrollMarginTop: 110,
+              background: isSelectedTask ? "var(--task-focus-card-background)" : "var(--mui-palette-background-paper)",
+              boxShadow: isSelectedTask ? "var(--task-focus-card-shadow, 0 18px 34px rgba(183, 121, 31, 0.12))" : undefined,
+              transition: "background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease",
+            }}
+          >
           <Stack spacing={2}>
             <Stack direction={{ xs: "column", lg: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
               <Stack spacing={1}>
                 <Typography variant="h6">{task.title}</Typography>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
+                  {isSelectedTask ? <Chip label="선택된 업무" color="secondary" /> : null}
                   <Chip label={`기간 ${formatDate(task.startDate)} ~ ${formatDate(task.endDate)}`} variant="outlined" />
                   <Chip label={`깊이 ${task.depth}`} />
                   <Chip label={task.assigneeName ? `담당자 ${task.assigneeName}` : "담당자 미지정"} color={task.assigneeName ? "primary" : "default"} variant={task.assigneeName ? "filled" : "outlined"} />
@@ -276,8 +289,9 @@ function TaskList({
               updateSubmissionAction={updateSubmissionAction}
             />
           </Stack>
-        </Paper>
-      ))}
+          </Paper>
+        );
+      })}
     </Stack>
   );
 }
@@ -295,6 +309,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const feedbackStatus = getSingleSearchParam(params.status);
   const feedbackMessage = getSingleSearchParam(params.message);
   const projectIdParam = getSingleSearchParam(params.projectId);
+  const taskIdParam = getSingleSearchParam(params.taskId);
   const today = new Date();
   const nextWeek = new Date(today);
 
@@ -302,7 +317,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   if (!runtimeEnv.database.configured) {
     return (
-      <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">작업 관리</Typography>
           <Alert severity="warning">
@@ -322,7 +337,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   if (!projectsTableReady || !tasksTableReady || !submissionsTableReady || !commentsTableReady || !usersTableReady) {
     return (
-      <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">작업 관리</Typography>
           <Alert severity="warning">
@@ -346,11 +361,12 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
       ])
     : [[], [], []];
   const orderedTasks = getOrderedTasks(tasks);
+  const selectedTask = getSelectedTask(orderedTasks, taskIdParam);
   const submissionsByTaskId = groupSubmissionsByTaskId(submissions);
   const commentsBySubmissionId = groupCommentsBySubmissionId(comments);
 
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+    <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
       <Stack spacing={3}>
         <Stack direction={{ xs: "column", lg: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
           <Stack spacing={1}>
@@ -371,6 +387,14 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         {feedbackStatus && feedbackMessage ? (
           <Alert severity={feedbackStatus === "success" ? "success" : "error"}>{feedbackMessage}</Alert>
         ) : null}
+
+        {selectedTask ? (
+          <Alert severity="info">
+            홈에서 선택한 업무 상세를 아래에 강조 표시했습니다. 현재 선택 업무는 {selectedTask.title}이며, 제출물과 댓글도 같은 카드 안에서 바로 이어서 수정할 수 있습니다.
+          </Alert>
+        ) : null}
+
+        <TaskFocusController taskId={selectedTask?.id ?? null} />
 
         <TaskWritePolicy canWrite={canWrite} />
 
@@ -440,6 +464,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             commentsBySubmissionId={commentsBySubmissionId}
             orderedTasks={orderedTasks}
             project={selectedProject}
+            selectedTaskId={selectedTask?.id ?? null}
             submissionsByTaskId={submissionsByTaskId}
             users={users}
           />

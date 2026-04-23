@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Alert, Button, Chip, Container, Paper, Stack, Typography } from "@mui/material";
 import { getAuthSession } from "@/lib/auth";
 import { getDatabaseAdminStatus } from "@/lib/database-admin";
@@ -24,7 +25,7 @@ export default async function Home({ searchParams }: HomePageProps) {
 
   if (!session?.user) {
     return (
-      <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Stack spacing={1.5}>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
@@ -52,7 +53,7 @@ export default async function Home({ searchParams }: HomePageProps) {
 
   if (!runtimeEnv.database.configured) {
     return (
-      <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">홈</Typography>
           <Alert severity="warning">
@@ -69,7 +70,7 @@ export default async function Home({ searchParams }: HomePageProps) {
 
   if (!projectsTableReady || !tasksTableReady) {
     return (
-      <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">홈</Typography>
           <Alert severity="warning">
@@ -91,7 +92,7 @@ export default async function Home({ searchParams }: HomePageProps) {
   const orderedTasks = getOrderedTasks(tasks);
 
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+    <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
       <Stack spacing={3}>
         <Stack direction={{ xs: "column", lg: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
           <Stack spacing={1}>
@@ -162,32 +163,47 @@ export default async function Home({ searchParams }: HomePageProps) {
             ) : (
               <Stack spacing={1.5}>
                 {orderedTasks.map((task) => (
-                  <Paper
+                  <Link
                     key={task.id}
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      borderRadius: 3,
-                      ml: { xs: 0, md: task.depth * 2 },
-                      borderLeft: "3px solid",
-                      borderColor: "primary.main",
-                    }}
+                    href={`/tasks?projectId=${selectedProject.id}&taskId=${task.id}#task-${task.id}`}
+                    style={{ display: "block" }}
                   >
-                    <Stack spacing={0.75}>
-                      <Typography variant="subtitle1">{task.title}</Typography>
-                      <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 2,
+                        borderRadius: 3,
+                        ml: { xs: 0, md: task.depth * 2 },
+                        borderLeft: "3px solid",
+                        borderColor: "primary.main",
+                        cursor: "pointer",
+                        transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease",
+                        '&:hover': {
+                          transform: "translateY(-2px)",
+                          boxShadow: 6,
+                          borderColor: "secondary.main",
+                        },
+                      }}
+                    >
+                      <Stack spacing={0.75}>
+                        <Typography variant="subtitle1">{task.title}</Typography>
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                          <Typography variant="body2" color="text.secondary">
+                            {formatDate(task.startDate)} ~ {formatDate(task.endDate)}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            담당자 {task.assigneeName ?? "미지정"}
+                          </Typography>
+                        </Stack>
                         <Typography variant="body2" color="text.secondary">
-                          {formatDate(task.startDate)} ~ {formatDate(task.endDate)}
+                          {task.description || "설명이 아직 입력되지 않았습니다."}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          담당자 {task.assigneeName ?? "미지정"}
+                        <Typography variant="caption" color="primary.main">
+                          클릭하면 작업 관리 화면에서 이 업무 상세와 제출 이력을 바로 확인합니다.
                         </Typography>
                       </Stack>
-                      <Typography variant="body2" color="text.secondary">
-                        {task.description || "설명이 아직 입력되지 않았습니다."}
-                      </Typography>
-                    </Stack>
-                  </Paper>
+                    </Paper>
+                  </Link>
                 ))}
               </Stack>
             )}

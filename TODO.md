@@ -20,6 +20,10 @@ Update it whenever stage scope, validation steps, or blocking issues change.
 - [x] Repository workflow: Add VS Code-friendly debug script and launch setup
 - [x] Repository workflow: Switch VS Code full-stack debugging popup to Chrome
 - [x] Repository workflow: Add responsive app shell, route navigation, and three-mode theme switching
+- [x] Repository workflow: Add structured user-action logging and admin log review page
+- [x] Repository workflow: Apply APP_PORT-managed build/start execution
+- [x] Repository workflow: Route home task cards into focused task-detail workspace state
+- [x] Repository workflow: Elevate gantt as the primary visual surface
 
 ## Stage 2 Next Work
 

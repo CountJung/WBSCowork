@@ -22,6 +22,7 @@ Use this skill to execute the first stage from MasterPlan.md while keeping repos
 - Keep TODO.md and HARNESS_MAP.md synchronized with real execution state.
 - Do not ignore warnings or errors from setup, lint, build, or runtime checks.
 - Prefer the smallest implementation that establishes a clean Stage 1 baseline.
+- When touching shared shell or theme foundations, keep light and dark mode contrast explicit so highlighted cards, nested panels, and primary surfaces remain readable in both modes.
 
 ## Step-by-Step Workflow
 
@@ -38,6 +39,7 @@ Use this skill to execute the first stage from MasterPlan.md while keeping repos
 - **Do not** treat setup output as success if lint, build, or dependency install still reports warnings or errors that matter to the touched slice.
 - **Do not** leave placeholder validation commands in HARNESS_MAP.md after real commands are known.
 - **Do not** add features beyond Stage 1. WBS CRUD, gantt, submissions, comments, and uploads belong to later stages.
+- **Do not** hardcode light-only emphasis styles into shared surfaces. Later task-focus or timeline flows should be able to preserve hierarchy and contrast in both theme modes.
 
 ## References
 

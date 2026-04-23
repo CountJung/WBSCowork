@@ -2,7 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { getRuntimeEnv } from "@/lib/env";
-import { logError, logInfo, serializeError } from "@/lib/logger";
+import { logUserAction, logUserActionFailure } from "@/lib/logger";
 import { resolveUserRoleForSession, syncAuthenticatedUserIfPossible } from "@/lib/repositories/user-repository";
 import { getDefaultUserRole } from "@/models/user";
 
@@ -57,15 +57,25 @@ export const authOptions = {
               : getProfilePicture(profile),
         });
 
-        await logInfo("auth", "Authenticated user sign-in completed", {
-          email: user.email ?? null,
-          role: getRoleForEmail(user.email),
+        await logUserAction("auth", {
+          actorEmail: user.email ?? null,
+          action: "auth.sign-in",
+          entityType: "session",
+          entityLabel: user.name ?? user.email ?? "authenticated-user",
+          metadata: {
+            role: getRoleForEmail(user.email),
+          },
         });
       } catch (error) {
-        await logError("auth", "Authenticated user sign-in failed", {
-          email: user.email ?? null,
-          error: serializeError(error),
-        });
+        await logUserActionFailure(
+          "auth",
+          {
+            actorEmail: user.email ?? null,
+            action: "auth.sign-in",
+            entityType: "session",
+          },
+          error,
+        );
 
         throw error;
       }

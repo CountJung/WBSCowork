@@ -78,15 +78,16 @@ export default function SettingsAdminPanel({ initialSnapshot }: SettingsAdminPan
 
       <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
         <Stack spacing={2}>
-          <Typography variant="h5">현재 로그 정책</Typography>
+          <Typography variant="h5">현재 운영 정책</Typography>
           <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
+            <Chip label={`앱 포트 ${getEntryValue(snapshot, "APP_PORT") || "3000"}`} color="secondary" />
             <Chip label={`로그 경로 ${snapshot.logDirectoryPath}`} color="primary" />
             <Chip label={`보관 ${snapshot.logRetentionDays}일`} />
             <Chip label={`파일당 ${snapshot.logMaxFileSizeMb}MB`} />
             <Chip label={`최근 로그 ${snapshot.logFiles.length}개`} variant="outlined" />
           </Stack>
           <Typography variant="body2" color="text.secondary">
-            서버 시작, 주요 관리자 작업, Server Action 오류, 콘솔 출력이 모두 파일 로그로 기록되도록 구성됩니다.
+            서버 시작, 주요 관리자 작업, 사용자 제출 액션, Server Action 오류, 콘솔 출력이 모두 파일 로그로 기록됩니다. APP_PORT는 build와 start 스크립트가 함께 참조합니다.
           </Typography>
         </Stack>
       </Paper>

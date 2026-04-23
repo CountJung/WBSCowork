@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireSuperuserSession } from "@/lib/auth";
 import { getDatabaseAdminStatus, initializeDatabaseSchema, type DatabaseAdminStatus } from "@/lib/database-admin";
-import { logError, logInfo, serializeError } from "@/lib/logger";
+import { logUserAction, logUserActionFailure } from "@/lib/logger";
 import { upsertUser } from "@/lib/repositories/user-repository";
 
 export type DatabaseAdminActionState = {
@@ -39,10 +39,14 @@ export async function initializeDatabaseAction(
     revalidatePath("/admin/database");
     revalidatePath("/admin");
 
-    await logInfo("admin.database", "Database initialization completed", {
+    await logUserAction("admin.database", {
       actorEmail: session.user.email ?? null,
-      databaseName: status.databaseName,
-      tableCount: status.existingTableCount,
+      action: "database.initialize",
+      entityType: "database",
+      entityLabel: status.databaseName,
+      metadata: {
+        tableCount: status.existingTableCount,
+      },
     });
 
     return {
@@ -51,10 +55,15 @@ export async function initializeDatabaseAction(
       status,
     };
   } catch (error) {
-    await logError("admin.database", "Database initialization failed", {
-      actorEmail: session.user.email ?? null,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "admin.database",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "database.initialize",
+        entityType: "database",
+      },
+      error,
+    );
 
     return {
       ...previousState,
@@ -80,10 +89,14 @@ export async function refreshDatabaseStatusAction(
   try {
     const status = await getDatabaseAdminStatus();
 
-    await logInfo("admin.database", "Database status refreshed", {
+    await logUserAction("admin.database", {
       actorEmail: session.user.email ?? null,
-      databaseName: status.databaseName,
-      databaseExists: status.databaseExists,
+      action: "database.status.refresh",
+      entityType: "database",
+      entityLabel: status.databaseName,
+      metadata: {
+        databaseExists: status.databaseExists,
+      },
     });
 
     return {
@@ -92,10 +105,15 @@ export async function refreshDatabaseStatusAction(
       status,
     };
   } catch (error) {
-    await logError("admin.database", "Database status refresh failed", {
-      actorEmail: session.user.email ?? null,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "admin.database",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "database.status.refresh",
+        entityType: "database",
+      },
+      error,
+    );
 
     return {
       ...previousState,

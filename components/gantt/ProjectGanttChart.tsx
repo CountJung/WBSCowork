@@ -1,7 +1,8 @@
 "use client";
 
-import { startTransition, useEffect, useRef, useState } from "react";
-import { Alert, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Alert, Chip, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import Gantt from "frappe-gantt";
 import type { Project } from "@/models/project";
 import type { Task } from "@/models/task";
@@ -36,6 +37,12 @@ function calculateProgress(startDate: Date, endDate: Date) {
   return Math.max(0, Math.min(100, Math.round(progress)));
 }
 
+function calculateProjectSpanDays(startDate: Date, endDate: Date) {
+  const daySpan = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+
+  return Math.max(daySpan, 1);
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -45,14 +52,14 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
-function createChartOptions(viewMode: ViewMode): GanttOptions {
+function createChartOptions(viewMode: ViewMode, taskCount: number): GanttOptions {
   return {
     view_mode: viewMode,
     view_mode_select: false,
     readonly: true,
     readonly_dates: true,
     readonly_progress: true,
-    container_height: "auto",
+    container_height: Math.max(560, taskCount * 54),
     popup: ({ task, set_title, set_subtitle, set_details }) => {
       const ganttTask = task as WbsGanttTask;
 
@@ -70,10 +77,31 @@ function createChartOptions(viewMode: ViewMode): GanttOptions {
 }
 
 export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const ganttRef = useRef<Gantt | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("Week");
   const [renderError, setRenderError] = useState<string | null>(null);
+  const rootTaskCount = tasks.filter((task) => task.parentId === null).length;
+  const assignedTaskCount = tasks.filter((task) => task.assigneeId !== null).length;
+  const linkedTaskCount = tasks.filter((task) => task.parentId !== null).length;
+  const projectSpanDays = calculateProjectSpanDays(project.startDate, project.endDate);
+
+  const openTaskRoute = useEffectEvent((taskId: string) => {
+    const taskElement = document.getElementById(`task-${taskId}`);
+
+    if (pathname === "/tasks" && searchParams.get("projectId") === String(project.id) && searchParams.get("taskId") === taskId) {
+      if (taskElement) {
+        taskElement.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      return;
+    }
+
+    router.push(`/tasks?projectId=${project.id}&taskId=${taskId}`, { scroll: false });
+  });
 
   useEffect(() => {
     const container = containerRef.current;
@@ -105,10 +133,48 @@ export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartP
       try {
         if (!ganttRef.current) {
           container.innerHTML = "";
-          ganttRef.current = new Gantt(container, chartTasks, createChartOptions(viewMode));
+          ganttRef.current = new Gantt(container, chartTasks, {
+            ...createChartOptions(viewMode, chartTasks.length),
+            popup: ({ add_action, set_details, set_subtitle, set_title, task }) => {
+              const ganttTask = task as WbsGanttTask;
+
+              set_title(escapeHtml(ganttTask.name));
+              set_subtitle(escapeHtml(ganttTask.description || "세부 설명이 아직 없습니다."));
+              set_details(
+                [
+                  `<strong>기간</strong> ${escapeHtml(ganttTask.start)} ~ ${escapeHtml(ganttTask.end)}`,
+                  `<strong>진행률</strong> ${ganttTask.progress ?? 0}%`,
+                  `<strong>담당자</strong> ${escapeHtml(ganttTask.assigneeName || "미지정")}`,
+                  `<strong>이동</strong> 아래 버튼으로 해당 업무 카드와 제출물 영역으로 바로 이동할 수 있습니다.`,
+                ].join("<br />"),
+              );
+              add_action("업무 열기", (popupTask) => {
+                openTaskRoute(String(popupTask.id));
+              });
+            },
+          });
         } else {
           ganttRef.current.refresh(chartTasks);
-          ganttRef.current.update_options(createChartOptions(viewMode));
+          ganttRef.current.update_options({
+            ...createChartOptions(viewMode, chartTasks.length),
+            popup: ({ add_action, set_details, set_subtitle, set_title, task }) => {
+              const ganttTask = task as WbsGanttTask;
+
+              set_title(escapeHtml(ganttTask.name));
+              set_subtitle(escapeHtml(ganttTask.description || "세부 설명이 아직 없습니다."));
+              set_details(
+                [
+                  `<strong>기간</strong> ${escapeHtml(ganttTask.start)} ~ ${escapeHtml(ganttTask.end)}`,
+                  `<strong>진행률</strong> ${ganttTask.progress ?? 0}%`,
+                  `<strong>담당자</strong> ${escapeHtml(ganttTask.assigneeName || "미지정")}`,
+                  `<strong>이동</strong> 아래 버튼으로 해당 업무 카드와 제출물 영역으로 바로 이동할 수 있습니다.`,
+                ].join("<br />"),
+              );
+              add_action("업무 열기", (popupTask) => {
+                openTaskRoute(String(popupTask.id));
+              });
+            },
+          });
           ganttRef.current.change_view_mode(viewMode, true);
         }
 
@@ -162,15 +228,45 @@ export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartP
   }
 
   return (
-    <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
-      <Stack spacing={2}>
-        <Stack direction={{ xs: "column", lg: "row" }} spacing={1.5} sx={{ justifyContent: "space-between" }}>
-          <Stack spacing={0.5}>
-            <Typography variant="h5">{project.name} 간트 차트</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Stage 4 구현입니다. 프로젝트 작업의 일정과 부모-자식 흐름을 시간축으로 시각화합니다.
+    <Paper
+      elevation={0}
+      sx={[
+        {
+          p: { xs: 3, md: 4 },
+          borderRadius: 6,
+          border: "1px solid",
+          borderColor: "divider",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(249,244,232,0.94) 52%, rgba(255,255,255,0.98) 100%)",
+          boxShadow: "0 18px 40px rgba(20, 99, 86, 0.08)",
+        },
+        (theme) =>
+          theme.applyStyles("dark", {
+            background: "linear-gradient(180deg, rgba(22,33,29,0.98) 0%, rgba(15,24,21,0.96) 50%, rgba(18,31,27,0.99) 100%)",
+            boxShadow: "0 22px 48px rgba(0, 0, 0, 0.28)",
+          }),
+      ]}
+    >
+      <Stack spacing={3}>
+        <Stack direction={{ xs: "column", lg: "row" }} spacing={2} sx={{ justifyContent: "space-between", alignItems: { lg: "flex-start" } }}>
+          <Stack spacing={1.25}>
+            <Typography variant="overline" color="primary.main" sx={{ letterSpacing: "0.14em", fontWeight: 700 }}>
+              WBS 핵심 시각화
             </Typography>
+            <Stack spacing={0.5}>
+              <Typography variant="h4">{project.name} 간트 차트</Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 820 }}>
+                이 프로젝트의 핵심 화면입니다. 전체 일정 길이, 상하위 작업 연결, 담당자 배치 상태를 한 번에 읽고 바로 세부 작업 카드로 이어서 확인할 수 있습니다.
+              </Typography>
+            </Stack>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1.25} sx={{ flexWrap: "wrap" }}>
+              <Chip label={`전체 기간 ${projectSpanDays}일`} color="primary" />
+              <Chip label={`전체 작업 ${tasks.length}`} variant="outlined" />
+              <Chip label={`루트 작업 ${rootTaskCount}`} variant="outlined" />
+              <Chip label={`연결 작업 ${linkedTaskCount}`} variant="outlined" />
+              <Chip label={`담당 배정 ${assignedTaskCount}`} variant="outlined" />
+            </Stack>
           </Stack>
+
           <ToggleButtonGroup
             exclusive
             size="small"

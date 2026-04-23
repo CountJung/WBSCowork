@@ -6,8 +6,8 @@
     "dev": "next dev",
     "dev:debug": "next dev --inspect",
     "db:check": "tsx scripts/check-db.ts",
-    "build": "next build",
-    "start": "next start",
+    "build": "tsx scripts/run-next.ts build",
+    "start": "tsx scripts/run-next.ts start",
     "lint": "eslint"
   },
   "dependencies": {

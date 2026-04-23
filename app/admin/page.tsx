@@ -127,7 +127,16 @@ export default async function AdminPage() {
             <Stack spacing={2}>
               <Typography variant="h5">시스템 세팅</Typography>
               <Typography variant="body2" color="text.secondary">
-                파일 로그 롤링 정책과 전체 env 설정을 편집합니다. 문제 분석용 로그 파일도 여기서 관리합니다. 이동은 상단 앱바의 세팅 항목을 사용합니다.
+                파일 로그 롤링 정책, 앱 포트, 전체 env 설정을 편집합니다. 이동은 상단 앱바의 세팅 항목을 사용합니다.
+              </Typography>
+            </Stack>
+          </Paper>
+
+          <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 4 }}>
+            <Stack spacing={2}>
+              <Typography variant="h5">로그 확인</Typography>
+              <Typography variant="body2" color="text.secondary">
+                최근 사용자 액션 이력과 원본 로그 파일 tail을 검토합니다. 이동은 상단 앱바의 로그 항목을 사용합니다.
               </Typography>
             </Stack>
           </Paper>

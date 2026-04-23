@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireSuperuserSession } from "@/lib/auth";
-import { logError, logInfo, serializeError } from "@/lib/logger";
+import { logUserAction, logUserActionFailure } from "@/lib/logger";
 import { updateUserRole } from "@/lib/repositories/user-repository";
 import { manageableUserRoles, type ManageableUserRole } from "@/models/user";
 
@@ -46,11 +46,16 @@ export async function updateUserRoleAction(formData: FormData) {
     revalidatePath("/admin");
     revalidatePath("/admin/users");
 
-    await logInfo("admin.users", "User role updated", {
+    await logUserAction("admin.users", {
       actorEmail: session.user.email ?? null,
-      userId: updatedUser.id,
+      action: "user.role.update",
+      entityType: "user",
+      entityId: updatedUser.id,
+      entityLabel: updatedUser.name,
       targetEmail: updatedUser.email,
-      nextRole: roleValue,
+      metadata: {
+        nextRole: roleValue,
+      },
     });
 
     redirectPath = buildRedirectPath(
@@ -58,12 +63,19 @@ export async function updateUserRoleAction(formData: FormData) {
       `${updatedUser.name} 계정의 권한을 ${roleValue === "member" ? "일반사용자" : "게스트"}로 변경했습니다.`,
     );
   } catch (error) {
-    await logError("admin.users", "User role update failed", {
-      actorEmail: session.user.email ?? null,
-      targetUserId: userIdValue,
-      requestedRole: roleValue,
-      error: serializeError(error),
-    });
+    await logUserActionFailure(
+      "admin.users",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "user.role.update",
+        entityType: "user",
+        entityId: userIdValue,
+        metadata: {
+          requestedRole: roleValue,
+        },
+      },
+      error,
+    );
 
     redirectPath = buildRedirectPath(
       "error",

@@ -1,3 +1,5 @@
+"use client";
+
 import { Box, Button, Checkbox, Chip, Divider, FormControlLabel, Paper, Stack, TextField, Typography } from "@mui/material";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -8,7 +10,7 @@ type ContentAction = (formData: FormData) => Promise<void>;
 
 type TaskSubmissionPanelProps = {
   canWrite: boolean;
-  commentsBySubmissionId: Map<number, Comment[]>;
+  commentsBySubmissionId: Record<number, Comment[]>;
   createCommentAction: ContentAction;
   createSubmissionAction: ContentAction;
   deleteCommentAction: ContentAction;
@@ -61,20 +63,28 @@ function AttachmentInput({ helperText }: { helperText: string }) {
 function MarkdownContent({ content }: { content: string }) {
   return (
     <Box
-      sx={{
-        color: "text.primary",
-        "& p": { my: 0.75 },
-        "& ul, & ol": { pl: 3, my: 0.75 },
-        "& pre": {
-          overflowX: "auto",
-          p: 1.5,
-          borderRadius: 2,
-          bgcolor: "rgba(17, 24, 39, 0.08)",
+      sx={[
+        {
+          color: "text.primary",
+          "& p": { my: 0.75 },
+          "& ul, & ol": { pl: 3, my: 0.75 },
+          "& pre": {
+            overflowX: "auto",
+            p: 1.5,
+            borderRadius: 2,
+            bgcolor: "rgba(17, 24, 39, 0.08)",
+          },
+          "& code": {
+            fontFamily: "ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, monospace",
+          },
         },
-        "& code": {
-          fontFamily: "ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, monospace",
-        },
-      }}
+        (theme) =>
+          theme.applyStyles("dark", {
+            "& pre": {
+              bgcolor: "rgba(7, 13, 11, 0.72)",
+            },
+          }),
+      ]}
     >
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
     </Box>
@@ -96,12 +106,28 @@ export default function TaskSubmissionPanel({
   updateSubmissionAction,
 }: TaskSubmissionPanelProps) {
   const totalCommentCount = submissions.reduce(
-    (count, submission) => count + (commentsBySubmissionId.get(submission.id)?.length ?? 0),
+    (count, submission) => count + (commentsBySubmissionId[submission.id]?.length ?? 0),
     0,
   );
 
   return (
-    <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, bgcolor: "action.hover" }}>
+    <Paper
+      elevation={0}
+      sx={[
+        {
+          p: 2.5,
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: "divider",
+          background: "linear-gradient(180deg, rgba(20, 99, 86, 0.05) 0%, rgba(255, 255, 255, 0.68) 100%)",
+        },
+        (theme) =>
+          theme.applyStyles("dark", {
+            background: "linear-gradient(180deg, rgba(110, 212, 196, 0.07) 0%, rgba(16, 24, 22, 0.74) 100%)",
+            borderColor: "rgba(110, 212, 196, 0.16)",
+          }),
+      ]}
+    >
       <Stack spacing={2}>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ justifyContent: "space-between" }}>
           <Stack spacing={0.5}>
@@ -123,11 +149,28 @@ export default function TaskSubmissionPanel({
         ) : (
           <Stack spacing={2}>
             {submissions.map((submission) => {
-              const comments = commentsBySubmissionId.get(submission.id) ?? [];
+              const comments = commentsBySubmissionId[submission.id] ?? [];
               const formattedFileSize = formatFileSize(submission.fileSizeBytes);
 
               return (
-                <Paper key={submission.id} elevation={0} sx={{ p: 2, borderRadius: 3 }}>
+                <Paper
+                  key={submission.id}
+                  elevation={0}
+                  sx={[
+                    {
+                      p: 2,
+                      borderRadius: 3,
+                      border: "1px solid",
+                      borderColor: "divider",
+                      backgroundColor: "background.paper",
+                    },
+                    (theme) =>
+                      theme.applyStyles("dark", {
+                        backgroundColor: "rgba(18, 27, 24, 0.92)",
+                        borderColor: "rgba(110, 212, 196, 0.16)",
+                      }),
+                  ]}
+                >
                   <Stack spacing={1.5}>
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ justifyContent: "space-between" }}>
                       <Stack spacing={0.5}>
@@ -177,7 +220,24 @@ export default function TaskSubmissionPanel({
                       ) : (
                         <Stack spacing={1.25}>
                           {comments.map((comment) => (
-                            <Paper key={comment.id} elevation={0} sx={{ p: 1.5, borderRadius: 3, bgcolor: "background.default" }}>
+                            <Paper
+                              key={comment.id}
+                              elevation={0}
+                              sx={[
+                                {
+                                  p: 1.5,
+                                  borderRadius: 3,
+                                  border: "1px solid",
+                                  borderColor: "rgba(20, 99, 86, 0.08)",
+                                  backgroundColor: "rgba(20, 99, 86, 0.05)",
+                                },
+                                (theme) =>
+                                  theme.applyStyles("dark", {
+                                    borderColor: "rgba(110, 212, 196, 0.12)",
+                                    backgroundColor: "rgba(110, 212, 196, 0.08)",
+                                  }),
+                              ]}
+                            >
                               <Stack spacing={1.25}>
                                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ justifyContent: "space-between" }}>
                                   <Stack spacing={0.25}>
@@ -251,7 +311,7 @@ export default function TaskSubmissionPanel({
                       <>
                         <Divider />
                         <Stack spacing={1.5}>
-                          <Stack component="form" action={updateSubmissionAction} spacing={1.5} encType="multipart/form-data">
+                          <Stack component="form" action={updateSubmissionAction} spacing={1.5}>
                             <input type="hidden" name="projectId" value={String(projectId)} />
                             <input type="hidden" name="taskId" value={String(taskId)} />
                             <input type="hidden" name="submissionId" value={String(submission.id)} />
@@ -293,7 +353,7 @@ export default function TaskSubmissionPanel({
         {!canWrite ? null : (
           <>
             <Divider />
-            <Stack component="form" action={createSubmissionAction} spacing={1.5} encType="multipart/form-data">
+            <Stack component="form" action={createSubmissionAction} spacing={1.5}>
               <input type="hidden" name="projectId" value={String(projectId)} />
               <input type="hidden" name="taskId" value={String(taskId)} />
               <TextField

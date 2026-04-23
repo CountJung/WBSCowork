@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
 import { Roboto } from "next/font/google";
 import AppProviders from "@/components/AppProviders";
 import AppShell from "@/components/AppShell";
@@ -32,11 +31,6 @@ export default function RootLayout({
   return (
     <html lang="ko" className={roboto.variable} suppressHydrationWarning>
       <body>
-        <InitColorSchemeScript
-          defaultMode="system"
-          modeStorageKey="wbs-task-mode"
-          colorSchemeStorageKey="wbs-task-color-scheme"
-        />
         <AppProviders>
           <AppShell appName={runtimeEnv.appName} authProvidersConfigured={runtimeEnv.auth.googleProviderConfigured}>
             {children}

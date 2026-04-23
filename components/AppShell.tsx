@@ -10,6 +10,8 @@ import {
   Container,
   Divider,
   Drawer,
+  Menu,
+  MenuItem,
   NoSsr,
   Stack,
   ToggleButton,
@@ -38,6 +40,14 @@ const defaultNavItems: NavItem[] = [{ href: "/", label: "홈" }];
 
 const taskNavItem: NavItem = { href: "/tasks", label: "작업" };
 
+const adminNavItems: NavItem[] = [
+  { href: "/admin", label: "관리 개요" },
+  { href: "/admin/logs", label: "로그" },
+  { href: "/admin/settings", label: "세팅" },
+  { href: "/admin/users", label: "사용자 관리" },
+  { href: "/admin/database", label: "DB 관리" },
+];
+
 function isActivePath(currentPath: string, href: string) {
   if (href === "/") {
     return currentPath === href;
@@ -51,16 +61,10 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
   const { data: session, status } = useSession();
   const { mode, setMode, systemMode } = useColorScheme();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [adminMenuAnchorEl, setAdminMenuAnchorEl] = useState<null | HTMLElement>(null);
   const navItems = [...defaultNavItems, taskNavItem];
-
-  if (session?.user?.isSuperuser) {
-    navItems.push(
-      { href: "/admin", label: "관리자" },
-      { href: "/admin/settings", label: "세팅" },
-      { href: "/admin/users", label: "사용자 관리" },
-      { href: "/admin/database", label: "DB 관리" },
-    );
-  }
+  const adminMenuOpen = Boolean(adminMenuAnchorEl);
+  const isAdminRouteActive = Boolean(session?.user?.isSuperuser) && isActivePath(pathname, "/admin");
 
   const selectedMode: AppThemeMode = mode ?? "system";
   const effectiveMode = selectedMode === "system" ? systemMode ?? "light" : selectedMode;
@@ -79,6 +83,14 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
 
   function closeMobileNav() {
     setMobileNavOpen(false);
+  }
+
+  function openAdminMenu(event: MouseEvent<HTMLElement>) {
+    setAdminMenuAnchorEl(event.currentTarget);
+  }
+
+  function closeAdminMenu() {
+    setAdminMenuAnchorEl(null);
   }
 
   const authAction =
@@ -148,6 +160,39 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
                   </Button>
                 );
               })}
+
+              {session?.user?.isSuperuser ? (
+                <>
+                  <Button
+                    aria-controls={adminMenuOpen ? "admin-navigation-menu" : undefined}
+                    aria-expanded={adminMenuOpen ? "true" : undefined}
+                    aria-haspopup="menu"
+                    color={isAdminRouteActive ? "primary" : "inherit"}
+                    onClick={openAdminMenu}
+                    variant={isAdminRouteActive ? "contained" : "text"}
+                  >
+                    관리자
+                  </Button>
+                  <Menu
+                    anchorEl={adminMenuAnchorEl}
+                    id="admin-navigation-menu"
+                    onClose={closeAdminMenu}
+                    open={adminMenuOpen}
+                  >
+                    {adminNavItems.map((item) => (
+                      <MenuItem
+                        key={item.href}
+                        component={Link}
+                        href={item.href}
+                        onClick={closeAdminMenu}
+                        selected={isActivePath(pathname, item.href)}
+                      >
+                        {item.label}
+                      </MenuItem>
+                    ))}
+                  </Menu>
+                </>
+              ) : null}
             </Stack>
 
             <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", justifyContent: "flex-end" }}>
@@ -235,6 +280,33 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
                 </Button>
               );
             })}
+
+            {session?.user?.isSuperuser ? (
+              <>
+                <Divider sx={{ my: 0.5 }} />
+                <Stack spacing={1} sx={{ pl: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    관리자 메뉴
+                  </Typography>
+                  {adminNavItems.map((item) => {
+                    const active = isActivePath(pathname, item.href);
+
+                    return (
+                      <Button
+                        key={item.href}
+                        component={Link}
+                        href={item.href}
+                        onClick={closeMobileNav}
+                        sx={{ justifyContent: "flex-start" }}
+                        variant={active ? "contained" : "outlined"}
+                      >
+                        {item.label}
+                      </Button>
+                    );
+                  })}
+                </Stack>
+              </>
+            ) : null}
           </Stack>
 
           <Divider />

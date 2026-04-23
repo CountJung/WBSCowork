@@ -12,9 +12,14 @@ declare module "frappe-gantt" {
 
   export type GanttPopupContext = {
     task: GanttTask;
+    chart: unknown;
     set_title: (value: string) => void;
     set_subtitle: (value: string) => void;
     set_details: (value: string) => void;
+    add_action: (
+      label: string | ((task: GanttTask) => string),
+      onClick: (task: GanttTask, chart: unknown, event: MouseEvent) => void,
+    ) => void;
   };
 
   export type GanttOptions = {
