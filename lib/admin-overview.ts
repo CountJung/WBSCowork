@@ -50,7 +50,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
 
     return {
       ready: true,
-      message: "Google 로그인 사용자 동기화, 프로젝트 및 작업 저장소, 간트 시각화, 관리자 세팅과 파일 로그 기반 운영 흐름이 활성화되어 있습니다.",
+      message: "Google 로그인 사용자 메타데이터 동기화, 프로젝트 및 작업 저장소, 간트 시각화, 제출물 피드백, 첨부파일 공유, 관리자 세팅과 파일 로그 기반 운영 흐름이 활성화되어 있습니다.",
       userCount,
       projectCount,
       recentUsers,

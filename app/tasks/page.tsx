@@ -82,9 +82,9 @@ function groupCommentsBySubmissionId(comments: Comment[]) {
 
 function TaskWritePolicy({ canWrite }: { canWrite: boolean }) {
   return canWrite ? (
-    <Alert severity="success">현재 계정은 작업, 제출물, 댓글, 프로젝트를 생성, 수정, 삭제할 수 있습니다.</Alert>
+    <Alert severity="success">현재 계정은 작업, 제출물, 첨부파일, 댓글, 프로젝트를 생성, 수정, 삭제할 수 있습니다.</Alert>
   ) : (
-    <Alert severity="info">현재 계정은 게스트 권한이므로 작업, 제출물, 댓글, 프로젝트를 읽기 전용으로만 볼 수 있습니다.</Alert>
+    <Alert severity="info">현재 계정은 게스트 권한이므로 작업, 제출물, 첨부파일, 댓글, 프로젝트를 읽기 전용으로만 볼 수 있습니다.</Alert>
   );
 }
 
@@ -316,9 +316,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const databaseStatus = await getDatabaseAdminStatus();
   const projectsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "projects" && table.exists);
   const tasksTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "tasks" && table.exists);
-  const submissionsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "submissions" && table.exists);
+  const submissionsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "submissions" && table.exists && table.missingColumns.length === 0);
   const commentsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "comments" && table.exists);
-  const usersTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "users" && table.exists);
+  const usersTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "users" && table.exists && table.missingColumns.length === 0);
 
   if (!projectsTableReady || !tasksTableReady || !submissionsTableReady || !commentsTableReady || !usersTableReady) {
     return (
@@ -326,16 +326,11 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         <Stack spacing={3}>
           <Typography variant="h3">작업 관리</Typography>
           <Alert severity="warning">
-            작업, 제출물, 댓글 관리에 필요한 기본 테이블이 아직 준비되지 않았습니다. 먼저 관리자 DB 페이지에서 DB와 기본 테이블을 초기화해야 합니다.
+            작업, 제출물, 댓글 관리에 필요한 기본 테이블 또는 확장 컬럼이 아직 준비되지 않았습니다. 먼저 관리자 DB 페이지에서 DB와 기본 테이블을 초기화해야 합니다.
           </Alert>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-            <Button href="/admin/database" variant="contained">
-              DB 관리 페이지 이동
-            </Button>
-            <Button href="/admin" variant="outlined">
-              관리자 메인으로 돌아가기
-            </Button>
-          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            관리자 관련 이동은 상단 앱바를 사용합니다.
+          </Typography>
         </Stack>
       </Container>
     );

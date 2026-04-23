@@ -6,6 +6,9 @@ export type SubmissionRow = {
   author_email: string;
   content: string;
   file_path: string | null;
+  file_name: string | null;
+  file_mime_type: string | null;
+  file_size_bytes: number | null;
   created_at: Date | string;
 };
 
@@ -17,6 +20,9 @@ export type Submission = {
   authorEmail: string;
   content: string;
   filePath: string | null;
+  fileName: string | null;
+  fileMimeType: string | null;
+  fileSizeBytes: number | null;
   createdAt: Date;
 };
 
@@ -29,6 +35,9 @@ export function mapSubmissionRow(row: SubmissionRow): Submission {
     authorEmail: row.author_email,
     content: row.content,
     filePath: row.file_path,
+    fileName: row.file_name,
+    fileMimeType: row.file_mime_type,
+    fileSizeBytes: row.file_size_bytes === null ? null : Number(row.file_size_bytes),
     createdAt: row.created_at instanceof Date ? row.created_at : new Date(row.created_at),
   };
 }

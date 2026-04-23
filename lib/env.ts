@@ -1,6 +1,7 @@
 type RuntimeEnv = {
   appName: string;
   uploadDir: string;
+  uploadMaxFileSizeMb: number;
   auth: {
     googleClientId?: string;
     googleClientSecret?: string;
@@ -87,10 +88,12 @@ export function getRuntimeEnv(): RuntimeEnv {
   const databasePassword = readOptionalEnv("DB_PASSWORD", { allowEmpty: true, trim: false });
   const databaseName = readOptionalEnv("DB_NAME");
   const uploadDir = readOptionalEnv("UPLOAD_DIR") ?? "./uploads";
+  const uploadMaxFileSizeMb = readPositiveIntegerEnv("UPLOAD_MAX_FILE_SIZE_MB", 20);
 
   cachedRuntimeEnv = {
     appName: readOptionalEnv("NEXT_PUBLIC_APP_NAME") ?? "WBS Task",
     uploadDir,
+    uploadMaxFileSizeMb,
     auth: {
       googleClientId,
       googleClientSecret,

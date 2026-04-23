@@ -1,5 +1,13 @@
 import { getRuntimeEnv } from "@/lib/env";
-import { getEditableEnvEntries, getEditableEnvFilePath, getEditableEnvGroups, saveEditableEnvEntries, type EditableEnvEntry } from "@/lib/env-file";
+import {
+  getEditableEnvEntries,
+  getEditableEnvFilePath,
+  getEditableEnvGroups,
+  getLegacyOverrideEnvPath,
+  getLegacyOverrideKeys,
+  saveEditableEnvEntries,
+  type EditableEnvEntry,
+} from "@/lib/env-file";
 import { getAbsoluteLogDirectory, listRecentLogFiles, type LogFileSummary } from "@/lib/logger";
 
 export type AdminSettingsSnapshot = {
@@ -7,6 +15,8 @@ export type AdminSettingsSnapshot = {
   envEntries: EditableEnvEntry[];
   envFilePath: string;
   envGroups: ReturnType<typeof getEditableEnvGroups>;
+  legacyOverrideEnvPath: string;
+  legacyOverrideKeys: string[];
   logDirectoryPath: string;
   logRetentionDays: number;
   logMaxFileSizeMb: number;
@@ -21,6 +31,8 @@ export async function getAdminSettingsSnapshot(): Promise<AdminSettingsSnapshot>
     envEntries: await getEditableEnvEntries(),
     envFilePath: getEditableEnvFilePath(),
     envGroups: getEditableEnvGroups(),
+    legacyOverrideEnvPath: getLegacyOverrideEnvPath(),
+    legacyOverrideKeys: await getLegacyOverrideKeys(),
     logDirectoryPath: getAbsoluteLogDirectory(),
     logRetentionDays: runtimeEnv.logging.retentionDays,
     logMaxFileSizeMb: runtimeEnv.logging.maxFileSizeMb,

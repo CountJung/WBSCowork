@@ -9,6 +9,7 @@ import { createProject, deleteProject } from "@/lib/repositories/project-reposit
 import { createSubmission, deleteSubmission, getSubmissionById, updateSubmission } from "@/lib/repositories/submission-repository";
 import { createTask, deleteTask, updateTask } from "@/lib/repositories/task-repository";
 import { getUserByEmail } from "@/lib/repositories/user-repository";
+import { deleteStoredSubmissionAttachment, saveUploadedSubmissionAttachment, type StoredSubmissionAttachment } from "@/lib/submission-files";
 import { canWriteTaskContent } from "@/models/user";
 
 function buildTasksPath(status: "success" | "error", message: string, projectId?: number) {
@@ -26,6 +27,14 @@ function buildTasksPath(status: "success" | "error", message: string, projectId?
 
 function getSingleValue(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value : "";
+}
+
+function getUploadedFile(value: FormDataEntryValue | null) {
+  return value instanceof File && value.size > 0 ? value : null;
+}
+
+function isChecked(value: FormDataEntryValue | null) {
+  return getSingleValue(value) === "on";
 }
 
 function parseRequiredPositiveInteger(value: FormDataEntryValue | null, label: string) {
@@ -327,14 +336,28 @@ export async function createSubmissionAction(formData: FormData) {
   const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
   const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
   const { session, user } = await requirePersistedUser(projectId);
+  let storedAttachment: StoredSubmissionAttachment | null = null;
 
   let redirectPath: string;
 
   try {
+    const uploadedFile = getUploadedFile(formData.get("attachment"));
+
+    if (uploadedFile) {
+      storedAttachment = await saveUploadedSubmissionAttachment(uploadedFile, {
+        authorId: user.id,
+        taskId,
+      });
+    }
+
     const submission = await createSubmission({
       taskId,
       authorId: user.id,
       content: getSingleValue(formData.get("content")),
+      filePath: storedAttachment?.filePath ?? null,
+      fileName: storedAttachment?.fileName ?? null,
+      fileMimeType: storedAttachment?.fileMimeType ?? null,
+      fileSizeBytes: storedAttachment?.fileSizeBytes ?? null,
     });
 
     revalidatePath("/");
@@ -344,11 +367,16 @@ export async function createSubmissionAction(formData: FormData) {
       actorEmail: session.user.email ?? null,
       projectId,
       taskId,
+      fileName: submission.fileName,
       submissionId: submission.id,
     });
 
     redirectPath = buildTasksPath("success", "제출물을 등록했습니다.", projectId);
   } catch (error) {
+    if (storedAttachment) {
+      await deleteStoredSubmissionAttachment(storedAttachment.filePath).catch(() => undefined);
+    }
+
     await logError("tasks", "Submission creation failed", {
       actorEmail: session.user.email ?? null,
       projectId,
@@ -370,14 +398,51 @@ export async function updateSubmissionAction(formData: FormData) {
   const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
   const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
   const session = await requireWritableSession(projectId);
+  let storedAttachment: StoredSubmissionAttachment | null = null;
 
   let redirectPath: string;
 
   try {
+    const submissionId = parseRequiredPositiveInteger(formData.get("submissionId"), "제출물");
+    const existingSubmission = await getSubmissionById(submissionId);
+
+    if (!existingSubmission) {
+      throw new Error("수정할 제출물을 찾을 수 없습니다.");
+    }
+
+    const uploadedFile = getUploadedFile(formData.get("attachment"));
+    const clearAttachment = isChecked(formData.get("clearAttachment"));
+    const replaceAttachment = Boolean(uploadedFile) || clearAttachment;
+
+    if (uploadedFile) {
+      storedAttachment = await saveUploadedSubmissionAttachment(uploadedFile, {
+        authorId: existingSubmission.authorId,
+        taskId,
+      });
+    }
+
     const submission = await updateSubmission({
-      id: parseRequiredPositiveInteger(formData.get("submissionId"), "제출물"),
+      id: submissionId,
       content: getSingleValue(formData.get("content")),
+      replaceAttachment,
+      filePath: storedAttachment?.filePath ?? null,
+      fileName: storedAttachment?.fileName ?? null,
+      fileMimeType: storedAttachment?.fileMimeType ?? null,
+      fileSizeBytes: storedAttachment?.fileSizeBytes ?? null,
     });
+
+    if (replaceAttachment && existingSubmission.filePath && existingSubmission.filePath !== storedAttachment?.filePath) {
+      await deleteStoredSubmissionAttachment(existingSubmission.filePath).catch(async (cleanupError) => {
+        await logError("tasks", "Submission attachment cleanup failed", {
+          actorEmail: session.user.email ?? null,
+          filePath: existingSubmission.filePath,
+          projectId,
+          submissionId,
+          taskId,
+          error: serializeError(cleanupError),
+        });
+      });
+    }
 
     revalidatePath("/");
     revalidatePath("/tasks");
@@ -386,11 +451,16 @@ export async function updateSubmissionAction(formData: FormData) {
       actorEmail: session.user.email ?? null,
       projectId,
       taskId,
+      fileName: submission.fileName,
       submissionId: submission.id,
     });
 
     redirectPath = buildTasksPath("success", "제출물을 수정했습니다.", projectId);
   } catch (error) {
+    if (storedAttachment) {
+      await deleteStoredSubmissionAttachment(storedAttachment.filePath).catch(() => undefined);
+    }
+
     await logError("tasks", "Submission update failed", {
       actorEmail: session.user.email ?? null,
       projectId,
@@ -425,6 +495,19 @@ export async function deleteSubmissionAction(formData: FormData) {
 
     const submission = await deleteSubmission(submissionId);
 
+    if (existingSubmission.filePath) {
+      await deleteStoredSubmissionAttachment(existingSubmission.filePath).catch(async (cleanupError) => {
+        await logError("tasks", "Submission attachment delete failed", {
+          actorEmail: session.user.email ?? null,
+          filePath: existingSubmission.filePath,
+          projectId,
+          submissionId,
+          taskId,
+          error: serializeError(cleanupError),
+        });
+      });
+    }
+
     revalidatePath("/");
     revalidatePath("/tasks");
 
@@ -432,6 +515,7 @@ export async function deleteSubmissionAction(formData: FormData) {
       actorEmail: session.user.email ?? null,
       projectId,
       taskId,
+      fileName: existingSubmission.fileName,
       submissionId: submission.id,
       submissionAuthorEmail: existingSubmission.authorEmail,
     });

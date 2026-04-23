@@ -36,6 +36,7 @@ Apply the repository-wide guidance from ../copilot-instructions.md to all applic
 - Keep data fetching boundaries clear. Server-render what can stay on the server, and use client-side fetching only where interactivity requires it.
 - Build UI so it works cleanly across mobile and desktop breakpoints. Treat responsive layout behavior as part of the done criteria for route and component work.
 - For third-party global styles, prefer importing the concrete CSS file from the root layout or another root entry module. Avoid `@import` from `node_modules` inside global CSS when Turbopack resolution is involved.
+- Prefer the shared app bar as the primary cross-page navigation surface. Avoid duplicating page-to-page route links inside content panels unless they are part of a local workflow that cannot be expressed through the global navigation.
 
 ## Auth and API
 

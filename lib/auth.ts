@@ -20,6 +20,16 @@ function getRoleForEmail(email?: string | null) {
   return getDefaultUserRole(email, getRuntimeEnv().auth.superuserEmail);
 }
 
+function getProfilePicture(profile: unknown) {
+  if (!profile || typeof profile !== "object") {
+    return null;
+  }
+
+  const picture = (profile as { picture?: unknown }).picture;
+
+  return typeof picture === "string" ? picture : null;
+}
+
 export const authOptions = {
   providers: runtimeEnv.auth.googleProviderConfigured
     ? [
@@ -34,12 +44,17 @@ export const authOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, profile }) {
       try {
         await syncAuthenticatedUserIfPossible({
           email: user.email,
           name: user.name,
           role: getRoleForEmail(user.email),
+          googleId: typeof profile?.sub === "string" ? profile.sub : null,
+          avatarUrl:
+            typeof user.image === "string"
+              ? user.image
+              : getProfilePicture(profile),
         });
 
         await logInfo("auth", "Authenticated user sign-in completed", {

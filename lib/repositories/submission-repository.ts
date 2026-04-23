@@ -8,11 +8,19 @@ export type CreateSubmissionInput = {
   authorId: number;
   content: string;
   filePath?: string | null;
+  fileName?: string | null;
+  fileMimeType?: string | null;
+  fileSizeBytes?: number | null;
 };
 
 export type UpdateSubmissionInput = {
   id: number;
   content: string;
+  filePath?: string | null;
+  fileName?: string | null;
+  fileMimeType?: string | null;
+  fileSizeBytes?: number | null;
+  replaceAttachment?: boolean;
 };
 
 function normalizeContent(content: string) {
@@ -55,6 +63,9 @@ export async function getSubmissionById(id: number): Promise<Submission | null> 
       users.email AS author_email,
       submissions.content,
       submissions.file_path,
+      submissions.file_name,
+      submissions.file_mime_type,
+      submissions.file_size_bytes,
       submissions.created_at
     FROM submissions
     INNER JOIN users ON users.id = submissions.author_id
@@ -78,6 +89,9 @@ export async function listSubmissionsByProject(projectId: number): Promise<Submi
       users.email AS author_email,
       submissions.content,
       submissions.file_path,
+      submissions.file_name,
+      submissions.file_mime_type,
+      submissions.file_size_bytes,
       submissions.created_at
     FROM submissions
     INNER JOIN tasks ON tasks.id = submissions.task_id
@@ -94,8 +108,24 @@ export async function createSubmission(input: CreateSubmissionInput): Promise<Su
   await Promise.all([ensureTaskExists(input.taskId), ensureAuthorExists(input.authorId)]);
 
   const result = (await getDatabasePool().query(
-    "INSERT INTO submissions (task_id, author_id, content, file_path) VALUES (?, ?, ?, ?)",
-    [input.taskId, input.authorId, normalizeContent(input.content), input.filePath ?? null],
+    `INSERT INTO submissions (
+      task_id,
+      author_id,
+      content,
+      file_path,
+      file_name,
+      file_mime_type,
+      file_size_bytes
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      input.taskId,
+      input.authorId,
+      normalizeContent(input.content),
+      input.filePath ?? null,
+      input.fileName ?? null,
+      input.fileMimeType ?? null,
+      input.fileSizeBytes ?? null,
+    ],
   )) as {
     insertId: number;
   };
@@ -116,7 +146,17 @@ export async function updateSubmission(input: UpdateSubmissionInput): Promise<Su
     throw new Error("수정할 제출물을 찾을 수 없습니다.");
   }
 
-  await getDatabasePool().query("UPDATE submissions SET content = ? WHERE id = ?", [normalizeContent(input.content), input.id]);
+  const nextFilePath = input.replaceAttachment ? input.filePath ?? null : existingSubmission.filePath;
+  const nextFileName = input.replaceAttachment ? input.fileName ?? null : existingSubmission.fileName;
+  const nextFileMimeType = input.replaceAttachment ? input.fileMimeType ?? null : existingSubmission.fileMimeType;
+  const nextFileSizeBytes = input.replaceAttachment ? input.fileSizeBytes ?? null : existingSubmission.fileSizeBytes;
+
+  await getDatabasePool().query(
+    `UPDATE submissions
+     SET content = ?, file_path = ?, file_name = ?, file_mime_type = ?, file_size_bytes = ?
+     WHERE id = ?`,
+    [normalizeContent(input.content), nextFilePath, nextFileName, nextFileMimeType, nextFileSizeBytes, input.id],
+  );
 
   const updatedSubmission = await getSubmissionById(input.id);
 

@@ -1,6 +1,11 @@
 import { createConnection } from "mariadb";
 import { requireDatabaseEnv } from "@/lib/env";
 
+type ColumnDefinition = {
+  name: string;
+  definition: string;
+};
+
 const managedTableNames = ["users", "projects", "tasks", "submissions", "comments"] as const;
 
 export type ManagedTableName = (typeof managedTableNames)[number];
@@ -14,6 +19,7 @@ export type DatabaseAdminStatus = {
   tables: Array<{
     name: ManagedTableName;
     exists: boolean;
+    missingColumns: string[];
   }>;
   existingTableCount: number;
   managedTableCount: number;
@@ -25,6 +31,10 @@ const createSchemaStatements = [
     email VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     role ENUM('admin', 'member', 'guest') NOT NULL DEFAULT 'guest',
+    google_id VARCHAR(255) NULL,
+    avatar_url VARCHAR(500) NULL,
+    last_login_at DATETIME NULL,
+    last_synced_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY users_email_unique (email)
@@ -63,6 +73,9 @@ const createSchemaStatements = [
     author_id BIGINT NOT NULL,
     content TEXT NOT NULL,
     file_path VARCHAR(500) NULL,
+    file_name VARCHAR(255) NULL,
+    file_mime_type VARCHAR(255) NULL,
+    file_size_bytes BIGINT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY submissions_task_idx (task_id),
@@ -84,12 +97,54 @@ const createSchemaStatements = [
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 ] as const;
 
+const requiredUsersColumns: ColumnDefinition[] = [
+  { name: "google_id", definition: "google_id VARCHAR(255) NULL" },
+  { name: "avatar_url", definition: "avatar_url VARCHAR(500) NULL" },
+  { name: "last_login_at", definition: "last_login_at DATETIME NULL" },
+  { name: "last_synced_at", definition: "last_synced_at DATETIME NULL" },
+];
+
+const requiredSubmissionColumns: ColumnDefinition[] = [
+  { name: "file_name", definition: "file_name VARCHAR(255) NULL" },
+  { name: "file_mime_type", definition: "file_mime_type VARCHAR(255) NULL" },
+  { name: "file_size_bytes", definition: "file_size_bytes BIGINT NULL" },
+];
+
+const requiredColumnsByTable: Partial<Record<ManagedTableName, string[]>> = {
+  submissions: requiredSubmissionColumns.map((column) => column.name),
+  users: requiredUsersColumns.map((column) => column.name),
+};
+
 function quoteIdentifier(identifier: string) {
   if (!/^[A-Za-z0-9_]+$/.test(identifier)) {
     throw new Error("DB_NAME must use only letters, numbers, and underscores for admin creation tasks.");
   }
 
   return `\`${identifier}\``;
+}
+
+async function ensureTableColumns(
+  connection: Awaited<ReturnType<typeof createConnection>>,
+  databaseName: string,
+  tableName: string,
+  columns: ColumnDefinition[],
+) {
+  const rows = (await connection.query(
+    `SELECT COLUMN_NAME AS columnName
+     FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
+    [databaseName, tableName],
+  )) as Array<{ columnName: string }>;
+
+  const existingColumns = new Set(rows.map((row) => row.columnName));
+
+  for (const column of columns) {
+    if (existingColumns.has(column.name)) {
+      continue;
+    }
+
+    await connection.query(`ALTER TABLE ${quoteIdentifier(tableName)} ADD COLUMN ${column.definition}`);
+  }
 }
 
 async function withServerConnection<T>(callback: (connection: Awaited<ReturnType<typeof createConnection>>) => Promise<T>) {
@@ -146,24 +201,44 @@ export async function getDatabaseAdminStatus(): Promise<DatabaseAdminStatus> {
       user: databaseEnv.user,
       databaseName: databaseEnv.database,
       databaseExists: false,
-      tables: managedTableNames.map((name) => ({ name, exists: false })),
+      tables: managedTableNames.map((name) => ({ name, exists: false, missingColumns: requiredColumnsByTable[name] ?? [] })),
       existingTableCount: 0,
       managedTableCount: managedTableNames.length,
     };
   }
 
-  const existingTables = await withDatabaseConnection(async (connection) => {
-    const rows = (await connection.query(
-      "SELECT TABLE_NAME AS tableName FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ?",
-      [databaseEnv.database],
-    )) as Array<{ tableName: string }>;
+  const { existingColumnsByTable, existingTables } = await withDatabaseConnection(async (connection) => {
+    const [tableRows, columnRows] = await Promise.all([
+      connection.query("SELECT TABLE_NAME AS tableName FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ?", [databaseEnv.database]),
+      connection.query(
+        "SELECT TABLE_NAME AS tableName, COLUMN_NAME AS columnName FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ?",
+        [databaseEnv.database],
+      ),
+    ]);
 
-    return new Set(rows.map((row) => row.tableName as ManagedTableName));
+    const existingTables = new Set((tableRows as Array<{ tableName: string }>).map((row) => row.tableName as ManagedTableName));
+    const existingColumnsByTable = new Map<ManagedTableName, Set<string>>();
+
+    for (const row of columnRows as Array<{ tableName: string; columnName: string }>) {
+      const tableName = row.tableName as ManagedTableName;
+      const columns = existingColumnsByTable.get(tableName) ?? new Set<string>();
+
+      columns.add(row.columnName);
+      existingColumnsByTable.set(tableName, columns);
+    }
+
+    return {
+      existingColumnsByTable,
+      existingTables,
+    };
   });
 
   const tables = managedTableNames.map((name) => ({
     name,
     exists: existingTables.has(name),
+    missingColumns: existingTables.has(name)
+      ? (requiredColumnsByTable[name] ?? []).filter((columnName) => !existingColumnsByTable.get(name)?.has(columnName))
+      : [],
   }));
 
   return {
@@ -192,6 +267,9 @@ export async function initializeDatabaseSchema() {
     for (const statement of createSchemaStatements) {
       await connection.query(statement);
     }
+
+    await ensureTableColumns(connection, databaseEnv.database, "users", requiredUsersColumns);
+    await ensureTableColumns(connection, databaseEnv.database, "submissions", requiredSubmissionColumns);
 
     await connection.query(
       "ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'member', 'guest') NOT NULL DEFAULT 'guest'",

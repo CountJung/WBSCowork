@@ -1,5 +1,5 @@
 import { Alert, Button, Chip, Container, Paper, Stack, Typography } from "@mui/material";
-import { getAuthSession, getSignInPath } from "@/lib/auth";
+import { getAuthSession } from "@/lib/auth";
 import { getDatabaseAdminStatus } from "@/lib/database-admin";
 import { getRuntimeEnv } from "@/lib/env";
 import { listAllProjects } from "@/lib/repositories/project-repository";
@@ -41,16 +41,8 @@ export default async function Home({ searchParams }: HomePageProps) {
             <Stack spacing={2}>
               <Typography variant="h5">시작하기</Typography>
               <Typography variant="body2" color="text.secondary">
-                먼저 로그인한 뒤 프로젝트 작업 공간으로 이동해 프로젝트, 작업, 제출물을 관리하세요.
+                상단 앱바의 Google 로그인으로 세션을 시작한 뒤, 앱바의 작업 메뉴에서 프로젝트 작업 공간으로 이동하세요.
               </Typography>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                <Button href={getSignInPath("/")} variant="contained">
-                  로그인
-                </Button>
-                <Button href="/tasks" variant="outlined">
-                  작업 공간 보기
-                </Button>
-              </Stack>
             </Stack>
           </Paper>
         </Stack>
@@ -83,14 +75,9 @@ export default async function Home({ searchParams }: HomePageProps) {
           <Alert severity="warning">
             홈 화면에 필요한 프로젝트 또는 작업 테이블이 아직 준비되지 않았습니다. 먼저 관리자 DB 페이지에서 기본 테이블을 초기화해야 합니다.
           </Alert>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-            <Button href="/admin/database" variant="contained">
-              DB 관리 페이지 이동
-            </Button>
-            <Button href="/tasks" variant="outlined">
-              작업 공간 이동
-            </Button>
-          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            관리자와 작업 화면 이동은 상단 앱바를 사용합니다.
+          </Typography>
         </Stack>
       </Container>
     );
@@ -126,12 +113,9 @@ export default async function Home({ searchParams }: HomePageProps) {
               <Stack spacing={0.5}>
                 <Typography variant="h5">프로젝트 선택</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  홈에서는 선택한 프로젝트의 간트와 간략한 작업 목록만 보여줍니다.
+                  홈에서는 선택한 프로젝트의 간트와 간략한 작업 목록만 보여줍니다. 세부 수정은 상단 앱바의 작업 메뉴에서 진행합니다.
                 </Typography>
               </Stack>
-              <Button href={selectedProject ? `/tasks?projectId=${selectedProject.id}` : "/tasks"} variant="outlined">
-                작업 공간 열기
-              </Button>
             </Stack>
 
             <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ flexWrap: "wrap" }}>

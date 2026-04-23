@@ -60,6 +60,7 @@ export async function saveSettingsAction(
       throw new Error("로그 디렉터리 경로는 비워 둘 수 없습니다.");
     }
 
+    parsePositiveInteger(entries.UPLOAD_MAX_FILE_SIZE_MB, "첨부파일 최대 용량");
     parsePositiveInteger(entries.LOG_RETENTION_DAYS, "로그 보관 기간");
     parsePositiveInteger(entries.LOG_MAX_FILE_SIZE_MB, "파일당 최대 용량");
 

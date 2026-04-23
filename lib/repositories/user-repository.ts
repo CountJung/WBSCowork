@@ -15,12 +15,16 @@ export type UpsertUserInput = {
   email: string;
   name: string;
   role: UserRole;
+  googleId?: string | null;
+  avatarUrl?: string | null;
 };
 
 export type SyncAuthenticatedUserInput = {
   email?: string | null;
   name?: string | null;
   role: UserRole;
+  googleId?: string | null;
+  avatarUrl?: string | null;
 };
 
 export type SyncAuthenticatedUserResult =
@@ -52,7 +56,7 @@ function normalizeName(name: string) {
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   const rows = (await getDatabasePool().query(
-    "SELECT id, email, name, role, created_at FROM users WHERE email = ? LIMIT 1",
+    "SELECT id, email, name, role, google_id, avatar_url, last_login_at, last_synced_at, created_at FROM users WHERE email = ? LIMIT 1",
     [normalizeEmail(email)],
   )) as UserRow[];
 
@@ -63,7 +67,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function getUserById(id: number): Promise<User | null> {
   const rows = (await getDatabasePool().query(
-    "SELECT id, email, name, role, created_at FROM users WHERE id = ? LIMIT 1",
+    "SELECT id, email, name, role, google_id, avatar_url, last_login_at, last_synced_at, created_at FROM users WHERE id = ? LIMIT 1",
     [id],
   )) as UserRow[];
 
@@ -74,7 +78,7 @@ export async function getUserById(id: number): Promise<User | null> {
 
 export async function listUsers(limit = 10): Promise<User[]> {
   const rows = (await getDatabasePool().query(
-    "SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC LIMIT ?",
+    "SELECT id, email, name, role, google_id, avatar_url, last_login_at, last_synced_at, created_at FROM users ORDER BY COALESCE(last_login_at, created_at) DESC, id DESC LIMIT ?",
     [limit],
   )) as UserRow[];
 
@@ -83,7 +87,7 @@ export async function listUsers(limit = 10): Promise<User[]> {
 
 export async function listAllUsers(): Promise<User[]> {
   const rows = (await getDatabasePool().query(
-    "SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC, id DESC",
+    "SELECT id, email, name, role, google_id, avatar_url, last_login_at, last_synced_at, created_at FROM users ORDER BY COALESCE(last_login_at, created_at) DESC, id DESC",
   )) as UserRow[];
 
   return rows.map(mapUserRow);
@@ -102,16 +106,20 @@ export async function upsertUser(input: UpsertUserInput): Promise<User> {
   const name = normalizeName(input.name);
 
   await getDatabasePool().query(
-    `INSERT INTO users (email, name, role)
-     VALUES (?, ?, ?)
+    `INSERT INTO users (email, name, role, google_id, avatar_url, last_login_at, last_synced_at)
+     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
      ON DUPLICATE KEY UPDATE
        name = VALUES(name),
+       google_id = VALUES(google_id),
+       avatar_url = VALUES(avatar_url),
+       last_login_at = CURRENT_TIMESTAMP,
+       last_synced_at = CURRENT_TIMESTAMP,
        role = CASE
          WHEN users.role = 'admin' OR VALUES(role) = 'admin' THEN 'admin'
          WHEN users.role = 'member' AND VALUES(role) = 'guest' THEN 'member'
          ELSE VALUES(role)
        END`,
-    [email, name, input.role],
+    [email, name, input.role, input.googleId ?? null, input.avatarUrl ?? null],
   );
 
   const user = await getUserByEmail(email);
@@ -209,6 +217,8 @@ export async function syncAuthenticatedUserIfPossible(
         email: input.email,
         name: input.name ?? input.email,
         role: input.role,
+        googleId: input.googleId,
+        avatarUrl: input.avatarUrl,
       }),
     };
   } catch {

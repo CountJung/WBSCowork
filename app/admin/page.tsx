@@ -1,4 +1,4 @@
-import { Alert, Button, Chip, Container, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Chip, Container, Paper, Stack, Typography } from "@mui/material";
 import { redirect } from "next/navigation";
 import { getAdminOverview } from "@/lib/admin-overview";
 import { getAuthSession, getSignInPath } from "@/lib/auth";
@@ -20,6 +20,10 @@ export default async function AdminPage() {
   const runtimeEnv = getRuntimeEnv();
   const adminOverview = runtimeEnv.database.configured ? await getAdminOverview() : null;
 
+  function formatOptionalDate(value: Date | null) {
+    return value ? value.toISOString().slice(0, 10) : "기록 없음";
+  }
+
   return (
     <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
       <Stack spacing={3}>
@@ -29,6 +33,8 @@ export default async function AdminPage() {
             슈퍼유저 계정으로 로그인된 상태입니다. 여기에서 시스템 초기화와 관리자 전용 기능 진입점을 제어합니다.
           </Typography>
         </Stack>
+
+        <Alert severity="info">관리자 하위 화면 이동은 상단 앱바를 사용합니다. 이 페이지는 현재 시스템 상태와 운영 현황 요약만 제공합니다.</Alert>
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
           <Chip label={`계정: ${session.user.email ?? "이메일 없음"}`} />
@@ -65,7 +71,7 @@ export default async function AdminPage() {
                     {adminOverview.recentUsers.length > 0 ? (
                       adminOverview.recentUsers.map((user) => (
                         <Typography key={user.id} variant="body2" color="text.secondary">
-                          {user.name} · {user.email} · {user.role}
+                          {user.name} · {user.email} · {user.role} · 최근 로그인 {formatOptionalDate(user.lastLoginAt)}
                         </Typography>
                       ))
                     ) : (
@@ -103,11 +109,8 @@ export default async function AdminPage() {
             <Stack spacing={2}>
               <Typography variant="h5">DB 관리</Typography>
               <Typography variant="body2" color="text.secondary">
-                env에 설정된 MariaDB 연결 정보로 실제 DB와 기본 테이블을 생성하고 상태를 확인합니다.
+                env에 설정된 MariaDB 연결 정보로 실제 DB와 기본 테이블을 생성하고 상태를 확인합니다. 이동은 상단 앱바의 DB 관리 항목을 사용합니다.
               </Typography>
-              <Button href="/admin/database" variant="contained">
-                DB 관리 페이지 이동
-              </Button>
             </Stack>
           </Paper>
 
@@ -115,11 +118,8 @@ export default async function AdminPage() {
             <Stack spacing={2}>
               <Typography variant="h5">사용자 관리</Typography>
               <Typography variant="body2" color="text.secondary">
-                Google 로그인으로 생성된 사용자 목록을 확인하고 게스트 또는 일반사용자 권한을 직접 지정합니다.
+                Google 로그인으로 동기화된 사용자 목록과 최근 로그인 메타데이터를 확인하고 게스트 또는 일반사용자 권한을 직접 지정합니다. 이동은 상단 앱바의 사용자 관리 항목을 사용합니다.
               </Typography>
-              <Button href="/admin/users" variant="contained">
-                사용자 관리 페이지 이동
-              </Button>
             </Stack>
           </Paper>
 
@@ -127,23 +127,8 @@ export default async function AdminPage() {
             <Stack spacing={2}>
               <Typography variant="h5">시스템 세팅</Typography>
               <Typography variant="body2" color="text.secondary">
-                파일 로그 롤링 정책과 전체 env 설정을 편집합니다. 문제 분석용 로그 파일도 여기서 관리합니다.
+                파일 로그 롤링 정책과 전체 env 설정을 편집합니다. 문제 분석용 로그 파일도 여기서 관리합니다. 이동은 상단 앱바의 세팅 항목을 사용합니다.
               </Typography>
-              <Button href="/admin/settings" variant="contained">
-                세팅 페이지 이동
-              </Button>
-            </Stack>
-          </Paper>
-
-          <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 4 }}>
-            <Stack spacing={2}>
-              <Typography variant="h5">기타 이동</Typography>
-              <Typography variant="body2" color="text.secondary">
-                홈 화면으로 돌아가 현재 세션과 기본 진입 흐름을 확인할 수 있습니다.
-              </Typography>
-              <Button href="/" variant="outlined">
-                홈으로 돌아가기
-              </Button>
             </Stack>
           </Paper>
         </Stack>

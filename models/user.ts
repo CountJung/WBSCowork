@@ -38,6 +38,10 @@ export type UserRow = {
   email: string;
   name: string;
   role: UserRole;
+  google_id: string | null;
+  avatar_url: string | null;
+  last_login_at: Date | string | null;
+  last_synced_at: Date | string | null;
   created_at: Date | string;
 };
 
@@ -46,6 +50,10 @@ export type User = {
   email: string;
   name: string;
   role: UserRole;
+  googleId: string | null;
+  avatarUrl: string | null;
+  lastLoginAt: Date | null;
+  lastSyncedAt: Date | null;
   createdAt: Date;
 };
 
@@ -55,6 +63,10 @@ export function mapUserRow(row: UserRow): User {
     email: row.email,
     name: row.name,
     role: row.role,
+    googleId: row.google_id,
+    avatarUrl: row.avatar_url,
+    lastLoginAt: row.last_login_at ? (row.last_login_at instanceof Date ? row.last_login_at : new Date(row.last_login_at)) : null,
+    lastSyncedAt: row.last_synced_at ? (row.last_synced_at instanceof Date ? row.last_synced_at : new Date(row.last_synced_at)) : null,
     createdAt: row.created_at instanceof Date ? row.created_at : new Date(row.created_at),
   };
 }

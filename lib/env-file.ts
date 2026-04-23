@@ -1,4 +1,4 @@
-import { access, readFile, writeFile } from "node:fs/promises";
+import { access, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { constants as fsConstants } from "node:fs";
 import { resetRuntimeEnvCache } from "@/lib/env";
@@ -35,7 +35,7 @@ const editableEnvGroups: EditableEnvGroup[] = [
   {
     title: "파일 및 로그 설정",
     description: "업로드 경로와 파일 로그 롤링 설정입니다.",
-    keys: ["UPLOAD_DIR", "LOG_DIR", "LOG_RETENTION_DAYS", "LOG_MAX_FILE_SIZE_MB"],
+    keys: ["UPLOAD_DIR", "UPLOAD_MAX_FILE_SIZE_MB", "LOG_DIR", "LOG_RETENTION_DAYS", "LOG_MAX_FILE_SIZE_MB"],
   },
 ];
 
@@ -54,6 +54,7 @@ const defaultEnvValues: Record<string, string> = {
   NEXTAUTH_URL: "http://localhost:3000",
   SUPERUSER_EMAIL: "admin@example.com",
   UPLOAD_DIR: "./uploads",
+  UPLOAD_MAX_FILE_SIZE_MB: "200",
   LOG_DIR: "./logs",
   LOG_RETENTION_DAYS: "5",
   LOG_MAX_FILE_SIZE_MB: "100",
@@ -74,6 +75,10 @@ export function getManagedEnvKeys() {
 }
 
 export function getEditableEnvFilePath() {
+  return path.join(getWorkspaceRoot(), ".env");
+}
+
+function getLegacyOverrideEnvFilePath() {
   return path.join(getWorkspaceRoot(), ".env.local");
 }
 
@@ -140,6 +145,54 @@ async function readEnvFileMap() {
   return parseEnvFileContent(fileContent);
 }
 
+export async function getLegacyOverrideKeys() {
+  const legacyOverrideFilePath = getLegacyOverrideEnvFilePath();
+
+  try {
+    await access(legacyOverrideFilePath, fsConstants.F_OK);
+  } catch {
+    return [];
+  }
+
+  const fileContent = await readFile(legacyOverrideFilePath, "utf8");
+
+  return [...parseEnvFileContent(fileContent).keys()].filter((key) => knownEnvKeys.includes(key)).sort();
+}
+
+export function getLegacyOverrideEnvPath() {
+  return getLegacyOverrideEnvFilePath();
+}
+
+async function syncLegacyOverrideFile() {
+  const legacyOverrideFilePath = getLegacyOverrideEnvFilePath();
+
+  try {
+    await access(legacyOverrideFilePath, fsConstants.F_OK);
+  } catch {
+    return;
+  }
+
+  const fileContent = await readFile(legacyOverrideFilePath, "utf8");
+  const legacyEntries = parseEnvFileContent(fileContent);
+
+  for (const key of knownEnvKeys) {
+    legacyEntries.delete(key);
+  }
+
+  if (legacyEntries.size === 0) {
+    await rm(legacyOverrideFilePath, { force: true });
+    return;
+  }
+
+  const lines = [
+    "# Legacy Local Overrides",
+    ...[...legacyEntries.entries()].map(([key, value]) => `${key}=${serializeEnvValue(value)}`),
+    "",
+  ];
+
+  await writeFile(legacyOverrideFilePath, `${lines.join("\n").trim()}\n`, "utf8");
+}
+
 export async function getEditableEnvEntries(): Promise<EditableEnvEntry[]> {
   const fileEntries = await readEnvFileMap();
   const extraKeys = [...fileEntries.keys()].filter((key) => !knownEnvKeys.includes(key)).sort();
@@ -202,6 +255,7 @@ export async function saveEditableEnvEntries(entries: Record<string, string>) {
   }
 
   await writeFile(getEditableEnvFilePath(), `${fileLines.join("\n").trim()}\n`, "utf8");
+  await syncLegacyOverrideFile();
 
   for (const key of orderedKeys) {
     process.env[key] = entryMap.get(key) ?? defaultEnvValues[key] ?? "";

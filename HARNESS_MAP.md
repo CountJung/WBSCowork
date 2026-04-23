@@ -5,7 +5,7 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 
 ## Current Objective
 
-- Stage 6 comment feedback flow is implemented and validated.
+- Stage 7 submission attachment flow is implemented and validated.
 - Home now shows a simplified authenticated project overview with selected-project gantt and task list.
 - Admin-only settings management for file logging and env editing is ready.
 - Rolling file logs are written into `/logs` with env-driven retention and file-size policies.
@@ -32,11 +32,11 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 | Database Connect | npm run db:check | MariaDB connection succeeds once the target DB exists | Admin initialization required |
 | Admin Auth | Google login with `SUPERUSER_EMAIL` account | Matching Google account receives superuser session and can open `/admin` | Passed by build and route wiring |
 | Admin DB | `/admin/database` | Superuser can inspect DB existence and trigger DB plus core table creation from the web UI | Passed by build and route wiring |
-| Admin Settings | `/admin/settings` | Superuser can edit env values and rolling file log policy, and inspect recent log files | Passed by lint and build |
+| Admin Settings | `/admin/settings` | Superuser can edit env values in `.env`, clean managed overrides from `.env.local`, and inspect recent log files | Passed by lint and build |
 | Auth Persistence | Google login after DB init | The signed-in user is upserted into `users` when the schema is ready | Passed by build and route wiring |
-| User Roles | `/admin/users` | Superuser can inspect signed-in users and change `guest/member` roles while `SUPERUSER_EMAIL` remains reserved | Passed by lint and route wiring |
+| User Roles | `/admin/users` | Superuser can inspect Google-synced users, profile metadata, login history, and change `guest/member` roles while `SUPERUSER_EMAIL` remains reserved | Passed by lint and route wiring |
 | Task CRUD | `/tasks` | Authenticated users can read project tasks, while `member/admin/superuser` can create, edit, delete projects and tasks | Passed by lint and route wiring |
-| Submission | `/tasks` | Writable users can register, edit, and delete Markdown submissions per task, and all authenticated users can read them | Passed by lint and route wiring |
+| Submission | `/tasks` | Writable users can register, edit, and delete Markdown submissions per task with optional attachments, and all authenticated users can read and download them | Passed by lint and route wiring |
 | Comment | `/tasks` | Writable users can register, edit, and delete Markdown comments per submission, and all authenticated users can read them | Passed by lint and route wiring |
 | Gantt | `/tasks` | Selected project tasks render in a frappe-gantt timeline with Day/Week/Month switching, richer popup details, and auto-height refresh behavior | Passed by lint and route wiring |
 | Home | `/` | Authenticated users see the selected project's gantt and simplified task list instead of stage-progress scaffolding | Passed by lint and route wiring |
@@ -54,9 +54,10 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 
 ## Environment Assumptions
 
-- Google OAuth remains inactive until GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_SECRET, and NEXTAUTH_URL are provided in `.env.local`.
-- MariaDB access uses DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, DB_CONNECTION_LIMIT, and DB_CONNECT_TIMEOUT_MS from `.env.local` or the shell environment.
-- Rolling file logs use LOG_DIR, LOG_RETENTION_DAYS, and LOG_MAX_FILE_SIZE_MB from `.env.local` or the shell environment.
+- Google OAuth remains inactive until GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_SECRET, and NEXTAUTH_URL are provided in `.env`.
+- MariaDB access uses DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, DB_CONNECTION_LIMIT, and DB_CONNECT_TIMEOUT_MS from `.env` or the shell environment.
+- Upload storage uses UPLOAD_DIR and UPLOAD_MAX_FILE_SIZE_MB from `.env` or the shell environment.
+- Rolling file logs use LOG_DIR, LOG_RETENTION_DAYS, and LOG_MAX_FILE_SIZE_MB from `.env` or the shell environment.
 - Sensitive `.env*` files may exist locally for runtime only, but they are excluded from AI task context and should not be opened as part of normal repository work.
 
 ## VS Code Debugging
@@ -70,7 +71,7 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 - `lib/db.ts` creates a shared MariaDB pool from validated env values.
 - `models/user.ts` and `models/project.ts` define the initial Stage 2 domain shapes.
 - `scripts/check-db.ts` loads Next.js env files and validates or tests MariaDB connectivity from the command line.
-- `lib/auth.ts` maps the env-configured `SUPERUSER_EMAIL` into the NextAuth session so the first administrator can operate without a pre-existing database.
+- `lib/auth.ts` maps the env-configured `SUPERUSER_EMAIL` into the NextAuth session so the first administrator can operate without a pre-existing database, and now syncs Google profile metadata into `users`.
 - `/admin` and `/admin/database` provide superuser-only admin entry points and DB lifecycle controls.
 - `/admin/users` provides a superuser-only user role management entry point for guest/member control.
 - `components/AppShell.tsx` adds the responsive global app bar, mobile drawer navigation, and persisted system/light/dark theme mode switching.
@@ -97,6 +98,12 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 - `react-markdown` and `remark-gfm` are installed to render submission content safely with GFM support.
 - The home route now focuses on the selected project's gantt and concise task list rather than implementation-progress scaffolding.
 
+## Stage 7 Attachment Flow
+
+- `lib/submission-files.ts` stores submission attachments under the env-configured upload directory and enforces an env-configured file size limit.
+- `/api/submissions/[submissionId]/attachment` streams authenticated attachment downloads for submission sharing.
+- `/tasks` now supports attachment upload on create, replacement or removal on edit, and cleanup when submissions are deleted.
+
 ## Stage 6 Feedback Flow
 
 - `models/comment.ts` and `lib/repositories/comment-repository.ts` provide the MariaDB-backed comment domain and CRUD accessors.
@@ -109,6 +116,6 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 
 ## Next Update Trigger
 
-- When file upload flow is added on top of submissions
+- When Synology NAS deployment preparation begins
 - If auth provider secrets are provisioned
 - After each new validation command or blocker appears

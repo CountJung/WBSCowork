@@ -37,5 +37,5 @@ Update it whenever stage scope, validation steps, or blocking issues change.
 - [x] Stage 4: Integrate gantt chart
 - [x] Stage 5: Implement submission feature
 - [x] Stage 6: Implement comment feature
-- [ ] Stage 7: Implement file upload flow
+- [x] Stage 7: Implement file upload flow
 - [ ] Stage 8: Prepare Synology NAS deployment
