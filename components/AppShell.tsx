@@ -10,6 +10,7 @@ import {
   Container,
   Divider,
   Drawer,
+  IconButton,
   Menu,
   MenuItem,
   NoSsr,
@@ -121,13 +122,23 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
         <Container maxWidth="lg">
           <Toolbar disableGutters sx={{ minHeight: 78, py: 1.5, gap: 2, justifyContent: "space-between" }}>
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0 }}>
-              <Button
-                variant="text"
+              <IconButton
                 onClick={() => setMobileNavOpen(true)}
-                sx={{ display: { xs: "inline-flex", md: "none" }, minWidth: 0, px: 1.25 }}
+                aria-label="메뉴 열기"
+                aria-expanded={mobileNavOpen}
+                sx={{
+                  display: { xs: "inline-flex", md: "none" },
+                  minWidth: 44,
+                  minHeight: 44,
+                  borderRadius: 1.5,
+                  border: "1px solid",
+                  borderColor: "divider",
+                  fontSize: "1.25rem",
+                  lineHeight: 1,
+                }}
               >
-                메뉴
-              </Button>
+                ☰
+              </IconButton>
 
               <Stack spacing={0.25} sx={{ minWidth: 0 }}>
                 <Typography
@@ -239,6 +250,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
 
       <Drawer
         anchor="left"
+        keepMounted
         open={mobileNavOpen}
         onClose={closeMobileNav}
         slotProps={{

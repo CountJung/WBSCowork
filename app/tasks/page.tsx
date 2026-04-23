@@ -14,6 +14,7 @@ import { getAuthSession, getSignInPath } from "@/lib/auth";
 import { getDatabaseAdminStatus } from "@/lib/database-admin";
 import { getRuntimeEnv } from "@/lib/env";
 import { listCommentsByProject } from "@/lib/repositories/comment-repository";
+import { listAttachmentsByProject } from "@/lib/repositories/submission-attachment-repository";
 import { listAllProjects } from "@/lib/repositories/project-repository";
 import { listSubmissionsByProject } from "@/lib/repositories/submission-repository";
 import { listTasksByProject } from "@/lib/repositories/task-repository";
@@ -24,6 +25,7 @@ import TaskFocusController from "@/components/task/TaskFocusController";
 import TaskSubmissionPanel from "@/components/task/TaskSubmissionPanel";
 import type { Comment } from "@/models/comment";
 import type { Project } from "@/models/project";
+import type { SubmissionAttachment } from "@/models/submission-attachment";
 import type { Submission } from "@/models/submission";
 import type { Task } from "@/models/task";
 import { canWriteTaskContent, getUserRoleLabel } from "@/models/user";
@@ -35,6 +37,7 @@ import {
   deleteCommentAction,
   deleteProjectAction,
   deleteSubmissionAction,
+  deleteSubmissionAttachmentAction,
   deleteTaskAction,
   updateCommentAction,
   updateSubmissionAction,
@@ -80,6 +83,19 @@ function groupCommentsBySubmissionId(comments: Comment[]) {
   }
 
   return commentsBySubmissionId;
+}
+
+function groupAttachmentsBySubmissionId(attachments: SubmissionAttachment[]) {
+  const attachmentsBySubmissionId: Record<number, SubmissionAttachment[]> = {};
+
+  for (const attachment of attachments) {
+    const group = attachmentsBySubmissionId[attachment.submissionId] ?? [];
+
+    group.push(attachment);
+    attachmentsBySubmissionId[attachment.submissionId] = group;
+  }
+
+  return attachmentsBySubmissionId;
 }
 
 function TaskWritePolicy({ canWrite }: { canWrite: boolean }) {
@@ -160,6 +176,7 @@ function TaskCreateForm({
 function TaskList({
   canWrite,
   commentsBySubmissionId,
+  attachmentsBySubmissionId,
   orderedTasks,
   project,
   selectedTaskId,
@@ -168,6 +185,7 @@ function TaskList({
 }: {
   canWrite: boolean;
   commentsBySubmissionId: Record<number, Comment[]>;
+  attachmentsBySubmissionId: Record<number, SubmissionAttachment[]>;
   orderedTasks: Task[];
   project: Project;
   selectedTaskId: number | null;
@@ -277,10 +295,12 @@ function TaskList({
             <TaskSubmissionPanel
               canWrite={canWrite}
               commentsBySubmissionId={commentsBySubmissionId}
+              attachmentsBySubmissionId={attachmentsBySubmissionId}
               createCommentAction={createCommentAction}
               createSubmissionAction={createSubmissionAction}
               deleteCommentAction={deleteCommentAction}
               deleteSubmissionAction={deleteSubmissionAction}
+              deleteAttachmentAction={deleteSubmissionAttachmentAction}
               projectId={project.id}
               submissions={submissionsByTaskId.get(task.id) ?? []}
               taskId={task.id}
@@ -353,17 +373,19 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   const [projects, users] = await Promise.all([listAllProjects(), listAllUsers()]);
   const selectedProject = getSelectedProject(projects, projectIdParam);
-  const [tasks, submissions, comments] = selectedProject
+  const [tasks, submissions, comments, attachments] = selectedProject
     ? await Promise.all([
         listTasksByProject(selectedProject.id),
         listSubmissionsByProject(selectedProject.id),
         listCommentsByProject(selectedProject.id),
+        listAttachmentsByProject(selectedProject.id).catch(() => [] as Awaited<ReturnType<typeof listAttachmentsByProject>>),
       ])
-    : [[], [], []];
+    : [[], [], [], []];
   const orderedTasks = getOrderedTasks(tasks);
   const selectedTask = getSelectedTask(orderedTasks, taskIdParam);
   const submissionsByTaskId = groupSubmissionsByTaskId(submissions);
   const commentsBySubmissionId = groupCommentsBySubmissionId(comments);
+  const attachmentsBySubmissionId = groupAttachmentsBySubmissionId(attachments);
 
   return (
     <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
@@ -462,6 +484,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           <TaskList
             canWrite={canWrite}
             commentsBySubmissionId={commentsBySubmissionId}
+            attachmentsBySubmissionId={attachmentsBySubmissionId}
             orderedTasks={orderedTasks}
             project={selectedProject}
             selectedTaskId={selectedTask?.id ?? null}

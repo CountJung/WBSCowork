@@ -104,6 +104,30 @@ export async function listSubmissionsByProject(projectId: number): Promise<Submi
   return rows.map(mapSubmissionRow);
 }
 
+export async function listSubmissionsByTask(taskId: number): Promise<Submission[]> {
+  const rows = (await getDatabasePool().query(
+    `SELECT
+      submissions.id,
+      submissions.task_id,
+      submissions.author_id,
+      users.name AS author_name,
+      users.email AS author_email,
+      submissions.content,
+      submissions.file_path,
+      submissions.file_name,
+      submissions.file_mime_type,
+      submissions.file_size_bytes,
+      submissions.created_at
+    FROM submissions
+    INNER JOIN users ON users.id = submissions.author_id
+    WHERE submissions.task_id = ?
+    ORDER BY submissions.created_at DESC, submissions.id DESC`,
+    [taskId],
+  )) as SubmissionRow[];
+
+  return rows.map(mapSubmissionRow);
+}
+
 export async function createSubmission(input: CreateSubmissionInput): Promise<Submission> {
   await Promise.all([ensureTaskExists(input.taskId), ensureAuthorExists(input.authorId)]);
 

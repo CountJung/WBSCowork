@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { logUserAction, logUserActionFailure } from "@/lib/logger";
-import { getSubmissionById } from "@/lib/repositories/submission-repository";
+import { getSubmissionAttachmentById } from "@/lib/repositories/submission-attachment-repository";
 import { readStoredSubmissionAttachment } from "@/lib/submission-files";
 
 type RouteContext = {
   params: Promise<{
-    submissionId: string;
+    attachmentId: string;
   }>;
 };
 
@@ -18,44 +18,44 @@ export async function GET(request: Request, context: RouteContext) {
   }
 
   const params = await context.params;
-  const submissionId = Number(params.submissionId);
+  const attachmentId = Number(params.attachmentId);
 
-  if (!Number.isInteger(submissionId) || submissionId <= 0) {
-    return NextResponse.json({ message: "올바른 제출물 식별자가 아닙니다." }, { status: 400 });
+  if (!Number.isInteger(attachmentId) || attachmentId <= 0) {
+    return NextResponse.json({ message: "올바른 첨부파일 식별자가 아닙니다." }, { status: 400 });
   }
 
-  const submission = await getSubmissionById(submissionId);
+  const attachment = await getSubmissionAttachmentById(attachmentId);
 
-  if (!submission?.filePath || !submission.fileName) {
+  if (!attachment) {
     return NextResponse.json({ message: "첨부파일이 없습니다." }, { status: 404 });
   }
 
   try {
-    const attachment = await readStoredSubmissionAttachment(submission.filePath);
+    const stored = await readStoredSubmissionAttachment(attachment.filePath);
     const url = new URL(request.url);
     const inline = url.searchParams.get("inline") === "1";
     const disposition = inline
-      ? `inline; filename*=UTF-8''${encodeURIComponent(submission.fileName)}`
-      : `attachment; filename*=UTF-8''${encodeURIComponent(submission.fileName)}`;
+      ? `inline; filename*=UTF-8''${encodeURIComponent(attachment.fileName)}`
+      : `attachment; filename*=UTF-8''${encodeURIComponent(attachment.fileName)}`;
 
     await logUserAction("submissions.attachment", {
       actorEmail: session.user.email ?? null,
       action: "submission.attachment.download",
       entityType: "submission",
-      entityId: submission.id,
-      submissionId: submission.id,
-      taskId: submission.taskId,
+      entityId: attachment.submissionId,
+      submissionId: attachment.submissionId,
       metadata: {
-        fileName: submission.fileName,
+        fileName: attachment.fileName,
+        inline,
       },
     });
 
-    return new NextResponse(attachment.buffer, {
+    return new NextResponse(stored.buffer, {
       headers: {
         "Cache-Control": "private, no-store",
         "Content-Disposition": disposition,
-        "Content-Length": String(submission.fileSizeBytes ?? attachment.fileSizeBytes),
-        "Content-Type": submission.fileMimeType ?? "application/octet-stream",
+        "Content-Length": String(stored.fileSizeBytes),
+        "Content-Type": attachment.fileMimeType,
       },
     });
   } catch (error) {
@@ -65,9 +65,9 @@ export async function GET(request: Request, context: RouteContext) {
         actorEmail: session.user.email ?? null,
         action: "submission.attachment.download",
         entityType: "submission",
-        entityId: submission.id,
-        submissionId: submission.id,
-        taskId: submission.taskId,
+        entityId: attachment.submissionId,
+        submissionId: attachment.submissionId,
+        metadata: { filePath: attachment.filePath },
       },
       error,
     );

@@ -6,7 +6,7 @@ type ColumnDefinition = {
   definition: string;
 };
 
-const managedTableNames = ["users", "projects", "tasks", "submissions", "comments"] as const;
+const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments"] as const;
 
 export type ManagedTableName = (typeof managedTableNames)[number];
 
@@ -82,6 +82,18 @@ const createSchemaStatements = [
     KEY submissions_author_idx (author_id),
     CONSTRAINT submissions_task_fk FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE,
     CONSTRAINT submissions_author_fk FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS submission_attachments (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    submission_id BIGINT NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_mime_type VARCHAR(255) NOT NULL DEFAULT 'application/octet-stream',
+    file_size_bytes BIGINT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY submission_attachments_submission_idx (submission_id),
+    CONSTRAINT submission_attachments_submission_fk FOREIGN KEY (submission_id) REFERENCES submissions (id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   `CREATE TABLE IF NOT EXISTS comments (
     id BIGINT NOT NULL AUTO_INCREMENT,

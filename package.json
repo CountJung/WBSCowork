@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:debug": "next dev --inspect",
+    "dev": "tsx scripts/run-next.ts dev",
+    "dev:debug": "tsx scripts/run-next.ts dev --inspect",
     "db:check": "tsx scripts/check-db.ts",
     "build": "tsx scripts/run-next.ts build",
     "start": "tsx scripts/run-next.ts start",

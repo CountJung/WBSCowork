@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Box, Button, Checkbox, Chip, Divider, FormControlLabel, Paper, Stack, TextField, Typography } from "@mui/material";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Comment } from "@/models/comment";
+import type { SubmissionAttachment } from "@/models/submission-attachment";
 import type { Submission } from "@/models/submission";
 
 type ContentAction = (formData: FormData) => Promise<void>;
@@ -11,10 +13,12 @@ type ContentAction = (formData: FormData) => Promise<void>;
 type TaskSubmissionPanelProps = {
   canWrite: boolean;
   commentsBySubmissionId: Record<number, Comment[]>;
+  attachmentsBySubmissionId: Record<number, SubmissionAttachment[]>;
   createCommentAction: ContentAction;
   createSubmissionAction: ContentAction;
   deleteCommentAction: ContentAction;
   deleteSubmissionAction: ContentAction;
+  deleteAttachmentAction: ContentAction;
   projectId: number;
   submissions: Submission[];
   taskId: number;
@@ -49,13 +53,115 @@ function formatFileSize(sizeBytes: number | null) {
   return `${sizeBytes} B`;
 }
 
+function isPreviewable(mimeType: string | null): boolean {
+  if (!mimeType) return false;
+
+  return mimeType.startsWith("image/") || mimeType === "application/pdf";
+}
+
 function AttachmentInput({ helperText }: { helperText: string }) {
   return (
     <Stack spacing={0.75}>
       <Typography variant="caption" color="text.secondary">
         {helperText}
       </Typography>
-      <Box component="input" name="attachment" type="file" sx={{ font: "inherit", color: "text.secondary" }} />
+      <Box component="input" name="attachments" type="file" multiple sx={{ font: "inherit", color: "text.secondary" }} />
+    </Stack>
+  );
+}
+
+function AttachmentPreview({
+  mimeType,
+  previewUrl,
+  fileName,
+}: {
+  mimeType: string;
+  previewUrl: string;
+  fileName: string;
+}) {
+  if (mimeType.startsWith("image/")) {
+    return (
+      <Box
+        component="img"
+        src={previewUrl}
+        alt={fileName}
+        sx={{
+          maxWidth: "100%",
+          maxHeight: 400,
+          borderRadius: 1,
+          display: "block",
+          objectFit: "contain",
+          mt: 1,
+        }}
+      />
+    );
+  }
+
+  if (mimeType === "application/pdf") {
+    return (
+      <Box
+        component="iframe"
+        src={previewUrl}
+        title={fileName}
+        sx={{
+          width: "100%",
+          height: { xs: 300, sm: 480 },
+          border: "none",
+          borderRadius: 1,
+          mt: 1,
+        }}
+      />
+    );
+  }
+
+  return null;
+}
+
+type AttachmentRowProps = {
+  fileName: string;
+  fileMimeType: string | null;
+  fileSizeBytes: number | null;
+  downloadUrl: string;
+  previewUrl: string;
+  previewKey: string;
+  openPreviews: Set<string>;
+  onTogglePreview: (key: string) => void;
+  deleteForm: React.ReactNode | null;
+};
+
+function AttachmentRow({
+  fileName,
+  fileMimeType,
+  fileSizeBytes,
+  downloadUrl,
+  previewUrl,
+  previewKey,
+  openPreviews,
+  onTogglePreview,
+  deleteForm,
+}: AttachmentRowProps) {
+  const formattedSize = formatFileSize(fileSizeBytes);
+  const canPreview = isPreviewable(fileMimeType);
+  const isOpen = openPreviews.has(previewKey);
+
+  return (
+    <Stack spacing={0.75}>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "center" }, flexWrap: "wrap" }}>
+        <Button component="a" href={downloadUrl} variant="outlined" size="small" download>
+          {fileName}
+        </Button>
+        {fileMimeType ? <Chip label={fileMimeType} size="small" variant="outlined" /> : null}
+        {formattedSize ? <Chip label={formattedSize} size="small" variant="outlined" /> : null}
+        {canPreview ? (
+          <Button size="small" variant="text" onClick={() => onTogglePreview(previewKey)}>
+            {isOpen ? "미리보기 닫기" : "미리보기"}
+          </Button>
+        ) : null}
+        {deleteForm}
+      </Stack>
+      {isOpen && canPreview && fileMimeType ? (
+        <AttachmentPreview mimeType={fileMimeType} previewUrl={previewUrl} fileName={fileName} />
+      ) : null}
     </Stack>
   );
 }
@@ -94,10 +200,12 @@ function MarkdownContent({ content }: { content: string }) {
 export default function TaskSubmissionPanel({
   canWrite,
   commentsBySubmissionId,
+  attachmentsBySubmissionId,
   createCommentAction,
   createSubmissionAction,
   deleteCommentAction,
   deleteSubmissionAction,
+  deleteAttachmentAction,
   projectId,
   submissions,
   taskId,
@@ -105,10 +213,28 @@ export default function TaskSubmissionPanel({
   updateCommentAction,
   updateSubmissionAction,
 }: TaskSubmissionPanelProps) {
+  const [openPreviews, setOpenPreviews] = useState<Set<string>>(new Set());
   const totalCommentCount = submissions.reduce(
     (count, submission) => count + (commentsBySubmissionId[submission.id]?.length ?? 0),
     0,
   );
+  const totalAttachmentCount =
+    submissions.reduce((count, s) => count + (attachmentsBySubmissionId[s.id]?.length ?? 0), 0) +
+    submissions.filter((s) => s.filePath).length;
+
+  function togglePreview(key: string) {
+    setOpenPreviews((prev) => {
+      const next = new Set(prev);
+
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+
+      return next;
+    });
+  }
 
   return (
     <Paper
@@ -138,7 +264,8 @@ export default function TaskSubmissionPanel({
           </Stack>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
             <Chip label={`제출 ${submissions.length}`} color="primary" variant="outlined" />
-            <Chip label={`댓글 ${totalCommentCount}`} color="secondary" variant="outlined" />
+            <Chip label={`첨부 ${totalAttachmentCount}`} color="secondary" variant="outlined" />
+            <Chip label={`댓글 ${totalCommentCount}`} variant="outlined" />
           </Stack>
         </Stack>
 
@@ -150,7 +277,7 @@ export default function TaskSubmissionPanel({
           <Stack spacing={2}>
             {submissions.map((submission) => {
               const comments = commentsBySubmissionId[submission.id] ?? [];
-              const formattedFileSize = formatFileSize(submission.fileSizeBytes);
+              const attachments = attachmentsBySubmissionId[submission.id] ?? [];
 
               return (
                 <Paper
@@ -186,19 +313,55 @@ export default function TaskSubmissionPanel({
                     <Divider />
                     <Stack spacing={1.25}>
                       <Typography variant="subtitle2">첨부파일</Typography>
+
+                      {/* 레거시 단일 파일 (기존 데이터 하위 호환) */}
                       {submission.filePath && submission.fileName ? (
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "center" }, flexWrap: "wrap" }}>
-                          <Button component="a" href={`/api/submissions/${submission.id}/attachment`} variant="outlined" size="small">
-                            {submission.fileName}
-                          </Button>
-                          {submission.fileMimeType ? <Chip label={submission.fileMimeType} size="small" variant="outlined" /> : null}
-                          {formattedFileSize ? <Chip label={formattedFileSize} size="small" variant="outlined" /> : null}
-                        </Stack>
-                      ) : (
+                        <AttachmentRow
+                          fileName={submission.fileName}
+                          fileMimeType={submission.fileMimeType}
+                          fileSizeBytes={submission.fileSizeBytes}
+                          downloadUrl={`/api/submissions/${submission.id}/attachment`}
+                          previewUrl={`/api/submissions/${submission.id}/attachment?inline=1`}
+                          previewKey={`legacy-${submission.id}`}
+                          openPreviews={openPreviews}
+                          onTogglePreview={togglePreview}
+                          deleteForm={null}
+                        />
+                      ) : null}
+
+                      {/* 다중 첨부파일 */}
+                      {attachments.map((attachment) => (
+                        <AttachmentRow
+                          key={attachment.id}
+                          fileName={attachment.fileName}
+                          fileMimeType={attachment.fileMimeType}
+                          fileSizeBytes={attachment.fileSizeBytes}
+                          downloadUrl={`/api/submission-attachments/${attachment.id}`}
+                          previewUrl={`/api/submission-attachments/${attachment.id}?inline=1`}
+                          previewKey={`att-${attachment.id}`}
+                          openPreviews={openPreviews}
+                          onTogglePreview={togglePreview}
+                          deleteForm={
+                            canWrite ? (
+                              <Stack component="form" action={deleteAttachmentAction}>
+                                <input type="hidden" name="projectId" value={String(projectId)} />
+                                <input type="hidden" name="taskId" value={String(taskId)} />
+                                <input type="hidden" name="submissionId" value={String(submission.id)} />
+                                <input type="hidden" name="attachmentId" value={String(attachment.id)} />
+                                <Button type="submit" color="error" size="small" variant="outlined">
+                                  삭제
+                                </Button>
+                              </Stack>
+                            ) : null
+                          }
+                        />
+                      ))}
+
+                      {!submission.filePath && attachments.length === 0 ? (
                         <Typography variant="body2" color="text.secondary">
                           첨부된 파일이 없습니다.
                         </Typography>
-                      )}
+                      ) : null}
                     </Stack>
 
                     <Divider />
@@ -322,9 +485,9 @@ export default function TaskSubmissionPanel({
                               multiline
                               minRows={4}
                             />
-                            <AttachmentInput helperText="새 파일을 선택하면 기존 첨부파일을 교체합니다." />
+                            <AttachmentInput helperText="새 파일 추가 첨부 (여러 파일 동시 선택 가능, 기존 첨부파일에 추가됩니다)" />
                             {submission.filePath ? (
-                              <FormControlLabel control={<Checkbox name="clearAttachment" />} label="현재 첨부파일 제거" />
+                              <FormControlLabel control={<Checkbox name="clearAttachment" />} label="레거시 단일 첨부파일 제거" />
                             ) : null}
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
                               <Button type="submit" variant="outlined">
@@ -365,7 +528,7 @@ export default function TaskSubmissionPanel({
                 helperText="Markdown과 체크리스트, 코드 블록, 링크를 사용할 수 있습니다."
                 required
               />
-              <AttachmentInput helperText="문서, 이미지, 압축파일 등 산출물을 함께 첨부할 수 있습니다." />
+              <AttachmentInput helperText="문서, 이미지, 압축파일 등 여러 파일을 동시에 선택할 수 있습니다." />
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
                 <Button type="submit" variant="contained">
                   제출 등록
