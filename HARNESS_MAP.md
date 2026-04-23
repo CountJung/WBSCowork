@@ -5,7 +5,7 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 
 ## Current Objective
 
-- Stage 5 task submission flow is implemented and validated.
+- Stage 6 comment feedback flow is implemented and validated.
 - Home now shows a simplified authenticated project overview with selected-project gantt and task list.
 - Admin-only settings management for file logging and env editing is ready.
 - Rolling file logs are written into `/logs` with env-driven retention and file-size policies.
@@ -37,6 +37,7 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 | User Roles | `/admin/users` | Superuser can inspect signed-in users and change `guest/member` roles while `SUPERUSER_EMAIL` remains reserved | Passed by lint and route wiring |
 | Task CRUD | `/tasks` | Authenticated users can read project tasks, while `member/admin/superuser` can create, edit, delete projects and tasks | Passed by lint and route wiring |
 | Submission | `/tasks` | Writable users can register, edit, and delete Markdown submissions per task, and all authenticated users can read them | Passed by lint and route wiring |
+| Comment | `/tasks` | Writable users can register, edit, and delete Markdown comments per submission, and all authenticated users can read them | Passed by lint and route wiring |
 | Gantt | `/tasks` | Selected project tasks render in a frappe-gantt timeline with Day/Week/Month switching, richer popup details, and auto-height refresh behavior | Passed by lint and route wiring |
 | Home | `/` | Authenticated users see the selected project's gantt and simplified task list instead of stage-progress scaffolding | Passed by lint and route wiring |
 | Lint | npm run lint | Zero unresolved warnings or errors for touched files | Passed |
@@ -49,6 +50,7 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 - Installed `next-auth` resolved to v4.24.14, so the auth foundation uses `NextAuthOptions` and an App Router route handler instead of the Auth.js v5 helper pattern.
 - In the macOS external-drive environment, AppleDouble metadata files (`._*`) were being written into `.next/dev/cache/turbopack`, causing Turbopack persistence startup to fail with `Failed to open database`.
 - `next.config.ts` now sets `experimental.turbopackFileSystemCacheForDev = false` so `npm run dev:debug` can start reliably on the external drive.
+- `frappe-gantt` CSS could not be resolved from `app/globals.css` under Next.js 16 Turbopack, so the stylesheet is imported directly from `app/layout.tsx` using the concrete file path.
 
 ## Environment Assumptions
 
@@ -95,12 +97,18 @@ Update it whenever commands, scripts, dependencies, or quality gates change.
 - `react-markdown` and `remark-gfm` are installed to render submission content safely with GFM support.
 - The home route now focuses on the selected project's gantt and concise task list rather than implementation-progress scaffolding.
 
+## Stage 6 Feedback Flow
+
+- `models/comment.ts` and `lib/repositories/comment-repository.ts` provide the MariaDB-backed comment domain and CRUD accessors.
+- `/tasks` now loads project-scoped comments together with tasks and submissions, and renders submission-level feedback threads inline.
+- Writable users can create, edit, and delete Markdown comments, while authenticated guests remain read-only.
+
 ## Known Blockers
 
 - None recorded.
 
 ## Next Update Trigger
 
-- When comment CRUD is added on top of submissions
+- When file upload flow is added on top of submissions
 - If auth provider secrets are provisioned
 - After each new validation command or blocker appears

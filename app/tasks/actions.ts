@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAuthSession, getSignInPath } from "@/lib/auth";
 import { logError, logInfo, serializeError } from "@/lib/logger";
+import { createComment, deleteComment, getCommentById, updateComment } from "@/lib/repositories/comment-repository";
 import { createProject, deleteProject } from "@/lib/repositories/project-repository";
 import { createSubmission, deleteSubmission, getSubmissionById, updateSubmission } from "@/lib/repositories/submission-repository";
 import { createTask, deleteTask, updateTask } from "@/lib/repositories/task-repository";
@@ -95,7 +96,7 @@ async function requirePersistedUser(projectId?: number) {
   const user = await getUserByEmail(email);
 
   if (!user) {
-    throw new Error("제출 기능을 사용하려면 현재 로그인 사용자가 DB 사용자 테이블에 존재해야 합니다.");
+    throw new Error("쓰기 기능을 사용하려면 현재 로그인 사용자가 DB 사용자 테이블에 존재해야 합니다.");
   }
 
   return {
@@ -447,6 +448,147 @@ export async function deleteSubmissionAction(formData: FormData) {
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "제출물 삭제 중 알 수 없는 오류가 발생했습니다.",
+      projectId,
+    );
+  }
+
+  redirect(redirectPath);
+}
+
+export async function createCommentAction(formData: FormData) {
+  const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
+  const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
+  const submissionId = parseRequiredPositiveInteger(formData.get("submissionId"), "제출물");
+  const { session, user } = await requirePersistedUser(projectId);
+
+  let redirectPath: string;
+
+  try {
+    const comment = await createComment({
+      submissionId,
+      authorId: user.id,
+      content: getSingleValue(formData.get("content")),
+    });
+
+    revalidatePath("/");
+    revalidatePath("/tasks");
+
+    await logInfo("tasks", "Comment created", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      taskId,
+      submissionId,
+      commentId: comment.id,
+    });
+
+    redirectPath = buildTasksPath("success", "댓글을 등록했습니다.", projectId);
+  } catch (error) {
+    await logError("tasks", "Comment creation failed", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      taskId,
+      submissionId,
+      error: serializeError(error),
+    });
+
+    redirectPath = buildTasksPath(
+      "error",
+      error instanceof Error ? error.message : "댓글 등록 중 알 수 없는 오류가 발생했습니다.",
+      projectId,
+    );
+  }
+
+  redirect(redirectPath);
+}
+
+export async function updateCommentAction(formData: FormData) {
+  const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
+  const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
+  const submissionId = parseRequiredPositiveInteger(formData.get("submissionId"), "제출물");
+  const session = await requireWritableSession(projectId);
+
+  let redirectPath: string;
+
+  try {
+    const comment = await updateComment({
+      id: parseRequiredPositiveInteger(formData.get("commentId"), "댓글"),
+      content: getSingleValue(formData.get("content")),
+    });
+
+    revalidatePath("/");
+    revalidatePath("/tasks");
+
+    await logInfo("tasks", "Comment updated", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      taskId,
+      submissionId,
+      commentId: comment.id,
+    });
+
+    redirectPath = buildTasksPath("success", "댓글을 수정했습니다.", projectId);
+  } catch (error) {
+    await logError("tasks", "Comment update failed", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      taskId,
+      submissionId,
+      error: serializeError(error),
+    });
+
+    redirectPath = buildTasksPath(
+      "error",
+      error instanceof Error ? error.message : "댓글 수정 중 알 수 없는 오류가 발생했습니다.",
+      projectId,
+    );
+  }
+
+  redirect(redirectPath);
+}
+
+export async function deleteCommentAction(formData: FormData) {
+  const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
+  const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
+  const submissionId = parseRequiredPositiveInteger(formData.get("submissionId"), "제출물");
+  const session = await requireWritableSession(projectId);
+
+  let redirectPath: string;
+
+  try {
+    const commentId = parseRequiredPositiveInteger(formData.get("commentId"), "댓글");
+    const existingComment = await getCommentById(commentId);
+
+    if (!existingComment) {
+      throw new Error("삭제할 댓글을 찾을 수 없습니다.");
+    }
+
+    const comment = await deleteComment(commentId);
+
+    revalidatePath("/");
+    revalidatePath("/tasks");
+
+    await logInfo("tasks", "Comment deleted", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      taskId,
+      submissionId,
+      commentId: comment.id,
+      commentAuthorEmail: existingComment.authorEmail,
+    });
+
+    redirectPath = buildTasksPath("success", "댓글을 삭제했습니다.", projectId);
+  } catch (error) {
+    await logError("tasks", "Comment deletion failed", {
+      actorEmail: session.user.email ?? null,
+      projectId,
+      taskId,
+      submissionId,
+      error: serializeError(error),
+    });
+
+    redirectPath = buildTasksPath(
+      "error",
+      error instanceof Error ? error.message : "댓글 삭제 중 알 수 없는 오류가 발생했습니다.",
       projectId,
     );
   }

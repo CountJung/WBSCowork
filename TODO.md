@@ -36,6 +36,6 @@ Update it whenever stage scope, validation steps, or blocking issues change.
 - [x] Stage 3: Implement Task (WBS) CRUD with guest/member write policy integration
 - [x] Stage 4: Integrate gantt chart
 - [x] Stage 5: Implement submission feature
-- [ ] Stage 6: Implement comment feature
+- [x] Stage 6: Implement comment feature
 - [ ] Stage 7: Implement file upload flow
 - [ ] Stage 8: Prepare Synology NAS deployment

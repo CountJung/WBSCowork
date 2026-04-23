@@ -35,6 +35,7 @@ Apply the repository-wide guidance from ../copilot-instructions.md to all applic
 - Centralize theme configuration so the same palette, typography, and spacing rules apply across routes.
 - Keep data fetching boundaries clear. Server-render what can stay on the server, and use client-side fetching only where interactivity requires it.
 - Build UI so it works cleanly across mobile and desktop breakpoints. Treat responsive layout behavior as part of the done criteria for route and component work.
+- For third-party global styles, prefer importing the concrete CSS file from the root layout or another root entry module. Avoid `@import` from `node_modules` inside global CSS when Turbopack resolution is involved.
 
 ## Auth and API
 

@@ -13,6 +13,7 @@ import { redirect } from "next/navigation";
 import { getAuthSession, getSignInPath } from "@/lib/auth";
 import { getDatabaseAdminStatus } from "@/lib/database-admin";
 import { getRuntimeEnv } from "@/lib/env";
+import { listCommentsByProject } from "@/lib/repositories/comment-repository";
 import { listAllProjects } from "@/lib/repositories/project-repository";
 import { listSubmissionsByProject } from "@/lib/repositories/submission-repository";
 import { listTasksByProject } from "@/lib/repositories/task-repository";
@@ -20,17 +21,21 @@ import { formatDate, getOrderedTasks, getSelectedProject } from "@/lib/task-view
 import { listAllUsers } from "@/lib/repositories/user-repository";
 import ProjectGanttChart from "@/components/gantt/ProjectGanttChart";
 import TaskSubmissionPanel from "@/components/task/TaskSubmissionPanel";
+import type { Comment } from "@/models/comment";
 import type { Project } from "@/models/project";
 import type { Submission } from "@/models/submission";
 import type { Task } from "@/models/task";
 import { canWriteTaskContent, getUserRoleLabel } from "@/models/user";
 import {
+  createCommentAction,
   createProjectAction,
   createSubmissionAction,
   createTaskAction,
+  deleteCommentAction,
   deleteProjectAction,
   deleteSubmissionAction,
   deleteTaskAction,
+  updateCommentAction,
   updateSubmissionAction,
   updateTaskAction,
 } from "./actions";
@@ -62,11 +67,24 @@ function groupSubmissionsByTaskId(submissions: Submission[]) {
   return submissionsByTaskId;
 }
 
+function groupCommentsBySubmissionId(comments: Comment[]) {
+  const commentsBySubmissionId = new Map<number, Comment[]>();
+
+  for (const comment of comments) {
+    const group = commentsBySubmissionId.get(comment.submissionId) ?? [];
+
+    group.push(comment);
+    commentsBySubmissionId.set(comment.submissionId, group);
+  }
+
+  return commentsBySubmissionId;
+}
+
 function TaskWritePolicy({ canWrite }: { canWrite: boolean }) {
   return canWrite ? (
-    <Alert severity="success">현재 계정은 작업과 프로젝트를 생성, 수정, 삭제할 수 있습니다.</Alert>
+    <Alert severity="success">현재 계정은 작업, 제출물, 댓글, 프로젝트를 생성, 수정, 삭제할 수 있습니다.</Alert>
   ) : (
-    <Alert severity="info">현재 계정은 게스트 권한이므로 작업과 프로젝트를 읽기 전용으로만 볼 수 있습니다.</Alert>
+    <Alert severity="info">현재 계정은 게스트 권한이므로 작업, 제출물, 댓글, 프로젝트를 읽기 전용으로만 볼 수 있습니다.</Alert>
   );
 }
 
@@ -139,12 +157,14 @@ function TaskCreateForm({
 
 function TaskList({
   canWrite,
+  commentsBySubmissionId,
   orderedTasks,
   project,
   submissionsByTaskId,
   users,
 }: {
   canWrite: boolean;
+  commentsBySubmissionId: Map<number, Comment[]>;
   orderedTasks: Task[];
   project: Project;
   submissionsByTaskId: Map<number, Submission[]>;
@@ -243,12 +263,16 @@ function TaskList({
 
             <TaskSubmissionPanel
               canWrite={canWrite}
+              commentsBySubmissionId={commentsBySubmissionId}
+              createCommentAction={createCommentAction}
               createSubmissionAction={createSubmissionAction}
+              deleteCommentAction={deleteCommentAction}
               deleteSubmissionAction={deleteSubmissionAction}
               projectId={project.id}
               submissions={submissionsByTaskId.get(task.id) ?? []}
               taskId={task.id}
               taskTitle={task.title}
+              updateCommentAction={updateCommentAction}
               updateSubmissionAction={updateSubmissionAction}
             />
           </Stack>
@@ -292,15 +316,17 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const databaseStatus = await getDatabaseAdminStatus();
   const projectsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "projects" && table.exists);
   const tasksTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "tasks" && table.exists);
+  const submissionsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "submissions" && table.exists);
+  const commentsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "comments" && table.exists);
   const usersTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "users" && table.exists);
 
-  if (!projectsTableReady || !tasksTableReady || !usersTableReady) {
+  if (!projectsTableReady || !tasksTableReady || !submissionsTableReady || !commentsTableReady || !usersTableReady) {
     return (
       <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">작업 관리</Typography>
           <Alert severity="warning">
-            작업 관리에 필요한 기본 테이블이 아직 준비되지 않았습니다. 먼저 관리자 DB 페이지에서 DB와 기본 테이블을 초기화해야 합니다.
+            작업, 제출물, 댓글 관리에 필요한 기본 테이블이 아직 준비되지 않았습니다. 먼저 관리자 DB 페이지에서 DB와 기본 테이블을 초기화해야 합니다.
           </Alert>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             <Button href="/admin/database" variant="contained">
@@ -317,10 +343,16 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   const [projects, users] = await Promise.all([listAllProjects(), listAllUsers()]);
   const selectedProject = getSelectedProject(projects, projectIdParam);
-  const tasks = selectedProject ? await listTasksByProject(selectedProject.id) : [];
-  const submissions = selectedProject ? await listSubmissionsByProject(selectedProject.id) : [];
+  const [tasks, submissions, comments] = selectedProject
+    ? await Promise.all([
+        listTasksByProject(selectedProject.id),
+        listSubmissionsByProject(selectedProject.id),
+        listCommentsByProject(selectedProject.id),
+      ])
+    : [[], [], []];
   const orderedTasks = getOrderedTasks(tasks);
   const submissionsByTaskId = groupSubmissionsByTaskId(submissions);
+  const commentsBySubmissionId = groupCommentsBySubmissionId(comments);
 
   return (
     <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
@@ -329,7 +361,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           <Stack spacing={1}>
             <Typography variant="h3">작업 관리</Typography>
             <Typography variant="body1" color="text.secondary">
-              프로젝트별 WBS 작업을 관리하는 Stage 3 화면입니다. guest는 읽기 전용, member와 슈퍼유저는 생성·수정·삭제가 가능합니다.
+              프로젝트별 WBS 작업, 제출물, 댓글을 관리하는 화면입니다. guest는 읽기 전용이고, member와 슈퍼유저는 생성·수정·삭제가 가능합니다.
             </Typography>
           </Stack>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
@@ -337,6 +369,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             <Chip label={`프로젝트 ${projects.length}`} color="primary" />
             <Chip label={`작업 ${orderedTasks.length}`} />
             <Chip label={`제출 ${submissions.length}`} />
+            <Chip label={`댓글 ${comments.length}`} />
           </Stack>
         </Stack>
 
@@ -409,6 +442,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         {selectedProject ? (
           <TaskList
             canWrite={canWrite}
+            commentsBySubmissionId={commentsBySubmissionId}
             orderedTasks={orderedTasks}
             project={selectedProject}
             submissionsByTaskId={submissionsByTaskId}

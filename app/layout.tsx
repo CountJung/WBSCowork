@@ -4,6 +4,7 @@ import { Roboto } from "next/font/google";
 import AppProviders from "@/components/AppProviders";
 import AppShell from "@/components/AppShell";
 import { getRuntimeEnv } from "@/lib/env";
+import "../node_modules/frappe-gantt/dist/frappe-gantt.css";
 import "./globals.css";
 
 const roboto = Roboto({
