@@ -79,3 +79,31 @@ export async function deleteProject(projectId: number): Promise<Project> {
 
   return existingProject;
 }
+
+export type UpdateProjectInput = {
+  id: number;
+  name: string;
+  startDate: Date | string;
+  endDate: Date | string;
+};
+
+export async function updateProject(input: UpdateProjectInput): Promise<Project> {
+  const existingProject = await getProjectById(input.id);
+
+  if (!existingProject) {
+    throw new Error("수정할 프로젝트를 찾을 수 없습니다.");
+  }
+
+  await getDatabasePool().query(
+    "UPDATE projects SET name = ?, start_date = ?, end_date = ? WHERE id = ?",
+    [input.name.trim(), toSqlDate(input.startDate), toSqlDate(input.endDate), input.id],
+  );
+
+  const updated = await getProjectById(input.id);
+
+  if (!updated) {
+    throw new Error("프로젝트 수정 후 데이터를 불러오지 못했습니다.");
+  }
+
+  return updated;
+}

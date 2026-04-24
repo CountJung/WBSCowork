@@ -21,6 +21,7 @@ import { listTasksByProject } from "@/lib/repositories/task-repository";
 import { formatDate, getOrderedTasks, getSelectedProject, getSelectedTask } from "@/lib/task-view";
 import { listAllUsers } from "@/lib/repositories/user-repository";
 import ProjectGanttChart from "@/components/gantt/ProjectGanttChart";
+import MarkdownContent from "@/components/MarkdownContent";
 import TaskFocusController from "@/components/task/TaskFocusController";
 import TaskSubmissionPanel from "@/components/task/TaskSubmissionPanel";
 import type { Comment } from "@/models/comment";
@@ -40,6 +41,7 @@ import {
   deleteSubmissionAttachmentAction,
   deleteTaskAction,
   updateCommentAction,
+  updateProjectAction,
   updateSubmissionAction,
   updateTaskAction,
 } from "./actions";
@@ -237,9 +239,7 @@ function TaskList({
                   <Chip label={task.assigneeName ? `담당자 ${task.assigneeName}` : "담당자 미지정"} color={task.assigneeName ? "primary" : "default"} variant={task.assigneeName ? "filled" : "outlined"} />
                 </Stack>
                 {task.description ? (
-                  <Typography variant="body2" color="text.secondary">
-                    {task.description}
-                  </Typography>
+                  <MarkdownContent content={task.description} />
                 ) : (
                   <Typography variant="body2" color="text.secondary">
                     설명이 아직 입력되지 않았습니다.
@@ -471,22 +471,37 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
         {selectedProject ? (
           <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
-            <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
-              <Stack spacing={1.5}>
-                <Typography variant="h5">선택된 프로젝트</Typography>
-                <Typography variant="h6">{selectedProject.name}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  기간 {formatDate(selectedProject.startDate)} ~ {formatDate(selectedProject.endDate)}
-                </Typography>
-              </Stack>
-              {!canWrite ? null : (
-                <Stack component="form" action={deleteProjectAction} sx={{ alignItems: { md: "flex-end" } }}>
-                  <input type="hidden" name="projectId" value={String(selectedProject.id)} />
-                  <Button type="submit" color="error" variant="outlined">
-                    프로젝트 삭제
-                  </Button>
+            <Stack spacing={2}>
+              <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
+                <Stack spacing={1.5}>
+                  <Typography variant="h5">선택된 프로젝트</Typography>
+                  <Typography variant="h6">{selectedProject.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    기간 {formatDate(selectedProject.startDate)} ~ {formatDate(selectedProject.endDate)}
+                  </Typography>
                 </Stack>
-              )}
+                {!canWrite ? null : (
+                  <Stack component="form" action={deleteProjectAction} sx={{ alignItems: { md: "flex-end" } }}>
+                    <input type="hidden" name="projectId" value={String(selectedProject.id)} />
+                    <Button type="submit" color="error" variant="outlined">
+                      프로젝트 삭제
+                    </Button>
+                  </Stack>
+                )}
+              </Stack>
+              {canWrite ? (
+                <Stack component="form" action={updateProjectAction} spacing={2}>
+                  <input type="hidden" name="projectId" value={String(selectedProject.id)} />
+                  <TextField name="name" label="프로젝트 이름" defaultValue={selectedProject.name} required />
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                    <TextField name="startDate" label="시작일" type="date" defaultValue={formatDate(selectedProject.startDate)} required fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+                    <TextField name="endDate" label="종료일" type="date" defaultValue={formatDate(selectedProject.endDate)} required fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+                  </Stack>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                    <Button type="submit" variant="contained">프로젝트 저장</Button>
+                  </Stack>
+                </Stack>
+              ) : null}
             </Stack>
           </Paper>
         ) : null}

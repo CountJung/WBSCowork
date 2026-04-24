@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Box, Button, Checkbox, Chip, Divider, FormControl, FormControlLabel, FormLabel, Paper, Radio, RadioGroup, Stack, TextField, Typography } from "@mui/material";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import MarkdownContent from "@/components/MarkdownContent";
 import type { Comment } from "@/models/comment";
 import type { SubmissionAttachment } from "@/models/submission-attachment";
 import type { Submission } from "@/models/submission";
@@ -164,37 +163,6 @@ function AttachmentRow({
         <AttachmentPreview mimeType={fileMimeType} previewUrl={previewUrl} fileName={fileName} />
       ) : null}
     </Stack>
-  );
-}
-
-function MarkdownContent({ content }: { content: string }) {
-  return (
-    <Box
-      sx={[
-        {
-          color: "text.primary",
-          "& p": { my: 0.75 },
-          "& ul, & ol": { pl: 3, my: 0.75 },
-          "& pre": {
-            overflowX: "auto",
-            p: 1.5,
-            borderRadius: 2,
-            bgcolor: "rgba(17, 24, 39, 0.08)",
-          },
-          "& code": {
-            fontFamily: "ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, monospace",
-          },
-        },
-        (theme) =>
-          theme.applyStyles("dark", {
-            "& pre": {
-              bgcolor: "rgba(7, 13, 11, 0.72)",
-            },
-          }),
-      ]}
-    >
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-    </Box>
   );
 }
 

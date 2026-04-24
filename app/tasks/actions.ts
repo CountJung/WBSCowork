@@ -6,7 +6,7 @@ import { getAuthSession, getSignInPath } from "@/lib/auth";
 import { logUserAction, logUserActionFailure } from "@/lib/logger";
 import { createSubmissionAttachment, deleteSubmissionAttachment, getSubmissionAttachmentById, listAttachmentsBySubmission, listAttachmentsByTask, listAttachmentsByProject } from "@/lib/repositories/submission-attachment-repository";
 import { createComment, deleteComment, getCommentById, updateComment } from "@/lib/repositories/comment-repository";
-import { createProject, deleteProject } from "@/lib/repositories/project-repository";
+import { createProject, deleteProject, updateProject } from "@/lib/repositories/project-repository";
 import { createSubmission, deleteSubmission, getSubmissionById, updateSubmission, listSubmissionsByProject, listSubmissionsByTask } from "@/lib/repositories/submission-repository";
 import { createTask, deleteTask, listTasksByProject, updateTask } from "@/lib/repositories/task-repository";
 import { getUserByEmail } from "@/lib/repositories/user-repository";
@@ -173,6 +173,60 @@ export async function createProjectAction(formData: FormData) {
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "프로젝트 생성 중 알 수 없는 오류가 발생했습니다.",
+    );
+  }
+
+  redirect(redirectPath);
+}
+
+export async function updateProjectAction(formData: FormData) {
+  const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
+  const session = await requireWritableSession(projectId);
+
+  let redirectPath: string;
+
+  try {
+    const name = getSingleValue(formData.get("name")).trim();
+    const startDate = parseRequiredDate(formData.get("startDate"), "프로젝트 시작일");
+    const endDate = parseRequiredDate(formData.get("endDate"), "프로젝트 종료일");
+
+    if (!name) {
+      throw new Error("프로젝트 이름은 비워 둘 수 없습니다.");
+    }
+
+    assertValidDateRange(startDate, endDate);
+
+    const project = await updateProject({ id: projectId, name, startDate, endDate });
+
+    revalidatePath("/admin");
+    revalidatePath("/tasks");
+
+    await logUserAction("tasks", {
+      actorEmail: session.user.email ?? null,
+      action: "project.update",
+      entityType: "project",
+      entityId: project.id,
+      entityLabel: project.name,
+      projectId: project.id,
+    });
+
+    redirectPath = buildTasksPath("success", `${project.name} 프로젝트를 수정했습니다.`, { projectId: project.id });
+  } catch (error) {
+    await logUserActionFailure(
+      "tasks",
+      {
+        actorEmail: session.user.email ?? null,
+        action: "project.update",
+        entityType: "project",
+        projectId,
+      },
+      error,
+    );
+
+    redirectPath = buildTasksPath(
+      "error",
+      error instanceof Error ? error.message : "프로젝트 수정 중 알 수 없는 오류가 발생했습니다.",
+      { projectId },
     );
   }
 
