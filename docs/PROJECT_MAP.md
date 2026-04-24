@@ -18,7 +18,7 @@
 - **역할 시스템 확장 (현 스프린트)**:
   - 슈퍼관리자(env) / 관리자(admin 역할) / 일반사용자(member) / 게스트(guest) 4단계
   - 제출물 공개/비공개(visibility) 타입 추가
-  - 관리자 역할은 `/admin`, `/admin/logs`, `/admin/settings` 접근 가능 (DB·사용자 관리 제외)
+  - 관리자 역할은 `/admin` (관리 개요), `/admin/users` (사용자 관리)만 접근 가능; 로그·세팅·DB는 슈퍼관리자 전용; 일반사용자 이하 권한 부여 가능
   - 일반사용자·게스트는 공개 제출물만 조회 가능, 일반사용자는 본인 비공개도 조회 가능
 
 ## Live Rules
@@ -39,10 +39,10 @@
 | Database Connect | `npm run db:check` | MariaDB 연결 성공 (DB 존재 시) | 관리자 초기화 필요 |
 | Admin Auth | `SUPERUSER_EMAIL` 계정으로 Google 로그인 | 슈퍼유저 세션 수신, `/admin` 접근 가능 | 빌드·라우트 연결로 확인 |
 | Admin DB | `/admin/database` | 슈퍼유저가 DB·테이블 생성 트리거 가능 | 빌드·라우트 연결로 확인 |
-| Admin Settings | `/admin/settings` | 슈퍼관리자·관리자가 로그 정책·환경변수 편집 가능 | 린트·빌드 확인 |
-| Admin Logs | `/admin/logs` | 슈퍼관리자·관리자가 구조화 로그 및 파일 로그 꼬리 검토 | Ready |
+| Admin Settings | `/admin/settings` | 슈퍼관리자 전용 — 환경변수 편집 가능 | 린트·빌드 확인 |
+| Admin Logs | `/admin/logs` | 슈퍼관리자 전용 — 구조화 로그 및 파일 로그 꼬리 검토 | Ready |
 | Auth Persistence | DB 초기화 후 Google 로그인 | 로그인 사용자가 `users` 테이블에 upsert | 빌드·라우트 연결로 확인 |
-| User Roles | `/admin/users` | 슈퍼유저가 `guest/member/admin` 역할 변경 (SUPERUSER_EMAIL 예약) | 린트·라우트 연결로 확인 |
+| User Roles | `/admin/users` | 슈퍼관리자: `guest/member/admin` 역할 변경 가능; 관리자: `guest/member`만 부여 가능 (SUPERUSER_EMAIL 예약) | 린트·라우트 연결로 확인 |
 | Task CRUD | `/tasks` | 인증 사용자가 프로젝트 태스크 조회, `member/admin/superuser`가 생성·수정·삭제 | 린트·라우트 연결로 확인 |
 | Submission Visibility | `/tasks` | 쓰기 사용자가 공개/비공개 제출물 등록, 역할에 따라 조회 범위 제한 | 린트·라우트 연결로 확인 |
 | Comment | `/tasks` | 쓰기 사용자가 제출물에 댓글 CRUD, 모든 인증 사용자가 읽기 | 린트·라우트 연결로 확인 |
@@ -81,7 +81,7 @@
 - `models/user.ts`, `models/project.ts`: Stage 2 도메인 형태 정의.
 - `lib/auth.ts`: env 기반 슈퍼유저 세션 매핑 + Google 프로필 동기화 + `requireAdminPanelSession` 헬퍼.
 - `/admin`, `/admin/database`: 슈퍼유저 전용 관리자 진입점.
-- `/admin/users`: 슈퍼유저 전용 사용자 역할 관리 (guest/member/admin 변경).
+- `/admin/users`: 슈퍼관리자는 guest/member/admin 역할 변경; 관리자는 guest/member만 부여 가능.
 - `components/AppShell.tsx`: 반응형 앱바, 모바일 드로어, 역할 기반 관리자 메뉴 분기.
 
 ## Stage 3 태스크 플로우
@@ -115,12 +115,13 @@
 
 ## 역할 확장 (현 스프린트)
 
-- `models/user.ts`: `canAccessAdminPanel`, `canManageAllSubmissions` 헬퍼 추가; `manageableUserRoles`에 `admin` 포함.
+- `models/user.ts`: `canAccessAdminPanel`, `canManageAllSubmissions` 헬퍼 추가; `manageableUserRoles`(전체), `adminAssignableRoles`(`guest`·`member`만) 상수 추가.
 - `models/submission.ts`: `SubmissionVisibility = "public" | "private"` 타입 추가.
 - `lib/database-admin.ts`: `submissions` 테이블에 `visibility` 컬럼 추가 (신규 + 마이그레이션).
 - `lib/auth.ts`: `requireAdminPanelSession` 헬퍼 추가.
-- `app/admin/page.tsx`, `app/admin/logs/page.tsx`, `app/admin/settings/page.tsx`: 관리자 역할 접근 허용.
-- `components/AppShell.tsx`: 슈퍼관리자는 전체 메뉴, 관리자 역할은 제한 메뉴(DB·사용자 관리 제외).
+- `app/admin/page.tsx`: 관리자 역할 접근 허용. `app/admin/logs/page.tsx`, `app/admin/settings/page.tsx`: 슈퍼관리자 전용으로 변경.
+- `app/admin/users/page.tsx`, `app/admin/users/actions.ts`: 관리자 역할 접근 허용; 역할별 부여 가능 범위 분기 처리.
+- `components/AppShell.tsx`: 슈퍼관리자는 전체 메뉴, 관리자 역할은 관리 개요·사용자 관리 메뉴만 표시.
 - `components/task/TaskSubmissionPanel.tsx`: 공개/비공개 배지, visibility 라디오 폼 추가.
 
 ## 알려진 블로커

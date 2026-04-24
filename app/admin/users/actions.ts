@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireSuperuserSession } from "@/lib/auth";
+import { getAuthSession, getSignInPath } from "@/lib/auth";
 import { logUserAction, logUserActionFailure } from "@/lib/logger";
 import { updateUserRole } from "@/lib/repositories/user-repository";
-import { manageableUserRoles, type ManageableUserRole } from "@/models/user";
+import { canAccessAdminPanel, adminAssignableRoles, manageableUserRoles, type ManageableUserRole } from "@/models/user";
 
 function buildRedirectPath(status: "success" | "error", message: string) {
   const searchParams = new URLSearchParams({
@@ -21,10 +21,10 @@ function getSingleValue(value: FormDataEntryValue | null) {
 }
 
 export async function updateUserRoleAction(formData: FormData) {
-  const session = await requireSuperuserSession();
+  const session = await getAuthSession();
 
-  if (!session) {
-    redirect(buildRedirectPath("error", "슈퍼유저만 사용자 권한을 변경할 수 있습니다."));
+  if (!session?.user || !canAccessAdminPanel(session.user.role, session.user.isSuperuser)) {
+    redirect(getSignInPath("/admin/users"));
   }
 
   const userIdValue = Number(getSingleValue(formData.get("userId")));
@@ -34,8 +34,15 @@ export async function updateUserRoleAction(formData: FormData) {
     redirect(buildRedirectPath("error", "올바른 사용자 식별자가 전달되지 않았습니다."));
   }
 
-  if (!manageableUserRoles.includes(roleValue as ManageableUserRole)) {
-    redirect(buildRedirectPath("error", "변경 가능한 권한은 관리자, 일반사용자, 게스트뿐입니다."));
+  // 슈퍼관리자는 admin 포함 전체 역할 부여 가능, 관리자는 guest/member만 부여 가능
+  const isSuperuserActor = session.user.isSuperuser;
+  const allowedRoles = isSuperuserActor ? manageableUserRoles : adminAssignableRoles;
+
+  if (!(allowedRoles as readonly string[]).includes(roleValue)) {
+    const msg = isSuperuserActor
+      ? "변경 가능한 권한은 관리자, 일반사용자, 게스트뿐입니다."
+      : "관리자는 일반사용자 또는 게스트로만 권한을 변경할 수 있습니다.";
+    redirect(buildRedirectPath("error", msg));
   }
 
   let redirectPath: string;
@@ -58,9 +65,10 @@ export async function updateUserRoleAction(formData: FormData) {
       },
     });
 
+    const roleLabel = roleValue === "admin" ? "관리자" : roleValue === "member" ? "일반사용자" : "게스트";
     redirectPath = buildRedirectPath(
       "success",
-      `${updatedUser.name} 계정의 권한을 ${roleValue === "member" ? "일반사용자" : "게스트"}로 변경했습니다.`,
+      `${updatedUser.name} 계정의 권한을 ${roleLabel}로 변경했습니다.`,
     );
   } catch (error) {
     await logUserActionFailure(

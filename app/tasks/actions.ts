@@ -8,9 +8,9 @@ import { createSubmissionAttachment, deleteSubmissionAttachment, getSubmissionAt
 import { createComment, deleteComment, getCommentById, updateComment } from "@/lib/repositories/comment-repository";
 import { createProject, deleteProject } from "@/lib/repositories/project-repository";
 import { createSubmission, deleteSubmission, getSubmissionById, updateSubmission, listSubmissionsByProject, listSubmissionsByTask } from "@/lib/repositories/submission-repository";
-import { createTask, deleteTask, updateTask } from "@/lib/repositories/task-repository";
+import { createTask, deleteTask, listTasksByProject, updateTask } from "@/lib/repositories/task-repository";
 import { getUserByEmail } from "@/lib/repositories/user-repository";
-import { deleteStoredSubmissionAttachment, saveUploadedSubmissionAttachment, type StoredSubmissionAttachment } from "@/lib/submission-files";
+import { deleteStoredSubmissionAttachment, saveUploadedSubmissionAttachment, cleanupTaskUploadDirectory, cleanupProjectUploadDirectories, type StoredSubmissionAttachment } from "@/lib/submission-files";
 import { canWriteTaskContent } from "@/models/user";
 import type { SubmissionVisibility } from "@/models/submission";
 
@@ -350,6 +350,9 @@ export async function deleteTaskAction(formData: FormData) {
       });
     }
 
+    // 빈 폴더 정리
+    await cleanupTaskUploadDirectory(taskId).catch(() => undefined);
+
     revalidatePath("/tasks");
 
     await logUserAction("tasks", {
@@ -392,10 +395,11 @@ export async function deleteProjectAction(formData: FormData) {
   let redirectPath = "/tasks";
 
   try {
-    // 삭제 전에 프로젝트 전체 제출물과 첨부파일 목록 조회 (DB CASCADE 이전)
-    const [submissionsToClean, attachmentsToClean] = await Promise.all([
+    // 삭제 전에 프로젝트 전체 제출물, 첨부파일, 태스크 목록 조회 (DB CASCADE 이전)
+    const [submissionsToClean, attachmentsToClean, tasksToClean] = await Promise.all([
       listSubmissionsByProject(projectId),
       listAttachmentsByProject(projectId),
+      listTasksByProject(projectId),
     ]);
 
     const project = await deleteProject(projectId);
@@ -437,6 +441,10 @@ export async function deleteProjectAction(formData: FormData) {
         );
       });
     }
+
+    // 빈 폴더 정리
+    const taskIds = tasksToClean.map((t) => t.id);
+    await cleanupProjectUploadDirectories(taskIds).catch(() => undefined);
 
     revalidatePath("/");
     revalidatePath("/admin");

@@ -5,6 +5,11 @@ export const manageableUserRoles = ["guest", "member", "admin"] as const;
 
 export type ManageableUserRole = (typeof manageableUserRoles)[number];
 
+// 관리자(admin 역할)가 변경 가능한 역할 목록 — admin 부여는 슈퍼관리자 전용
+export const adminAssignableRoles = ["guest", "member"] as const;
+
+export type AdminAssignableRole = (typeof adminAssignableRoles)[number];
+
 export function getDefaultUserRole(email: string | null | undefined, superuserEmail: string | null | undefined): UserRole {
   if (!email || !superuserEmail) {
     return "guest";

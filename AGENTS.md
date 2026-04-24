@@ -22,7 +22,7 @@
 | 역할 | 식별 | 권한 요약 |
 | --- | --- | --- |
 | **슈퍼관리자** | `isSuperuser = true` (env `SUPERUSER_EMAIL`) | 모든 권한, 환경설정 세팅, DB 관리, 사용자 관리 |
-| **관리자** | `role = "admin"` | `/admin`, `/admin/logs`, `/admin/settings` 접근, 모든 제출물(비공개 포함) 조회·관리 |
+| **관리자** | `role = "admin"` | `/admin` (관리 개요), `/admin/users` (사용자 관리) 접근; `guest`·`member` 이하 권한 부여 가능; 모든 제출물(비공개 포함) 조회·관리 |
 | **일반사용자** | `role = "member"` | 태스크/제출물/댓글 CRUD, 공개 제출물 + 본인 비공개 제출물 조회 |
 | **게스트** | `role = "guest"` | 공개 제출물 읽기 전용, 권한 승급 대기 상태 |
 
@@ -62,7 +62,7 @@ docs/          # 하위 문서 (PROJECT_MAP.md 등)
 1. `canAccessAdminPanel(role, isSuperuser)` — admin 패널 접근 확인
 2. `canManageAllSubmissions(role, isSuperuser)` — 비공개 제출물 접근 확인
 3. `canWriteTaskContent(role, isSuperuser)` — 태스크/제출물 쓰기 확인
-4. Admin 패널 중 `/admin/database`, `/admin/users`는 `isSuperuser`만 접근 가능
+4. Admin 패널 중 `/admin/database`, `/admin/logs`, `/admin/settings`는 `isSuperuser`만 접근 가능; `/admin/users`는 관리자 역할도 접근 가능 (`guest`·`member`만 부여)
 5. 제출물 목록 쿼리는 반드시 `SubmissionVisibilityFilter`를 사용할 것
 6. 환경 변수 파일(`.env*`)을 AI 컨텍스트로 열지 않는다
 7. 경고·오류 무시 금지 — 해결 불가 시 `docs/PROJECT_MAP.md`에 기록
@@ -82,8 +82,8 @@ npm run dev:debug     # Node 인스펙터 포함 dev 서버
 
 ## 주요 파일 링크
 
-- [MasterPlan.md](MasterPlan.md) — 전체 제품 계획
-- [TODO.md](TODO.md) — 현재 진행 태스크
+- [docs/MasterPlan.md](docs/MasterPlan.md) — 전체 제품 계획
+- [docs/TODO.md](docs/TODO.md) — 현재 진행 태스크
 - [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md) — 실행 맵 (구 HARNESS_MAP.md)
 - [.github/copilot-instructions.md](.github/copilot-instructions.md) — AI 작업 규칙
 - [.github/instructions/nextjs-stack.instructions.md](.github/instructions/nextjs-stack.instructions.md) — Next.js 스택 가이드

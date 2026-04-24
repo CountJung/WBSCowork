@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import SettingsAdminPanel from "@/components/admin/SettingsAdminPanel";
 import { getAdminSettingsSnapshot } from "@/lib/admin-settings";
 import { getAuthSession, getSignInPath } from "@/lib/auth";
-import { canAccessAdminPanel } from "@/models/user";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +13,7 @@ export default async function AdminSettingsPage() {
     redirect(getSignInPath("/admin/settings"));
   }
 
-  if (!canAccessAdminPanel(session.user.role, session.user.isSuperuser)) {
+  if (!session.user.isSuperuser) {
     redirect("/");
   }
 

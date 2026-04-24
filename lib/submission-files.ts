@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { getRuntimeEnv } from "@/lib/env";
 
@@ -100,4 +100,61 @@ export async function readStoredSubmissionAttachment(filePath: string) {
     buffer,
     fileSizeBytes: fileStats.size,
   };
+}
+
+/**
+ * 지정된 디렉터리가 비어 있으면 삭제합니다.
+ * 업로드 루트 밖으로는 절대 벗어나지 않습니다.
+ */
+async function removeEmptyDirectory(absoluteDir: string, uploadRoot: string) {
+  const normalizedRoot = path.resolve(uploadRoot);
+  const normalizedDir = path.resolve(absoluteDir);
+
+  if (normalizedDir === normalizedRoot || !normalizedDir.startsWith(`${normalizedRoot}${path.sep}`)) {
+    return;
+  }
+
+  try {
+    const entries = await readdir(normalizedDir);
+
+    if (entries.length === 0) {
+      await rm(normalizedDir, { recursive: true, force: true });
+    }
+  } catch {
+    // 존재하지 않거나 접근 불가한 경우 무시
+  }
+}
+
+/**
+ * 태스크 삭제 후 빈 폴더를 정리합니다.
+ * 경로: submissions/{taskId}/
+ * 내부에 남은 하위 폴더가 없으면 taskId 디렉터리를 삭제합니다.
+ */
+export async function cleanupTaskUploadDirectory(taskId: number) {
+  const uploadRoot = getAbsoluteUploadDirectory();
+  const taskDir = assertPathWithinRoot(uploadRoot, path.join(uploadRoot, "submissions", String(taskId)));
+
+  try {
+    const entries = await readdir(taskDir);
+
+    // 하위 authorId 디렉터리도 비어 있으면 순서대로 제거
+    for (const entry of entries) {
+      const authorDir = path.join(taskDir, entry);
+      await removeEmptyDirectory(authorDir, uploadRoot);
+    }
+
+    await removeEmptyDirectory(taskDir, uploadRoot);
+  } catch {
+    // 디렉터리가 없거나 접근 불가한 경우 무시
+  }
+}
+
+/**
+ * 프로젝트 삭제 후 해당 태스크들의 빈 폴더를 정리합니다.
+ * taskIds: 프로젝트에 속했던 태스크 ID 목록
+ */
+export async function cleanupProjectUploadDirectories(taskIds: number[]) {
+  for (const taskId of taskIds) {
+    await cleanupTaskUploadDirectory(taskId);
+  }
 }

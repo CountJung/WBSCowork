@@ -15,7 +15,7 @@ import { getAuthSession, getSignInPath, isSuperuserEmail } from "@/lib/auth";
 import { getDatabaseAdminStatus } from "@/lib/database-admin";
 import { getRuntimeEnv } from "@/lib/env";
 import { listAllUsers } from "@/lib/repositories/user-repository";
-import { getUserRoleLabel, manageableUserRoles } from "@/models/user";
+import { canAccessAdminPanel, getUserRoleLabel, manageableUserRoles, adminAssignableRoles } from "@/models/user";
 import { updateUserRoleAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +52,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
     redirect(getSignInPath("/admin/users"));
   }
 
-  if (!session.user.isSuperuser) {
+  if (!canAccessAdminPanel(session.user.role, session.user.isSuperuser)) {
     redirect("/");
   }
 
@@ -97,6 +97,8 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   }
 
   const users = await listAllUsers();
+  const actorIsSuperuser = session.user.isSuperuser;
+  const assignableRoles = actorIsSuperuser ? manageableUserRoles : adminAssignableRoles;
   const superuserCount = users.filter((user) => isSuperuserEmail(user.email)).length;
   const googleLinkedCount = users.filter((user) => Boolean(user.googleId)).length;
   const loggedInCount = users.filter((user) => Boolean(user.lastLoginAt)).length;
@@ -111,7 +113,9 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
           <Stack spacing={1}>
             <Typography variant="h3">사용자 관리</Typography>
             <Typography variant="body1" color="text.secondary">
-              슈퍼유저 전용 페이지입니다. Google 로그인으로 동기화된 사용자 목록, 프로필 메타데이터, 최근 로그인 기록을 확인하고 권한 승급을 제어할 수 있습니다.
+              {actorIsSuperuser
+                ? "Google 로그인으로 동기화된 사용자 목록을 확인하고 관리자/일반사용자/게스트 권한을 제어할 수 있습니다."
+                : "사용자 목록을 확인하고 일반사용자 이하 권한(일반사용자/게스트)을 부여할 수 있습니다. 관리자 권한 부여는 슈퍼관리자만 가능합니다."}
             </Typography>
           </Stack>
         </Stack>
@@ -150,7 +154,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
               const roleDescription = isSuperuser
                 ? "env 기반 슈퍼관리자 계정입니다. 관리자 전용 페이지와 시스템 설정에 접근할 수 있습니다."
                 : user.role === "admin"
-                  ? "관리자 메뉴(DB 관리 제외)에 접근하고 모든 비공개 제출물을 확인할 수 있는 관리자입니다."
+                  ? "관리 개요와 사용자 관리에 접근하고 모든 비공개 제출물을 확인할 수 있는 관리자입니다. 일반사용자 이하 권한 부여가 가능합니다."
                   : user.role === "member"
                     ? "공개 제출물 읽기와 작성이 가능한 일반사용자입니다."
                     : "공개 제출물만 읽을 수 있는 권한 대기 상태의 게스트입니다.";
@@ -204,7 +208,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                         >
                           <input type="hidden" name="userId" value={String(user.id)} />
                           <TextField select name="role" label="권한" defaultValue={user.role} size="small" sx={{ minWidth: { sm: 180 } }}>
-                            {manageableUserRoles.map((role) => (
+                            {assignableRoles.map((role) => (
                               <MenuItem key={role} value={role}>
                                 {getUserRoleLabel(role)}
                               </MenuItem>
