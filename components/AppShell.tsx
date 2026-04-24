@@ -41,12 +41,20 @@ const defaultNavItems: NavItem[] = [{ href: "/", label: "홈" }];
 
 const taskNavItem: NavItem = { href: "/tasks", label: "작업" };
 
-const adminNavItems: NavItem[] = [
+// 슈퍼관리자 전용 메뉴 (DB 관리 + 사용자 관리 포함)
+const superuserAdminNavItems: NavItem[] = [
   { href: "/admin", label: "관리 개요" },
   { href: "/admin/logs", label: "로그" },
   { href: "/admin/settings", label: "세팅" },
   { href: "/admin/users", label: "사용자 관리" },
   { href: "/admin/database", label: "DB 관리" },
+];
+
+// 관리자(admin 역할) 메뉴 — DB 관리 및 사용자 관리 제외
+const adminRoleNavItems: NavItem[] = [
+  { href: "/admin", label: "관리 개요" },
+  { href: "/admin/logs", label: "로그" },
+  { href: "/admin/settings", label: "세팅" },
 ];
 
 function isActivePath(currentPath: string, href: string) {
@@ -65,7 +73,11 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
   const [adminMenuAnchorEl, setAdminMenuAnchorEl] = useState<null | HTMLElement>(null);
   const navItems = [...defaultNavItems, taskNavItem];
   const adminMenuOpen = Boolean(adminMenuAnchorEl);
-  const isAdminRouteActive = Boolean(session?.user?.isSuperuser) && isActivePath(pathname, "/admin");
+  const isSuperuser = Boolean(session?.user?.isSuperuser);
+  const isAdminRole = session?.user?.role === "admin";
+  const hasAdminAccess = isSuperuser || isAdminRole;
+  const currentAdminNavItems = isSuperuser ? superuserAdminNavItems : adminRoleNavItems;
+  const isAdminRouteActive = hasAdminAccess && isActivePath(pathname, "/admin");
 
   const selectedMode: AppThemeMode = mode ?? "system";
   const effectiveMode = selectedMode === "system" ? systemMode ?? "light" : selectedMode;
@@ -172,7 +184,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
                 );
               })}
 
-              {session?.user?.isSuperuser ? (
+              {hasAdminAccess ? (
                 <>
                   <Button
                     aria-controls={adminMenuOpen ? "admin-navigation-menu" : undefined}
@@ -190,7 +202,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
                     onClose={closeAdminMenu}
                     open={adminMenuOpen}
                   >
-                    {adminNavItems.map((item) => (
+                    {currentAdminNavItems.map((item) => (
                       <MenuItem
                         key={item.href}
                         component={Link}
@@ -223,11 +235,25 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
                 </ToggleButtonGroup>
               </NoSsr>
 
-              {status === "authenticated" && session?.user ? (
+              {session?.user?.isSuperuser ? (
                 <Chip
                   label={sessionChipLabel}
-                  color={session.user.isSuperuser ? "primary" : "default"}
-                  variant={session.user.isSuperuser ? "filled" : "outlined"}
+                  color="primary"
+                  variant="filled"
+                  sx={{ display: { xs: "none", lg: "inline-flex" } }}
+                />
+              ) : session?.user?.role === "admin" ? (
+                <Chip
+                  label={sessionChipLabel}
+                  color="secondary"
+                  variant="outlined"
+                  sx={{ display: { xs: "none", lg: "inline-flex" } }}
+                />
+              ) : status === "authenticated" && session?.user ? (
+                <Chip
+                  label={sessionChipLabel}
+                  color="default"
+                  variant="outlined"
                   sx={{ display: { xs: "none", lg: "inline-flex" } }}
                 />
               ) : null}
@@ -293,14 +319,14 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
               );
             })}
 
-            {session?.user?.isSuperuser ? (
+            {hasAdminAccess ? (
               <>
                 <Divider sx={{ my: 0.5 }} />
                 <Stack spacing={1} sx={{ pl: 1 }}>
                   <Typography variant="body2" color="text.secondary">
                     관리자 메뉴
                   </Typography>
-                  {adminNavItems.map((item) => {
+                  {currentAdminNavItems.map((item) => {
                     const active = isActivePath(pathname, item.href);
 
                     return (

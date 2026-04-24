@@ -12,7 +12,7 @@ Apply the repository-wide guidance from ../copilot-instructions.md to every task
 
 - Do not ignore compiler warnings, lint warnings, runtime errors, failed checks, or failing tests.
 - Do not mark work as complete while known warnings or errors remain undocumented.
-- If a blocker cannot be resolved immediately, add it to TODO.md and HARNESS_MAP.md with the exact command, output summary, impact, and owner action.
+- If a blocker cannot be resolved immediately, add it to TODO.md and docs/PROJECT_MAP.md with the exact command, output summary, impact, and owner action.
 
 ## Validation Policy
 
@@ -29,12 +29,13 @@ Apply the repository-wide guidance from ../copilot-instructions.md to every task
 ## Living Documents
 
 - Keep TODO.md current with stage status and unresolved issues.
-- Keep HARNESS_MAP.md current with runnable commands, expected outputs, blockers, and environment assumptions.
+- Keep docs/PROJECT_MAP.md current with runnable commands, expected outputs, blockers, and environment assumptions. (HARNESS_MAP.md now redirects to this file.)
 - Keep skill references current when workflows or toolchains change.
 - Update instruction files when the repository adopts new conventions or removes old ones.
+- All sub-documents live under `/docs/`.
 
 ## Completion Rules
 
 - A task is not complete unless the relevant validation command has been run or explicitly blocked.
 - A task is not complete if warnings or errors were seen and not recorded.
-- A stage transition is not complete unless TODO.md and HARNESS_MAP.md reflect the new state.
+- A stage transition is not complete unless TODO.md and docs/PROJECT_MAP.md reflect the new state.

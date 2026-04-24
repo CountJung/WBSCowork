@@ -1,6 +1,7 @@
 export type UserRole = "admin" | "member" | "guest";
 
-export const manageableUserRoles = ["guest", "member"] as const;
+// 슈퍼관리자(env)가 직접 변경 가능한 역할 목록 (admin 포함)
+export const manageableUserRoles = ["guest", "member", "admin"] as const;
 
 export type ManageableUserRole = (typeof manageableUserRoles)[number];
 
@@ -31,6 +32,21 @@ export function getUserRoleLabel(role: UserRole, isSuperuser = false) {
 
 export function canWriteTaskContent(role: UserRole, isSuperuser = false) {
   return isSuperuser || role === "admin" || role === "member";
+}
+
+/**
+ * 관리자 패널 접근 권한: 슈퍼관리자 또는 관리자(admin) 역할
+ * DB 관리 및 사용자 관리는 슈퍼관리자 전용 (isSuperuser 직접 확인)
+ */
+export function canAccessAdminPanel(role: UserRole, isSuperuser = false) {
+  return isSuperuser || role === "admin";
+}
+
+/**
+ * 모든 제출물(비공개 포함) 조회 권한: 슈퍼관리자 또는 관리자(admin) 역할
+ */
+export function canManageAllSubmissions(role: UserRole, isSuperuser = false) {
+  return isSuperuser || role === "admin";
 }
 
 export type UserRow = {

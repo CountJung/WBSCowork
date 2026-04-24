@@ -2,6 +2,7 @@ import { Alert, Button, Chip, Container, Divider, List, ListItem, ListItemText, 
 import { redirect } from "next/navigation";
 import { getAuthSession, getSignInPath } from "@/lib/auth";
 import { listRecentLogFiles, listRecentUserActionEntries, readRecentLogEntries, type LogEntryWithFile } from "@/lib/logger";
+import { canAccessAdminPanel } from "@/models/user";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,7 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
     redirect(getSignInPath("/admin/logs"));
   }
 
-  if (!session.user.isSuperuser) {
+  if (!canAccessAdminPanel(session.user.role, session.user.isSuperuser)) {
     redirect("/");
   }
 

@@ -72,6 +72,7 @@ const createSchemaStatements = [
     task_id BIGINT NOT NULL,
     author_id BIGINT NOT NULL,
     content TEXT NOT NULL,
+    visibility ENUM('public', 'private') NOT NULL DEFAULT 'public',
     file_path VARCHAR(500) NULL,
     file_name VARCHAR(255) NULL,
     file_mime_type VARCHAR(255) NULL,
@@ -117,6 +118,7 @@ const requiredUsersColumns: ColumnDefinition[] = [
 ];
 
 const requiredSubmissionColumns: ColumnDefinition[] = [
+  { name: "visibility", definition: "visibility ENUM('public', 'private') NOT NULL DEFAULT 'public'" },
   { name: "file_name", definition: "file_name VARCHAR(255) NULL" },
   { name: "file_mime_type", definition: "file_mime_type VARCHAR(255) NULL" },
   { name: "file_size_bytes", definition: "file_size_bytes BIGINT NULL" },

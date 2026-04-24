@@ -12,6 +12,7 @@ import { createTask, deleteTask, updateTask } from "@/lib/repositories/task-repo
 import { getUserByEmail } from "@/lib/repositories/user-repository";
 import { deleteStoredSubmissionAttachment, saveUploadedSubmissionAttachment, type StoredSubmissionAttachment } from "@/lib/submission-files";
 import { canWriteTaskContent } from "@/models/user";
+import type { SubmissionVisibility } from "@/models/submission";
 
 function buildTasksPath(
   status: "success" | "error",
@@ -82,6 +83,10 @@ function assertValidDateRange(startDate: string, endDate: string) {
   if (startDate > endDate) {
     throw new Error("시작일은 종료일보다 늦을 수 없습니다.");
   }
+}
+
+function parseVisibility(value: FormDataEntryValue | null): SubmissionVisibility {
+  return getSingleValue(value) === "private" ? "private" : "public";
 }
 
 async function requireWritableSession(projectId?: number) {
@@ -487,6 +492,7 @@ export async function createSubmissionAction(formData: FormData) {
       taskId,
       authorId: user.id,
       content: getSingleValue(formData.get("content")),
+      visibility: parseVisibility(formData.get("visibility")),
       filePath: null,
       fileName: null,
       fileMimeType: null,
@@ -573,6 +579,7 @@ export async function updateSubmissionAction(formData: FormData) {
     const submission = await updateSubmission({
       id: submissionId,
       content: getSingleValue(formData.get("content")),
+      visibility: parseVisibility(formData.get("visibility")),
       replaceAttachment: clearAttachment,
       filePath: null,
       fileName: null,

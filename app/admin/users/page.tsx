@@ -100,6 +100,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   const superuserCount = users.filter((user) => isSuperuserEmail(user.email)).length;
   const googleLinkedCount = users.filter((user) => Boolean(user.googleId)).length;
   const loggedInCount = users.filter((user) => Boolean(user.lastLoginAt)).length;
+  const adminCount = users.filter((user) => user.role === "admin" && !isSuperuserEmail(user.email)).length;
   const memberCount = users.filter((user) => user.role === "member" && !isSuperuserEmail(user.email)).length;
   const guestCount = users.filter((user) => user.role === "guest").length;
 
@@ -128,13 +129,14 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
               env에 설정된 SUPERUSER_EMAIL 계정은 슈퍼관리자로 고정되며, 새 Google 로그인 사용자는 기본적으로 게스트로 등록됩니다. 로그인 시 Google 식별자, 프로필 이미지, 최근 로그인 시각도 함께 동기화합니다.
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              일반사용자는 업무 게시 읽기와 쓰기가 가능하고, 게스트는 읽기 전용입니다.
+              관리자(admin)는 관리자 메뉴(로그, 세팅 등)에 접근하고 모든 비공개 제출물을 확인할 수 있습니다. 일반사용자는 공개 제출물참조 및 작성 권한이 있으며, 게스트는 공개 제출물 읽기만 가능합니다.
             </Typography>
             <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
               <Chip label={`전체 사용자 ${users.length}`} color="primary" />
               <Chip label={`Google 연결 ${googleLinkedCount}`} color="info" />
               <Chip label={`로그인 기록 ${loggedInCount}`} color="info" variant="outlined" />
               <Chip label={`슈퍼관리자 ${superuserCount}`} color="secondary" />
+              <Chip label={`관리자 ${adminCount}`} color="warning" />
               <Chip label={`일반사용자 ${memberCount}`} color="success" />
               <Chip label={`게스트 ${guestCount}`} />
             </Stack>
@@ -147,11 +149,11 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
               const isSuperuser = isSuperuserEmail(user.email);
               const roleDescription = isSuperuser
                 ? "env 기반 슈퍼관리자 계정입니다. 관리자 전용 페이지와 시스템 설정에 접근할 수 있습니다."
-                : user.role === "member"
-                  ? "업무 게시 읽기와 쓰기가 가능한 일반사용자입니다."
-                  : user.role === "guest"
-                    ? "읽기 전용 게스트입니다."
-                    : "관리 권한이 있는 계정입니다.";
+                : user.role === "admin"
+                  ? "관리자 메뉴(DB 관리 제외)에 접근하고 모든 비공개 제출물을 확인할 수 있는 관리자입니다."
+                  : user.role === "member"
+                    ? "공개 제출물 읽기와 작성이 가능한 일반사용자입니다."
+                    : "공개 제출물만 읽을 수 있는 권한 대기 상태의 게스트입니다.";
 
               return (
                 <Paper key={user.id} elevation={0} sx={{ p: 3, borderRadius: 4 }}>
@@ -169,7 +171,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
                             <Chip
                               label={`현재 권한: ${getUserRoleLabel(user.role, isSuperuser)}`}
-                              color={isSuperuser ? "secondary" : user.role === "member" ? "success" : "default"}
+                              color={isSuperuser ? "secondary" : user.role === "admin" ? "warning" : user.role === "member" ? "success" : "default"}
                             />
                             <Chip label={`생성일: ${user.createdAt.toISOString().slice(0, 10)}`} variant="outlined" />
                           </Stack>
@@ -188,9 +190,9 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                         </Stack>
                       </Stack>
 
-                      {isSuperuser || user.role === "admin" ? (
+                      {isSuperuser ? (
                         <Alert severity="info" sx={{ alignSelf: { lg: "flex-start" } }}>
-                          이 계정은 관리자 예약 권한으로 분류되어 있어 이 화면에서 변경하지 않습니다.
+                          이 계정은 env 기반 슈퍼관리자로 고정되어 있어 이 화면에서 변경하지 않습니다.
                         </Alert>
                       ) : (
                         <Stack

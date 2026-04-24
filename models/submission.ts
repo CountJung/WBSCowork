@@ -1,3 +1,5 @@
+export type SubmissionVisibility = "public" | "private";
+
 export type SubmissionRow = {
   id: number;
   task_id: number;
@@ -5,6 +7,7 @@ export type SubmissionRow = {
   author_name: string;
   author_email: string;
   content: string;
+  visibility: SubmissionVisibility;
   file_path: string | null;
   file_name: string | null;
   file_mime_type: string | null;
@@ -19,6 +22,7 @@ export type Submission = {
   authorName: string;
   authorEmail: string;
   content: string;
+  visibility: SubmissionVisibility;
   filePath: string | null;
   fileName: string | null;
   fileMimeType: string | null;
@@ -34,6 +38,7 @@ export function mapSubmissionRow(row: SubmissionRow): Submission {
     authorName: row.author_name,
     authorEmail: row.author_email,
     content: row.content,
+    visibility: row.visibility ?? "public",
     filePath: row.file_path,
     fileName: row.file_name,
     fileMimeType: row.file_mime_type,

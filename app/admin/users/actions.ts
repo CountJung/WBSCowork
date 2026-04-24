@@ -35,7 +35,7 @@ export async function updateUserRoleAction(formData: FormData) {
   }
 
   if (!manageableUserRoles.includes(roleValue as ManageableUserRole)) {
-    redirect(buildRedirectPath("error", "변경 가능한 권한은 일반사용자 또는 게스트뿐입니다."));
+    redirect(buildRedirectPath("error", "변경 가능한 권한은 관리자, 일반사용자, 게스트뿐입니다."));
   }
 
   let redirectPath: string;

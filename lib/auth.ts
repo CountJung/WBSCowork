@@ -124,3 +124,21 @@ export async function requireSuperuserSession() {
 
   return session;
 }
+
+/**
+ * 관리자 패널 접근 허용 세션 확인 (슈퍼관리자 또는 admin 역할)
+ * DB 관리·사용자 관리는 isSuperuser 직접 확인
+ */
+export async function requireAdminPanelSession() {
+  const session = await getAuthSession();
+
+  if (!session?.user) {
+    return null;
+  }
+
+  if (session.user.isSuperuser || session.user.role === "admin") {
+    return session;
+  }
+
+  return null;
+}

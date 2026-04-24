@@ -42,4 +42,6 @@ Update it whenever stage scope, validation steps, or blocking issues change.
 - [x] Stage 5: Implement submission feature
 - [x] Stage 6: Implement comment feature
 - [x] Stage 7: Implement file upload flow
+- [x] Role system expansion: 4-tier (슈퍼관리자/관리자/일반사용자/게스트) + submission visibility (public/private)
+- [x] Document migration: HARNESS_MAP.md → docs/PROJECT_MAP.md, AGENTS.md rewrite
 - [ ] Stage 8: Prepare Synology NAS deployment

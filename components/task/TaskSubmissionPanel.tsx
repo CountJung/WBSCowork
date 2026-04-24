@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Button, Checkbox, Chip, Divider, FormControlLabel, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, Checkbox, Chip, Divider, FormControl, FormControlLabel, FormLabel, Paper, Radio, RadioGroup, Stack, TextField, Typography } from "@mui/material";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Comment } from "@/models/comment";
@@ -12,6 +12,7 @@ type ContentAction = (formData: FormData) => Promise<void>;
 
 type TaskSubmissionPanelProps = {
   canWrite: boolean;
+  canSeeAllSubmissions: boolean;
   commentsBySubmissionId: Record<number, Comment[]>;
   attachmentsBySubmissionId: Record<number, SubmissionAttachment[]>;
   createCommentAction: ContentAction;
@@ -197,8 +198,23 @@ function MarkdownContent({ content }: { content: string }) {
   );
 }
 
+function VisibilityRadio({ defaultValue = "public" }: { defaultValue?: string }) {
+  return (
+    <FormControl component="fieldset">
+      <FormLabel component="legend" sx={{ typography: "caption", mb: 0.5 }}>
+        공개 범위
+      </FormLabel>
+      <RadioGroup name="visibility" defaultValue={defaultValue} row>
+        <FormControlLabel value="public" control={<Radio size="small" />} label="공개" />
+        <FormControlLabel value="private" control={<Radio size="small" />} label="비공개 (본인 및 관리자만)" />
+      </RadioGroup>
+    </FormControl>
+  );
+}
+
 export default function TaskSubmissionPanel({
   canWrite,
+  canSeeAllSubmissions,
   commentsBySubmissionId,
   attachmentsBySubmissionId,
   createCommentAction,
@@ -266,9 +282,11 @@ export default function TaskSubmissionPanel({
             <Chip label={`제출 ${submissions.length}`} color="primary" variant="outlined" />
             <Chip label={`첨부 ${totalAttachmentCount}`} color="secondary" variant="outlined" />
             <Chip label={`댓글 ${totalCommentCount}`} variant="outlined" />
+            {canSeeAllSubmissions ? (
+              <Chip label="비공개 포함" color="warning" size="small" variant="outlined" />
+            ) : null}
           </Stack>
         </Stack>
-
         {submissions.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
             아직 등록된 제출물이 없습니다.
@@ -276,8 +294,8 @@ export default function TaskSubmissionPanel({
         ) : (
           <Stack spacing={2}>
             {submissions.map((submission) => {
-              const comments = commentsBySubmissionId[submission.id] ?? [];
               const attachments = attachmentsBySubmissionId[submission.id] ?? [];
+              const comments = commentsBySubmissionId[submission.id] ?? [];
 
               return (
                 <Paper
@@ -306,6 +324,12 @@ export default function TaskSubmissionPanel({
                           {submission.authorEmail} · {formatDateTime(submission.createdAt)}
                         </Typography>
                       </Stack>
+                      <Chip
+                        label={submission.visibility === "private" ? "비공개" : "공개"}
+                        color={submission.visibility === "private" ? "warning" : "success"}
+                        size="small"
+                        variant="outlined"
+                      />
                     </Stack>
 
                     <MarkdownContent content={submission.content} />
@@ -528,6 +552,7 @@ export default function TaskSubmissionPanel({
                 helperText="Markdown과 체크리스트, 코드 블록, 링크를 사용할 수 있습니다."
                 required
               />
+              <VisibilityRadio defaultValue="public" />
               <AttachmentInput helperText="문서, 이미지, 압축파일 등 여러 파일을 동시에 선택할 수 있습니다." />
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
                 <Button type="submit" variant="contained">

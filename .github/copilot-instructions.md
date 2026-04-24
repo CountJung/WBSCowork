@@ -29,9 +29,10 @@
 
 ## Living Artifacts
 
-- Keep TODO.md, HARNESS_MAP.md, .github/copilot-instructions.md, and .github/skills/ alive at all times.
+- Keep TODO.md, docs/PROJECT_MAP.md, .github/copilot-instructions.md, and .github/skills/ alive at all times.
 - Update these files whenever project structure, workflow, validation commands, or stage status changes.
 - Treat these files as operational documents, not one-time setup output.
+- All sub-documents live under `/docs/`. HARNESS_MAP.md now redirects to docs/PROJECT_MAP.md.
 
 ## Repository Shape
 

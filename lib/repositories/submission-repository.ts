@@ -1,12 +1,24 @@
 import { getDatabasePool } from "@/lib/db";
 import { getTaskById } from "@/lib/repositories/task-repository";
 import { getUserById } from "@/lib/repositories/user-repository";
-import { mapSubmissionRow, type Submission, type SubmissionRow } from "@/models/submission";
+import { mapSubmissionRow, type Submission, type SubmissionRow, type SubmissionVisibility } from "@/models/submission";
+
+/**
+ * 제출물 목록 조회 시 역할별 공개 범위 필터 옵션
+ * - canSeeAll=true (슈퍼관리자/관리자): 모든 제출물
+ * - canSeeAll=false, viewerUserId 있음: 공개 제출물 + 본인 비공개 제출물
+ * - canSeeAll=false, viewerUserId 없음: 공개 제출물만
+ */
+export type SubmissionVisibilityFilter = {
+  canSeeAll: boolean;
+  viewerUserId?: number | null;
+};
 
 export type CreateSubmissionInput = {
   taskId: number;
   authorId: number;
   content: string;
+  visibility?: SubmissionVisibility;
   filePath?: string | null;
   fileName?: string | null;
   fileMimeType?: string | null;
@@ -16,6 +28,7 @@ export type CreateSubmissionInput = {
 export type UpdateSubmissionInput = {
   id: number;
   content: string;
+  visibility?: SubmissionVisibility;
   filePath?: string | null;
   fileName?: string | null;
   fileMimeType?: string | null;
@@ -53,20 +66,24 @@ async function ensureAuthorExists(authorId: number) {
   return author;
 }
 
-export async function getSubmissionById(id: number): Promise<Submission | null> {
-  const rows = (await getDatabasePool().query(
-    `SELECT
+const submissionSelectColumns = `
       submissions.id,
       submissions.task_id,
       submissions.author_id,
       users.name AS author_name,
       users.email AS author_email,
       submissions.content,
+      COALESCE(submissions.visibility, 'public') AS visibility,
       submissions.file_path,
       submissions.file_name,
       submissions.file_mime_type,
       submissions.file_size_bytes,
-      submissions.created_at
+      submissions.created_at`;
+
+export async function getSubmissionById(id: number): Promise<Submission | null> {
+  const rows = (await getDatabasePool().query(
+    `SELECT
+      ${submissionSelectColumns}
     FROM submissions
     INNER JOIN users ON users.id = submissions.author_id
     WHERE submissions.id = ?
@@ -79,50 +96,53 @@ export async function getSubmissionById(id: number): Promise<Submission | null> 
   return row ? mapSubmissionRow(row) : null;
 }
 
-export async function listSubmissionsByProject(projectId: number): Promise<Submission[]> {
+function buildVisibilityWhere(filter: SubmissionVisibilityFilter): { clause: string; params: unknown[] } {
+  if (filter.canSeeAll) {
+    return { clause: "", params: [] };
+  }
+
+  if (filter.viewerUserId) {
+    return {
+      clause: "AND (submissions.visibility = 'public' OR submissions.author_id = ?)",
+      params: [filter.viewerUserId],
+    };
+  }
+
+  return { clause: "AND submissions.visibility = 'public'", params: [] };
+}
+
+export async function listSubmissionsByProject(
+  projectId: number,
+  filter: SubmissionVisibilityFilter = { canSeeAll: true },
+): Promise<Submission[]> {
+  const { clause, params } = buildVisibilityWhere(filter);
   const rows = (await getDatabasePool().query(
     `SELECT
-      submissions.id,
-      submissions.task_id,
-      submissions.author_id,
-      users.name AS author_name,
-      users.email AS author_email,
-      submissions.content,
-      submissions.file_path,
-      submissions.file_name,
-      submissions.file_mime_type,
-      submissions.file_size_bytes,
-      submissions.created_at
+      ${submissionSelectColumns}
     FROM submissions
     INNER JOIN tasks ON tasks.id = submissions.task_id
     INNER JOIN users ON users.id = submissions.author_id
-    WHERE tasks.project_id = ?
+    WHERE tasks.project_id = ? ${clause}
     ORDER BY submissions.created_at DESC, submissions.id DESC`,
-    [projectId],
+    [projectId, ...params],
   )) as SubmissionRow[];
 
   return rows.map(mapSubmissionRow);
 }
 
-export async function listSubmissionsByTask(taskId: number): Promise<Submission[]> {
+export async function listSubmissionsByTask(
+  taskId: number,
+  filter: SubmissionVisibilityFilter = { canSeeAll: true },
+): Promise<Submission[]> {
+  const { clause, params } = buildVisibilityWhere(filter);
   const rows = (await getDatabasePool().query(
     `SELECT
-      submissions.id,
-      submissions.task_id,
-      submissions.author_id,
-      users.name AS author_name,
-      users.email AS author_email,
-      submissions.content,
-      submissions.file_path,
-      submissions.file_name,
-      submissions.file_mime_type,
-      submissions.file_size_bytes,
-      submissions.created_at
+      ${submissionSelectColumns}
     FROM submissions
     INNER JOIN users ON users.id = submissions.author_id
-    WHERE submissions.task_id = ?
+    WHERE submissions.task_id = ? ${clause}
     ORDER BY submissions.created_at DESC, submissions.id DESC`,
-    [taskId],
+    [taskId, ...params],
   )) as SubmissionRow[];
 
   return rows.map(mapSubmissionRow);
@@ -136,15 +156,17 @@ export async function createSubmission(input: CreateSubmissionInput): Promise<Su
       task_id,
       author_id,
       content,
+      visibility,
       file_path,
       file_name,
       file_mime_type,
       file_size_bytes
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.taskId,
       input.authorId,
       normalizeContent(input.content),
+      input.visibility ?? "public",
       input.filePath ?? null,
       input.fileName ?? null,
       input.fileMimeType ?? null,
@@ -175,11 +197,13 @@ export async function updateSubmission(input: UpdateSubmissionInput): Promise<Su
   const nextFileMimeType = input.replaceAttachment ? input.fileMimeType ?? null : existingSubmission.fileMimeType;
   const nextFileSizeBytes = input.replaceAttachment ? input.fileSizeBytes ?? null : existingSubmission.fileSizeBytes;
 
+  const nextVisibility: SubmissionVisibility = input.visibility ?? existingSubmission.visibility ?? "public";
+
   await getDatabasePool().query(
     `UPDATE submissions
-     SET content = ?, file_path = ?, file_name = ?, file_mime_type = ?, file_size_bytes = ?
+     SET content = ?, visibility = ?, file_path = ?, file_name = ?, file_mime_type = ?, file_size_bytes = ?
      WHERE id = ?`,
-    [normalizeContent(input.content), nextFilePath, nextFileName, nextFileMimeType, nextFileSizeBytes, input.id],
+    [normalizeContent(input.content), nextVisibility, nextFilePath, nextFileName, nextFileMimeType, nextFileSizeBytes, input.id],
   );
 
   const updatedSubmission = await getSubmissionById(input.id);

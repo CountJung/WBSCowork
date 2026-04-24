@@ -28,7 +28,7 @@ import type { Project } from "@/models/project";
 import type { SubmissionAttachment } from "@/models/submission-attachment";
 import type { Submission } from "@/models/submission";
 import type { Task } from "@/models/task";
-import { canWriteTaskContent, getUserRoleLabel } from "@/models/user";
+import { canWriteTaskContent, getUserRoleLabel, canManageAllSubmissions } from "@/models/user";
 import {
   createCommentAction,
   createProjectAction,
@@ -175,6 +175,7 @@ function TaskCreateForm({
 
 function TaskList({
   canWrite,
+  canSeeAllSubmissions,
   commentsBySubmissionId,
   attachmentsBySubmissionId,
   orderedTasks,
@@ -184,6 +185,7 @@ function TaskList({
   users,
 }: {
   canWrite: boolean;
+  canSeeAllSubmissions: boolean;
   commentsBySubmissionId: Record<number, Comment[]>;
   attachmentsBySubmissionId: Record<number, SubmissionAttachment[]>;
   orderedTasks: Task[];
@@ -294,6 +296,7 @@ function TaskList({
 
             <TaskSubmissionPanel
               canWrite={canWrite}
+              canSeeAllSubmissions={canSeeAllSubmissions}
               commentsBySubmissionId={commentsBySubmissionId}
               attachmentsBySubmissionId={attachmentsBySubmissionId}
               createCommentAction={createCommentAction}
@@ -325,6 +328,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   const runtimeEnv = getRuntimeEnv();
   const canWrite = canWriteTaskContent(session.user.role, session.user.isSuperuser);
+  const canSeeAllSubmissions = canManageAllSubmissions(session.user.role, session.user.isSuperuser);
   const params = await searchParams;
   const feedbackStatus = getSingleSearchParam(params.status);
   const feedbackMessage = getSingleSearchParam(params.message);
@@ -373,10 +377,21 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   const [projects, users] = await Promise.all([listAllProjects(), listAllUsers()]);
   const selectedProject = getSelectedProject(projects, projectIdParam);
+
+  // 사용자 DB ID 조회 (visibility 필터링에 필요)
+  const { getUserByEmail } = await import("@/lib/repositories/user-repository");
+  const currentDbUser = session.user.email ? await getUserByEmail(session.user.email).catch(() => null) : null;
+  const currentDbUserId = currentDbUser?.id ?? null;
+
+  const visibilityFilter = {
+    canSeeAll: canSeeAllSubmissions,
+    viewerUserId: currentDbUserId,
+  };
+
   const [tasks, submissions, comments, attachments] = selectedProject
     ? await Promise.all([
         listTasksByProject(selectedProject.id),
-        listSubmissionsByProject(selectedProject.id),
+        listSubmissionsByProject(selectedProject.id, visibilityFilter),
         listCommentsByProject(selectedProject.id),
         listAttachmentsByProject(selectedProject.id).catch(() => [] as Awaited<ReturnType<typeof listAttachmentsByProject>>),
       ])
@@ -483,6 +498,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         {selectedProject ? (
           <TaskList
             canWrite={canWrite}
+            canSeeAllSubmissions={canSeeAllSubmissions}
             commentsBySubmissionId={commentsBySubmissionId}
             attachmentsBySubmissionId={attachmentsBySubmissionId}
             orderedTasks={orderedTasks}

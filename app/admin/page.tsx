@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getAdminOverview } from "@/lib/admin-overview";
 import { getAuthSession, getSignInPath } from "@/lib/auth";
 import { getRuntimeEnv } from "@/lib/env";
+import { canAccessAdminPanel } from "@/models/user";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function AdminPage() {
     redirect(getSignInPath("/admin"));
   }
 
-  if (!session.user.isSuperuser) {
+  if (!canAccessAdminPanel(session.user.role, session.user.isSuperuser)) {
     redirect("/");
   }
 

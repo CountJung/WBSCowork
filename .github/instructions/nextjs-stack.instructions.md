@@ -53,4 +53,12 @@ Apply the repository-wide guidance from ../copilot-instructions.md to all applic
 
 - Run lint on touched changes.
 - Run production build checks before closing a stage milestone.
-- Treat framework warnings as follow-up work only if they are documented in TODO.md and HARNESS_MAP.md.
+- Treat framework warnings as follow-up work only if they are documented in TODO.md and docs/PROJECT_MAP.md.
+
+## Role and Visibility Rules
+
+- Use `canAccessAdminPanel(role, isSuperuser)` from `models/user.ts` to guard all admin pages except `/admin/database` and `/admin/users`.
+- Use `canManageAllSubmissions(role, isSuperuser)` to determine if a user can see private submissions.
+- Pass `SubmissionVisibilityFilter` from `lib/repositories/submission-repository.ts` when listing submissions.
+- `/admin/database` and `/admin/users` remain superuser-only (`isSuperuser` check).
+- All sub-documents live under `/docs/`. Reference `docs/PROJECT_MAP.md` instead of `HARNESS_MAP.md`.
