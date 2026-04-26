@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WBSCowork 사용설명서</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html {
+            background: #ffffff;
+        }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+        }
+        .slide {
+            width: 720pt;
+            height: 405pt;
+            margin: 0;
+            padding: 0;
+            display: none;
+        }
+        .slide.active {
+            display: flex;
+        }
+        
+        /* Teal & Coral Theme */
+        .teal-dark { color: #277884; }
+        .teal { color: #5EA8A7; }
+        .coral { color: #FE4447; }
+        
+        .bg-teal-dark { background: #277884; }
+        .bg-teal { background: #5EA8A7; }
+        .bg-coral { background: #FE4447; }
+        .bg-white { background: #FFFFFF; }
+        .bg-light { background: #f5f5f5; }
+        
+        /* Slide Layouts */
+        .slide {
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        
+        .slide-header {
+            background: linear-gradient(135deg, #277884 0%, #5EA8A7 100%);
+            color: white;
+            padding: 30pt;
+            border-bottom: 4pt solid #FE4447;
+        }
+        
+        .slide-title {
+            font-size: 44pt;
+            font-weight: bold;
+            margin-bottom: 10pt;
+        }
+        
+        .slide-subtitle {
+            font-size: 20pt;
+            opacity: 0.95;
+        }
+        
+        .slide-content {
+            padding: 40pt;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        
+        .content-full {
+            flex-direction: column;
+        }
+        
+        .content-two-col {
+            flex-direction: row;
+            gap: 30pt;
+        }
+        
+        .col {
+            flex: 1;
+        }
+        
+        h1 {
+            font-size: 36pt;
+            color: #277884;
+            margin-bottom: 20pt;
+            font-weight: bold;
+        }
+        
+        h2 {
+            font-size: 28pt;
+            color: #5EA8A7;
+            margin-bottom: 15pt;
+            margin-top: 15pt;
+            font-weight: bold;
+        }
+        
+        h3 {
+            font-size: 22pt;
+            color: #277884;
+            margin-top: 12pt;
+            margin-bottom: 8pt;
+            font-weight: bold;
+        }
+        
+        p {
+            font-size: 16pt;
+            color: #333;
+            margin-bottom: 12pt;
+            line-height: 1.5;
+        }
+        
+        ul, ol {
+            margin-left: 30pt;
+            margin-bottom: 15pt;
+        }
+        
+        li {
+            font-size: 16pt;
+            color: #333;
+            margin-bottom: 8pt;
+            line-height: 1.4;
+        }
+        
+        .accent {
+            color: #FE4447;
+            font-weight: bold;
+        }
+        
+        .highlight-box {
+            background: #f0f8f8;
+            border-left: 5pt solid #FE4447;
+            padding: 15pt;
+            margin: 15pt 0;
+            font-size: 15pt;
+            line-height: 1.5;
+        }
+        
+        .feature-box {
+            background: #ffffff;
+            border: 2pt solid #5EA8A7;
+            border-radius: 8pt;
+            padding: 15pt;
+            margin: 10pt 0;
+            font-size: 14pt;
+        }
+        
+        .footer {
+            text-align: center;
+            font-size: 12pt;
+            color: #999;
+            margin-top: 20pt;
+            padding-top: 15pt;
+            border-top: 1pt solid #ddd;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            background: #277884;
+            color: white;
+            padding: 5pt 10pt;
+            border-radius: 4pt;
+            font-size: 12pt;
+            font-weight: bold;
+            margin-right: 8pt;
+        }
+        
+        .step-number {
+            display: inline-block;
+            background: #FE4447;
+            color: white;
+            width: 32pt;
+            height: 32pt;
+            text-align: center;
+            line-height: 32pt;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 10pt;
+            font-size: 16pt;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Slide 1: Title Slide -->
+<div class="slide active">
+    <div class="slide-header">
+        <div class="slide-title">WBSCowork</div>
+        <div class="slide-subtitle">태스크 기반 산출물 협업 시스템</div>
+    </div>
+    <div class="slide-content content-full">
+        <h2 style="margin-top: 60pt; color: #5EA8A7;">사용설명서</h2>
+        <p style="margin-top: 40pt; font-size: 18pt;">Next.js + TypeScript 기반 WBS/간트 협업 플랫폼</p>
+        <p style="color: #999; font-size: 14pt; margin-top: 80pt;">완벽한 프로젝트 관리와 팀 협업을 위한 종합 가이드</p>
+    </div>
+</div>
+
+<!-- Slide 2: 핵심 개념 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">핵심 개념</div>
+        <div class="slide-subtitle">WBSCowork의 기본 원칙</div>
+    </div>
+    <div class="slide-content content-full">
+        <div class="highlight-box">
+            <strong>WBSCowork는 게시판이 아닙니다. 일반 협업툴이 아닙니다.</strong><br>
+            <strong class="accent">→ 태스크 기반 산출물 관리 시스템</strong>
+        </div>
+        <h3>세 가지 핵심 기능</h3>
+        <ul>
+            <li><strong>WBS/간트 기반 업무 관리</strong> — 주간 업무를 시각적으로 계획하고 추적</li>
+            <li><strong>태스크 단위 산출물 제출</strong> — 각 태스크에 결과물을 체계적으로 등록</li>
+            <li><strong>팀원 간 피드백 & 협업</strong> — 댓글을 통한 실시간 협업 및 피드백</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Slide 3: 기술 스택 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">기술 스택</div>
+        <div class="slide-subtitle">WBSCowork를 구성하는 기술들</div>
+    </div>
+    <div class="slide-content content-two-col">
+        <div class="col">
+            <h3>프론트엔드</h3>
+            <ul>
+                <li>Next.js 16 App Router</li>
+                <li>TypeScript</li>
+                <li>React</li>
+                <li>MUI (Material UI)</li>
+            </ul>
+        </div>
+        <div class="col">
+            <h3>백엔드 & 데이터</h3>
+            <ul>
+                <li>Node.js</li>
+                <li>MariaDB</li>
+                <li>NextAuth v4</li>
+                <li>TanStack Query</li>
+            </ul>
+        </div>
+    </div>
+    <div class="slide-content" style="padding-top: 0;">
+        <h3>차트 & 시각화</h3>
+        <ul>
+            <li>frappe-gantt (간트 차트)</li>
+            <li>Google OAuth (인증)</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Slide 4: 역할 시스템 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">역할 시스템</div>
+        <div class="slide-subtitle">네 가지 사용자 역할</div>
+    </div>
+    <div class="slide-content content-full">
+        <div class="feature-box">
+            <span class="role-badge">슈퍼관리자</span> (isSuperuser)<br>
+            <strong class="accent">모든 권한:</strong> DB 관리, 환경설정, 사용자 관리, 모든 제출물 조회
+        </div>
+        <div class="feature-box">
+            <span class="role-badge">관리자</span> (role: admin)<br>
+            <strong class="accent">관리 권한:</strong> /admin, /admin/users 접근 가능, 모든 제출물 조회, 일반사용자/게스트 권한 부여
+        </div>
+        <div class="feature-box">
+            <span class="role-badge">일반사용자</span> (role: member)<br>
+            <strong class="accent">편집 권한:</strong> 태스크/제출물/댓글 CRUD, 공개 제출물 + 본인 비공개 제출물 조회
+        </div>
+        <div class="feature-box">
+            <span class="role-badge">게스트</span> (role: guest)<br>
+            <strong class="accent">읽기 권한:</strong> 공개 제출물만 조회 가능, 권한 승급 대기 중
+        </div>
+    </div>
+</div>
+
+<!-- Slide 5: 제출물 공개 범위 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">제출물 공개 범위</div>
+        <div class="slide-subtitle">visibility 설정으로 접근 제어</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>공개 (public)</h3>
+        <p>모든 인증 사용자가 조회 가능</p>
+        <ul>
+            <li>팀 전체와 공유할 제출물</li>
+            <li>프로젝트 진행 상황 공개</li>
+        </ul>
+        
+        <h3>비공개 (private)</h3>
+        <p>제한된 사용자만 조회 가능:</p>
+        <ul>
+            <li><strong>작성자</strong> (본인)</li>
+            <li><strong>관리자</strong> (admin 역할)</li>
+            <li><strong>슈퍼관리자</strong> (isSuperuser)</li>
+        </ul>
+        
+        <div class="highlight-box">
+            <strong>💡 팁:</strong> 민감한 정보나 개인 피드백은 비공개로 설정하세요.
+        </div>
+    </div>
+</div>
+
+<!-- Slide 6: 메인 화면 — 홈 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">메인 화면</div>
+        <div class="slide-subtitle">홈 (/) 의 구성</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>상단: 프로젝트 선택</h3>
+        <p>현재 진행 중인 프로젝트를 선택하여 모든 업무 관리</p>
+        
+        <h3>중앙: Gantt 타임라인</h3>
+        <p>선택한 프로젝트의 모든 태스크를 간트 차트로 시각화</p>
+        <ul>
+            <li>시작일과 종료일이 명확하게 표시됨</li>
+            <li>태스크 간의 의존성 관계를 한눈에 파악</li>
+            <li>진행 상황을 동적으로 업데이트</li>
+        </ul>
+        
+        <h3>하단: 태스크 목록</h3>
+        <p>현재 프로젝트의 모든 태스크를 리스트로 표시</p>
+        <ul>
+            <li>각 태스크의 산출물 수 표시</li>
+            <li>진행 상태 확인</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Slide 7: 태스크 관리 1 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">태스크 관리 (1/2)</div>
+        <div class="slide-subtitle">태스크 생성 및 편집</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>새 태스크 생성</h3>
+        <ul>
+            <li><span class="step-number">1</span>홈 화면의 "새 태스크" 버튼 클릭</li>
+            <li><span class="step-number">2</span>태스크 제목, 설명, 날짜 입력</li>
+            <li><span class="step-number">3</span>상위 태스크 지정 (선택)</li>
+            <li><span class="step-number">4</span>저장</li>
+        </ul>
+        
+        <h3>태스크 수정</h3>
+        <p>Gantt 차트에서 태스크를 클릭하거나 리스트에서 선택 후 편집</p>
+        
+        <h3>진행 상태 추적</h3>
+        <p class="accent">각 태스크의 시작일, 종료일, 산출물 등을 한 곳에서 관리</p>
+    </div>
+</div>
+
+<!-- Slide 8: 태스크 관리 2 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">태스크 관리 (2/2)</div>
+        <div class="slide-subtitle">태스크 상세 보기</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>태스크 상세 화면</h3>
+        <p>각 태스크를 클릭하면 상세 정보와 산출물을 확인할 수 있습니다.</p>
+        
+        <h3>상세 화면의 구성</h3>
+        <ul>
+            <li><strong>기본 정보:</strong> 제목, 설명, 시작일, 종료일</li>
+            <li><strong>산출물 섹션:</strong> 해당 태스크에 제출된 모든 산출물</li>
+            <li><strong>댓글 섹션:</strong> 팀원들과의 피드백 및 협업</li>
+            <li><strong>편집 버튼:</strong> 권한이 있으면 편집 가능</li>
+        </ul>
+        
+        <div class="highlight-box">
+            <strong>✨ 포커스 모드:</strong> 태스크를 열면 해당 태스크가 Gantt에서 강조되어 집중할 수 있습니다.
+        </div>
+    </div>
+</div>
+
+<!-- Slide 9: 산출물 제출 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">산출물 제출</div>
+        <div class="slide-subtitle">태스크에 결과물 등록하기</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>산출물 제출 방법</h3>
+        <ul>
+            <li><span class="step-number">1</span>태스크를 열고 "산출물 추가" 클릭</li>
+            <li><span class="step-number">2</span>제목, 내용, 공개 범위 설정</li>
+            <li><span class="step-number">3</span>파일 첨부 (선택)</li>
+            <li><span class="step-number">4</span>제출</li>
+        </ul>
+        
+        <h3>공개 범위 설정</h3>
+        <div class="feature-box">
+            <strong>공개:</strong> 모든 인증 사용자가 조회 가능<br>
+            <strong>비공개:</strong> 작성자, 관리자, 슈퍼관리자만 조회 가능
+        </div>
+        
+        <p class="accent">💡 팀과 공유할 정보는 공개로, 개인 피드백은 비공개로 설정하세요.</p>
+    </div>
+</div>
+
+<!-- Slide 10: 파일 첨부 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">파일 첨부</div>
+        <div class="slide-subtitle">산출물에 파일 추가하기</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>파일 첨부 방법</h3>
+        <ul>
+            <li>산출물 제출 시 파일 업로드 섹션에서 파일 선택</li>
+            <li>여러 파일 동시 업로드 가능</li>
+        </ul>
+        
+        <h3>지원 파일 타입</h3>
+        <p>모든 일반적인 파일 형식 지원:</p>
+        <ul>
+            <li>문서: PDF, Word, Excel 등</li>
+            <li>이미지: JPG, PNG, GIF 등</li>
+            <li>기타: ZIP, 비디오 등 모든 형식</li>
+        </ul>
+        
+        <h3>파일 크기 제한</h3>
+        <p>시스템 설정에 따라 최대 파일 크기가 결정됩니다.</p>
+        
+        <div class="highlight-box">
+            <strong>✓ 파일 관리:</strong> 업로드된 파일은 서버에 안전하게 저장되며 언제든 다운로드할 수 있습니다.
+        </div>
+    </div>
+</div>
+
+<!-- Slide 11: 댓글 및 협업 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">댓글 및 협업</div>
+        <div class="slide-subtitle">팀원과 실시간으로 소통하기</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>댓글 달기</h3>
+        <ul>
+            <li>산출물 또는 태스크 하단의 댓글 섹션에 입력</li>
+            <li>텍스트 기반 피드백으로 빠른 협업</li>
+            <li>모든 댓글은 타임스탬프와 함께 기록됨</li>
+        </ul>
+        
+        <h3>협업의 장점</h3>
+        <ul>
+            <li><strong>실시간 피드백:</strong> 팀원들이 즉시 반응</li>
+            <li><strong>컨텍스트 보존:</strong> 태스크/산출물과 함께 논의 기록</li>
+            <li><strong>역할별 접근:</strong> 공개/비공개 댓글 구분</li>
+        </ul>
+        
+        <div class="highlight-box">
+            <strong>💬 권장:</strong> 긍정적이고 건설적인 피드백으로 팀 분위기를 좋게 유지하세요.
+        </div>
+    </div>
+</div>
+
+<!-- Slide 12: 관리자 패널 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">관리자 패널</div>
+        <div class="slide-subtitle">/admin 대시보드 안내</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>관리자 패널 접근</h3>
+        <div class="feature-box">
+            <span class="role-badge">슈퍼관리자</span> 모든 관리 기능 접근 가능<br>
+            <span class="role-badge">관리자</span> /admin (개요), /admin/users 만 접근 가능
+        </div>
+        
+        <h3>주요 기능 (슈퍼관리자 전용)</h3>
+        <ul>
+            <li><strong>/admin/database:</strong> DB 테이블 생성 및 초기화</li>
+            <li><strong>/admin/logs:</strong> 시스템 로그 조회 및 분석</li>
+            <li><strong>/admin/settings:</strong> 환경변수 편집</li>
+        </ul>
+        
+        <h3>사용자 관리 (관리자 + 슈퍼관리자)</h3>
+        <p>/admin/users 에서 사용자 역할 변경 가능 (guest ↔ member)</p>
+    </div>
+</div>
+
+<!-- Slide 13: 데이터베이스 관리 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">데이터베이스 관리</div>
+        <div class="slide-subtitle">슈퍼관리자의 DB 설정</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>초기 설정 (슈퍼관리자 전용)</h3>
+        <p>/admin/database 에서:</p>
+        <ul>
+            <li><strong>DB 연결 확인:</strong> MariaDB 연결 상태 점검</li>
+            <li><strong>테이블 생성:</strong> 필요한 모든 테이블 자동 생성</li>
+            <li><strong>초기 데이터:</strong> 시스템 기본 프로젝트 생성</li>
+        </ul>
+        
+        <h3>주요 테이블</h3>
+        <div class="feature-box">
+            <strong>users:</strong> 사용자 계정 정보<br>
+            <strong>projects:</strong> 프로젝트<br>
+            <strong>tasks:</strong> 태스크<br>
+            <strong>submissions:</strong> 산출물<br>
+            <strong>comments:</strong> 댓글
+        </div>
+    </div>
+</div>
+
+<!-- Slide 14: 로깅 및 모니터링 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">로깅 및 모니터링</div>
+        <div class="slide-subtitle">시스템 상태 확인</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>로그 조회 (/admin/logs)</h3>
+        <p>슈퍼관리자만 접근 가능</p>
+        <ul>
+            <li><strong>구조화 로그:</strong> JSON 형식의 상세한 시스템 로그</li>
+            <li><strong>파일 로그:</strong> 서버 시작 이후의 모든 로그 기록</li>
+            <li><strong>실시간 추적:</strong> 최신 로그를 계속 업데이트</li>
+        </ul>
+        
+        <h3>로그 저장 위치</h3>
+        <p>/logs 디렉터리에 날짜별로 롤링 저장</p>
+        
+        <h3>모니터링 요점</h3>
+        <ul>
+            <li>에러 발생 시 즉시 확인</li>
+            <li>사용자 행동 추적 (감사)</li>
+            <li>성능 병목 지점 파악</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Slide 15: 환경 설정 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">환경 설정</div>
+        <div class="slide-subtitle">/admin/settings 관리</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>편집 가능한 설정 (슈퍼관리자 전용)</h3>
+        <div class="feature-box">
+            <strong>Google OAuth:</strong> GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET<br>
+            <strong>인증:</strong> NEXTAUTH_URL, NEXTAUTH_SECRET<br>
+            <strong>MariaDB:</strong> DB_HOST, DB_PORT, DB_NAME 등<br>
+            <strong>파일 업로드:</strong> UPLOAD_MAX_FILE_SIZE_MB, UPLOAD_DIR<br>
+            <strong>로깅:</strong> LOG_DIR, LOG_RETENTION_DAYS
+        </div>
+        
+        <h3>주의사항</h3>
+        <ul>
+            <li>.env 파일은 시스템 시작 시 읽음</li>
+            <li>민감한 정보 (비밀키)는 안전하게 관리</li>
+            <li>변경 후 서버 재시작 필요 (일부 설정)</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Slide 16: 권한 관리 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">권한 관리</div>
+        <div class="slide-subtitle">사용자 역할 및 접근 제어</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>권한 변경 절차</h3>
+        <ul>
+            <li><span class="step-number">1</span>/admin/users 로 이동</li>
+            <li><span class="step-number">2</span>사용자 선택</li>
+            <li><span class="step-number">3</span>새 역할 선택 (guest/member/admin)</li>
+            <li><span class="step-number">4</span>저장</li>
+        </ul>
+        
+        <h3>역할 업그레이드 규칙</h3>
+        <ul>
+            <li><strong>관리자:</strong> guest/member 만 부여 가능 (슈퍼관리자만 admin 부여)</li>
+            <li><strong>슈퍼관리자:</strong> 환경변수에 지정된 이메일만 해당</li>
+            <li><strong>SUPERUSER_EMAIL 예약:</strong> 해당 계정은 항상 슈퍼관리자</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Slide 17: 팁 및 모범 사례 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">팁 및 모범 사례</div>
+        <div class="slide-subtitle">효율적인 사용을 위한 조언</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>태스크 작성 팁</h3>
+        <ul>
+            <li>명확한 제목과 설명으로 의도를 분명히 하기</li>
+            <li>적절한 시간 범위 설정 (너무 길거나 짧지 않게)</li>
+            <li>상위-하위 태스크 계층 구조로 복잡한 프로젝트 정리</li>
+        </ul>
+        
+        <h3>협업 모범 사례</h3>
+        <ul>
+            <li>산출물에는 명확한 제목과 설명 작성</li>
+            <li>파일 첨부 시 버전 명시 (예: v1.0, Draft_2 등)</li>
+            <li>댓글은 건설적이고 구체적으로 작성</li>
+            <li>중요한 결정은 주석으로 기록</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Slide 18: 팁 및 모범 사례 (계속) -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">팁 및 모범 사례 (2/2)</div>
+        <div class="slide-subtitle">추가 조언</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>Gantt 차트 활용</h3>
+        <ul>
+            <li>차트를 자주 업데이트하여 진행 상황 반영</li>
+            <li>진행 상황이 변경되면 즉시 태스크 날짜 수정</li>
+            <li>지연된 태스크는 팀에 공지</li>
+        </ul>
+        
+        <h3>보안 및 개인정보</h3>
+        <ul>
+            <li>민감한 정보는 비공개 산출물로 제출</li>
+            <li>로그인 비밀번호는 절대 공유하지 말기</li>
+            <li>파일 첨부 시 불필요한 개인정보 제거</li>
+        </ul>
+        
+        <h3>성능 최적화</h3>
+        <ul>
+            <li>대용량 파일은 압축 후 업로드</li>
+            <li>오래된 완료 태스크는 보관 처리</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Slide 19: 자주 묻는 질문 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">자주 묻는 질문</div>
+        <div class="slide-subtitle">FAQ</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>Q. 산출물을 어떻게 삭제하나요?</h3>
+        <p>산출물 작성자와 관리자만 삭제 가능합니다. 산출물 상세 화면에서 삭제 버튼을 클릭하세요.</p>
+        
+        <h3>Q. 공개 산출물을 비공개로 변경할 수 있나요?</h3>
+        <p>네, 작성자는 산출물 공개 범위를 언제든지 변경할 수 있습니다.</p>
+        
+        <h3>Q. 태스크 순서를 변경할 수 있나요?</h3>
+        <p>네, Gantt 차트에서 태스크를 드래그하여 시간 범위를 조정할 수 있습니다.</p>
+        
+        <h3>Q. 파일을 다시 다운로드할 수 있나요?</h3>
+        <p>네, 모든 첨부 파일은 언제든지 다운로드할 수 있습니다.</p>
+    </div>
+</div>
+
+<!-- Slide 20: 연락처 및 지원 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">연락처 및 지원</div>
+        <div class="slide-subtitle">문제 해결 가이드</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>문제 발생 시</h3>
+        <ul>
+            <li><strong>로그인 문제:</strong> 브라우저 캐시 삭제 후 재시도</li>
+            <li><strong>파일 업로드 실패:</strong> 파일 크기 및 형식 확인</li>
+            <li><strong>화면 렌더링 문제:</strong> 다른 브라우저 시도</li>
+        </ul>
+        
+        <h3>지원 채널</h3>
+        <ul>
+            <li><strong>시스템 관리자:</strong> 슈퍼관리자에 문의</li>
+            <li><strong>로그 확인:</strong> /admin/logs 에서 에러 메시지 확인</li>
+            <li><strong>문서:</strong> 프로젝트 docs/ 폴더의 추가 문서 참조</li>
+        </ul>
+        
+        <div class="highlight-box">
+            <strong>💡 팁:</strong> 문제 보고 시 증상, 사용한 브라우저, 발생 시간을 함께 알려주면 빠르게 해결됩니다.
+        </div>
+    </div>
+</div>
+
+<!-- Slide 21: 마지막 요약 -->
+<div class="slide">
+    <div class="slide-header">
+        <div class="slide-title">핵심 요약</div>
+        <div class="slide-subtitle">WBSCowork 사용 가이드</div>
+    </div>
+    <div class="slide-content content-full">
+        <h3>4가지 핵심 단계</h3>
+        <ul>
+            <li><span class="step-number">1</span><strong>프로젝트 선택:</strong> 홈에서 작업할 프로젝트 선택</li>
+            <li><span class="step-number">2</span><strong>태스크 확인:</strong> Gantt 차트와 리스트에서 진행 상황 파악</li>
+            <li><span class="step-number">3</span><strong>산출물 제출:</strong> 완성된 작업 결과를 태스크에 등록</li>
+            <li><span class="step-number">4</span><strong>협업 & 피드백:</strong> 댓글로 팀원과 소통</li>
+        </ul>
+        
+        <div class="highlight-box">
+            <strong>🎯 목표:</strong> 체계적인 업무 관리와 투명한 협업으로 프로젝트 성공 달성!
+        </div>
+    </div>
+</div>
+
+<!-- Slide 22: 감사의 말 -->
+<div class="slide">
+    <div class="slide-header" style="background: linear-gradient(135deg, #FE4447 0%, #277884 100%);">
+        <div class="slide-title">감사합니다!</div>
+        <div class="slide-subtitle">WBSCowork 사용설명서</div>
+    </div>
+    <div class="slide-content content-full">
+        <h2 style="text-align: center; margin-top: 80pt; color: #277884;">
+            더 나은 팀 협업을 위해
+        </h2>
+        <p style="text-align: center; font-size: 18pt; margin-top: 60pt; color: #5EA8A7;">
+            체계적인 WBS 관리 + 효율적인 협업 = 프로젝트 성공
+        </p>
+        <p style="text-align: center; font-size: 14pt; margin-top: 60pt; color: #999;">
+            추가 질문이나 제안은 시스템 관리자에게 문의하세요.
+        </p>
+    </div>
+</div>
+
+</body>
+</html>
