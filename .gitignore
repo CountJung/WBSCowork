@@ -26,6 +26,7 @@
 *.pem
 /logs/
 /uploads/*
+*/outputs/*
 
 # debug
 npm-debug.log*
