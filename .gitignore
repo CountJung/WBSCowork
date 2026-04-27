@@ -27,6 +27,7 @@
 /logs/
 /uploads/*
 */outputs/*
+*/screenshots/*
 
 # debug
 npm-debug.log*

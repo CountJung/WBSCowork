@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Box, Button, Checkbox, Chip, Divider, FormControl, FormControlLabel, FormLabel, Paper, Radio, RadioGroup, Stack, TextField, Typography } from "@mui/material";
 import MarkdownContent from "@/components/MarkdownContent";
 import type { Comment } from "@/models/comment";
@@ -60,12 +60,108 @@ function isPreviewable(mimeType: string | null): boolean {
 }
 
 function AttachmentInput({ helperText }: { helperText: string }) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0 || !inputRef.current) return;
+
+    const dt = new DataTransfer();
+    files.forEach((f) => dt.items.add(f));
+    inputRef.current.files = dt.files;
+    setSelectedFiles(files);
+  }, []);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedFiles(Array.from(e.target.files ?? []));
+  }, []);
+
   return (
     <Stack spacing={0.75}>
       <Typography variant="caption" color="text.secondary">
         {helperText}
       </Typography>
-      <Box component="input" name="attachments" type="file" multiple sx={{ font: "inherit", color: "text.secondary" }} />
+
+      {/* 항상 숨겨진 파일 인풋 — 폼 제출에 사용 */}
+      <Box
+        component="input"
+        ref={inputRef}
+        name="attachments"
+        type="file"
+        multiple
+        onChange={handleChange}
+        sx={{ display: "none" }}
+      />
+
+      {/* 데스크탑: 드래그 드롭 영역 */}
+      <Box
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => inputRef.current?.click()}
+        sx={[
+          {
+            border: "2px dashed",
+            borderColor: isDragging ? "primary.main" : "divider",
+            borderRadius: 2,
+            px: 2,
+            py: 1.5,
+            cursor: "pointer",
+            transition: "border-color 0.15s, background 0.15s",
+            userSelect: "none",
+            display: { xs: "none", sm: "flex" },
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 0.5,
+          },
+          isDragging && {
+            backgroundColor: "action.hover",
+          },
+        ]}
+      >
+        <Typography variant="body2" color={isDragging ? "primary.main" : "text.secondary"} sx={{ textAlign: "center" }}>
+          {isDragging
+            ? "파일을 놓으세요"
+            : selectedFiles.length > 0
+              ? selectedFiles.map((f) => f.name).join(", ")
+              : "파일을 여기에 드래그하거나 클릭하여 선택"}
+        </Typography>
+        {selectedFiles.length === 0 && !isDragging && (
+          <Typography variant="caption" color="text.disabled">
+            여러 파일 동시 선택 가능
+          </Typography>
+        )}
+      </Box>
+
+      {/* 모바일: 간단한 선택 버튼 */}
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ display: { xs: "flex", sm: "none" } }}>
+        <Button size="small" variant="outlined" onClick={() => inputRef.current?.click()}>
+          파일 선택
+        </Button>
+        {selectedFiles.length > 0 && (
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {selectedFiles.map((f) => f.name).join(", ")}
+          </Typography>
+        )}
+      </Stack>
     </Stack>
   );
 }
