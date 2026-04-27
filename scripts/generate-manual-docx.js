@@ -379,7 +379,9 @@ async function main() {
     console.log('\uD83D\uDCDD WBSCowork 상세 사용설명서 Word 문서 생성 중...\n');
 
     var doc = buildDocument();
-    var outputPath = path.resolve(__dirname, '../docs/WBSCowork_UserManual.docx');
+    var outputDir = path.join(__dirname, 'outputs');
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+    var outputPath = path.join(outputDir, 'WBSCowork_UserManual.docx');
 
     var buffer = await Packer.toBuffer(doc);
     fs.writeFileSync(outputPath, buffer);

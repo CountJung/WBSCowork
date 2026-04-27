@@ -46,3 +46,5 @@
 - Apply TypeScript and Next.js guidance from .github/instructions/nextjs-stack.instructions.md.
 - Apply workflow and validation guidance from .github/instructions/quality-gates.instructions.md.
 - Use the stage bootstrap workflow from .github/skills/wbs-stage-one-bootstrap/SKILL.md when starting or repairing Stage 1.
+- Apply React/Next.js performance best practices from .github/skills/react-best-practices/SKILL.md when writing, reviewing, or refactoring React components, data fetching, or bundle optimization.
+- Document generation scripts (pptx, docx, pdf) must write output to scripts/outputs/.
