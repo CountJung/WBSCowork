@@ -152,7 +152,7 @@ function AttachmentInput({ helperText }: { helperText: string }) {
       </Box>
 
       {/* 모바일: 간단한 선택 버튼 */}
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ display: { xs: "flex", sm: "none" } }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center", display: { xs: "flex", sm: "none" } }}>
         <Button size="small" variant="outlined" onClick={() => inputRef.current?.click()}>
           파일 선택
         </Button>
