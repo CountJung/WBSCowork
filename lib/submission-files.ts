@@ -11,11 +11,26 @@ export type StoredSubmissionAttachment = {
   fileSizeBytes: number;
 };
 
+/**
+ * 파일 시스템 저장 경로용 — ASCII 안전 문자만 허용
+ */
 function sanitizeFileName(fileName: string) {
   const baseName = path.basename(fileName).trim() || "attachment";
   const normalizedName = baseName.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^_+/, "");
 
   return normalizedName.length > 0 ? normalizedName.slice(0, 120) : "attachment";
+}
+
+/**
+ * DB 저장·화면 표시용 파일명 — 한글·유니코드 글자/숫자/일반 문장부호 보존
+ * 제어 문자, 경로 구분자, OS 예약 문자만 제거한다
+ */
+function sanitizeDisplayFileName(fileName: string) {
+  const baseName = path.basename(fileName).trim() || "attachment";
+  // 제어문자(\x00-\x1F, \x7F), 경로 구분자(/\\), OS 예약 문자(:*?"<>|) 제거
+  const normalizedName = baseName.replace(/[\x00-\x1F\x7F/\\:*?"<>|]+/g, "_").replace(/^_+/, "");
+
+  return normalizedName.length > 0 ? normalizedName.slice(0, 255) : "attachment";
 }
 
 function assertPathWithinRoot(rootPath: string, targetPath: string) {
@@ -71,7 +86,8 @@ export async function saveUploadedSubmissionAttachment(
   return {
     absolutePath,
     fileMimeType: file.type || "application/octet-stream",
-    fileName: safeFileName,
+    // 화면 표시·다운로드용 파일명은 한글·유니코드를 그대로 보존한다
+    fileName: sanitizeDisplayFileName(file.name || "attachment"),
     filePath: path.relative(uploadRoot, absolutePath).split(path.sep).join("/"),
     fileSizeBytes: file.size,
   };

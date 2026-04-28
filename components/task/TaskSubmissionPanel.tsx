@@ -573,6 +573,7 @@ export default function TaskSubmissionPanel({
                               multiline
                               minRows={4}
                             />
+                            <VisibilityRadio defaultValue={submission.visibility} />
                             <AttachmentInput helperText="새 파일 추가 첨부 (여러 파일 동시 선택 가능, 기존 첨부파일에 추가됩니다)" />
                             {submission.filePath ? (
                               <FormControlLabel control={<Checkbox name="clearAttachment" />} label="레거시 단일 첨부파일 제거" />
