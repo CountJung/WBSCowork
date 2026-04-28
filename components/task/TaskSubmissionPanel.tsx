@@ -294,6 +294,7 @@ export default function TaskSubmissionPanel({
   updateSubmissionAction,
 }: TaskSubmissionPanelProps) {
   const [openPreviews, setOpenPreviews] = useState<Set<string>>(new Set());
+  const [editingSubmissionId, setEditingSubmissionId] = useState<number | null>(null);
   const totalCommentCount = submissions.reduce(
     (count, submission) => count + (commentsBySubmissionId[submission.id]?.length ?? 0),
     0,
@@ -381,19 +382,36 @@ export default function TaskSubmissionPanel({
                   ]}
                 >
                   <Stack spacing={1.5}>
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ justifyContent: "space-between" }}>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ justifyContent: "space-between", alignItems: { sm: "flex-start" } }}>
                       <Stack spacing={0.5}>
                         <Typography variant="subtitle2">{submission.authorName}</Typography>
                         <Typography variant="caption" color="text.secondary">
                           {submission.authorEmail} · {formatDateTime(submission.createdAt)}
                         </Typography>
                       </Stack>
-                      <Chip
-                        label={submission.visibility === "private" ? "비공개" : "공개"}
-                        color={submission.visibility === "private" ? "warning" : "success"}
-                        size="small"
-                        variant="outlined"
-                      />
+                      <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+                        <Chip
+                          label={submission.visibility === "private" ? "비공개" : "공개"}
+                          color={submission.visibility === "private" ? "warning" : "success"}
+                          size="small"
+                          variant="outlined"
+                        />
+                        {canWrite && editingSubmissionId !== submission.id ? (
+                          <>
+                            <Button size="small" variant="outlined" onClick={() => setEditingSubmissionId(submission.id)}>
+                              수정
+                            </Button>
+                            <Stack component="form" action={deleteSubmissionAction}>
+                              <input type="hidden" name="projectId" value={String(projectId)} />
+                              <input type="hidden" name="taskId" value={String(taskId)} />
+                              <input type="hidden" name="submissionId" value={String(submission.id)} />
+                              <Button type="submit" color="error" size="small" variant="outlined">
+                                삭제
+                              </Button>
+                            </Stack>
+                          </>
+                        ) : null}
+                      </Stack>
                     </Stack>
 
                     <MarkdownContent content={submission.content} />
@@ -452,6 +470,7 @@ export default function TaskSubmissionPanel({
                       ) : null}
                     </Stack>
 
+                    {editingSubmissionId !== submission.id && (<>
                     <Divider />
                     <Stack spacing={1.5}>
                       <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ justifyContent: "space-between" }}>
@@ -557,12 +576,20 @@ export default function TaskSubmissionPanel({
                         </Stack>
                       )}
                     </Stack>
+                    </>)}
 
-                    {!canWrite ? null : (
+                    {canWrite && editingSubmissionId === submission.id && (
                       <>
                         <Divider />
                         <Stack spacing={1.5}>
-                          <Stack component="form" action={updateSubmissionAction} spacing={1.5}>
+                          <Stack
+                            component="form"
+                            action={async (formData: FormData) => {
+                              await updateSubmissionAction(formData);
+                              setEditingSubmissionId(null);
+                            }}
+                            spacing={1.5}
+                          >
                             <input type="hidden" name="projectId" value={String(projectId)} />
                             <input type="hidden" name="taskId" value={String(taskId)} />
                             <input type="hidden" name="submissionId" value={String(submission.id)} />
@@ -580,17 +607,12 @@ export default function TaskSubmissionPanel({
                             ) : null}
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
                               <Button type="submit" variant="outlined">
-                                제출 수정
+                                저장
+                              </Button>
+                              <Button type="button" variant="text" onClick={() => setEditingSubmissionId(null)}>
+                                취소
                               </Button>
                             </Stack>
-                          </Stack>
-                          <Stack component="form" action={deleteSubmissionAction}>
-                            <input type="hidden" name="projectId" value={String(projectId)} />
-                            <input type="hidden" name="taskId" value={String(taskId)} />
-                            <input type="hidden" name="submissionId" value={String(submission.id)} />
-                            <Button type="submit" color="error" variant="outlined">
-                              제출 삭제
-                            </Button>
                           </Stack>
                         </Stack>
                       </>
