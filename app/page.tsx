@@ -7,6 +7,7 @@ import { listAllProjects } from "@/lib/repositories/project-repository";
 import { listTasksByProject } from "@/lib/repositories/task-repository";
 import { formatDate, getOrderedTasks, getSelectedProject } from "@/lib/task-view";
 import ProjectGanttChart from "@/components/gantt/ProjectGanttChart";
+import MarkdownContent from "@/components/MarkdownContent";
 import { getUserRoleLabel } from "@/models/user";
 
 type HomePageProps = {
@@ -195,9 +196,13 @@ export default async function Home({ searchParams }: HomePageProps) {
                             담당자 {task.assigneeName ?? "미지정"}
                           </Typography>
                         </Stack>
-                        <Typography variant="body2" color="text.secondary">
-                          {task.description || "설명이 아직 입력되지 않았습니다."}
-                        </Typography>
+                        {task.description ? (
+                          <MarkdownContent content={task.description} />
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            설명이 아직 입력되지 않았습니다.
+                          </Typography>
+                        )}
                         <Typography variant="caption" color="primary.main">
                           클릭하면 작업 관리 화면에서 이 업무 상세와 제출 이력을 바로 확인합니다.
                         </Typography>
