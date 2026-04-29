@@ -295,6 +295,7 @@ export default function TaskSubmissionPanel({
 }: TaskSubmissionPanelProps) {
   const [openPreviews, setOpenPreviews] = useState<Set<string>>(new Set());
   const [editingSubmissionId, setEditingSubmissionId] = useState<number | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const totalCommentCount = submissions.reduce(
     (count, submission) => count + (commentsBySubmissionId[submission.id]?.length ?? 0),
     0,
@@ -523,29 +524,40 @@ export default function TaskSubmissionPanel({
                                 {!canWrite ? null : (
                                   <>
                                     <Divider />
-                                    <Stack spacing={1.25}>
-                                      <Stack component="form" action={updateCommentAction} spacing={1.25}>
-                                        <input type="hidden" name="projectId" value={String(projectId)} />
-                                        <input type="hidden" name="taskId" value={String(taskId)} />
-                                        <input type="hidden" name="submissionId" value={String(submission.id)} />
-                                        <input type="hidden" name="commentId" value={String(comment.id)} />
-                                        <TextField name="content" label="댓글 수정" defaultValue={comment.content} multiline minRows={3} />
-                                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
-                                          <Button type="submit" variant="outlined">
-                                            댓글 수정
+                                    {editingCommentId !== comment.id ? (
+                                      <Stack direction="row" spacing={1}>
+                                        <Button size="small" variant="outlined" onClick={() => setEditingCommentId(comment.id)}>
+                                          수정
+                                        </Button>
+                                        <Stack component="form" action={deleteCommentAction}>
+                                          <input type="hidden" name="projectId" value={String(projectId)} />
+                                          <input type="hidden" name="taskId" value={String(taskId)} />
+                                          <input type="hidden" name="submissionId" value={String(submission.id)} />
+                                          <input type="hidden" name="commentId" value={String(comment.id)} />
+                                          <Button type="submit" color="error" size="small" variant="outlined">
+                                            삭제
                                           </Button>
                                         </Stack>
                                       </Stack>
-                                      <Stack component="form" action={deleteCommentAction}>
-                                        <input type="hidden" name="projectId" value={String(projectId)} />
-                                        <input type="hidden" name="taskId" value={String(taskId)} />
-                                        <input type="hidden" name="submissionId" value={String(submission.id)} />
-                                        <input type="hidden" name="commentId" value={String(comment.id)} />
-                                        <Button type="submit" color="error" variant="outlined">
-                                          댓글 삭제
-                                        </Button>
+                                    ) : (
+                                      <Stack spacing={1.25}>
+                                        <Stack component="form" action={async (formData: FormData) => { await updateCommentAction(formData); setEditingCommentId(null); }} spacing={1.25}>
+                                          <input type="hidden" name="projectId" value={String(projectId)} />
+                                          <input type="hidden" name="taskId" value={String(taskId)} />
+                                          <input type="hidden" name="submissionId" value={String(submission.id)} />
+                                          <input type="hidden" name="commentId" value={String(comment.id)} />
+                                          <TextField name="content" label="댓글 수정" defaultValue={comment.content} multiline minRows={3} />
+                                          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
+                                            <Button type="submit" variant="outlined">
+                                              저장
+                                            </Button>
+                                            <Button type="button" variant="text" onClick={() => setEditingCommentId(null)}>
+                                              취소
+                                            </Button>
+                                          </Stack>
+                                        </Stack>
                                       </Stack>
-                                    </Stack>
+                                    )}
                                   </>
                                 )}
                               </Stack>

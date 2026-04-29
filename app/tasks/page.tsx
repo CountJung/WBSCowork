@@ -22,6 +22,7 @@ import { formatDate, getOrderedTasks, getSelectedProject, getSelectedTask } from
 import { listAllUsers } from "@/lib/repositories/user-repository";
 import ProjectGanttChart from "@/components/gantt/ProjectGanttChart";
 import MarkdownContent from "@/components/MarkdownContent";
+import TaskEditSection from "@/components/task/TaskEditSection";
 import TaskFocusController from "@/components/task/TaskFocusController";
 import TaskSubmissionPanel from "@/components/task/TaskSubmissionPanel";
 import type { Comment } from "@/models/comment";
@@ -248,51 +249,18 @@ function TaskList({
               </Stack>
 
               {!canWrite ? null : (
-                <Stack component="form" action={deleteTaskAction} sx={{ alignItems: { lg: "flex-end" } }}>
-                  <input type="hidden" name="projectId" value={String(project.id)} />
-                  <input type="hidden" name="taskId" value={String(task.id)} />
-                  <Button type="submit" color="error" variant="outlined">
-                    작업 삭제
-                  </Button>
+                <Stack sx={{ alignItems: { lg: "flex-end" } }}>
+                  <TaskEditSection
+                    task={task}
+                    orderedTasks={orderedTasks}
+                    projectId={project.id}
+                    users={users}
+                    updateTaskAction={updateTaskAction}
+                    deleteTaskAction={deleteTaskAction}
+                  />
                 </Stack>
               )}
             </Stack>
-
-            {!canWrite ? null : (
-              <Stack component="form" action={updateTaskAction} spacing={2}>
-                <input type="hidden" name="projectId" value={String(project.id)} />
-                <input type="hidden" name="taskId" value={String(task.id)} />
-                <TextField name="title" label="작업 제목" defaultValue={task.title} required />
-                <TextField name="description" label="설명" defaultValue={task.description} multiline minRows={3} />
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                  <TextField select name="parentId" label="상위 작업" defaultValue={String(task.parentId ?? "")} fullWidth>
-                    <MenuItem value="">루트 작업</MenuItem>
-                    {orderedTasks
-                      .filter((candidateTask) => candidateTask.id !== task.id)
-                      .map((candidateTask) => (
-                        <MenuItem key={candidateTask.id} value={String(candidateTask.id)}>
-                          {`${"\u00A0".repeat(candidateTask.depth * 2)}${candidateTask.title}`}
-                        </MenuItem>
-                      ))}
-                  </TextField>
-                  <TextField select name="assigneeId" label="담당자" defaultValue={String(task.assigneeId ?? "")} fullWidth>
-                    <MenuItem value="">미지정</MenuItem>
-                    {users.map((user) => (
-                      <MenuItem key={user.id} value={String(user.id)}>
-                        {user.name} · {getUserRoleLabel(user.role)}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Stack>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                  <TextField name="startDate" label="시작일" type="date" defaultValue={formatDate(task.startDate)} required fullWidth slotProps={{ inputLabel: { shrink: true } }} />
-                  <TextField name="endDate" label="종료일" type="date" defaultValue={formatDate(task.endDate)} required fullWidth slotProps={{ inputLabel: { shrink: true } }} />
-                </Stack>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                  <Button type="submit" variant="contained">작업 저장</Button>
-                </Stack>
-              </Stack>
-            )}
 
             <TaskSubmissionPanel
               canWrite={canWrite}
