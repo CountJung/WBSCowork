@@ -21,10 +21,8 @@ import { listTasksByProject } from "@/lib/repositories/task-repository";
 import { formatDate, getOrderedTasks, getSelectedProject, getSelectedTask } from "@/lib/task-view";
 import { listAllUsers } from "@/lib/repositories/user-repository";
 import ProjectGanttChart from "@/components/gantt/ProjectGanttChart";
-import MarkdownContent from "@/components/MarkdownContent";
-import TaskEditSection from "@/components/task/TaskEditSection";
+import TaskCard from "@/components/task/TaskCard";
 import TaskFocusController from "@/components/task/TaskFocusController";
-import TaskSubmissionPanel from "@/components/task/TaskSubmissionPanel";
 import type { Comment } from "@/models/comment";
 import type { Project } from "@/models/project";
 import type { SubmissionAttachment } from "@/models/submission-attachment";
@@ -213,74 +211,28 @@ function TaskList({
         const isSelectedTask = selectedTaskId === task.id;
 
         return (
-          <Paper
-            id={`task-${task.id}`}
+          <TaskCard
             key={task.id}
-            elevation={0}
-            sx={{
-              p: 3,
-              borderRadius: 4,
-              borderLeft: "4px solid",
-              borderColor: isSelectedTask ? "secondary.main" : "primary.main",
-              ml: { xs: 0, md: task.depth * 3 },
-              scrollMarginTop: 110,
-              background: isSelectedTask ? "var(--task-focus-card-background)" : "var(--mui-palette-background-paper)",
-              boxShadow: isSelectedTask ? "var(--task-focus-card-shadow, 0 18px 34px rgba(183, 121, 31, 0.12))" : undefined,
-              transition: "background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease",
-            }}
-          >
-          <Stack spacing={2}>
-            <Stack direction={{ xs: "column", lg: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
-              <Stack spacing={1}>
-                <Typography variant="h6">{task.title}</Typography>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
-                  {isSelectedTask ? <Chip label="선택된 업무" color="secondary" /> : null}
-                  <Chip label={`기간 ${formatDate(task.startDate)} ~ ${formatDate(task.endDate)}`} variant="outlined" />
-                  <Chip label={`깊이 ${task.depth}`} />
-                  <Chip label={task.assigneeName ? `담당자 ${task.assigneeName}` : "담당자 미지정"} color={task.assigneeName ? "primary" : "default"} variant={task.assigneeName ? "filled" : "outlined"} />
-                </Stack>
-                {task.description ? (
-                  <MarkdownContent content={task.description} />
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    설명이 아직 입력되지 않았습니다.
-                  </Typography>
-                )}
-              </Stack>
-
-              {!canWrite ? null : (
-                <Stack sx={{ alignItems: { lg: "flex-end" } }}>
-                  <TaskEditSection
-                    task={task}
-                    orderedTasks={orderedTasks}
-                    projectId={project.id}
-                    users={users}
-                    updateTaskAction={updateTaskAction}
-                    deleteTaskAction={deleteTaskAction}
-                  />
-                </Stack>
-              )}
-            </Stack>
-
-            <TaskSubmissionPanel
-              canWrite={canWrite}
-              canSeeAllSubmissions={canSeeAllSubmissions}
-              commentsBySubmissionId={commentsBySubmissionId}
-              attachmentsBySubmissionId={attachmentsBySubmissionId}
-              createCommentAction={createCommentAction}
-              createSubmissionAction={createSubmissionAction}
-              deleteCommentAction={deleteCommentAction}
-              deleteSubmissionAction={deleteSubmissionAction}
-              deleteAttachmentAction={deleteSubmissionAttachmentAction}
-              projectId={project.id}
-              submissions={submissionsByTaskId.get(task.id) ?? []}
-              taskId={task.id}
-              taskTitle={task.title}
-              updateCommentAction={updateCommentAction}
-              updateSubmissionAction={updateSubmissionAction}
-            />
-          </Stack>
-          </Paper>
+            task={task}
+            orderedTasks={orderedTasks}
+            projectId={project.id}
+            users={users}
+            isSelectedTask={isSelectedTask}
+            canWrite={canWrite}
+            canSeeAllSubmissions={canSeeAllSubmissions}
+            submissions={submissionsByTaskId.get(task.id) ?? []}
+            commentsBySubmissionId={commentsBySubmissionId}
+            attachmentsBySubmissionId={attachmentsBySubmissionId}
+            updateTaskAction={updateTaskAction}
+            deleteTaskAction={deleteTaskAction}
+            createCommentAction={createCommentAction}
+            createSubmissionAction={createSubmissionAction}
+            deleteCommentAction={deleteCommentAction}
+            deleteSubmissionAction={deleteSubmissionAction}
+            deleteAttachmentAction={deleteSubmissionAttachmentAction}
+            updateCommentAction={updateCommentAction}
+            updateSubmissionAction={updateSubmissionAction}
+          />
         );
       })}
     </Stack>
