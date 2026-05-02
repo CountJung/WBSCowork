@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Button, Checkbox, Chip, Divider, FormControl, FormControlLabel, FormLabel, Paper, Radio, RadioGroup, Stack, TextField, Typography } from "@mui/material";
 import MarkdownContent from "@/components/MarkdownContent";
 import type { Comment } from "@/models/comment";
@@ -59,6 +59,63 @@ function isPreviewable(mimeType: string | null): boolean {
   return mimeType.startsWith("image/") || mimeType === "application/pdf";
 }
 
+function isImageFile(file: File) {
+  return file.type.startsWith("image/");
+}
+
+function FilePreviewThumbnail({ file }: { file: File }) {
+  const [objectUrl] = useState<string | null>(() =>
+    isImageFile(file) ? URL.createObjectURL(file) : null,
+  );
+
+  useEffect(() => {
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [objectUrl]);
+
+  if (!objectUrl) {
+    return (
+      <Box
+        sx={{
+          width: 72,
+          height: 72,
+          borderRadius: 1.5,
+          border: "1px solid",
+          borderColor: "divider",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: "action.hover",
+          flexShrink: 0,
+        }}
+      >
+        <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center", px: 0.5, fontSize: 10 }}>
+          {file.name.split(".").pop()?.toUpperCase() ?? "파일"}
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      component="img"
+      src={objectUrl}
+      alt={file.name}
+      sx={{
+        width: 72,
+        height: 72,
+        borderRadius: 1.5,
+        objectFit: "cover",
+        border: "1px solid",
+        borderColor: "divider",
+        flexShrink: 0,
+        display: "block",
+      }}
+    />
+  );
+}
+
 function AttachmentInput({ helperText }: { helperText: string }) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -93,6 +150,9 @@ function AttachmentInput({ helperText }: { helperText: string }) {
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedFiles(Array.from(e.target.files ?? []));
   }, []);
+
+  const imageFiles = selectedFiles.filter(isImageFile);
+  const otherFiles = selectedFiles.filter((f) => !isImageFile(f));
 
   return (
     <Stack spacing={0.75}>
@@ -141,7 +201,7 @@ function AttachmentInput({ helperText }: { helperText: string }) {
           {isDragging
             ? "파일을 놓으세요"
             : selectedFiles.length > 0
-              ? selectedFiles.map((f) => f.name).join(", ")
+              ? `${selectedFiles.length}개 파일 선택됨`
               : "파일을 여기에 드래그하거나 클릭하여 선택"}
         </Typography>
         {selectedFiles.length === 0 && !isDragging && (
@@ -157,11 +217,47 @@ function AttachmentInput({ helperText }: { helperText: string }) {
           파일 선택
         </Button>
         {selectedFiles.length > 0 && (
-          <Typography variant="caption" color="text.secondary" noWrap>
-            {selectedFiles.map((f) => f.name).join(", ")}
+          <Typography variant="caption" color="text.secondary">
+            {selectedFiles.length}개 선택됨
           </Typography>
         )}
       </Stack>
+
+      {/* 선택된 이미지 썸네일 그리드 */}
+      {imageFiles.length > 0 && (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))",
+            gap: 1,
+            mt: 0.5,
+          }}
+        >
+          {imageFiles.map((file, idx) => (
+            <Stack key={idx} spacing={0.25} sx={{ alignItems: "center" }}>
+              <FilePreviewThumbnail file={file} />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontSize: 9, textAlign: "center", wordBreak: "break-all", lineClamp: 2, overflow: "hidden", maxWidth: 72 }}
+              >
+                {file.name}
+              </Typography>
+            </Stack>
+          ))}
+        </Box>
+      )}
+
+      {/* 비이미지 파일 목록 */}
+      {otherFiles.length > 0 && (
+        <Stack spacing={0.25} sx={{ mt: 0.25 }}>
+          {otherFiles.map((file, idx) => (
+            <Typography key={idx} variant="caption" color="text.secondary">
+              📄 {file.name} ({formatFileSize(file.size)})
+            </Typography>
+          ))}
+        </Stack>
+      )}
     </Stack>
   );
 }
@@ -183,7 +279,7 @@ function AttachmentPreview({
         alt={fileName}
         sx={{
           maxWidth: "100%",
-          maxHeight: 400,
+          maxHeight: 480,
           borderRadius: 1,
           display: "block",
           objectFit: "contain",
@@ -237,8 +333,52 @@ function AttachmentRow({
   deleteForm,
 }: AttachmentRowProps) {
   const formattedSize = formatFileSize(fileSizeBytes);
+  const isImage = fileMimeType?.startsWith("image/") ?? false;
   const canPreview = isPreviewable(fileMimeType);
   const isOpen = openPreviews.has(previewKey);
+
+  // 이미지 파일은 썸네일을 자동으로 표시
+  if (isImage) {
+    return (
+      <Stack spacing={0.75}>
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+          {/* 클릭 시 풀 사이즈 토글 */}
+          <Box
+            component="img"
+            src={previewUrl}
+            alt={fileName}
+            onClick={() => onTogglePreview(previewKey)}
+            sx={{
+              width: { xs: 80, sm: 96 },
+              height: { xs: 80, sm: 96 },
+              borderRadius: 1.5,
+              objectFit: "cover",
+              cursor: "pointer",
+              border: "1px solid",
+              borderColor: isOpen ? "primary.main" : "divider",
+              flexShrink: 0,
+              transition: "border-color 0.15s",
+            }}
+          />
+          <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+            <Button component="a" href={downloadUrl} variant="text" size="small" download sx={{ justifyContent: "flex-start", px: 0, fontWeight: 500, textAlign: "left", wordBreak: "break-all" }}>
+              {fileName}
+            </Button>
+            <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap" }}>
+              {formattedSize ? <Chip label={formattedSize} size="small" variant="outlined" /> : null}
+              <Button size="small" variant="text" onClick={() => onTogglePreview(previewKey)} sx={{ px: 0.5, minWidth: 0 }}>
+                {isOpen ? "닫기" : "크게 보기"}
+              </Button>
+              {deleteForm}
+            </Stack>
+          </Stack>
+        </Stack>
+        {isOpen && (
+          <AttachmentPreview mimeType={fileMimeType!} previewUrl={previewUrl} fileName={fileName} />
+        )}
+      </Stack>
+    );
+  }
 
   return (
     <Stack spacing={0.75}>

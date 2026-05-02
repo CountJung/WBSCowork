@@ -59,6 +59,7 @@ function createChartOptions(viewMode: ViewMode, taskCount: number): GanttOptions
     readonly: true,
     readonly_dates: true,
     readonly_progress: true,
+    scroll_to: "today",
     container_height: Math.max(560, taskCount * 54),
     popup: ({ task, set_title, set_subtitle, set_details }) => {
       const ganttTask = task as WbsGanttTask;
@@ -82,6 +83,7 @@ export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartP
   const searchParams = useSearchParams();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const ganttRef = useRef<Gantt | null>(null);
+  const hasScrolledToToday = useRef(false);
   const [viewMode, setViewMode] = useState<ViewMode>("Week");
   const [renderError, setRenderError] = useState<string | null>(null);
   const rootTaskCount = tasks.filter((task) => task.parentId === null).length;
@@ -115,6 +117,9 @@ export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartP
       ganttRef.current = null;
       return;
     }
+
+    // Reset today-scroll flag on every effect run (tasks or viewMode changed)
+    hasScrolledToToday.current = false;
 
     const chartTasks: WbsGanttTask[] = tasks.map((task) => ({
       id: String(task.id),
@@ -181,6 +186,24 @@ export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartP
         startTransition(() => {
           setRenderError(null);
         });
+
+        // Scroll to today on initial render using the .current-highlight element
+        // frappe-gantt's internal scrollTo uses behavior:'smooth' (async), so we
+        // manually set scrollLeft synchronously after layout via rAF.
+        if (!hasScrolledToToday.current) {
+          requestAnimationFrame(() => {
+            const ganttContainer = container.querySelector(".gantt-container") as HTMLElement | null;
+            const todayEl = container.querySelector(".current-highlight") as HTMLElement | null;
+            if (ganttContainer && todayEl) {
+              const left = parseFloat(todayEl.style.left) || 0;
+              const containerWidth = ganttContainer.clientWidth;
+              if (containerWidth > 0) {
+                ganttContainer.scrollLeft = Math.max(0, left - containerWidth / 3);
+                hasScrolledToToday.current = true;
+              }
+            }
+          });
+        }
       } catch (error) {
         startTransition(() => {
           setRenderError(error instanceof Error ? error.message : "간트 차트를 렌더링하지 못했습니다.");

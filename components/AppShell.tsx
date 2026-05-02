@@ -44,6 +44,7 @@ const taskNavItem: NavItem = { href: "/tasks", label: "작업" };
 // 슈퍼관리자 전용 메뉴 (DB 관리 + 사용자 관리 포함)
 const superuserAdminNavItems: NavItem[] = [
   { href: "/admin", label: "관리 개요" },
+  { href: "/admin/projects", label: "프로젝트 관리" },
   { href: "/admin/logs", label: "로그" },
   { href: "/admin/settings", label: "세팅" },
   { href: "/admin/users", label: "사용자 관리" },
@@ -53,6 +54,7 @@ const superuserAdminNavItems: NavItem[] = [
 // 관리자(admin 역할) 메뉴 — 로그·세팅·DB 관리 제외, 관리 개요·사용자 관리만 허용
 const adminRoleNavItems: NavItem[] = [
   { href: "/admin", label: "관리 개요" },
+  { href: "/admin/projects", label: "프로젝트 관리" },
   { href: "/admin/users", label: "사용자 관리" },
 ];
 

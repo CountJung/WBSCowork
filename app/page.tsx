@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Alert, Button, Chip, Container, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Chip, Container, Paper, Stack, Typography } from "@mui/material";
 import { getAuthSession } from "@/lib/auth";
 import { getDatabaseAdminStatus } from "@/lib/database-admin";
 import { getRuntimeEnv } from "@/lib/env";
@@ -99,7 +99,7 @@ export default async function Home({ searchParams }: HomePageProps) {
           <Stack spacing={1}>
             <Typography variant="h3">홈</Typography>
             <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
-              선택한 프로젝트의 일정과 핵심 작업을 빠르게 확인하는 요약 화면입니다. 세부 수정과 제출 관리는 작업 공간에서 계속할 수 있습니다.
+              현재 프로젝트의 간트 차트와 작업 목록을 빠르게 확인하는 요약 화면입니다. 세부 수정과 제출 관리는 작업 공간에서 계속할 수 있습니다.
             </Typography>
           </Stack>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
@@ -109,46 +109,21 @@ export default async function Home({ searchParams }: HomePageProps) {
           </Stack>
         </Stack>
 
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
-          <Stack spacing={2}>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ justifyContent: "space-between" }}>
-              <Stack spacing={0.5}>
-                <Typography variant="h5">프로젝트 선택</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  홈에서는 선택한 프로젝트의 간트와 간략한 작업 목록만 보여줍니다. 세부 수정은 상단 앱바의 작업 메뉴에서 진행합니다.
-                </Typography>
-              </Stack>
-            </Stack>
-
-            <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ flexWrap: "wrap" }}>
-              {projects.length > 0 ? (
-                projects.map((project) => {
-                  const active = selectedProject?.id === project.id;
-
-                  return (
-                    <Button key={project.id} href={`/?projectId=${project.id}`} variant={active ? "contained" : "outlined"}>
-                      {project.name}
-                    </Button>
-                  );
-                })
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  아직 생성된 프로젝트가 없습니다. 작업 공간에서 첫 프로젝트를 만들 수 있습니다.
-                </Typography>
-              )}
-            </Stack>
-          </Stack>
-        </Paper>
-
         {selectedProject ? (
           <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
             <Stack spacing={1}>
-              <Typography variant="h5">선택된 프로젝트</Typography>
+              <Typography variant="h5">현재 프로젝트</Typography>
               <Typography variant="h6">{selectedProject.name}</Typography>
               <Typography variant="body2" color="text.secondary">
                 기간 {formatDate(selectedProject.startDate)} ~ {formatDate(selectedProject.endDate)}
               </Typography>
             </Stack>
+          </Paper>
+        ) : projects.length === 0 ? (
+          <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
+            <Typography variant="body2" color="text.secondary">
+              아직 생성된 프로젝트가 없습니다. 관리자에게 프로젝트 생성을 요청하세요.
+            </Typography>
           </Paper>
         ) : null}
 
@@ -178,6 +153,7 @@ export default async function Home({ searchParams }: HomePageProps) {
                         borderLeft: "3px solid",
                         borderColor: "primary.main",
                         cursor: "pointer",
+                        overflow: "hidden",
                         transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease",
                         '&:hover': {
                           transform: "translateY(-2px)",
@@ -186,7 +162,7 @@ export default async function Home({ searchParams }: HomePageProps) {
                         },
                       }}
                     >
-                      <Stack spacing={0.75}>
+                      <Stack spacing={0.75} sx={{ minWidth: 0 }}>
                         <Typography variant="subtitle1">{task.title}</Typography>
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                           <Typography variant="body2" color="text.secondary">

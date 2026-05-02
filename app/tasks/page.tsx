@@ -28,19 +28,16 @@ import type { Project } from "@/models/project";
 import type { SubmissionAttachment } from "@/models/submission-attachment";
 import type { Submission } from "@/models/submission";
 import type { Task } from "@/models/task";
-import { canWriteTaskContent, getUserRoleLabel, canManageAllSubmissions } from "@/models/user";
+import { canWriteTaskContent, getUserRoleLabel, canManageAllSubmissions, canAccessAdminPanel } from "@/models/user";
 import {
   createCommentAction,
-  createProjectAction,
   createSubmissionAction,
   createTaskAction,
   deleteCommentAction,
-  deleteProjectAction,
   deleteSubmissionAction,
   deleteSubmissionAttachmentAction,
   deleteTaskAction,
   updateCommentAction,
-  updateProjectAction,
   updateSubmissionAction,
   updateTaskAction,
 } from "./actions";
@@ -101,30 +98,9 @@ function groupAttachmentsBySubmissionId(attachments: SubmissionAttachment[]) {
 
 function TaskWritePolicy({ canWrite }: { canWrite: boolean }) {
   return canWrite ? (
-    <Alert severity="success">현재 계정은 작업, 제출물, 첨부파일, 댓글, 프로젝트를 생성, 수정, 삭제할 수 있습니다.</Alert>
+    <Alert severity="success">현재 계정은 작업, 제출물, 첨부파일, 댓글을 생성, 수정, 삭제할 수 있습니다. 프로젝트 관리는 관리자 메뉴를 이용하세요.</Alert>
   ) : (
-    <Alert severity="info">현재 계정은 게스트 권한이므로 작업, 제출물, 첨부파일, 댓글, 프로젝트를 읽기 전용으로만 볼 수 있습니다.</Alert>
-  );
-}
-
-function ProjectCreateForm({ defaultStartDate, defaultEndDate }: { defaultStartDate: string; defaultEndDate: string }) {
-  return (
-    <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
-      <Stack component="form" action={createProjectAction} spacing={2}>
-        <Typography variant="h5">프로젝트 만들기</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Task CRUD는 프로젝트 단위로 동작합니다. 아직 프로젝트가 없거나 새 작업 스트림을 시작해야 하면 여기서 바로 추가할 수 있습니다.
-        </Typography>
-        <TextField name="name" label="프로젝트 이름" required />
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-          <TextField name="startDate" label="시작일" type="date" defaultValue={defaultStartDate} required fullWidth slotProps={{ inputLabel: { shrink: true } }} />
-          <TextField name="endDate" label="종료일" type="date" defaultValue={defaultEndDate} required fullWidth slotProps={{ inputLabel: { shrink: true } }} />
-        </Stack>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-          <Button type="submit" variant="contained">프로젝트 생성</Button>
-        </Stack>
-      </Stack>
-    </Paper>
+    <Alert severity="info">현재 계정은 게스트 권한이므로 작업, 제출물, 첨부파일, 댓글을 읽기 전용으로만 볼 수 있습니다.</Alert>
   );
 }
 
@@ -248,16 +224,13 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   const runtimeEnv = getRuntimeEnv();
   const canWrite = canWriteTaskContent(session.user.role, session.user.isSuperuser);
+  const canManageProjects = canAccessAdminPanel(session.user.role, session.user.isSuperuser);
   const canSeeAllSubmissions = canManageAllSubmissions(session.user.role, session.user.isSuperuser);
   const params = await searchParams;
   const feedbackStatus = getSingleSearchParam(params.status);
   const feedbackMessage = getSingleSearchParam(params.message);
   const projectIdParam = getSingleSearchParam(params.projectId);
   const taskIdParam = getSingleSearchParam(params.taskId);
-  const today = new Date();
-  const nextWeek = new Date(today);
-
-  nextWeek.setDate(nextWeek.getDate() + 7);
 
   if (!runtimeEnv.database.configured) {
     return (
@@ -355,73 +328,48 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
         <TaskWritePolicy canWrite={canWrite} />
 
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
-          <Stack spacing={2}>
-            <Typography variant="h5">프로젝트 선택</Typography>
-            <Typography variant="body2" color="text.secondary">
-              작업은 프로젝트 단위로 묶여 있습니다. 다른 프로젝트를 선택하면 해당 작업 트리와 편집 폼이 함께 전환됩니다.
-            </Typography>
-            <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ flexWrap: "wrap" }}>
-              {projects.length > 0 ? (
-                projects.map((project) => {
-                  const active = selectedProject?.id === project.id;
-
-                  return (
-                    <Button
-                      key={project.id}
-                      href={`/tasks?projectId=${project.id}`}
-                      variant={active ? "contained" : "outlined"}
-                    >
-                      {project.name}
-                    </Button>
-                  );
-                })
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  아직 생성된 프로젝트가 없습니다.
-                </Typography>
-              )}
+        {canManageProjects ? (
+          <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
+            <Stack spacing={2}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ justifyContent: "space-between", alignItems: { sm: "center" } }}>
+                <Stack spacing={0.5}>
+                  <Typography variant="h5">프로젝트 선택</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    다른 프로젝트로 전환하면 해당 작업 트리가 함께 전환됩니다. 프로젝트 생성·수정·삭제는 관리자 메뉴의 프로젝트 관리에서 할 수 있습니다.
+                  </Typography>
+                </Stack>
+                <Button href="/admin/projects" variant="outlined" size="small" sx={{ flexShrink: 0 }}>
+                  프로젝트 관리
+                </Button>
+              </Stack>
+              <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ flexWrap: "wrap" }}>
+                {projects.length > 0 ? (
+                  projects.map((project) => {
+                    const active = selectedProject?.id === project.id;
+                    return (
+                      <Button key={project.id} href={`/tasks?projectId=${project.id}`} variant={active ? "contained" : "outlined"}>
+                        {project.name}
+                      </Button>
+                    );
+                  })
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    아직 생성된 프로젝트가 없습니다. 관리자 메뉴에서 먼저 프로젝트를 만들어 주세요.
+                  </Typography>
+                )}
+              </Stack>
             </Stack>
-          </Stack>
-        </Paper>
-
-        {canWrite ? (
-          <ProjectCreateForm defaultStartDate={formatDate(today)} defaultEndDate={formatDate(nextWeek)} />
+          </Paper>
         ) : null}
 
         {selectedProject ? (
           <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
-            <Stack spacing={2}>
-              <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
-                <Stack spacing={1.5}>
-                  <Typography variant="h5">선택된 프로젝트</Typography>
-                  <Typography variant="h6">{selectedProject.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    기간 {formatDate(selectedProject.startDate)} ~ {formatDate(selectedProject.endDate)}
-                  </Typography>
-                </Stack>
-                {!canWrite ? null : (
-                  <Stack component="form" action={deleteProjectAction} sx={{ alignItems: { md: "flex-end" } }}>
-                    <input type="hidden" name="projectId" value={String(selectedProject.id)} />
-                    <Button type="submit" color="error" variant="outlined">
-                      프로젝트 삭제
-                    </Button>
-                  </Stack>
-                )}
-              </Stack>
-              {canWrite ? (
-                <Stack component="form" action={updateProjectAction} spacing={2}>
-                  <input type="hidden" name="projectId" value={String(selectedProject.id)} />
-                  <TextField name="name" label="프로젝트 이름" defaultValue={selectedProject.name} required />
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                    <TextField name="startDate" label="시작일" type="date" defaultValue={formatDate(selectedProject.startDate)} required fullWidth slotProps={{ inputLabel: { shrink: true } }} />
-                    <TextField name="endDate" label="종료일" type="date" defaultValue={formatDate(selectedProject.endDate)} required fullWidth slotProps={{ inputLabel: { shrink: true } }} />
-                  </Stack>
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                    <Button type="submit" variant="contained">프로젝트 저장</Button>
-                  </Stack>
-                </Stack>
-              ) : null}
+            <Stack spacing={1.5}>
+              <Typography variant="h5">현재 프로젝트</Typography>
+              <Typography variant="h6">{selectedProject.name}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                기간 {formatDate(selectedProject.startDate)} ~ {formatDate(selectedProject.endDate)}
+              </Typography>
             </Stack>
           </Paper>
         ) : null}
@@ -445,7 +393,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         ) : (
           <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
             <Typography variant="body2" color="text.secondary">
-              선택된 프로젝트가 없습니다. 쓰기 권한이 있으면 위에서 프로젝트를 먼저 만들 수 있습니다.
+              {canManageProjects
+                ? "선택된 프로젝트가 없습니다. 위에서 프로젝트를 선택하거나 관리자 메뉴에서 먼저 프로젝트를 만들어 주세요."
+                : "현재 선택된 프로젝트가 없습니다. 관리자에게 프로젝트 생성을 요청하세요."}
             </Typography>
           </Paper>
         )}

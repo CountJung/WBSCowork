@@ -29,6 +29,7 @@ declare module "frappe-gantt" {
     readonly_dates?: boolean;
     readonly_progress?: boolean;
     container_height?: number | "auto";
+    scroll_to?: "today" | "start" | "end" | string;
     popup?: (context: GanttPopupContext) => string | false | void;
   };
 

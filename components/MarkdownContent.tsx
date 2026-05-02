@@ -10,8 +10,15 @@ export default function MarkdownContent({ content }: { content: string }) {
       sx={[
         {
           color: "text.primary",
+          overflowWrap: "break-word",
+          wordBreak: "break-word",
+          minWidth: 0,
           "& p": { my: 0.75 },
           "& ul, & ol": { pl: 3, my: 0.75 },
+          "& a": {
+            overflowWrap: "break-word",
+            wordBreak: "break-word",
+          },
           "& pre": {
             overflowX: "auto",
             p: 1.5,
