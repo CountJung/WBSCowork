@@ -35,7 +35,16 @@
 
 ## 다음 작업
 
-- [ ] 8단계: Synology NAS 배포 준비
+- [ ] 8단계: Feature-Sliced Design(FSD) 기반 프론트엔드 구조 정리
+  - Next.js App Router의 `app/`은 라우트 엔트리로 유지하고, 실제 화면 조립과 도메인 로직은 `src/` 아래 FSD 레이어로 점진 이동한다.
+  - 1차 구조 후보: `src/app`, `src/pages`, `src/widgets`, `src/features`, `src/entities`, `src/shared`.
+  - 도메인 명사(`project`, `task`, `submission`, `comment`, `user`)는 `entities`로 이동한다.
+  - 사용자 행동(`task-create`, `task-update`, `submission-create`, `submission-visibility-toggle`, `comment-create`, `attachment-upload`, `user-role-change`, `db-initialize`)은 `features`로 분리한다.
+  - 큰 UI 블록(`app-shell`, `project-gantt`, `task-workspace`, `submission-panel`, `admin-sidebar`, `user-role-table`)은 `widgets`로 분리한다.
+  - `shared`에는 범용 UI, env/config helper, 공통 server/client utility만 둔다.
+  - 구조 이동 후 `app → pages → widgets → features → entities → shared` 방향의 import 경계를 ESLint 또는 별도 검증 스크립트로 강제한다.
+  - 기능 변경과 구조 이동을 섞지 않고, `models/` → `entities/`, `components/` → `widgets/features`, `lib/repositories/` → `entities/*/api` 순서로 작은 단위로 진행한다.
+- [ ] 9단계: Synology NAS 배포 준비
 
 ---
 
