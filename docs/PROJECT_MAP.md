@@ -8,6 +8,8 @@
 
 ## 현재 목표
 
+- 8단계는 루트 `app/` 엔트리를 유지하는 점진 FSD 전환이다. 세부 매핑/게이트: `docs/FSD_MIGRATION_PLAN.md`.
+- 9단계 scheduled digest/report export는 architecture contract와 저장소 skill 작성 완료, 런타임 구현은 미착수다. 세부 D0~D5: `docs/PROJECT_DIGEST_REPORT_PLAN.md`.
 - Stage 7 제출물 첨부 플로우 구현 및 검증 완료.
 - 구조화 사용자 행동 로깅, 관리자 로그 검토, APP_PORT 빌드/시작 스크립트, 집중 태스크 라우팅, Gantt 우선 레이아웃 구현 완료.
 - 홈은 선택한 프로젝트 Gantt와 태스크 목록 중심으로 단순화.
@@ -25,7 +27,7 @@
 
 - 경고나 오류를 무시하지 않는다.
 - 실패한 명령이나 블로커는 반드시 기록하고 다음 조치를 명시한다.
-- 이 파일을 TODO.md 및 `.github/copilot-instructions.md`와 동기화한다.
+- 이 파일을 `docs/TODO.md` 및 `.github/copilot-instructions.md`와 동기화한다.
 - `.env`, `.env.local`, `.env.*` 파일을 AI 작업 컨텍스트나 리뷰 입력으로 사용하지 않는다.
 
 ## 커맨드 하네스
@@ -48,8 +50,12 @@
 | Comment | `/tasks` | 쓰기 사용자가 제출물에 댓글 CRUD, 모든 인증 사용자가 읽기 | 린트·라우트 연결로 확인 |
 | Gantt | `/tasks` | 선택한 프로젝트 태스크가 frappe-gantt 타임라인으로 렌더링 | 린트·라우트 연결로 확인 |
 | Home | `/` | 인증 사용자가 선택 프로젝트 Gantt와 태스크 목록 확인 | 린트·라우트 연결로 확인 |
-| Lint | `npm run lint` | 수정 파일에 미해결 경고·오류 없음 | Passed |
-| Build | `npm run build` | 프로덕션 빌드 성공 | Passed |
+| Lint | `npm run lint` | 수정 파일에 미해결 경고·오류 없음 | 2026-07-26 실패: 기존 JS/AppleDouble 10 errors, 7 warnings |
+| Build | `npm run build` | 프로덕션 빌드 성공 | 2026-07-26 성공; DEP0205 warning 추적 필요 |
+| FSD Boundary | `npm run check:fsd` | 역방향/deep/server-client import 차단 | M0에서 추가 예정 |
+| Digest Contract | focused snapshot/privacy test (D0에서 script 확정) | 현재 스키마 지표 + public/private 분리 | D0에서 추가 예정 |
+| Report OOXML | focused DOCX/PPTX structure/parity test (D2에서 script 확정) | ZIP/XML/hash/텍스트 일치 | D2에서 추가 예정 |
+| Scheduled Run | focused token/idempotency test (D3에서 script 확정) | token fail-closed + 병렬 run 1개 | D3에서 추가 예정 |
 
 ## 실행 노트
 
@@ -67,6 +73,7 @@
 - MariaDB: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_CONNECTION_LIMIT`, `DB_CONNECT_TIMEOUT_MS`.
 - 업로드: `UPLOAD_DIR`, `UPLOAD_MAX_FILE_SIZE_MB`.
 - 롤링 로그: `LOG_DIR`, `LOG_RETENTION_DAYS`, `LOG_MAX_FILE_SIZE_MB`.
+- Digest/report(구현 시): `DIGEST_SCHEDULER_TOKEN`, `REPORT_DIR`, `REPORT_RETENTION_DAYS`, row/run 상한. endpoint는 token 미설정 시 fail closed.
 - `.env*` 파일은 런타임 전용 — AI 작업 컨텍스트 제외.
 
 ## VS Code 디버깅
@@ -126,10 +133,19 @@
 
 ## 알려진 블로커
 
-- 없음.
+- `npm run lint`: `._next-env.d.ts` AppleDouble parse error와 기존 document authoring JS의 `no-require-imports`/unused 문제로 10 errors, 7 warnings. generated 파일 제외와 JS ESM 전환/별도 lint 정책을 결정해야 한다.
+- `npm run build`: build/TypeScript/static generation은 성공하지만 `tsx` 실행 중 Node DEP0205(`module.register()`) 경고가 남는다.
+
+## 계획된 구조·자동화
+
+- `docs/FSD_MIGRATION_PLAN.md`: 현재 파일을 `shared → entities → features → widgets → root app pages` 순으로 옮기는 M0~M5 계획, import boundary gate, rollback 가능한 re-export 전략.
+- `docs/PROJECT_DIGEST_REPORT_PLAN.md`: MariaDB snapshot, audience/visibility, scheduler token, run ledger, artifact storage, DOCX/PPTX native renderer의 D0~D5 계약.
+- `.github/skills/wbs-project-digest-report/SKILL.md`: 위 기능을 한 vertical slice씩 구현·검증하는 project skill.
+- scheduled email/webhook은 project membership/recipient consent 모델과 별도 threat model이 승인될 때까지 범위 밖이다.
 
 ## 다음 업데이트 트리거
 
+- FSD M0 또는 digest D0 구현 시작 시
 - Synology NAS 배포 준비 시작 시
 - auth 공급자 시크릿 프로비저닝 시
 - 새 검증 명령 또는 블로커 발생 시

@@ -4,13 +4,13 @@
 
 ## Project Overview
 
-- Build the product from MasterPlan.md as a task-based WBS collaboration system.
-- Keep the implementation scoped to the MVP defined in MasterPlan.md.
+- Build the product from `docs/MasterPlan.md` as a task-based WBS collaboration system.
+- Keep the implementation scoped to the MVP defined in `docs/MasterPlan.md`.
 - Treat the repository as a Next.js App Router application using TypeScript, MUI, NextAuth, MariaDB, TanStack Query, and frappe-gantt.
 
 ## Working Agreement
 
-- Read MasterPlan.md before changing architecture, folder structure, or stage scope.
+- Read `docs/MasterPlan.md` before changing architecture, folder structure, or stage scope.
 - Prefer the smallest change that satisfies the current stage.
 - Preserve a task-centric model. Do not drift into generic board or forum features.
 - Treat the gantt timeline as the signature surface of the product. Route and layout decisions should keep it visually dominant on home and task workspace screens.
@@ -23,21 +23,21 @@
 ## Quality Gates
 
 - Do not ignore warnings or errors from TypeScript, ESLint, build output, runtime logs, or test runs.
-- If a warning or error cannot be fixed in the current task, record it explicitly in TODO.md and HARNESS_MAP.md with impact and next action.
+- If a warning or error cannot be fixed in the current task, record it explicitly in `docs/TODO.md` and `docs/PROJECT_MAP.md` with impact and next action.
 - Do not silence checks with blanket disables. Any narrow suppression must include a reason in code and a matching task entry.
 - Validate the touched slice with the narrowest executable command before widening scope.
 
 ## Living Artifacts
 
-- Keep TODO.md, docs/PROJECT_MAP.md, .github/copilot-instructions.md, and .github/skills/ alive at all times.
+- Keep `docs/TODO.md`, `docs/PROJECT_MAP.md`, `.github/copilot-instructions.md`, and `.github/skills/` alive at all times.
 - Update these files whenever project structure, workflow, validation commands, or stage status changes.
 - Treat these files as operational documents, not one-time setup output.
 - All sub-documents live under `/docs/`. HARNESS_MAP.md now redirects to docs/PROJECT_MAP.md.
 
 ## Repository Shape
 
-- Use app/ with the App Router.
-- Keep shared logic in lib/ and reusable UI in components/.
+- Keep root `app/` as the App Router entry. During gradual FSD migration, build/move small slices in `src/shared → src/entities → src/features → src/widgets → root app pages` order; do not create a duplicate `src/app` or `src/pages` layer, and do not mix behavior changes with structure moves.
+- Existing `lib/`, `models/`, and `components/` remain compatibility locations until their mapped slice is migrated; follow `docs/FSD_MIGRATION_PLAN.md` rather than performing a bulk move.
 - Keep route handlers under app/api/.
 - Prefer Server Components by default and isolate client-only behavior into explicit Client Components.
 
@@ -48,6 +48,7 @@
 - Use the stage bootstrap workflow from .github/skills/wbs-stage-one-bootstrap/SKILL.md when starting or repairing Stage 1.
 - Apply React/Next.js performance best practices from .github/skills/react-best-practices/SKILL.md when writing, reviewing, or refactoring React components, data fetching, or bundle optimization.
 - Document generation scripts (pptx, docx, pdf) must write output to scripts/outputs/.
+- For runtime scheduled digest/report work, follow `.github/skills/wbs-project-digest-report/SKILL.md` and `docs/PROJECT_DIGEST_REPORT_PLAN.md`. Runtime artifacts use `REPORT_DIR`, not `scripts/outputs/`; start dry-run/download-only and preserve submission visibility.
 
 ## graphify
 

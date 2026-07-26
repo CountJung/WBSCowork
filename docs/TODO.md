@@ -36,26 +36,35 @@
 ## 다음 작업
 
 - [ ] 8단계: Feature-Sliced Design(FSD) 기반 프론트엔드 구조 정리
-  - Next.js App Router의 `app/`은 라우트 엔트리로 유지하고, 실제 화면 조립과 도메인 로직은 `src/` 아래 FSD 레이어로 점진 이동한다.
-  - 1차 구조 후보: `src/app`, `src/pages`, `src/widgets`, `src/features`, `src/entities`, `src/shared`.
-  - 도메인 명사(`project`, `task`, `submission`, `comment`, `user`)는 `entities`로 이동한다.
-  - 사용자 행동(`task-create`, `task-update`, `submission-create`, `submission-visibility-toggle`, `comment-create`, `attachment-upload`, `user-role-change`, `db-initialize`)은 `features`로 분리한다.
-  - 큰 UI 블록(`app-shell`, `project-gantt`, `task-workspace`, `submission-panel`, `admin-sidebar`, `user-role-table`)은 `widgets`로 분리한다.
-  - `shared`에는 범용 UI, env/config helper, 공통 server/client utility만 둔다.
-  - 구조 이동 후 `app → pages → widgets → features → entities → shared` 방향의 import 경계를 ESLint 또는 별도 검증 스크립트로 강제한다.
-  - 기능 변경과 구조 이동을 섞지 않고, `models/` → `entities/`, `components/` → `widgets/features`, `lib/repositories/` → `entities/*/api` 순서로 작은 단위로 진행한다.
-- [ ] 9단계: Synology NAS 배포 준비
+  - 실행 계약과 현재 파일별 매핑은 [FSD_MIGRATION_PLAN.md](FSD_MIGRATION_PLAN.md)를 따른다.
+  - 루트 `app/`은 App Router 엔트리로 유지한다. 구축/이동은 `src/shared → src/entities → src/features → src/widgets → root app pages` 순이며 중복 책임의 `src/app`, `src/pages`는 만들지 않는다.
+  - [ ] M0: `scripts/check-fsd-boundaries.ts` + `npm run check:fsd` 경계 하네스
+  - [ ] M1: 범용 UI/config/server utility를 shared로 이동하고 호환 re-export 유지
+  - [ ] M2: 모델/정책과 repository를 entity로 나누어 이동
+  - [ ] M3: Server Action mutation을 feature use-case로 추출
+  - [ ] M4: UI를 widget 단위로 이동
+  - [ ] M5: root app page/route adapter를 마지막 전환하고 호환 레이어 제거
+- [ ] 9단계: Scheduled project digest + DOCX/PPTX report export
+  - 상세 계약과 D0~D5 게이트는 [PROJECT_DIGEST_REPORT_PLAN.md](PROJECT_DIGEST_REPORT_PLAN.md)를 따른다.
+  - [ ] D0: 현재 DB 사실만 담는 versioned `DigestSnapshot` + privacy fixture
+  - [ ] D1: admin/superuser용 manual JSON preview
+  - [ ] D2: 동일 snapshot 기반 DOCX/PPTX export + 권한 다운로드
+  - [ ] D3: scheduler token, dry-run, MariaDB versioned migration·최소권한·run ledger/idempotency
+  - [ ] D4: download-only 운영 + artifact retention
+  - [ ] D5: membership/recipient consent와 threat model 승인 후 delivery 검토
+- [ ] 10단계: Synology NAS 배포 준비
 
 ---
 
 ## 미해결 블로커
 
-없음.
+- 2026-07-26 검수에서 `npm run lint` 실패(이번 문서 변경과 무관한 기존 범위): 외장 드라이브 AppleDouble `._next-env.d.ts` parse error, `.github/skills/document-skills/pptx/scripts/html2pptx.js`·`scripts/convert-manual-to-pptx.js`·`scripts/generate-manual-docx.js`의 CommonJS import/unused 경고. 다음 코드 품질 작업에서 generated/AppleDouble 제외 정책과 authoring script lint 범위 또는 ESM 전환을 결정한 뒤 17건(오류 10, 경고 7)을 해소한다.
+- 같은 검수의 `npm run build`는 성공했으나 Node `[DEP0205] module.register()` deprecation warning이 발생했다. `tsx`/Node/Next.js 조합의 upstream 또는 버전 호환성을 확인하고 경고가 사라지는 조합에서 재검증한다.
 
 ---
 
 ## 참고 문서
 
-- [docs/마스터플랜.md](마스터플랜.md) — 전체 제품 계획
+- [docs/MasterPlan.md](MasterPlan.md) — 전체 제품 계획
 - [docs/PROJECT_MAP.md](PROJECT_MAP.md) — 실행 맵 (커맨드 하네스)
 - [AGENTS.md](../AGENTS.md) — AI 에이전트 가이드

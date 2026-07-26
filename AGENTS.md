@@ -39,7 +39,7 @@
 ## 프로젝트 구조
 
 ```
-app/           # Next.js App Router 라우트
+app/           # Next.js App Router 엔트리(라우트/handler/action adapter)
   api/         # Route Handlers
   admin/       # 관리자 페이지 (슈퍼관리자·관리자 접근)
   tasks/       # 메인 WBS 태스크 워크스페이스
@@ -52,6 +52,7 @@ lib/
   db.ts        # MariaDB 풀
   repositories/ # DB 접근 계층
 models/        # 도메인 타입 (user, task, submission, comment 등)
+src/           # 점진 FSD 목표 구조(shared/entities/features/widgets 순으로 구축)
 docs/          # 하위 문서 (PROJECT_MAP.md 등)
 ```
 
@@ -66,6 +67,9 @@ docs/          # 하위 문서 (PROJECT_MAP.md 등)
 5. 제출물 목록 쿼리는 반드시 `SubmissionVisibilityFilter`를 사용할 것
 6. 환경 변수 파일(`.env*`)을 AI 컨텍스트로 열지 않는다
 7. 경고·오류 무시 금지 — 해결 불가 시 `docs/PROJECT_MAP.md`에 기록
+8. FSD 의존 방향은 `app → widgets → features → entities → shared`, 구축/이동 순서는 `shared → entities → features → widgets → root app pages`이다. 루트 `app/`을 `src/app`으로 옮기지 않고 구조 이동과 기능 변경을 분리한다.
+9. scheduled digest는 기본 dry-run/download-only이며, `SubmissionVisibilityFilter`, machine token, DB idempotency ledger 없이 활성화하지 않는다.
+10. report renderer는 동일한 versioned snapshot을 사용한다. DOCX는 `docx`, runtime PPTX는 브라우저 없는 `pptxgenjs` 직접 생성을 사용한다.
 
 ---
 
@@ -85,6 +89,9 @@ npm run dev:debug     # Node 인스펙터 포함 dev 서버
 - [docs/MasterPlan.md](docs/MasterPlan.md) — 전체 제품 계획
 - [docs/TODO.md](docs/TODO.md) — 현재 진행 태스크
 - [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md) — 실행 맵 (구 HARNESS_MAP.md)
+- [docs/FSD_MIGRATION_PLAN.md](docs/FSD_MIGRATION_PLAN.md) — 점진 FSD 파일 매핑·검증 게이트
+- [docs/PROJECT_DIGEST_REPORT_PLAN.md](docs/PROJECT_DIGEST_REPORT_PLAN.md) — scheduled digest/report export 계약
+- [.github/skills/wbs-project-digest-report/SKILL.md](.github/skills/wbs-project-digest-report/SKILL.md) — digest/export 구현 workflow
 - [.github/copilot-instructions.md](.github/copilot-instructions.md) — AI 작업 규칙
 - [.github/instructions/nextjs-stack.instructions.md](.github/instructions/nextjs-stack.instructions.md) — Next.js 스택 가이드
 - [.github/instructions/quality-gates.instructions.md](.github/instructions/quality-gates.instructions.md) — 품질 게이트 규칙
