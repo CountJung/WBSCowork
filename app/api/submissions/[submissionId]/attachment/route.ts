@@ -3,6 +3,8 @@ import { getAuthSession } from "@/lib/auth";
 import { logUserAction, logUserActionFailure } from "@/lib/logger";
 import { getSubmissionById } from "@/lib/repositories/submission-repository";
 import { readStoredSubmissionAttachment } from "@/lib/submission-files";
+import { canViewSubmission } from "@/models/submission";
+import { canManageAllSubmissions } from "@/models/user";
 
 type RouteContext = {
   params: Promise<{
@@ -27,6 +29,12 @@ export async function GET(request: Request, context: RouteContext) {
   const submission = await getSubmissionById(submissionId);
 
   if (!submission?.filePath || !submission.fileName) {
+    return NextResponse.json({ message: "첨부파일이 없습니다." }, { status: 404 });
+  }
+
+  const canSeeAll = canManageAllSubmissions(session.user.role, session.user.isSuperuser);
+
+  if (!canViewSubmission(submission, { canSeeAll, email: session.user.email })) {
     return NextResponse.json({ message: "첨부파일이 없습니다." }, { status: 404 });
   }
 

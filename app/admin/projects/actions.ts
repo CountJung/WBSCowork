@@ -5,6 +5,13 @@ import { redirect } from "next/navigation";
 import { getAuthSession, getSignInPath } from "@/lib/auth";
 import { logUserAction, logUserActionFailure } from "@/lib/logger";
 import { createProject, deleteProject, updateProject } from "@/lib/repositories/project-repository";
+import { listAttachmentsByProject } from "@/lib/repositories/submission-attachment-repository";
+import { listSubmissionsByProject } from "@/lib/repositories/submission-repository";
+import { listTasksByProject } from "@/lib/repositories/task-repository";
+import {
+  deleteProjectUploadDirectories,
+  deleteStoredSubmissionAttachment,
+} from "@/lib/submission-files";
 import { canAccessAdminPanel } from "@/models/user";
 
 function buildProjectsPath(status: "success" | "error", message: string) {
@@ -148,21 +155,80 @@ export async function deleteProjectAdminAction(formData: FormData) {
   let redirectPath: string;
 
   try {
-    await deleteProject(projectId);
+    if (getSingleValue(formData.get("confirmDestruction")) !== "yes") {
+      throw new Error("프로젝트 종료 및 개인정보 파기에 동의해야 합니다.");
+    }
+
+    const [submissionsToClean, attachmentsToClean, tasksToClean] = await Promise.all([
+      listSubmissionsByProject(projectId),
+      listAttachmentsByProject(projectId),
+      listTasksByProject(projectId),
+    ]);
+    const project = await deleteProject(projectId);
+
+    const storedFilePaths = new Set([
+      ...submissionsToClean
+        .map((submission) => submission.filePath)
+        .filter((filePath): filePath is string => Boolean(filePath)),
+      ...attachmentsToClean.map((attachment) => attachment.filePath),
+    ]);
+
+    let cleanupFailureCount = 0;
+
+    for (const filePath of storedFilePaths) {
+      await deleteStoredSubmissionAttachment(filePath).catch(async (cleanupError) => {
+        cleanupFailureCount += 1;
+        await logUserActionFailure(
+          "admin.projects",
+          {
+            actorEmail: session.user.email ?? null,
+            action: "project.delete.file.cleanup",
+            entityType: "project",
+            entityId: projectId,
+            projectId,
+            metadata: { storedFileCleanupFailed: true },
+          },
+          cleanupError,
+        );
+      });
+    }
+
+    await deleteProjectUploadDirectories(tasksToClean.map((task) => task.id)).catch(async (cleanupError) => {
+      cleanupFailureCount += 1;
+      await logUserActionFailure(
+        "admin.projects",
+        {
+          actorEmail: session.user.email ?? null,
+          action: "project.delete.directory.cleanup",
+          entityType: "project",
+          entityId: projectId,
+          projectId,
+        },
+        cleanupError,
+      );
+    });
 
     revalidatePath("/admin/projects");
     revalidatePath("/tasks");
     revalidatePath("/");
 
-    await logUserAction("admin.projects", {
-      actorEmail: session.user.email ?? null,
-      action: "project.delete",
-      entityType: "project",
-      entityId: projectId,
-      projectId: projectId,
-    });
+    if (cleanupFailureCount > 0) {
+      redirectPath = buildProjectsPath(
+        "error",
+        `${project.name} 프로젝트 DB는 삭제했지만 저장 파일 정리 ${cleanupFailureCount}건이 실패했습니다. 관리자 로그와 업로드 저장소를 확인해 주세요.`,
+      );
+    } else {
+      await logUserAction("admin.projects", {
+        actorEmail: session.user.email ?? null,
+        action: "project.delete",
+        entityType: "project",
+        entityId: projectId,
+        entityLabel: project.name,
+        projectId: projectId,
+      });
 
-    redirectPath = buildProjectsPath("success", "프로젝트를 삭제했습니다.");
+      redirectPath = buildProjectsPath("success", `${project.name} 프로젝트와 관련 데이터를 파기했습니다.`);
+    }
   } catch (error) {
     await logUserActionFailure(
       "admin.projects",

@@ -23,6 +23,7 @@
 | URL / entry | 파일 | 인증/권한 | 주요 데이터 |
 | --- | --- | --- | --- |
 | `/` | `app/page.tsx` | 비로그인은 안내, 로그인 후 조회 | projects, tasks, Gantt |
+| `/privacy` | `app/privacy/page.tsx` | 공개 | 수집 항목, 보유 기간, 프로젝트 종료·파기 절차 |
 | `/tasks` | `app/tasks/page.tsx` | 로그인 필수; guest read-only, member+ write | 모든 핵심 entity; submission 목록만 viewer filter 적용 |
 | `/admin` | `app/admin/page.tsx` | admin/superuser | 운영 요약 |
 | `/admin/projects` | `app/admin/projects/page.tsx` | admin/superuser | project CRUD |
@@ -31,10 +32,10 @@
 | `/admin/logs` | `app/admin/logs/page.tsx` | superuser only | rolling log tail |
 | `/admin/settings` | `app/admin/settings/page.tsx` | superuser only | env 설정 UI |
 | `/api/auth/[...nextauth]` | `app/api/auth/[...nextauth]/route.ts` | NextAuth | Google OAuth GET/POST |
-| `/api/submissions/[submissionId]/attachment` | 해당 `route.ts` | 현재 로그인만 확인 | legacy 단일 첨부 download |
-| `/api/submission-attachments/[attachmentId]` | 해당 `route.ts` | 현재 로그인만 확인 | 다중 첨부 download |
+| `/api/submissions/[submissionId]/attachment` | 해당 `route.ts` | 로그인 + public/작성자/admin 가시성 | legacy 단일 첨부 download |
+| `/api/submission-attachments/[attachmentId]` | 해당 `route.ts` | 로그인 + 부모 제출물 가시성 | 다중 첨부 download |
 
-두 attachment route는 private 제출물의 viewer 권한을 확인하지 않는 현재 위험 지점이다.
+두 attachment route는 권한이 없거나 존재하지 않는 자원을 모두 404로 응답해 식별자 열거를 줄인다.
 
 ## 3. 주요 실행 흐름
 
@@ -54,6 +55,12 @@
 `form → app/**/actions.ts → session/입력 검사 → repository → file/log/revalidate → redirect`
 
 `app/tasks/actions.ts`가 큰 단일 action 모듈이다. FSD 전환 시 use-case별 feature로 분리하되 기능/권한 변경과 파일 이동을 분리한다.
+
+### 프로젝트 종료·파기
+
+`/admin/projects 종료 및 파기 확인 → 프로젝트 연결 제출물·첨부·태스크 경로 선조회 → project DELETE/FK cascade → UPLOAD_DIR 저장 파일·빈 태스크 디렉터리 정리 → 구조화 결과 로그`
+
+프로젝트 종료일만으로 자동 삭제하지 않는다. 관리자가 산출물 인계와 별도 보존 의무를 확인한 뒤 명시적으로 실행하며, 공유 사용자 계정과 단기 운영 로그는 프로젝트 데이터와 별도 수명주기로 관리한다.
 
 ### DB 초기화
 

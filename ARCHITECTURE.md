@@ -23,6 +23,7 @@ lib auth/policy orchestration + repositories
 
 - `app/layout.tsx`: global CSS, frappe-gantt CSS, provider와 `AppShell` 조립.
 - `app/page.tsx`: 로그인 전 readiness 안내; 로그인 후 선택 프로젝트 Gantt/태스크 요약.
+- `app/privacy/page.tsx`: 로그인 없이 접근 가능한 개인정보 처리·보유·프로젝트 종료 파기 안내.
 - `app/tasks/page.tsx`: `dynamic = "force-dynamic"`; 세션과 DB readiness 확인 후 workspace 조립.
 - 관리자 page도 서버에서 권한을 검사한다. 민감 route는 UI 메뉴 노출과 독립적으로 fail closed해야 한다.
 - 동적 params/searchParams는 Next.js 16 패턴에 맞게 Promise를 await한다.
@@ -70,9 +71,8 @@ private → author OR admin/superuser
 ### 현재 확인된 보안 부채
 
 1. `app/tasks/page.tsx`는 submissions만 visibility-filtered이고 comments/attachments는 프로젝트 전체를 조회한다.
-2. 두 attachment Route Handler는 로그인만 확인하고 부모 submission visibility를 확인하지 않는다.
-3. `getSubmissionById`는 unscoped 단건 조회이므로 사용자 응답 경계에서 직접 사용하면 안 된다.
-4. task actions의 일부 mutation은 쓰기 역할만 확인하므로 작성자 ownership 정책을 별도로 감사해야 한다.
+2. `getSubmissionById`는 unscoped 단건 조회이므로 사용자 응답 경계에서는 `canViewSubmission` 정책과 함께 사용해야 한다.
+3. task actions의 일부 mutation은 쓰기 역할만 확인하므로 작성자 ownership 정책을 별도로 감사해야 한다.
 
 따라서 UI에서 private card가 숨겨진다는 사실만으로 데이터가 보호된다고 판단하지 않는다.
 
@@ -91,6 +91,8 @@ private → author OR admin/superuser
 
 DB cascade는 파일 삭제를 하지 않는다. 삭제 action은 DB 삭제 전 경로를 모으고 이후 저장 파일을 정리하지만 실패 복구/transaction 경계를 별도로 고려해야 한다.
 
+프로젝트 종료·파기는 `end_date` 도래만으로 자동 실행하지 않는다. 관리자가 `/admin/projects`에서 파기 확인을 명시한 경우 project 삭제와 FK cascade를 실행하고, 선조회한 legacy/multi-attachment 경로의 실제 파일과 빈 태스크 디렉터리를 함께 정리한다. 사용자 계정은 여러 프로젝트에서 공유될 수 있으므로 project cascade 대상이 아니며, 참여 목적이 모두 종료된 뒤 별도 계정 파기 절차가 필요하다. 운영 로그는 `LOG_RETENTION_DAYS`에 따라 만료 삭제된다.
+
 ### 스키마 운영 제약
 
 - fresh install: `CREATE DATABASE IF NOT EXISTS`, 6개 table 생성.
@@ -104,7 +106,7 @@ DB cascade는 파일 삭제를 하지 않는다. 삭제 action은 DB 삭제 전 
 
 - `lib/submission-files.ts`: `UPLOAD_DIR`, 크기 제한, 안전한 경로 해석, 읽기/삭제.
 - `next.config.ts`: 업로드 최대치 + 2MB로 Server Action body limit 계산.
-- 다운로드는 `Cache-Control: private, no-store`, length/type/disposition을 반환한다.
+- 다운로드는 부모 제출물의 public/작성자/admin 가시성을 검사하고 `Cache-Control: private, no-store`, length/type/disposition을 반환한다.
 - `lib/logger.ts` 및 `instrumentation.ts`: `LOG_DIR` 롤링 로그와 구조화 action log.
 - 파일 경로·비밀값·private content를 로그 metadata에 남기지 않는 방향으로 보강해야 한다.
 

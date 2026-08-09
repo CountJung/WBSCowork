@@ -30,6 +30,18 @@ export type Submission = {
   createdAt: Date;
 };
 
+export function canViewSubmission(
+  submission: Pick<Submission, "authorEmail" | "visibility">,
+  viewer: { canSeeAll: boolean; email?: string | null },
+) {
+  if (viewer.canSeeAll || submission.visibility === "public") {
+    return true;
+  }
+
+  const viewerEmail = viewer.email?.trim().toLowerCase();
+  return Boolean(viewerEmail && viewerEmail === submission.authorEmail.trim().toLowerCase());
+}
+
 export function mapSubmissionRow(row: SubmissionRow): Submission {
   return {
     id: row.id,

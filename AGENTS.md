@@ -70,6 +70,7 @@ docs/          # 하위 문서 (PROJECT_MAP.md 등)
 8. FSD 의존 방향은 `app → widgets → features → entities → shared`, 구축/이동 순서는 `shared → entities → features → widgets → root app pages`이다. 루트 `app/`을 `src/app`으로 옮기지 않고 구조 이동과 기능 변경을 분리한다.
 9. scheduled digest는 기본 dry-run/download-only이며, `SubmissionVisibilityFilter`, machine token, DB idempotency ledger 없이 활성화하지 않는다.
 10. report renderer는 동일한 versioned snapshot을 사용한다. DOCX는 `docx`, runtime PPTX는 브라우저 없는 `pptxgenjs` 직접 생성을 사용한다.
+11. 개인정보 처리지침은 실제 schema·로그·파일 수명주기와 일치시킨다. 프로젝트 파기는 종료일 자동 삭제가 아니라 관리자 명시 확인 후 DB cascade와 저장 파일 정리를 함께 실행하며, 공유 사용자 계정은 별도 수명주기로 다룬다.
 
 ---
 

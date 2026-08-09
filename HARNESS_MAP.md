@@ -76,9 +76,9 @@ DB 변경 시 최소 확인 목록:
 | `/tasks` | sign-in redirect | public read | write + public/own private | write + all | write + all |
 | `/admin`, `/admin/projects`, `/admin/users` | sign-in | `/` redirect | `/` redirect | allow | allow |
 | `/admin/database`, `/admin/logs`, `/admin/settings` | sign-in | deny | deny | deny | allow |
-| attachment GET | 401 | 부모 visibility 적용 필요 | 부모 visibility 적용 필요 | allow | allow |
+| attachment GET | 401 | public만, private 404 | public + 본인 private | allow | allow |
 
-마지막 행은 목표 게이트다. 현재 handler는 로그인만 검사하므로 private IDOR 테스트를 추가하고 수정 전 통과로 표시하지 않는다.
+attachment handler는 부모 제출물의 가시성을 검사하고 unauthorized/missing을 모두 404로 응답한다. 자동화된 private IDOR 회귀 테스트는 테스트 인프라 도입 시 추가한다.
 
 ## 6. 가시성 focused test 사양(추가 예정)
 

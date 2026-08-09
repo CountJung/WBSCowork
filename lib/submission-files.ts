@@ -165,6 +165,15 @@ export async function cleanupTaskUploadDirectory(taskId: number) {
   }
 }
 
+export async function deleteProjectUploadDirectories(taskIds: number[]) {
+  const uploadRoot = getAbsoluteUploadDirectory();
+
+  for (const taskId of taskIds) {
+    const taskDirectory = assertPathWithinRoot(uploadRoot, path.join(uploadRoot, "submissions", String(taskId)));
+    await rm(taskDirectory, { recursive: true, force: true });
+  }
+}
+
 /**
  * 프로젝트 삭제 후 해당 태스크들의 빈 폴더를 정리합니다.
  * taskIds: 프로젝트에 속했던 태스크 ID 목록

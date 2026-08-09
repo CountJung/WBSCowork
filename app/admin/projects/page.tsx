@@ -1,9 +1,11 @@
 import {
   Alert,
   Button,
+  Checkbox,
   Chip,
   Container,
   Divider,
+  FormControlLabel,
   Paper,
   Stack,
   TextField,
@@ -92,10 +94,15 @@ function ProjectEditCard({ project }: { project: Project }) {
               기간 {formatDate(project.startDate)} ~ {formatDate(project.endDate)}
             </Typography>
           </Stack>
-          <Stack component="form" action={deleteProjectAdminAction}>
+          <Stack component="form" action={deleteProjectAdminAction} spacing={1} sx={{ maxWidth: 360 }}>
             <input type="hidden" name="projectId" value={String(project.id)} />
+            <FormControlLabel
+              control={<Checkbox name="confirmDestruction" value="yes" required size="small" />}
+              label="종료 후 관련 DB 데이터와 첨부파일을 영구 파기합니다."
+              sx={{ alignItems: "flex-start", m: 0 }}
+            />
             <Button type="submit" color="error" size="small" variant="outlined">
-              삭제
+              종료 및 파기
             </Button>
           </Stack>
         </Stack>

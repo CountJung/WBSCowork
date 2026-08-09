@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { logUserAction, logUserActionFailure } from "@/lib/logger";
 import { getSubmissionAttachmentById } from "@/lib/repositories/submission-attachment-repository";
+import { getSubmissionById } from "@/lib/repositories/submission-repository";
 import { readStoredSubmissionAttachment } from "@/lib/submission-files";
+import { canViewSubmission } from "@/models/submission";
+import { canManageAllSubmissions } from "@/models/user";
 
 type RouteContext = {
   params: Promise<{
@@ -27,6 +30,13 @@ export async function GET(request: Request, context: RouteContext) {
   const attachment = await getSubmissionAttachmentById(attachmentId);
 
   if (!attachment) {
+    return NextResponse.json({ message: "첨부파일이 없습니다." }, { status: 404 });
+  }
+
+  const submission = await getSubmissionById(attachment.submissionId);
+  const canSeeAll = canManageAllSubmissions(session.user.role, session.user.isSuperuser);
+
+  if (!submission || !canViewSubmission(submission, { canSeeAll, email: session.user.email })) {
     return NextResponse.json({ message: "첨부파일이 없습니다." }, { status: 404 });
   }
 
@@ -67,7 +77,7 @@ export async function GET(request: Request, context: RouteContext) {
         entityType: "submission",
         entityId: attachment.submissionId,
         submissionId: attachment.submissionId,
-        metadata: { filePath: attachment.filePath },
+        metadata: { storedFileReadFailed: true },
       },
       error,
     );

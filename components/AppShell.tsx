@@ -18,6 +18,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Toolbar,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useColorScheme } from "@mui/material/styles";
@@ -66,6 +67,21 @@ function isActivePath(currentPath: string, href: string) {
   return currentPath === href || currentPath.startsWith(`${href}/`);
 }
 
+function PrivacyGuideIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none">
+      <path
+        d="M12 3 5.5 5.7v5.1c0 4.3 2.7 8.2 6.5 9.7 3.8-1.5 6.5-5.4 6.5-9.7V5.7L12 3Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <path d="M12 10.2v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="12" cy="7.7" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
 export default function AppShell({ appName, authProvidersConfigured, children }: AppShellProps) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
@@ -79,6 +95,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
   const hasAdminAccess = isSuperuser || isAdminRole;
   const currentAdminNavItems = isSuperuser ? superuserAdminNavItems : adminRoleNavItems;
   const isAdminRouteActive = hasAdminAccess && isActivePath(pathname, "/admin");
+  const isPrivacyRouteActive = isActivePath(pathname, "/privacy");
 
   const selectedMode: AppThemeMode = mode ?? "system";
   const effectiveMode = selectedMode === "system" ? systemMode ?? "light" : selectedMode;
@@ -220,6 +237,25 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
             </Stack>
 
             <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", justifyContent: "flex-end" }}>
+              <Tooltip title="개인정보 처리지침">
+                <IconButton
+                  component={Link}
+                  href="/privacy"
+                  aria-label="개인정보 처리지침 보기"
+                  aria-current={isPrivacyRouteActive ? "page" : undefined}
+                  color={isPrivacyRouteActive ? "primary" : "inherit"}
+                  sx={{
+                    minWidth: 44,
+                    minHeight: 44,
+                    border: "1px solid",
+                    borderColor: isPrivacyRouteActive ? "primary.main" : "divider",
+                    backgroundColor: isPrivacyRouteActive ? "action.selected" : "transparent",
+                  }}
+                >
+                  <PrivacyGuideIcon />
+                </IconButton>
+              </Tooltip>
+
               <NoSsr fallback={<Box sx={{ display: { xs: "none", md: "block" }, width: 212, height: 36 }} />}>
                 <ToggleButtonGroup
                   exclusive
@@ -261,13 +297,13 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
 
               <Box sx={{ display: { xs: "none", md: "block" } }}>{authAction}</Box>
               <NoSsr
-                fallback={<Chip label="표시 모드" variant="outlined" size="small" sx={{ display: { xs: "inline-flex", md: "none" } }} />}
+                fallback={<Chip label="표시 모드" variant="outlined" size="small" sx={{ display: { xs: "none", sm: "inline-flex", md: "none" } }} />}
               >
                 <Chip
                   label={`표시 ${effectiveMode}`}
                   variant="outlined"
                   size="small"
-                  sx={{ display: { xs: "inline-flex", md: "none" } }}
+                  sx={{ display: { xs: "none", sm: "inline-flex", md: "none" } }}
                 />
               </NoSsr>
             </Stack>
