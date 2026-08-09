@@ -102,4 +102,14 @@ npm run dev:debug     # Node 인스펙터 포함 dev 서버
 
 이 저장소는 **Next.js 16 App Router**를 사용합니다. 훈련 데이터와 API·컨벤션이 다를 수 있습니다.  
 코드 작성 전 `node_modules/next/dist/docs/`를 반드시 참조하십시오.
+## 운영 문서 스택
 
+작업 전 변경 성격에 맞춰 다음 루트 문서를 함께 확인한다.
+
+- [`MASTER_PLAN.html`](MASTER_PLAN.html): 사람용 단계 계획과 권한·가시성 우선순위
+- [`PROJECT_MAP.md`](PROJECT_MAP.md): App Router, repository, DB 작업별 진입점
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): 인증·인가, 제출물 가시성, MariaDB와 파일 경계
+- [`HARNESS_MAP.md`](HARNESS_MAP.md): 빌드·lint·DB 검증 명령과 알려진 기준선
+- [`tasks/TASK_TEMPLATE.md`](tasks/TASK_TEMPLATE.md): 권한 매트릭스·DB 영향·완료 조건 템플릿
+
+Serena는 역할·권한, DB schema, repository 계약 또는 여러 Route Handler를 함께 바꾸는 경우의 실제 참조 추적에만 사용한다. Graphify는 일반적인 문서·검색으로 설명되지 않는 의존 구조 리팩터링 때만 예외적으로 사용한다. 구조·명령·권한 경계가 달라지면 관련 운영 문서를 같은 변경에서 갱신한다.
