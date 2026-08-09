@@ -37,7 +37,9 @@
 |------|-----|-----------|
 | 홈 | `/` | 전체 |
 | 태스크 | `/tasks` | 전체 |
+| 개인정보 처리 | `/privacy` | 전체(비로그인 포함) |
 | 관리 대시보드 | `/admin` | 관리자 이상 |
+| 프로젝트 관리 | `/admin/projects` | 관리자 이상 |
 | 사용자 관리 | `/admin/users` | 관리자 이상 |
 | DB 관리 | `/admin/database` | 슈퍼관리자만 |
 | 로그 | `/admin/logs` | 슈퍼관리자만 |
@@ -71,7 +73,7 @@
 - 태스크 상세 → "편집" → 변경 → 저장
 
 **삭제 (DELETE)**
-- 관리자 권한 필요 (태스크 상세 → "삭제")
+- 쓰기 권한(일반사용자 이상) 필요 (태스크 상세 → "삭제")
 
 ---
 
@@ -151,19 +153,24 @@ NEXTAUTH_SECRET=...
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_NAME=wbscowork
+DB_NAME=wbs_app
+DB_CONNECTION_LIMIT=5
+DB_CONNECT_TIMEOUT_MS=10000
 
 # 파일 업로드
-UPLOAD_MAX_FILE_SIZE_MB=50
-UPLOAD_DIR=/uploads
+UPLOAD_DIR=./uploads
+UPLOAD_MAX_FILE_SIZE_MB=200
 
 # 슈퍼관리자 (한 이메일만)
 SUPERUSER_EMAIL=admin@example.com
 
 # 로깅
-LOG_DIR=/logs
-LOG_RETENTION_DAYS=30
+LOG_DIR=./logs
+LOG_RETENTION_DAYS=5
+LOG_MAX_FILE_SIZE_MB=100
 ```
+
+정확한 기본값은 저장소의 `env.example`이 기준입니다.
 
 ---
 
@@ -178,6 +185,9 @@ npm run dev:debug
 
 # 린트 확인
 npm run lint
+
+# 타입 검사
+npm run typecheck
 
 # 프로덕션 빌드
 npm run build
@@ -199,8 +209,9 @@ npm run db:check
 - 일반적인 사용 문제
 
 **문서**
-- `docs/MasterPlan.md` — 프로젝트 계획
-- `docs/PROJECT_MAP.md` — 실행 맵
+- `docs/PRODUCT_SPEC.md` — 제품 정의·DB 설계
+- `docs/PROJECT_MAP.md` — 코드 탐색 지도
+- `docs/HARNESS_MAP.md` — 실행·검증 명령
 - `AGENTS.md` — 권한 시스템
 
 ---

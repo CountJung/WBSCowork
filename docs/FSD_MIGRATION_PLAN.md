@@ -1,8 +1,6 @@
 # 점진적 FSD 마이그레이션 계획
 
-> 상태: 계획/검토 완료, 구현 미착수 · 대규모 이동 금지
-
-> 범위: 루트 `app/`을 Next.js App Router 엔트리로 유지하고 구현을 `src/shared → src/entities → src/features → src/widgets → 루트 app page` 순서로 점진 이동한다.
+> 상태: M0 완료(경계 하네스 가동), M1 진행 중 · 대규모 이동 금지. 범위: 루트 `app/`을 Next.js App Router 엔트리로 유지하고 구현을 `src/shared → src/entities → src/features → src/widgets → 루트 app page` 순서로 점진 이동한다.
 
 ## 1. 구조 계약
 
@@ -15,7 +13,7 @@ src/shared/                  # 도메인을 모르는 UI/config/server utility
 ```
 
 - `src/app`, `src/pages`는 만들지 않는다. page 역할은 기존 루트 `app/**/page.tsx`가 담당한다.
-- 공개 API는 각 slice의 `index.ts`로 제한하고 다른 slice의 내부 파일을 deep import하지 않는다.
+- 공개 API는 각 slice의 `index.ts`(server 전용 소비자는 `index.server.ts`)로 제한하고 다른 slice의 내부 파일을 deep import하지 않는다.
 - 허용 의존 방향은 `app → widgets → features → entities → shared`이다. 같은 레이어의 서로 다른 slice 간 직접 import는 금지한다.
 - **구현/이동 순서는 의존 방향의 반대인 `shared → entities → features → widgets → app pages`**이다. 하위 레이어 공개 API를 먼저 안정화한 뒤 상위 소비자를 전환한다.
 - Server Component가 기본이며 브라우저 상태가 필요한 leaf에만 `"use client"`를 둔다. DB/env/fs API는 server-only 공개 API로 제공한다.
@@ -49,15 +47,30 @@ src/shared/                  # 도메인을 모르는 UI/config/server utility
 
 ## 3. 실행 순서와 게이트
 
-### M0 — import boundary 하네스(이동 전)
+### M0 — import boundary 하네스(완료, 2026-08-09)
 
-1. 빈 레이어를 만들기보다 첫 실제 slice와 함께 `scripts/check-fsd-boundaries.ts`를 추가한다.
-2. 현재 `tsconfig.json`의 `@/* → ./*` alias를 그대로 사용해 `@/src/...`를 import한다. 별도 alias를 약속하지 않는다.
-3. `package.json`에 `check:fsd`를 연결하고 CI 품질 게이트에 포함한다.
+1. `scripts/check-fsd-boundaries.ts`를 첫 실제 slice(`src/shared/ui/markdown-content`)와 함께 추가했다.
+2. `tsconfig.json`의 `@/* → ./*` alias를 그대로 사용해 `@/src/...`로 import한다. 별도 alias는 만들지 않았다.
+3. `package.json`에 `check:fsd`를 연결했다. 함께 `typecheck`(`tsc --noEmit`)도 추가했다.
 
-**게이트**: 정상 fixture는 통과하고 역방향/deep/server-client 위반 fixture는 실패해야 한다. `npm run check:fsd`, `npm run lint`, `npm run build` 통과. 런타임 파일 이동 없음.
+**게이트 결과**: fixture self-test 5건(정상 1, 역방향/cross-slice/deep/client-server 각 1) PASS, 저장소 위반 0건, `npm run lint`·`npm run typecheck`·`npm run build` 통과.
 
-### M1 — shared 기반
+구현하면서 확정한 계약:
+
+| 결정 | 내용 | 이유 |
+| --- | --- | --- |
+| 공개 API 2종 | slice 공개 진입점은 `index.ts`와 `index.server.ts` | 순수 모델과 server 전용 API를 한 index에 섞으면 client 그래프가 server 코드를 끌어온다 |
+| shared 공개 단위 | `src/shared/<segment>/<unit>` (슬라이스가 아닌 세그먼트 구조) | 표준 FSD에서 shared는 slice를 갖지 않는다 |
+| type-only import 예외 | `import type` / `export type`은 client-server 검사에서 제외 | 컴파일 시 지워지므로 번들 경계에 영향이 없다 |
+| `"use server"` 경계 | Server Action 모듈에서 그래프 탐색을 멈춘다 | client → Server Action은 네트워크 참조로 대체되어 서버 코드를 번들에 넣지 않는다 |
+| `legacy-import`는 경고 | src 슬라이스가 `components/`·`lib/`·`models/`를 참조하면 warn | 이동 도중 불가피한 과도기 상태를 차단하지 않되 남은 부채로 노출한다 |
+| 전이 검사 | client 진입점에서 도달 가능한 그래프 전체를 탐색 | re-export를 한 단계 거치면 직접 import 검사만으로는 뚫린다 |
+
+**남은 M0 후속**: CI 워크플로가 없으므로 `check:fsd`는 아직 로컬 게이트다. CI 도입 시 lint/typecheck/build와 함께 연결한다.
+
+### M1 — shared 기반 (진행 중)
+
+완료: `components/MarkdownContent.tsx` → `src/shared/ui/markdown-content/`, 기존 경로는 호환 re-export 유지.
 
 도메인 비의존 UI/config부터 이동한다. `db`, `env`, `logger`, auth provider wiring 같은 server module은 각 파일에 server-only 경계를 두되 도메인 권한 helper를 shared로 끌어내리지 않는다.
 
@@ -87,18 +100,22 @@ Server Action의 세션 확인, 입력 정규화, repository 호출, 행동 로�
 
 **게이트**: `npm run check:fsd`가 역방향, cross-slice deep import, client→server import를 거부하고 전체 lint/build가 통과해야 한다. URL, Route Handler, Server Action entry는 루트 `app/`에 남는다.
 
-## 4. import boundary gate 최소 사양
+## 4. import boundary gate 사양 (구현됨)
 
-검사기는 정적 import, dynamic import, re-export를 대상으로 최소한 다음을 실패 처리한다.
+`scripts/check-fsd-boundaries.ts`가 정적 import, dynamic import, `require`, re-export를 대상으로 다음을 검사한다.
 
-- `src/shared/**` → `src/entities|features|widgets/**`
-- `src/entities/**` → `src/features|widgets/**`
-- `src/features/**` → `src/widgets/**`
-- 같은 레이어의 다른 slice 직접 import
-- 다른 slice의 public `index.ts`를 우회한 deep import
-- `"use client"` 파일 또는 `*.client.ts(x)` → `*.server.ts`, `mariadb`, `node:fs`, server env import
+| 코드 | 차단 대상 | 심각도 |
+| --- | --- | --- |
+| `layer-direction` | `shared → entities\|features\|widgets`, `entities → features\|widgets`, `features → widgets`, `src → app` | error |
+| `cross-slice` | 같은 레이어의 다른 slice 직접 import | error |
+| `deep-import` | 다른 slice의 `index.ts`/`index.server.ts`를 우회한 내부 파일 참조 | error |
+| `unknown-layer` | `src/` 아래에 정의되지 않은 레이어(예: `src/app`) | error |
+| `client-server` | client 진입점에서 **전이적으로** 도달하는 `*.server.ts(x)`, `src/shared/server/**`, `mariadb`, `node:fs(/promises)`, `server-only` 등 | error |
+| `legacy-import` | src 슬라이스 → `components/`·`lib/`·`models/` | warn |
 
-경계 예외를 blanket disable하지 않는다. fixture에는 각 금지 유형과 허용 방향을 모두 포함한다. CI 연결이 구현되기 전에는 `check:fsd`를 완료로 표시하지 않는다.
+client 진입점은 `"use client"` 지시문 또는 `*.client.ts(x)` 파일이다. `import type`/`export type`과 `"use server"` 모듈은 client-server 검사에서 제외한다(각각 컴파일 시 소거, 네트워크 경계 대체).
+
+경계 예외를 blanket disable하지 않는다. fixture(`scripts/fixtures/fsd/`)는 허용 방향 1건과 금지 유형 4건을 모두 포함하며, 기본 실행이 self-test를 먼저 통과해야 저장소 검사로 넘어간다. 이 저장소에는 아직 CI 워크플로가 없어 현재는 로컬 게이트다.
 
 ## 5. 완료 정의
 
@@ -106,4 +123,4 @@ Server Action의 세션 확인, 입력 정규화, repository 호출, 행동 로�
 - 구조 이동 commit/PR에 기능, SQL, 권한, UI 동작 변경이 섞이지 않는다.
 - 핵심 권한/visibility 정책과 SQL 동작이 이동 전후 동일하다.
 - 모든 새 slice는 public API를 가지며 실제 import boundary gate가 로컬/CI에서 실행된다.
-- `docs/TODO.md`, `docs/PROJECT_MAP.md`, `AGENTS.md`가 실제 상태와 동기화된다.
+- `docs/TODO.md`, `docs/PROJECT_MAP.md`, `docs/HARNESS_MAP.md`, `AGENTS.md`가 실제 상태와 동기화된다.

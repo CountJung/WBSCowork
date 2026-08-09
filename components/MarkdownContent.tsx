@@ -1,43 +1,5 @@
-"use client";
-
-import { Box } from "@mui/material";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-
-export default function MarkdownContent({ content }: { content: string }) {
-  return (
-    <Box
-      sx={[
-        {
-          color: "text.primary",
-          overflowWrap: "break-word",
-          wordBreak: "break-word",
-          minWidth: 0,
-          "& p": { my: 0.75 },
-          "& ul, & ol": { pl: 3, my: 0.75 },
-          "& a": {
-            overflowWrap: "break-word",
-            wordBreak: "break-word",
-          },
-          "& pre": {
-            overflowX: "auto",
-            p: 1.5,
-            borderRadius: 2,
-            bgcolor: "rgba(17, 24, 39, 0.08)",
-          },
-          "& code": {
-            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-          },
-        },
-        (theme) =>
-          theme.applyStyles("dark", {
-            "& pre": {
-              bgcolor: "rgba(7, 13, 11, 0.72)",
-            },
-          }),
-      ]}
-    >
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-    </Box>
-  );
-}
+/**
+ * 호환 re-export. 실제 구현은 `src/shared/ui/markdown-content` 로 이동했다.
+ * FSD M5 에서 소비자 import 를 전환한 뒤 이 파일을 제거한다.
+ */
+export { default } from "@/src/shared/ui/markdown-content";

@@ -1,6 +1,7 @@
 # WBSCowork 하네스 맵
 
 > 실제 `package.json`과 저장소 파일에 존재하는 실행·검증 경로만 기록한다.
+> 구 `docs/PROJECT_MAP.md`(명령 하네스 문서)를 이 파일로 통합했다. 코드 탐색 지도는 [PROJECT_MAP.md](PROJECT_MAP.md)다.
 
 ## 1. 전제
 
@@ -17,24 +18,39 @@
 | `npm run dev:debug` | 위 명령 + `--inspect` | 서버 디버깅 | inspector와 dev server 기동 |
 | `npm run build` | `tsx scripts/run-next.ts build` | production compile/build | exit 0, route 생성 성공 |
 | `npm run start` | `tsx scripts/run-next.ts start` | production server | 선행 build 후 APP_PORT listen |
-| `npm run lint` | `eslint` | 정적 검사 | error/warning 정책 충족 |
+| `npm run lint` | `eslint` | 정적 검사 | error/warning 0 |
+| `npm run typecheck` | `tsc --noEmit` | 타입 검사 | 출력 없이 exit 0 |
+| `npm run check:fsd` | `tsx scripts/check-fsd-boundaries.ts` | FSD import 경계 | fixture self-test 5건 PASS + 저장소 위반 0 |
 | `npm run db:check -- --validate-only` | `tsx scripts/check-db.ts` | DB env 파싱만 | 연결 없이 validation passed |
 | `npm run db:check` | 동일 | 실제 pool 연결 | DB name/server version 출력, exit 0 |
 
-현재 `test`, `typecheck`, `check:fsd`, `db:migrate` script는 없다.
+현재 `test`, `db:migrate` script는 없다. 없는 명령을 문서에 기재하지 않는다.
+
+### `check:fsd` 세부
+
+기본 실행은 **fixture self-test → 저장소 검사** 순서다. 검사기가 조용히 망가진 채 통과하는 것을 막기 위한 구성이다.
+
+| 플래그 | 동작 |
+| --- | --- |
+| (없음) | self-test 후 저장소 검사 |
+| `-- --self-test` | `scripts/fixtures/fsd/*` 만 검사 |
+| `-- --only-repo` | 저장소만 검사 |
+| `-- --json` | 기계 판독용 출력 |
+
+차단하는 위반: `layer-direction`, `cross-slice`, `deep-import`, `unknown-layer`, `client-server`. `legacy-import`(src 슬라이스가 `components/`·`lib/`·`models/` 참조)는 이동 중 남은 부채로 경고만 낸다.
 
 ## 3. 변경 유형별 최소 게이트
 
 | 변경 범위 | 필수 | 조건부/수동 |
 | --- | --- | --- |
 | 문서만 | `git diff --check`; 링크/파일명 검토 | standalone HTML에서 외부 URL/CDN 없음 확인 |
-| TS/TSX/UI | `npm run lint`, `npm run build` | `/`, `/tasks`, 관련 admin desktop/mobile smoke |
-| role/auth | lint/build | guest/member/admin/superuser matrix, 로그인/redirect/action 직접 호출 |
-| visibility | lint/build | public/private × actor, comment/attachment metadata/download, IDOR |
-| repository SQL | lint/build, validate-only | 테스트 DB에서 CRUD/transaction/EXPLAIN |
+| TS/TSX/UI | `npm run lint`, `npm run typecheck`, `npm run build` | `/`, `/tasks`, 관련 admin desktop/mobile smoke |
+| role/auth | lint/typecheck/build | guest/member/admin/superuser matrix, 로그인/redirect/action 직접 호출 |
+| visibility | lint/typecheck/build | public/private × actor, comment/attachment metadata/download, IDOR |
+| repository SQL | lint/typecheck/build, validate-only | 테스트 DB에서 CRUD/transaction/EXPLAIN |
 | schema | 위 + 실제 DB | fresh/existing upgrade, FK/cascade/index, rollback/backup |
-| upload/download | lint/build | size limit, MIME/disposition, traversal, missing file, unauthorized 404 |
-| FSD 이동 | lint/build | import boundary checker가 실제 추가된 뒤 `npm run check:fsd` |
+| upload/download | lint/typecheck/build | size limit, MIME/disposition, traversal, missing file, unauthorized 404 |
+| FSD 이동 | `npm run check:fsd`, lint/typecheck/build | 이동 전후 export/signature/SQL 동일성, 호환 re-export 동작 |
 
 ## 4. DB 검증 층위
 
@@ -99,7 +115,44 @@ attachment handler는 부모 제출물의 가시성을 검사하고 unauthorized
 
 실제 script를 package.json에 추가하기 전에는 가상의 명령을 기재하지 않는다.
 
-## 7. 완료 체크
+## 7. 환경 변수 가정
+
+키 목록만 기록한다. 실제 값은 `.env*`에만 두고 문서·AI 컨텍스트·로그에 남기지 않는다. 전체 목록은 `env.example`이 기준이다.
+
+| 범위 | 키 |
+| --- | --- |
+| 앱 | `NEXT_PUBLIC_APP_NAME`, `APP_PORT` |
+| 인증 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `SUPERUSER_EMAIL` |
+| DB | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_CONNECTION_LIMIT`, `DB_CONNECT_TIMEOUT_MS` |
+| 업로드 | `UPLOAD_DIR`, `UPLOAD_MAX_FILE_SIZE_MB` |
+| 로그 | `LOG_DIR`, `LOG_RETENTION_DAYS`, `LOG_MAX_FILE_SIZE_MB` |
+| digest/report (미구현) | `DIGEST_SCHEDULER_TOKEN`, `REPORT_DIR`, `REPORT_RETENTION_DAYS` — token 미설정 시 endpoint는 fail closed |
+
+## 8. 환경 특이사항
+
+- 설치된 `next-auth`는 v4.24.x로 해석된다. `NextAuthOptions`와 App Router 핸들러 패턴을 사용한다.
+- macOS 외장 볼륨에서 AppleDouble(`._*`) 파일이 Turbopack 캐시에 쓰여 dev 서버가 실패한 적이 있다. `next.config.ts`의 `experimental.turbopackFileSystemCacheForDev = false`로 회피한다. lint 대상에서도 `**/._*`를 제외한다.
+- `frappe-gantt` CSS는 Turbopack에서 `globals.css`로 불러올 수 없어 `app/layout.tsx`에서 직접 import한다.
+- 저장소 bootstrap 시 대문자 폴더명은 npm 패키지 명명 규칙에 걸린다. 소문자 임시 폴더에서 생성 후 이동했다.
+
+## 9. VS Code 디버깅
+
+- `.vscode/launch.json` + `npm run dev:debug`.
+- 풀 스택 런치는 `debugWithChrome`으로 Chrome을 실행한다. 서버가 이미 떠 있으면 client-side 구성만 붙인다.
+
+## 10. 알려진 기준선 (2026-08-09)
+
+| 명령 | 결과 |
+| --- | --- |
+| `npm run lint` | 통과 (0 errors, 0 warnings) |
+| `npm run typecheck` | 통과 |
+| `npm run check:fsd` | 통과 (self-test 5건, 저장소 위반 0건) |
+| `npm run build` | 성공. Node `[DEP0205] module.register()` 경고 잔존 — `tsx@4.21.0` 로더 문제이며 [TODO.md](TODO.md)에 추적 중 |
+| `npm run db:check` | 미실행 — 이 환경에 MariaDB 인스턴스 없음 |
+
+DB 연결이 필요한 명령을 실행하지 못했으면 코드 실패로 위장하지 말고 미실행 사유를 남긴다.
+
+## 11. 완료 체크
 
 ```bash
 git diff --check
@@ -113,3 +166,10 @@ git status --short
 - 변경 전부터 존재한 warning/error
 - 생성/수정 파일
 - commit/push 여부
+
+## 12. 다음 업데이트 트리거
+
+- FSD M1 이후 각 마일스톤 완료 시
+- digest D0 구현 시작 시
+- Synology NAS 배포 준비 시작 시
+- 새 검증 명령 추가 또는 블로커 발생/해소 시

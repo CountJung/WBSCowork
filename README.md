@@ -65,17 +65,21 @@ npm run dev
 `env.example`의 변수를 `.env`로 복사하고 실제 값을 입력합니다.
 
 ### 필수 MariaDB 변수
+
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
 - `DB_CONNECTION_LIMIT`, `DB_CONNECT_TIMEOUT_MS`
 
 ### 필수 인증 변수
+
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 - `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `SUPERUSER_EMAIL`
 
 ### 필수 앱/런타임 변수
+
 - `APP_PORT`, `UPLOAD_DIR`, `UPLOAD_MAX_FILE_SIZE_MB`
 
 ### 로그 변수
+
 - `LOG_DIR`, `LOG_RETENTION_DAYS`, `LOG_MAX_FILE_SIZE_MB`
 
 ---
@@ -98,7 +102,26 @@ npm run db:check
 
 ```bash
 npm run lint          # ESLint 검사
+npm run typecheck     # tsc --noEmit
+npm run check:fsd     # FSD import 경계 검사 (fixture self-test + 저장소 검사)
 npm run build         # 프로덕션 빌드
 npm run db:check      # DB 연결 테스트
 npm run dev:debug     # Node 인스펙터 포함 dev 서버
 ```
+
+---
+
+## 문서
+
+루트에는 진입점만 두고 나머지 문서는 모두 [`docs/`](docs/)에 있습니다.
+
+| 문서 | 내용 |
+| --- | --- |
+| [docs/TODO.md](docs/TODO.md) | 단계 진행 상황, 백로그, 블로커 |
+| [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) | 제품 정의, MVP 범위, DB 설계 |
+| [docs/MASTER_PLAN.html](docs/MASTER_PLAN.html) | 운영 로드맵 (브라우저에서 열기) |
+| [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md) | 코드 탐색 지도 |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 인증·인가, 가시성, 데이터 경계 |
+| [docs/HARNESS_MAP.md](docs/HARNESS_MAP.md) | 실행·검증 명령과 기준선 |
+| [docs/manual/](docs/manual/) | 사용자 교육 슬라이드와 빠른 참조 카드 |
+| [AGENTS.md](AGENTS.md) | AI 에이전트 작업 규칙 |

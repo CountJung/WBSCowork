@@ -4,13 +4,13 @@
 
 ## Project Overview
 
-- Build the product from `docs/MasterPlan.md` as a task-based WBS collaboration system.
-- Keep the implementation scoped to the MVP defined in `docs/MasterPlan.md`.
+- Build the product from `docs/PRODUCT_SPEC.md` as a task-based WBS collaboration system.
+- Keep the implementation scoped to the MVP defined in `docs/PRODUCT_SPEC.md`.
 - Treat the repository as a Next.js App Router application using TypeScript, MUI, NextAuth, MariaDB, TanStack Query, and frappe-gantt.
 
 ## Working Agreement
 
-- Read `docs/MasterPlan.md` before changing architecture, folder structure, or stage scope.
+- Read `docs/PRODUCT_SPEC.md` before changing architecture, folder structure, or stage scope.
 - Prefer the smallest change that satisfies the current stage.
 - Preserve a task-centric model. Do not drift into generic board or forum features.
 - Treat the gantt timeline as the signature surface of the product. Route and layout decisions should keep it visually dominant on home and task workspace screens.
@@ -23,21 +23,21 @@
 ## Quality Gates
 
 - Do not ignore warnings or errors from TypeScript, ESLint, build output, runtime logs, or test runs.
-- If a warning or error cannot be fixed in the current task, record it explicitly in `docs/TODO.md` and `docs/PROJECT_MAP.md` with impact and next action.
+- If a warning or error cannot be fixed in the current task, record it explicitly in `docs/TODO.md` (backlog) and `docs/HARNESS_MAP.md` (command baseline) with impact and next action.
 - Do not silence checks with blanket disables. Any narrow suppression must include a reason in code and a matching task entry.
-- Validate the touched slice with the narrowest executable command before widening scope.
+- Validate the touched slice with the narrowest executable command before widening scope. Available: `npm run lint`, `npm run typecheck`, `npm run check:fsd`, `npm run build`, `npm run db:check`.
 
 ## Living Artifacts
 
-- Keep `docs/TODO.md`, `docs/PROJECT_MAP.md`, `.github/copilot-instructions.md`, and `.github/skills/` alive at all times.
+- Keep `docs/TODO.md`, `docs/PROJECT_MAP.md`, `docs/HARNESS_MAP.md`, `.github/copilot-instructions.md`, and `.github/skills/` alive at all times.
 - Update these files whenever project structure, workflow, validation commands, or stage status changes.
 - Treat these files as operational documents, not one-time setup output.
-- All sub-documents live under `/docs/`. HARNESS_MAP.md now redirects to docs/PROJECT_MAP.md.
+- All sub-documents live under `/docs/`; the repository root keeps only `README.md`, `AGENTS.md`, and `CLAUDE.md`. `docs/PROJECT_MAP.md` is the code navigation map and `docs/HARNESS_MAP.md` is the command/validation harness.
 
 ## Repository Shape
 
 - Keep root `app/` as the App Router entry. During gradual FSD migration, build/move small slices in `src/shared → src/entities → src/features → src/widgets → root app pages` order; do not create a duplicate `src/app` or `src/pages` layer, and do not mix behavior changes with structure moves.
-- Existing `lib/`, `models/`, and `components/` remain compatibility locations until their mapped slice is migrated; follow `docs/FSD_MIGRATION_PLAN.md` rather than performing a bulk move.
+- Existing `lib/`, `models/`, and `components/` remain compatibility locations until their mapped slice is migrated; follow `docs/FSD_MIGRATION_PLAN.md` rather than performing a bulk move. Run `npm run check:fsd` whenever `src/` changes.
 - Keep route handlers under app/api/.
 - Prefer Server Components by default and isolate client-only behavior into explicit Client Components.
 

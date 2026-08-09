@@ -10,14 +10,13 @@
  *   npm install --save-dev docx
  *
  * 출력:
- *   docs/WBSCowork_UserManual.docx
+ *   scripts/outputs/WBSCowork_UserManual.docx
  */
 
 const {
-    Document, Packer, Paragraph, TextRun, HeadingLevel,
+    Document, Packer, Paragraph, TextRun,
     AlignmentType, Table, TableRow, TableCell, WidthType,
-    BorderStyle, ImageRun, Spacing, UnderlineType,
-    LevelFormat, NumberFormat, convertInchesToTwip,
+    BorderStyle, ImageRun, convertInchesToTwip,
     ShadingType
 } = require('docx');
 const fs = require('fs');

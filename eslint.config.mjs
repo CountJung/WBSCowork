@@ -12,7 +12,24 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // macOS AppleDouble sidecars on external volumes are not source files.
+    "**/._*",
+    // Vendored document skills are maintained upstream, not in this repository.
+    ".github/skills/**",
+    // Generated documents and FSD checker fixtures are inputs/outputs, not app code.
+    "scripts/outputs/**",
+    "scripts/fixtures/**",
   ]),
+  {
+    // Document authoring scripts are plain CommonJS run directly with node.
+    files: ["scripts/**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

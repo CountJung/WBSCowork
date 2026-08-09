@@ -1,49 +1,47 @@
 # WBS 태스크 — 진행 목록
 
 > **살아있는 문서** — 단계 범위, 검증 절차, 블로커가 바뀔 때마다 업데이트하십시오.
+> 최종 검토: 2026-08-09
 
 ---
 
 ## 완료된 단계
 
-- [x] 1단계: Next.js + TypeScript 워크스페이스 초기화
-- [x] 1단계: MUI 테마 기반 구성
-- [x] 1단계: NextAuth 기반 설정
-- [x] 2단계: MariaDB 연결 모듈 및 환경변수 검증 추가
-- [x] 2단계: User·Project 도메인 모델 정의
-- [x] 2단계: Google 인증 사용자를 MariaDB에 자동 저장
-- [x] 2단계: 슈퍼관리자 로그인 및 관리자 전용 DB 관리 라우트
-- [x] 3단계: 태스크(WBS) CRUD + 게스트/멤버 쓰기 정책 적용
-- [x] 4단계: frappe-gantt 간트 차트 연동
-- [x] 5단계: 제출물 기능 구현
-- [x] 6단계: 댓글 기능 구현
-- [x] 7단계: 파일 업로드 플로우 구현
-- [x] 워크플로: APP_PORT 기반 빌드/시작 스크립트
-- [x] 워크플로: 반응형 앱셸, 라우트 내비게이션, 3모드 테마 스위칭
-- [x] 워크플로: 구조화 사용자 행동 로깅 + 관리자 로그 검토
-- [x] 워크플로: 홈 태스크 카드에서 집중 태스크 라우팅
-- [x] 역할 확장: 4단계(슈퍼관리자/관리자/일반사용자/게스트) + 제출물 공개/비공개
-- [x] 문서 정리: /docs/ 디렉터리 구조화, AGENTS.md 재작성
+| 단계 | 범위 | 결과물 |
+| --- | --- | --- |
+| 1 | Next.js 16 + TypeScript + MUI + NextAuth 기반 | `app/layout.tsx`, `lib/theme.ts`, `lib/auth.ts` |
+| 2 | MariaDB 연결, User/Project 모델, 슈퍼관리자 DB 관리 | `lib/db.ts`, `lib/env.ts`, `lib/database-admin.ts`, `/admin/database` |
+| 3 | 태스크(WBS) CRUD + 게스트/멤버 쓰기 정책 | `lib/repositories/task-repository.ts`, `/tasks` |
+| 4 | frappe-gantt 간트 차트 연동 | `components/gantt/ProjectGanttChart.tsx` |
+| 5 | 제출물 기능 | `lib/repositories/submission-repository.ts` |
+| 6 | 댓글 기능 | `lib/repositories/comment-repository.ts` |
+| 7 | 파일 업로드·다운로드 | `lib/submission-files.ts`, 2개 attachment route |
+| 역할 확장 | 4단계 역할 + 제출물 public/private | `models/user.ts`, `SubmissionVisibilityFilter` |
+| 운영 | 롤링 파일 로그, 구조화 행동 로그, 관리자 로그/세팅 화면, APP_PORT 하네스 | `lib/logger.ts`, `/admin/logs`, `/admin/settings`, `scripts/run-next.ts` |
+| 개인정보 | `/privacy` 안내, 관리자 명시 확인 기반 프로젝트 파기 | `app/privacy`, `/admin/projects` |
+| 8-M0 | FSD import boundary 하네스 + fixture self-test | `scripts/check-fsd-boundaries.ts`, `npm run check:fsd` |
 
 ---
 
 ## 현재 진행
 
-없음.
+- [ ] 8단계: Feature-Sliced Design(FSD) 기반 프론트엔드 구조 정리
+  - 실행 계약과 파일별 매핑은 [FSD_MIGRATION_PLAN.md](FSD_MIGRATION_PLAN.md)를 따른다.
+  - 루트 `app/`은 App Router 엔트리로 유지한다. 이동 순서는 `src/shared → src/entities → src/features → src/widgets → root app pages`이며 `src/app`, `src/pages`는 만들지 않는다.
+  - [x] M0: `scripts/check-fsd-boundaries.ts` + `npm run check:fsd` 경계 하네스 (self-test 5건, 저장소 위반 0건)
+  - [ ] M1: 범용 UI/config/server utility를 shared로 이동하고 호환 re-export 유지
+    - [x] `src/shared/ui/markdown-content` (첫 실제 slice, `components/MarkdownContent.tsx`는 호환 re-export)
+    - [ ] `lib/theme.ts` → `src/shared/config/theme`, `components/AppProviders.tsx` → `src/shared/ui/providers`
+    - [ ] `lib/db.ts`, `lib/env.ts`, `lib/logger.ts` → `src/shared/server/*` (server-only 경계 유지, 권한 helper는 이동 대상 아님)
+  - [ ] M2: 모델/정책과 repository를 entity로 나누어 이동 (`project → task → submission → comment → user`)
+  - [ ] M3: Server Action mutation을 feature use-case로 추출
+  - [ ] M4: UI를 widget 단위로 이동
+  - [ ] M5: root app page/route adapter 전환 후 호환 re-export 제거
 
 ---
 
 ## 다음 작업
 
-- [ ] 8단계: Feature-Sliced Design(FSD) 기반 프론트엔드 구조 정리
-  - 실행 계약과 현재 파일별 매핑은 [FSD_MIGRATION_PLAN.md](FSD_MIGRATION_PLAN.md)를 따른다.
-  - 루트 `app/`은 App Router 엔트리로 유지한다. 구축/이동은 `src/shared → src/entities → src/features → src/widgets → root app pages` 순이며 중복 책임의 `src/app`, `src/pages`는 만들지 않는다.
-  - [ ] M0: `scripts/check-fsd-boundaries.ts` + `npm run check:fsd` 경계 하네스
-  - [ ] M1: 범용 UI/config/server utility를 shared로 이동하고 호환 re-export 유지
-  - [ ] M2: 모델/정책과 repository를 entity로 나누어 이동
-  - [ ] M3: Server Action mutation을 feature use-case로 추출
-  - [ ] M4: UI를 widget 단위로 이동
-  - [ ] M5: root app page/route adapter를 마지막 전환하고 호환 레이어 제거
 - [ ] 9단계: Scheduled project digest + DOCX/PPTX report export
   - 상세 계약과 D0~D5 게이트는 [PROJECT_DIGEST_REPORT_PLAN.md](PROJECT_DIGEST_REPORT_PLAN.md)를 따른다.
   - [ ] D0: 현재 DB 사실만 담는 versioned `DigestSnapshot` + privacy fixture
@@ -56,15 +54,48 @@
 
 ---
 
-## 미해결 블로커
+## 보안·정합성 백로그 (2026-08-09 코드 검토에서 확인)
 
-- 2026-07-26 검수에서 `npm run lint` 실패(이번 문서 변경과 무관한 기존 범위): 외장 드라이브 AppleDouble `._next-env.d.ts` parse error, `.github/skills/document-skills/pptx/scripts/html2pptx.js`·`scripts/convert-manual-to-pptx.js`·`scripts/generate-manual-docx.js`의 CommonJS import/unused 경고. 다음 코드 품질 작업에서 generated/AppleDouble 제외 정책과 authoring script lint 범위 또는 ESM 전환을 결정한 뒤 17건(오류 10, 경고 7)을 해소한다.
-- 같은 검수의 `npm run build`는 성공했으나 Node `[DEP0205] module.register()` deprecation warning이 발생했다. `tsx`/Node/Next.js 조합의 upstream 또는 버전 호환성을 확인하고 경고가 사라지는 조합에서 재검증한다.
+FSD 이동과 섞지 않고 별도 변경으로 처리한다. 구조 이동보다 우선순위가 높다.
+
+- [ ] **P0 — 비공개 제출물의 파생 데이터가 client payload로 노출된다.**
+
+  `app/tasks/page.tsx`는 `listCommentsByProject`, `listAttachmentsByProject`로 프로젝트 전체를 조회한 뒤, 그룹화한 `commentsBySubmissionId`·`attachmentsBySubmissionId` **전체**를 client component `components/task/TaskCard.tsx`에 props로 넘긴다. 제출물 목록만 `SubmissionVisibilityFilter`를 통과하므로, 조회 권한이 없는 비공개 제출물의 댓글 본문·작성자 이메일·첨부 파일명·저장 경로가 RSC payload에 실려 브라우저에 도달한다. 상단 `댓글 N` Chip도 비공개 댓글을 포함한 수치다.
+
+  조치: 두 repository 함수에 viewer filter를 추가하거나 가시 제출물 id로 조회를 제한하고, 카드에 넘기는 map을 해당 태스크의 가시 제출물로 좁힌다. 회귀 방지 fixture는 `HARNESS_MAP.md` 6절 사양을 사용한다.
+- [ ] **P1 — 제출물·댓글 mutation에 작성자 ownership 검사가 없다.**
+
+  `app/tasks/actions.ts`의 `updateSubmissionAction`, `deleteSubmissionAction`, `updateCommentAction`, `deleteCommentAction`은 `requireWritableSession`(쓰기 역할)만 확인한다. 임의의 `member`가 타인의 제출물·댓글을 수정·삭제할 수 있고, `updateSubmissionAction`은 `visibility`도 함께 덮어쓰므로 타인의 비공개 제출물을 공개로 바꾸는 경로가 된다. `updateCommentAction`은 대상 댓글이 폼에 담긴 submission/project에 속하는지도 확인하지 않는다.
+
+  조치: 작성자 본인 또는 `canManageAllSubmissions` 통과 actor만 허용하고, 대상 자원의 상위 관계(project/task/submission)를 서버에서 재확인한다.
+- [ ] **P1 — 단건 조회 `getSubmissionById`는 unscoped다.**
+
+  현재 두 attachment route는 조회 후 `canViewSubmission`으로 막고 있어 다운로드 경로는 닫혀 있다. 새 소비자가 정책 검사를 빠뜨리지 않도록 viewer-aware 단건 조회 API를 추가하거나 호출부 규약을 문서화한다.
+- [ ] **P2 — 로그 metadata에 파일 경로가 남는다.** `app/tasks/actions.ts`의 cleanup 실패 로그가 `filePath`를 기록한다. 비공개 산출물 경로가 로그로 새지 않도록 redaction 정책을 정한다.
+
+---
+
+## 품질·운영 백로그
+
+- [ ] 자동화 테스트 러너 부재. `HARNESS_MAP.md` 6절의 가시성 fixture 사양이 문서로만 존재하고 `npm test`가 없다. P0/P1 수정과 함께 focused policy test 인프라를 도입한다.
+- [ ] versioned migration 없음. `lib/database-admin.ts`가 `CREATE TABLE`과 일부 `ALTER ADD`만 수행하고 migration ledger/rollback 이력이 없다. 9단계 D3가 이를 전제로 한다.
+- [ ] runtime pool과 schema admin이 같은 `DB_*` credential을 사용한다. 최소권한 계정 분리 필요.
+- [ ] `npm run build`에서 Node `[DEP0205] module.register()` deprecation 경고가 남는다. 원인은 `tsx@4.21.0` 로더(Node v26). 다음 의존성 갱신에서 `tsx` 최신(4.23.x) 적용 후 경고 소멸 여부를 재확인한다.
+- [ ] `next-env.d.ts`가 `.gitignore` 대상인데 `tsconfig.json` `include`에 남아 있다. 외장 볼륨 AppleDouble(`._next-env.d.ts`)과 함께 정리 대상인지 판단한다.
+
+---
+
+## 해소된 블로커
+
+- 2026-08-09: `npm run lint` 17건(오류 10, 경고 7) 해소. AppleDouble(`**/._*`), 벤더 skill 스크립트(`.github/skills/**`), 생성물·fixture를 `eslint.config.mjs`에서 제외하고, 문서 생성용 CommonJS 스크립트에 `sourceType: "commonjs"` override를 적용했으며 `scripts/generate-manual-docx.js`의 미사용 import를 제거했다.
 
 ---
 
 ## 참고 문서
 
-- [docs/MasterPlan.md](MasterPlan.md) — 전체 제품 계획
-- [docs/PROJECT_MAP.md](PROJECT_MAP.md) — 실행 맵 (커맨드 하네스)
-- [AGENTS.md](../AGENTS.md) — AI 에이전트 가이드
+- [PRODUCT_SPEC.md](PRODUCT_SPEC.md) — 제품 정의·MVP 범위·DB 설계
+- [MASTER_PLAN.html](MASTER_PLAN.html) — 운영 마스터 플랜(사람용)
+- [PROJECT_MAP.md](PROJECT_MAP.md) — 코드 탐색 지도
+- [ARCHITECTURE.md](ARCHITECTURE.md) — 인증·인가·가시성·데이터 경계
+- [HARNESS_MAP.md](HARNESS_MAP.md) — 실행·검증 하네스
+- [../AGENTS.md](../AGENTS.md) — AI 에이전트 가이드

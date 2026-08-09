@@ -8,7 +8,9 @@
     "db:check": "tsx scripts/check-db.ts",
     "build": "tsx scripts/run-next.ts build",
     "start": "tsx scripts/run-next.ts start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "check:fsd": "tsx scripts/check-fsd-boundaries.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

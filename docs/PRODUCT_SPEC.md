@@ -1,5 +1,7 @@
-# 프로젝트 마스터플랜
+# 제품 정의서 (Product Spec)
 ## WBS 기반 협업 & 산출물 공유 시스템 (Next.js + TypeScript)
+
+> 제품 범위·도메인·DB 설계의 기준 문서. 단계별 실행 우선순위와 로드맵은 [MASTER_PLAN.html](MASTER_PLAN.html), 진행 상태는 [TODO.md](TODO.md)를 본다.
 
 ---
 
@@ -53,7 +55,8 @@ lib/
   db.ts        MariaDB 풀
   repositories/ DB 접근 계층
 models/        도메인 타입
-docs/          프로젝트 문서
+src/           점진 FSD 목표 구조 (shared 부터 구축 중)
+docs/          모든 프로젝트 문서
 ```
 
 ---
@@ -229,7 +232,11 @@ LOG_MAX_FILE_SIZE_MB=100
 | 6단계 | 댓글 기능 | 완료 |
 | 7단계 | 파일 업로드 | 완료 |
 | 역할 확장 | 4단계 역할 + 제출물 공개/비공개 | 완료 |
-| 8단계 | Synology NAS 배포 | 예정 |
+| 8단계 | Feature-Sliced Design 구조 정리 | 진행 중 (M0 완료) |
+| 9단계 | Scheduled digest + DOCX/PPTX report export | 예정 |
+| 10단계 | Synology NAS 배포 | 예정 |
+
+단계별 세부 항목과 블로커는 [TODO.md](TODO.md)가 단일 출처다.
 
 ---
 

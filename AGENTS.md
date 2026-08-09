@@ -53,7 +53,9 @@ lib/
   repositories/ # DB 접근 계층
 models/        # 도메인 타입 (user, task, submission, comment 등)
 src/           # 점진 FSD 목표 구조(shared/entities/features/widgets 순으로 구축)
-docs/          # 하위 문서 (PROJECT_MAP.md 등)
+  shared/ui/markdown-content/  # 이동 완료한 첫 slice
+scripts/       # 실행·검증 하네스 (run-next, check-db, check-fsd-boundaries)
+docs/          # 모든 하위 문서 (루트에는 README/AGENTS/CLAUDE 만 둔다)
 ```
 
 ---
@@ -66,8 +68,8 @@ docs/          # 하위 문서 (PROJECT_MAP.md 등)
 4. Admin 패널 중 `/admin/database`, `/admin/logs`, `/admin/settings`는 `isSuperuser`만 접근 가능; `/admin/users`는 관리자 역할도 접근 가능 (`guest`·`member`만 부여)
 5. 제출물 목록 쿼리는 반드시 `SubmissionVisibilityFilter`를 사용할 것
 6. 환경 변수 파일(`.env*`)을 AI 컨텍스트로 열지 않는다
-7. 경고·오류 무시 금지 — 해결 불가 시 `docs/PROJECT_MAP.md`에 기록
-8. FSD 의존 방향은 `app → widgets → features → entities → shared`, 구축/이동 순서는 `shared → entities → features → widgets → root app pages`이다. 루트 `app/`을 `src/app`으로 옮기지 않고 구조 이동과 기능 변경을 분리한다.
+7. 경고·오류 무시 금지 — 해결 불가 시 `docs/TODO.md`(백로그)와 `docs/HARNESS_MAP.md`(기준선)에 기록
+8. FSD 의존 방향은 `app → widgets → features → entities → shared`, 구축/이동 순서는 `shared → entities → features → widgets → root app pages`이다. 루트 `app/`을 `src/app`으로 옮기지 않고 구조 이동과 기능 변경을 분리한다. `src/`를 건드리면 `npm run check:fsd`를 반드시 실행한다.
 9. scheduled digest는 기본 dry-run/download-only이며, `SubmissionVisibilityFilter`, machine token, DB idempotency ledger 없이 활성화하지 않는다.
 10. report renderer는 동일한 versioned snapshot을 사용한다. DOCX는 `docx`, runtime PPTX는 브라우저 없는 `pptxgenjs` 직접 생성을 사용한다.
 11. 개인정보 처리지침은 실제 schema·로그·파일 수명주기와 일치시킨다. 프로젝트 파기는 종료일 자동 삭제가 아니라 관리자 명시 확인 후 DB cascade와 저장 파일 정리를 함께 실행하며, 공유 사용자 계정은 별도 수명주기로 다룬다.
@@ -78,24 +80,36 @@ docs/          # 하위 문서 (PROJECT_MAP.md 등)
 
 ```bash
 npm run lint          # ESLint 검사
+npm run typecheck     # tsc --noEmit
+npm run check:fsd     # FSD import 경계 (fixture self-test + 저장소 검사)
 npm run build         # 프로덕션 빌드
 npm run db:check      # DB 연결 테스트
 npm run dev:debug     # Node 인스펙터 포함 dev 서버
 ```
 
+기준선과 미실행 사유는 [docs/HARNESS_MAP.md](docs/HARNESS_MAP.md) 10절에 있다.
+
 ---
 
-## 주요 파일 링크
+## 문서 스택
 
-- [docs/MasterPlan.md](docs/MasterPlan.md) — 전체 제품 계획
-- [docs/TODO.md](docs/TODO.md) — 현재 진행 태스크
-- [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md) — 실행 맵 (구 HARNESS_MAP.md)
-- [docs/FSD_MIGRATION_PLAN.md](docs/FSD_MIGRATION_PLAN.md) — 점진 FSD 파일 매핑·검증 게이트
-- [docs/PROJECT_DIGEST_REPORT_PLAN.md](docs/PROJECT_DIGEST_REPORT_PLAN.md) — scheduled digest/report export 계약
-- [.github/skills/wbs-project-digest-report/SKILL.md](.github/skills/wbs-project-digest-report/SKILL.md) — digest/export 구현 workflow
-- [.github/copilot-instructions.md](.github/copilot-instructions.md) — AI 작업 규칙
-- [.github/instructions/nextjs-stack.instructions.md](.github/instructions/nextjs-stack.instructions.md) — Next.js 스택 가이드
-- [.github/instructions/quality-gates.instructions.md](.github/instructions/quality-gates.instructions.md) — 품질 게이트 규칙
+루트 진입점은 `README.md`, `AGENTS.md`, `CLAUDE.md` 세 개뿐이고 나머지 문서는 모두 `docs/`에 있다. 변경 성격에 맞춰 함께 확인하고, 구조·명령·권한 경계가 달라지면 같은 변경에서 갱신한다.
+
+| 문서 | 성격 |
+| --- | --- |
+| [docs/TODO.md](docs/TODO.md) | 단계 진행·백로그·블로커 (매 작업 시작·종료) |
+| [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) | 제품 정의·MVP 범위·DB 설계 |
+| [docs/MASTER_PLAN.html](docs/MASTER_PLAN.html) | 사람용 운영 로드맵과 권한·가시성 우선순위 |
+| [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md) | App Router·repository·DB 작업별 진입점 |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 인증·인가, 제출물 가시성, MariaDB·파일 경계 |
+| [docs/HARNESS_MAP.md](docs/HARNESS_MAP.md) | 실행·검증 명령과 알려진 기준선 |
+| [docs/FSD_MIGRATION_PLAN.md](docs/FSD_MIGRATION_PLAN.md) | 8단계 M0~M5 계약과 경계 게이트 사양 |
+| [docs/PROJECT_DIGEST_REPORT_PLAN.md](docs/PROJECT_DIGEST_REPORT_PLAN.md) | 9단계 digest/report export 계약 |
+| [docs/manual/](docs/manual/) | 사용자 교육 슬라이드·빠른 참조 |
+| [tasks/TASK_TEMPLATE.md](tasks/TASK_TEMPLATE.md) | 권한 매트릭스·DB 영향·완료 조건 템플릿 |
+| [.github/copilot-instructions.md](.github/copilot-instructions.md) | AI 작업 규칙 |
+| [.github/instructions/](.github/instructions/) | Next.js 스택·품질 게이트 가이드 |
+| [.github/skills/wbs-project-digest-report/SKILL.md](.github/skills/wbs-project-digest-report/SKILL.md) | digest/export 구현 workflow |
 
 ---
 
@@ -103,14 +117,9 @@ npm run dev:debug     # Node 인스펙터 포함 dev 서버
 
 이 저장소는 **Next.js 16 App Router**를 사용합니다. 훈련 데이터와 API·컨벤션이 다를 수 있습니다.  
 코드 작성 전 `node_modules/next/dist/docs/`를 반드시 참조하십시오.
-## 운영 문서 스택
 
-작업 전 변경 성격에 맞춰 다음 루트 문서를 함께 확인한다.
+---
 
-- [`MASTER_PLAN.html`](MASTER_PLAN.html): 사람용 단계 계획과 권한·가시성 우선순위
-- [`PROJECT_MAP.md`](PROJECT_MAP.md): App Router, repository, DB 작업별 진입점
-- [`ARCHITECTURE.md`](ARCHITECTURE.md): 인증·인가, 제출물 가시성, MariaDB와 파일 경계
-- [`HARNESS_MAP.md`](HARNESS_MAP.md): 빌드·lint·DB 검증 명령과 알려진 기준선
-- [`tasks/TASK_TEMPLATE.md`](tasks/TASK_TEMPLATE.md): 권한 매트릭스·DB 영향·완료 조건 템플릿
+## 도구 사용 기준
 
 Serena는 역할·권한, DB schema, repository 계약 또는 여러 Route Handler를 함께 바꾸는 경우의 실제 참조 추적에만 사용한다. Graphify는 일반적인 문서·검색으로 설명되지 않는 의존 구조 리팩터링 때만 예외적으로 사용한다. 구조·명령·권한 경계가 달라지면 관련 운영 문서를 같은 변경에서 갱신한다.

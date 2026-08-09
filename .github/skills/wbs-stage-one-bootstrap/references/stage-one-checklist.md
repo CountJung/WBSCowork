@@ -9,7 +9,7 @@ This reference is a living checklist for the first implementation stage.
 - MUI theme provider wired into the root layout
 - NextAuth foundation present and environment-variable driven
 - TODO.md updated with actual Stage 1 progress
-- HARNESS_MAP.md updated with real validation commands and known blockers
+- docs/HARNESS_MAP.md updated with real validation commands and known blockers
 
 ## Stop Conditions
 

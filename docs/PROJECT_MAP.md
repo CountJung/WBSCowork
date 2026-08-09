@@ -1,151 +1,122 @@
-# Project Map
+# WBSCowork 프로젝트 맵
 
-> **이전 이름**: `HARNESS_MAP.md` (루트에서 `/docs/PROJECT_MAP.md`로 이동)  
-> 앞으로 모든 서브 문서는 `/docs/` 디렉터리에서 관리합니다.
+> 현재 코드의 탐색 지도. 실행·검증 명령은 [HARNESS_MAP.md](HARNESS_MAP.md), 진행 이력과 backlog는 [TODO.md](TODO.md)를 본다.
 
-이 파일은 설정·검증·미해결 블로커를 추적하는 살아있는 실행 맵입니다.
-명령, 스크립트, 의존성, 품질 게이트가 바뀔 때마다 업데이트하십시오.
+## 1. 루트 지도
 
-## 현재 목표
+| 경로 | 책임 | 핵심 파일 |
+| --- | --- | --- |
+| `app/` | Next.js 16 App Router 엔트리, Server Component, Server Action, Route Handler | `layout.tsx`, `page.tsx`, `tasks/*`, `admin/*`, `api/*` |
+| `components/` | MUI 화면 조립과 client leaf | `AppShell.tsx`, `gantt/ProjectGanttChart.tsx`, `task/*`, `admin/*` |
+| `lib/` | auth/env/db/log/file 및 application helper | `auth.ts`, `db.ts`, `database-admin.ts`, `submission-files.ts` |
+| `lib/repositories/` | MariaDB SQL CRUD | project/task/submission/attachment/comment/user repository |
+| `models/` | DB row, 도메인 타입, 순수 권한 helper | `user.ts`, `submission.ts`, task/project/comment/attachment |
+| `src/` | 점진 FSD 목표 구조. 현재 `shared` 레이어만 시작됨 | `shared/ui/markdown-content/` |
+| `scripts/` | 실제 CLI 하네스 | `run-next.ts`, `check-db.ts`, `check-fsd-boundaries.ts`, `fixtures/fsd/`, 문서 변환 스크립트 |
+| `docs/` | 모든 하위 문서 | 아래 4절 |
+| `.github/` | Copilot 규칙과 저장소 skills | instructions, document skills |
+| `tasks/` | 작업 인계 템플릿 | `TASK_TEMPLATE.md` |
 
-- 8단계는 루트 `app/` 엔트리를 유지하는 점진 FSD 전환이다. 세부 매핑/게이트: `docs/FSD_MIGRATION_PLAN.md`.
-- 9단계 scheduled digest/report export는 architecture contract와 저장소 skill 작성 완료, 런타임 구현은 미착수다. 세부 D0~D5: `docs/PROJECT_DIGEST_REPORT_PLAN.md`.
-- Stage 7 제출물 첨부 플로우 구현 및 검증 완료.
-- 구조화 사용자 행동 로깅, 관리자 로그 검토, APP_PORT 빌드/시작 스크립트, 집중 태스크 라우팅, Gantt 우선 레이아웃 구현 완료.
-- 홈은 선택한 프로젝트 Gantt와 태스크 목록 중심으로 단순화.
-- 파일 로깅·환경변수 편집 관리자 세팅 완료.
-- `/logs`에 환경변수 기반 롤링 파일 로그 저장.
-- 슈퍼유저 로그인 및 관리자 전용 DB 관리 라우트 완료.
-- 반응형 앱셸, 라우트 내비게이션, 3-모드 테마 스위칭 완료.
-- **역할 시스템 확장 (현 스프린트)**:
-  - 슈퍼관리자(env) / 관리자(admin 역할) / 일반사용자(member) / 게스트(guest) 4단계
-  - 제출물 공개/비공개(visibility) 타입 추가
-  - 관리자 역할은 `/admin` (관리 개요), `/admin/users` (사용자 관리)만 접근 가능; 로그·세팅·DB는 슈퍼관리자 전용; 일반사용자 이하 권한 부여 가능
-  - 일반사용자·게스트는 공개 제출물만 조회 가능, 일반사용자는 본인 비공개도 조회 가능
+`src/`는 M1 진행 중이며 대부분의 런타임 코드는 아직 `app/`, `components/`, `lib/`, `models/`에 있다. FSD는 목표 구조이지 완료 구조가 아니다.
 
-## Live Rules
+## 2. 런타임 라우트 맵
 
-- 경고나 오류를 무시하지 않는다.
-- 실패한 명령이나 블로커는 반드시 기록하고 다음 조치를 명시한다.
-- 이 파일을 `docs/TODO.md` 및 `.github/copilot-instructions.md`와 동기화한다.
-- `.env`, `.env.local`, `.env.*` 파일을 AI 작업 컨텍스트나 리뷰 입력으로 사용하지 않는다.
-
-## 커맨드 하네스
-
-| 범위 | 커맨드 | 기대 결과 | 상태 |
+| URL / entry | 파일 | 인증/권한 | 주요 데이터 |
 | --- | --- | --- | --- |
-| Bootstrap | `npx create-next-app@latest wbs-task-bootstrap --ts --app --eslint --use-npm --import-alias "@/*" --no-tailwind --no-src-dir --disable-git --yes` | Next.js 워크스페이스 생성 및 루트 이동 | 완료 |
-| Debug | `npm run dev:debug` | Node 인스펙터 활성화된 Next.js dev 서버 시작 | Ready |
-| Debug | VS Code `Next.js: debug full stack (Chrome popup)` | dev 서버 + Chrome 팝업 동시 실행 | Ready |
-| Database Env | `npm run db:check -- --validate-only` | DB env 검증 (실 연결 없이) | 완료 |
-| Database Connect | `npm run db:check` | MariaDB 연결 성공 (DB 존재 시) | 관리자 초기화 필요 |
-| Admin Auth | `SUPERUSER_EMAIL` 계정으로 Google 로그인 | 슈퍼유저 세션 수신, `/admin` 접근 가능 | 빌드·라우트 연결로 확인 |
-| Admin DB | `/admin/database` | 슈퍼유저가 DB·테이블 생성 트리거 가능 | 빌드·라우트 연결로 확인 |
-| Admin Settings | `/admin/settings` | 슈퍼관리자 전용 — 환경변수 편집 가능 | 린트·빌드 확인 |
-| Admin Logs | `/admin/logs` | 슈퍼관리자 전용 — 구조화 로그 및 파일 로그 꼬리 검토 | Ready |
-| Auth Persistence | DB 초기화 후 Google 로그인 | 로그인 사용자가 `users` 테이블에 upsert | 빌드·라우트 연결로 확인 |
-| User Roles | `/admin/users` | 슈퍼관리자: `guest/member/admin` 역할 변경 가능; 관리자: `guest/member`만 부여 가능 (SUPERUSER_EMAIL 예약) | 린트·라우트 연결로 확인 |
-| Task CRUD | `/tasks` | 인증 사용자가 프로젝트 태스크 조회, `member/admin/superuser`가 생성·수정·삭제 | 린트·라우트 연결로 확인 |
-| Submission Visibility | `/tasks` | 쓰기 사용자가 공개/비공개 제출물 등록, 역할에 따라 조회 범위 제한 | 린트·라우트 연결로 확인 |
-| Comment | `/tasks` | 쓰기 사용자가 제출물에 댓글 CRUD, 모든 인증 사용자가 읽기 | 린트·라우트 연결로 확인 |
-| Gantt | `/tasks` | 선택한 프로젝트 태스크가 frappe-gantt 타임라인으로 렌더링 | 린트·라우트 연결로 확인 |
-| Home | `/` | 인증 사용자가 선택 프로젝트 Gantt와 태스크 목록 확인 | 린트·라우트 연결로 확인 |
-| Lint | `npm run lint` | 수정 파일에 미해결 경고·오류 없음 | 2026-07-26 실패: 기존 JS/AppleDouble 10 errors, 7 warnings |
-| Build | `npm run build` | 프로덕션 빌드 성공 | 2026-07-26 성공; DEP0205 warning 추적 필요 |
-| FSD Boundary | `npm run check:fsd` | 역방향/deep/server-client import 차단 | M0에서 추가 예정 |
-| Digest Contract | focused snapshot/privacy test (D0에서 script 확정) | 현재 스키마 지표 + public/private 분리 | D0에서 추가 예정 |
-| Report OOXML | focused DOCX/PPTX structure/parity test (D2에서 script 확정) | ZIP/XML/hash/텍스트 일치 | D2에서 추가 예정 |
-| Scheduled Run | focused token/idempotency test (D3에서 script 확정) | token fail-closed + 병렬 run 1개 | D3에서 추가 예정 |
+| `/` | `app/page.tsx` | 비로그인은 안내, 로그인 후 조회 | projects, tasks, Gantt |
+| `/privacy` | `app/privacy/page.tsx` | 공개 | 수집 항목, 보유 기간, 프로젝트 종료·파기 절차 |
+| `/tasks` | `app/tasks/page.tsx` | 로그인 필수; guest read-only, member+ write | 모든 핵심 entity; submission 목록만 viewer filter 적용 |
+| `/admin` | `app/admin/page.tsx` | admin/superuser | 운영 요약 |
+| `/admin/projects` | `app/admin/projects/page.tsx` | admin/superuser | project CRUD |
+| `/admin/users` | `app/admin/users/page.tsx` | admin/superuser | user role 관리 |
+| `/admin/database` | `app/admin/database/page.tsx` | superuser only | schema 상태/초기화 |
+| `/admin/logs` | `app/admin/logs/page.tsx` | superuser only | rolling log tail |
+| `/admin/settings` | `app/admin/settings/page.tsx` | superuser only | env 설정 UI |
+| `/api/auth/[...nextauth]` | `app/api/auth/[...nextauth]/route.ts` | NextAuth | Google OAuth GET/POST |
+| `/api/submissions/[submissionId]/attachment` | 해당 `route.ts` | 로그인 + public/작성자/admin 가시성 | legacy 단일 첨부 download |
+| `/api/submission-attachments/[attachmentId]` | 해당 `route.ts` | 로그인 + 부모 제출물 가시성 | 다중 첨부 download |
 
-## 실행 노트
+두 attachment route는 권한이 없거나 존재하지 않는 자원을 모두 404로 응답해 식별자 열거를 줄인다.
 
-- 루트 bootstrap 실패 — `WBSTask` 폴더명에 대문자가 포함되어 npm 패키지 명명 규칙 위반.  
-  해결: 소문자 임시 폴더에 앱 생성 후 루트로 이동.
-- 설치된 `next-auth`는 v4.24.14로 해석 → `NextAuthOptions` 및 App Router 핸들러 패턴 사용.
-- macOS 외장 드라이브 환경에서 AppleDouble 파일(`._*`)이 Turbopack 캐시에 쓰여 시작 실패.  
-  `next.config.ts`에 `experimental.turbopackFileSystemCacheForDev = false` 설정으로 해결.
-- `frappe-gantt` CSS는 Turbopack에서 `globals.css`로 불러올 수 없어 `app/layout.tsx`에서 직접 import.
+## 3. 주요 실행 흐름
 
-## 환경 가정
+### 인증
 
-- Google OAuth: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL` 필요.
-- `APP_PORT`: `npm run start` 포트 제어.
-- MariaDB: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_CONNECTION_LIMIT`, `DB_CONNECT_TIMEOUT_MS`.
-- 업로드: `UPLOAD_DIR`, `UPLOAD_MAX_FILE_SIZE_MB`.
-- 롤링 로그: `LOG_DIR`, `LOG_RETENTION_DAYS`, `LOG_MAX_FILE_SIZE_MB`.
-- Digest/report(구현 시): `DIGEST_SCHEDULER_TOKEN`, `REPORT_DIR`, `REPORT_RETENTION_DAYS`, row/run 상한. endpoint는 token 미설정 시 fail closed.
-- `.env*` 파일은 런타임 전용 — AI 작업 컨텍스트 제외.
+`GoogleProvider → lib/auth.ts callbacks → user-repository sync/role resolve → JWT token → session.user.{role,isSuperuser}`
 
-## VS Code 디버깅
+### 작업 화면 조회
 
-- `.vscode/launch.json` + `npm run dev:debug` 사용.
-- 풀 스택 런치는 `debugWithChrome`으로 Chrome을 실행.
+`app/tasks/page.tsx → database readiness → project/user 병렬 조회 → viewer DB id 해석 → task/submission/comment/attachment 병렬 조회 → task UI`
 
-## Stage 2 기반
+- `submission-repository`에는 `SubmissionVisibilityFilter`가 있다.
+- comment/attachment project 조회는 부모 submission visibility와 동일한 filter를 받지 않고, 결과 전체가 client component props로 넘어간다. [TODO.md](TODO.md)의 P0 항목이다.
 
-- `lib/env.ts`: env 파싱 및 준비 상태 확인.
-- `lib/db.ts`: 검증된 env로 MariaDB 풀 생성.
-- `models/user.ts`, `models/project.ts`: Stage 2 도메인 형태 정의.
-- `lib/auth.ts`: env 기반 슈퍼유저 세션 매핑 + Google 프로필 동기화 + `requireAdminPanelSession` 헬퍼.
-- `/admin`, `/admin/database`: 슈퍼유저 전용 관리자 진입점.
-- `/admin/users`: 슈퍼관리자는 guest/member/admin 역할 변경; 관리자는 guest/member만 부여 가능.
-- `components/AppShell.tsx`: 반응형 앱바, 모바일 드로어, 역할 기반 관리자 메뉴 분기.
+### 쓰기
 
-## Stage 3 태스크 플로우
+`form → app/**/actions.ts → session/입력 검사 → repository → file/log/revalidate → redirect`
 
-- `/tasks`: 프로젝트 선택 + WBS 태스크 트리 편집.
-- `lib/repositories/task-repository.ts`: MariaDB 기반 태스크 CRUD.
-- `models/task.ts`: Stage 3 태스크 도메인 형태.
+`app/tasks/actions.ts`가 큰 단일 action 모듈이다. FSD 전환 시 use-case별 feature로 분리하되 기능/권한 변경과 파일 이동을 분리한다.
 
-## Stage 4 타임라인 및 옵저빌리티
+### 프로젝트 종료·파기
 
-- `components/gantt/ProjectGanttChart.tsx`: frappe-gantt 렌더링.
-- `app/admin/settings`, `components/admin/SettingsAdminPanel.tsx`: 로그 정책·APP_PORT·env 편집.
-- `app/admin/logs`, `lib/logger.ts`: 롤링 로그 꼬리 + 구조화 행동 이력.
-- `instrumentation.ts`, `lib/logger.ts`: 롤링 파일 로그 초기화.
+`/admin/projects 종료 및 파기 확인 → 프로젝트 연결 제출물·첨부·태스크 경로 선조회 → project DELETE/FK cascade → UPLOAD_DIR 저장 파일·빈 태스크 디렉터리 정리 → 구조화 결과 로그`
 
-## Stage 5 제출물 플로우
+프로젝트 종료일만으로 자동 삭제하지 않는다. 관리자가 산출물 인계와 별도 보존 의무를 확인한 뒤 명시적으로 실행하며, 공유 사용자 계정과 단기 운영 로그는 프로젝트 데이터와 별도 수명주기로 관리한다.
 
-- `models/submission.ts`: `visibility` 필드 포함 제출물 도메인 형태.
-- `lib/repositories/submission-repository.ts`: MariaDB CRUD + `SubmissionVisibilityFilter` 역할 기반 필터링.
-- `/tasks`: 역할에 따라 공개/비공개 제출물 조회, 쓰기 사용자는 등록·수정·삭제 가능.
+### DB 초기화
 
-## Stage 7 첨부 플로우
+`/admin/database → app/admin/database/actions.ts → initializeDatabaseSchema() → CREATE DATABASE/TABLE + 일부 누락 컬럼 ALTER`
 
-- `lib/submission-files.ts`: env 설정 업로드 디렉터리에 첨부파일 저장 + 크기 제한 적용.
-- `/api/submissions/[submissionId]/attachment`: 인증 첨부파일 다운로드 스트리밍.
+별도 migration history table/runner는 없다.
 
-## Stage 6 피드백 플로우
+## 4. 데이터 관계
 
-- `models/comment.ts`, `lib/repositories/comment-repository.ts`: MariaDB 기반 댓글 도메인 CRUD.
-- `/tasks`: 제출물 수준 인라인 피드백 스레드 렌더링.
+```text
+projects 1 ── N tasks
+users    1 ── N tasks (assignee, nullable)
+tasks    1 ── N tasks (parent, nullable)
+tasks    1 ── N submissions
+users    1 ── N submissions
+submissions 1 ── N submission_attachments
+submissions 1 ── N comments
+users       1 ── N comments
+```
 
-## 역할 확장 (현 스프린트)
+상세 DDL은 `ARCHITECTURE.md`와 `lib/database-admin.ts`를 본다.
 
-- `models/user.ts`: `canAccessAdminPanel`, `canManageAllSubmissions` 헬퍼 추가; `manageableUserRoles`(전체), `adminAssignableRoles`(`guest`·`member`만) 상수 추가.
-- `models/submission.ts`: `SubmissionVisibility = "public" | "private"` 타입 추가.
-- `lib/database-admin.ts`: `submissions` 테이블에 `visibility` 컬럼 추가 (신규 + 마이그레이션).
-- `lib/auth.ts`: `requireAdminPanelSession` 헬퍼 추가.
-- `app/admin/page.tsx`: 관리자 역할 접근 허용. `app/admin/logs/page.tsx`, `app/admin/settings/page.tsx`: 슈퍼관리자 전용으로 변경.
-- `app/admin/users/page.tsx`, `app/admin/users/actions.ts`: 관리자 역할 접근 허용; 역할별 부여 가능 범위 분기 처리.
-- `components/AppShell.tsx`: 슈퍼관리자는 전체 메뉴, 관리자 역할은 관리 개요·사용자 관리 메뉴만 표시.
-- `components/task/TaskSubmissionPanel.tsx`: 공개/비공개 배지, visibility 라디오 폼 추가.
+## 5. 변경 시 동반 확인
 
-## 알려진 블로커
+| 변경 | 반드시 함께 확인 |
+| --- | --- |
+| 역할 helper | auth callback/session types, admin pages/actions, tasks UI/actions |
+| submission visibility | submission query, comments, attachments, download handlers, mutation ownership |
+| DB column/table | database-admin status, create/upgrade path, model mapper, repository SQL, `db:check` |
+| route/action | page form, redirect/revalidate, auth guard, structured log |
+| 파일 저장 | DB row lifecycle, path boundary, deletion cleanup, size/body limit |
+| FSD 이동 | public API, server/client boundary, alias `@/*`, legacy re-export, `npm run check:fsd` |
+| Next 설정 | `scripts/run-next.ts`, APP_PORT, build/start/dev 모두 |
 
-- `npm run lint`: `._next-env.d.ts` AppleDouble parse error와 기존 document authoring JS의 `no-require-imports`/unused 문제로 10 errors, 7 warnings. generated 파일 제외와 JS ESM 전환/별도 lint 정책을 결정해야 한다.
-- `npm run build`: build/TypeScript/static generation은 성공하지만 `tsx` 실행 중 Node DEP0205(`module.register()`) 경고가 남는다.
+## 6. 문서 지도
 
-## 계획된 구조·자동화
+루트에는 진입점 3개(`README.md`, `AGENTS.md`, `CLAUDE.md`)만 두고 나머지 문서는 모두 `docs/`에 있다.
 
-- `docs/FSD_MIGRATION_PLAN.md`: 현재 파일을 `shared → entities → features → widgets → root app pages` 순으로 옮기는 M0~M5 계획, import boundary gate, rollback 가능한 re-export 전략.
-- `docs/PROJECT_DIGEST_REPORT_PLAN.md`: MariaDB snapshot, audience/visibility, scheduler token, run ledger, artifact storage, DOCX/PPTX native renderer의 D0~D5 계약.
-- `.github/skills/wbs-project-digest-report/SKILL.md`: 위 기능을 한 vertical slice씩 구현·검증하는 project skill.
-- scheduled email/webhook은 project membership/recipient consent 모델과 별도 threat model이 승인될 때까지 범위 밖이다.
+| 문서 | 성격 | 언제 보는가 |
+| --- | --- | --- |
+| [PRODUCT_SPEC.md](PRODUCT_SPEC.md) | 제품 정의·MVP 범위·DB 설계 | 기능 범위/스키마 판단 |
+| [MASTER_PLAN.html](MASTER_PLAN.html) | 운영 마스터 플랜(사람용, standalone) | 우선순위·로드맵 공유 |
+| PROJECT_MAP.md (이 문서) | 코드 탐색 지도 | 어디를 고칠지 찾을 때 |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | 인증·인가·가시성·데이터 경계 | 정책/구조 변경 |
+| [HARNESS_MAP.md](HARNESS_MAP.md) | 실행·검증 명령과 기준선 | 검증 범위 결정 |
+| [TODO.md](TODO.md) | 단계 진행·백로그·블로커 | 매 작업 시작·종료 |
+| [FSD_MIGRATION_PLAN.md](FSD_MIGRATION_PLAN.md) | 8단계 M0~M5 계약 | 구조 이동 |
+| [PROJECT_DIGEST_REPORT_PLAN.md](PROJECT_DIGEST_REPORT_PLAN.md) | 9단계 D0~D5 계약 | digest/report |
+| [manual/](manual/) | 사용자 교육 자료(슬라이드·빠른 참조) | 교육·발표 |
 
-## 다음 업데이트 트리거
+## 7. 권위 자료 우선순위
 
-- FSD M0 또는 digest D0 구현 시작 시
-- Synology NAS 배포 준비 시작 시
-- auth 공급자 시크릿 프로비저닝 시
-- 새 검증 명령 또는 블로커 발생 시
+1. 실제 코드와 `package.json`/lockfile
+2. `lib/database-admin.ts`의 실제 DDL
+3. 운영 문서(`AGENTS.md`, 이 문서, `ARCHITECTURE.md`, `HARNESS_MAP.md`)
+4. `docs/`의 계획/이력 문서
+
+문서와 코드가 다르면 차이를 기록하고 코드를 근거로 운영한다.

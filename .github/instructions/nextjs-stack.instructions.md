@@ -20,7 +20,7 @@ Apply the repository-wide guidance from ../copilot-instructions.md to all applic
 - Keep top-level routes in root `app/`; route files remain thin entry adapters.
 - Follow `docs/FSD_MIGRATION_PLAN.md`: build/move in `src/shared → src/entities → src/features → src/widgets → root app pages` order. Do not bulk-move code, mix behavior changes with structure moves, or create duplicate `src/app`/`src/pages` layers.
 - Until a slice migrates, existing `components/`, `models/`, and `lib/` are compatibility locations. New cross-route domain work should target the mapped FSD slice and expose a public `index.ts` API.
-- Keep domain types and model helpers aligned with Project, User, Task, Submission, and Comment from `docs/MasterPlan.md`.
+- Keep domain types and model helpers aligned with Project, User, Task, Submission, and Comment from `docs/PRODUCT_SPEC.md`.
 
 ## TypeScript
 
@@ -53,7 +53,7 @@ Apply the repository-wide guidance from ../copilot-instructions.md to all applic
 
 - Run lint on touched changes.
 - Run production build checks before closing a stage milestone.
-- Treat framework warnings as follow-up work only if they are documented in TODO.md and docs/PROJECT_MAP.md.
+- Treat framework warnings as follow-up work only if they are documented in docs/TODO.md and docs/HARNESS_MAP.md.
 
 ## Role and Visibility Rules
 
@@ -61,4 +61,4 @@ Apply the repository-wide guidance from ../copilot-instructions.md to all applic
 - Use `canManageAllSubmissions(role, isSuperuser)` to determine if a user can see private submissions.
 - Pass `SubmissionVisibilityFilter` from `lib/repositories/submission-repository.ts` when listing submissions.
 - `/admin/users` allows admin and superuser sessions, but an admin may assign only `guest`/`member`; `/admin/database`, `/admin/logs`, and `/admin/settings` remain superuser-only.
-- All sub-documents live under `/docs/`. Reference `docs/PROJECT_MAP.md` instead of `HARNESS_MAP.md`.
+- All sub-documents live under `/docs/`. `docs/PROJECT_MAP.md` maps the code; `docs/HARNESS_MAP.md` holds the command harness.

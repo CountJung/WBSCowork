@@ -70,11 +70,11 @@ private → author OR admin/superuser
 
 ### 현재 확인된 보안 부채
 
-1. `app/tasks/page.tsx`는 submissions만 visibility-filtered이고 comments/attachments는 프로젝트 전체를 조회한다.
-2. `getSubmissionById`는 unscoped 단건 조회이므로 사용자 응답 경계에서는 `canViewSubmission` 정책과 함께 사용해야 한다.
-3. task actions의 일부 mutation은 쓰기 역할만 확인하므로 작성자 ownership 정책을 별도로 감사해야 한다.
+1. `app/tasks/page.tsx`는 submissions만 visibility-filtered이고 comments/attachments는 프로젝트 전체를 조회한다. 그 결과가 client component(`TaskCard`) props로 그대로 전달되므로 비공개 제출물의 댓글·첨부 metadata가 RSC payload에 실린다.
+2. `getSubmissionById`는 unscoped 단건 조회다. 두 attachment download handler는 조회 후 `canViewSubmission`으로 막고 있지만, 새 소비자가 이 정책 검사를 빠뜨리기 쉬운 형태다.
+3. 제출물·댓글의 update/delete action은 쓰기 역할만 확인하고 작성자 ownership을 확인하지 않는다. `updateSubmissionAction`은 `visibility`도 덮어쓴다.
 
-따라서 UI에서 private card가 숨겨진다는 사실만으로 데이터가 보호된다고 판단하지 않는다.
+따라서 UI에서 private card가 숨겨진다는 사실만으로 데이터가 보호된다고 판단하지 않는다. 각 항목의 우선순위와 조치는 [TODO.md](TODO.md)의 보안·정합성 백로그에 있다.
 
 ## 5. 데이터 아키텍처
 
@@ -120,7 +120,9 @@ src/entities/ 도메인 모델·정책·repository public API
 src/shared/   도메인 비의존 UI/config/server utility
 ```
 
-허용 의존은 `app → widgets → features → entities → shared`; 실제 이전은 역순이다. slice 외부는 `index.ts` 공개 API만 사용하고 server-only API가 client graph에 들어가지 않게 한다. 현재 `src/`와 `check:fsd` script는 미구현이다.
+허용 의존은 `app → widgets → features → entities → shared`; 실제 이전은 역순이다. slice 외부는 `index.ts` 공개 API만 사용하고, server-only 소비자가 필요하면 `index.server.ts`를 두 번째 공개 API로 둔다. server-only API가 client graph에 들어가지 않게 한다.
+
+`npm run check:fsd`(`scripts/check-fsd-boundaries.ts`)가 이 계약을 실행 가능한 게이트로 강제한다. 현재 `src/`에는 `shared/ui/markdown-content` slice만 있다.
 
 ## 8. 품질 속성 및 우선순위
 
@@ -140,4 +142,4 @@ src/shared/   도메인 비의존 UI/config/server utility
 - `src/` FSD boundary checker 도입
 - scheduler/report route 및 machine authentication 도입
 
-이 경우 `ARCHITECTURE.md`, `PROJECT_MAP.md`, `HARNESS_MAP.md`와 관련 `docs/` 계획을 함께 갱신한다.
+이 경우 `docs/ARCHITECTURE.md`, `docs/PROJECT_MAP.md`, `docs/HARNESS_MAP.md`와 관련 `docs/` 계획을 함께 갱신한다.
