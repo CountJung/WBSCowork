@@ -23,7 +23,7 @@ Do not trigger it for unrelated task/project CRUD, generic FSD moves, or one-off
 3. `docs/FSD_MIGRATION_PLAN.md`
 4. `.github/instructions/quality-gates.instructions.md`
 5. Format references: `.github/skills/document-skills/docx/SKILL.md` and `.github/skills/document-skills/pptx/SKILL.md`
-6. Actual schema/auth/visibility sources: `lib/database-admin.ts`, `lib/auth.ts`, `models/user.ts`, `lib/repositories/submission-repository.ts`, and attachment repository
+6. Actual schema/auth/visibility sources: `src/shared/server/database-admin`, `src/entities/user`, `src/entities/submission`, and attachment repository APIs
 
 Paths above are repository-root relative. If docs and code disagree, update the plan from actual schema/code evidence. Never read `.env*` as review context.
 

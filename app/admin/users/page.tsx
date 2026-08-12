@@ -11,11 +11,10 @@ import {
   Typography,
 } from "@mui/material";
 import { redirect } from "next/navigation";
-import { getAuthSession, getSignInPath, isSuperuserEmail } from "@/lib/auth";
-import { getDatabaseAdminStatus } from "@/lib/database-admin";
-import { getRuntimeEnv } from "@/lib/env";
-import { listAllUsers } from "@/lib/repositories/user-repository";
-import { canAccessAdminPanel, getUserRoleLabel, manageableUserRoles, adminAssignableRoles } from "@/models/user";
+import { getAuthSession, getSignInPath, isSuperuserEmail, listAllUsers } from "@/src/entities/user/index.server";
+import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
+import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
+import { canAccessAdminPanel, getUserRoleLabel, manageableUserRoles, adminAssignableRoles } from "@/src/entities/user";
 import { updateUserRoleAction } from "./actions";
 
 export const dynamic = "force-dynamic";

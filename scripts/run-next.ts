@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { loadEnvConfig } from "@next/env";
-import { getRuntimeEnv } from "../lib/env";
+import { getRuntimeEnv } from "../src/shared/server/runtime-env/index.server";
 
 type NextCommand = "build" | "dev" | "start";
 

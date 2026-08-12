@@ -1,7 +1,7 @@
 import { Alert, Button, Chip, Container, Divider, List, ListItem, ListItemText, Paper, Stack, Typography } from "@mui/material";
 import { redirect } from "next/navigation";
-import { getAuthSession, getSignInPath } from "@/lib/auth";
-import { listRecentLogFiles, listRecentUserActionEntries, readRecentLogEntries, type LogEntryWithFile } from "@/lib/logger";
+import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
+import { listRecentLogFiles, listRecentUserActionEntries, readRecentLogEntries, type LogEntryWithFile } from "@/src/shared/server/logging/index.server";
 
 export const dynamic = "force-dynamic";
 

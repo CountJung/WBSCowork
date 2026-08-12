@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { Alert, Chip, Container, Paper, Stack, Typography } from "@mui/material";
-import { getAuthSession } from "@/lib/auth";
-import { getDatabaseAdminStatus } from "@/lib/database-admin";
-import { getRuntimeEnv } from "@/lib/env";
-import { listAllProjects } from "@/lib/repositories/project-repository";
-import { listTasksByProject } from "@/lib/repositories/task-repository";
-import { formatDate, getOrderedTasks, getSelectedProject } from "@/lib/task-view";
-import ProjectGanttChart from "@/components/gantt/ProjectGanttChart";
-import MarkdownContent from "@/components/MarkdownContent";
-import { getUserRoleLabel } from "@/models/user";
+import { getAuthSession } from "@/src/entities/user/index.server";
+import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
+import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
+import { listAllProjects } from "@/src/entities/project/index.server";
+import { listTasksByProject } from "@/src/entities/task/index.server";
+import { getOrderedTasks } from "@/src/entities/task";
+import { getSelectedProject } from "@/src/entities/project";
+import { formatDate } from "@/src/shared/lib/date";
+import ProjectGanttChart from "@/src/widgets/project-gantt";
+import MarkdownContent from "@/src/shared/ui/markdown-content";
+import { getUserRoleLabel } from "@/src/entities/user";
 
 type HomePageProps = {
   searchParams: Promise<{

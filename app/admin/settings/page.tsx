@@ -1,8 +1,9 @@
 import { Alert, Container, Stack, Typography } from "@mui/material";
 import { redirect } from "next/navigation";
-import SettingsAdminPanel from "@/components/admin/SettingsAdminPanel";
-import { getAdminSettingsSnapshot } from "@/lib/admin-settings";
-import { getAuthSession, getSignInPath } from "@/lib/auth";
+import SettingsAdminPanel from "@/src/widgets/admin-settings";
+import { getAdminSettingsSnapshot } from "@/src/features/settings-manage/index.server";
+import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
+import { saveSettingsAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,7 @@ export default async function AdminSettingsPage() {
           </Alert>
         ) : null}
 
-        <SettingsAdminPanel initialSnapshot={initialSnapshot} />
+        <SettingsAdminPanel initialSnapshot={initialSnapshot} saveSettingsAction={saveSettingsAction} />
       </Stack>
     </Container>
   );

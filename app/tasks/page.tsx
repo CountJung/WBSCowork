@@ -10,25 +10,23 @@ import {
   Typography,
 } from "@mui/material";
 import { redirect } from "next/navigation";
-import { getAuthSession, getSignInPath } from "@/lib/auth";
-import { getDatabaseAdminStatus } from "@/lib/database-admin";
-import { getRuntimeEnv } from "@/lib/env";
-import { listCommentsByProject } from "@/lib/repositories/comment-repository";
-import { listAttachmentsByProject } from "@/lib/repositories/submission-attachment-repository";
-import { listAllProjects } from "@/lib/repositories/project-repository";
-import { listSubmissionsByProject } from "@/lib/repositories/submission-repository";
-import { listTasksByProject } from "@/lib/repositories/task-repository";
-import { formatDate, getOrderedTasks, getSelectedProject, getSelectedTask } from "@/lib/task-view";
-import { listAllUsers } from "@/lib/repositories/user-repository";
-import ProjectGanttChart from "@/components/gantt/ProjectGanttChart";
-import TaskCard from "@/components/task/TaskCard";
-import TaskFocusController from "@/components/task/TaskFocusController";
-import type { Comment } from "@/models/comment";
-import type { Project } from "@/models/project";
-import type { SubmissionAttachment } from "@/models/submission-attachment";
-import type { Submission } from "@/models/submission";
-import type { Task } from "@/models/task";
-import { canWriteTaskContent, getUserRoleLabel, canManageAllSubmissions, canAccessAdminPanel } from "@/models/user";
+import { getAuthSession, getSignInPath, listAllUsers } from "@/src/entities/user/index.server";
+import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
+import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
+import { listCommentsByProject } from "@/src/entities/comment/index.server";
+import { listAttachmentsByProject, listSubmissionsByProject } from "@/src/entities/submission/index.server";
+import { listAllProjects } from "@/src/entities/project/index.server";
+import { listTasksByProject } from "@/src/entities/task/index.server";
+import { getOrderedTasks, getSelectedTask } from "@/src/entities/task";
+import { getSelectedProject } from "@/src/entities/project";
+import { formatDate } from "@/src/shared/lib/date";
+import ProjectGanttChart from "@/src/widgets/project-gantt";
+import { TaskCard, TaskFocusController } from "@/src/widgets/task-workspace";
+import type { Comment } from "@/src/entities/comment";
+import type { Project } from "@/src/entities/project";
+import type { SubmissionAttachment, Submission } from "@/src/entities/submission";
+import type { Task } from "@/src/entities/task";
+import { canWriteTaskContent, getUserRoleLabel, canManageAllSubmissions, canAccessAdminPanel } from "@/src/entities/user";
 import {
   createCommentAction,
   createSubmissionAction,
@@ -272,7 +270,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const selectedProject = getSelectedProject(projects, projectIdParam);
 
   // 사용자 DB ID 조회 (visibility 필터링에 필요)
-  const { getUserByEmail } = await import("@/lib/repositories/user-repository");
+  const { getUserByEmail } = await import("@/src/entities/user/index.server");
   const currentDbUser = session.user.email ? await getUserByEmail(session.user.email).catch(() => null) : null;
   const currentDbUserId = currentDbUser?.id ?? null;
 

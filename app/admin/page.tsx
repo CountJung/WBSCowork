@@ -1,9 +1,9 @@
 import { Alert, Chip, Container, Paper, Stack, Typography } from "@mui/material";
 import { redirect } from "next/navigation";
-import { getAdminOverview } from "@/lib/admin-overview";
-import { getAuthSession, getSignInPath } from "@/lib/auth";
-import { getRuntimeEnv } from "@/lib/env";
-import { canAccessAdminPanel } from "@/models/user";
+import { getAdminOverview } from "@/src/features/admin-overview/index.server";
+import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
+import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
+import { canAccessAdminPanel } from "@/src/entities/user";
 
 export const dynamic = "force-dynamic";
 

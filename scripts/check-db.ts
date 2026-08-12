@@ -1,6 +1,6 @@
 import { loadEnvConfig } from "@next/env";
-import { checkDatabaseConnection, closeDatabasePool } from "../lib/db";
-import { requireDatabaseEnv } from "../lib/env";
+import { checkDatabaseConnection, closeDatabasePool } from "../src/shared/server/database/index.server";
+import { requireDatabaseEnv } from "../src/shared/server/runtime-env/index.server";
 
 loadEnvConfig(process.cwd());
 

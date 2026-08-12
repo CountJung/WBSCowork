@@ -32,7 +32,7 @@
 
 - `visibility = "public"`: 모든 인증 사용자 조회 가능  
 - `visibility = "private"`: 작성자 본인 + 관리자(admin) + 슈퍼관리자만 조회 가능  
-- 역할 기반 필터링은 `lib/repositories/submission-repository.ts`의 `SubmissionVisibilityFilter`로 처리
+- 역할 기반 필터링은 `src/entities/submission`의 `SubmissionVisibilityFilter`로 처리
 
 ---
 
@@ -43,17 +43,11 @@ app/           # Next.js App Router 엔트리(라우트/handler/action adapter)
   api/         # Route Handlers
   admin/       # 관리자 페이지 (슈퍼관리자·관리자 접근)
   tasks/       # 메인 WBS 태스크 워크스페이스
-components/
-  AppShell.tsx # 전역 앱바 + 역할별 관리자 메뉴
-  gantt/       # frappe-gantt 래퍼
-  task/        # 태스크 제출물 패널 (visibility UI 포함)
-lib/
-  auth.ts      # NextAuth 설정, requireAdminPanelSession
-  db.ts        # MariaDB 풀
-  repositories/ # DB 접근 계층
-models/        # 도메인 타입 (user, task, submission, comment 등)
-src/           # 점진 FSD 목표 구조(shared/entities/features/widgets 순으로 구축)
-  shared/ui/markdown-content/  # 이동 완료한 첫 slice
+src/
+  shared/      # 공통 UI/config/server utility
+  entities/    # 도메인 타입·정책·repository public API
+  features/    # Server Action use-case
+  widgets/     # 전역 앱바, 간트, task workspace, admin panel
 scripts/       # 실행·검증 하네스 (run-next, check-db, check-fsd-boundaries)
 docs/          # 모든 하위 문서 (루트에는 README/AGENTS/CLAUDE 만 둔다)
 ```
@@ -103,7 +97,7 @@ npm run dev:debug     # Node 인스펙터 포함 dev 서버
 | [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md) | App Router·repository·DB 작업별 진입점 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 인증·인가, 제출물 가시성, MariaDB·파일 경계 |
 | [docs/HARNESS_MAP.md](docs/HARNESS_MAP.md) | 실행·검증 명령과 알려진 기준선 |
-| [docs/FSD_MIGRATION_PLAN.md](docs/FSD_MIGRATION_PLAN.md) | 8단계 M0~M5 계약과 경계 게이트 사양 |
+| [docs/FSD_MIGRATION_PLAN.md](docs/FSD_MIGRATION_PLAN.md) | 8단계 M0~M5 완료 구조와 경계 게이트 사양 |
 | [docs/PROJECT_DIGEST_REPORT_PLAN.md](docs/PROJECT_DIGEST_REPORT_PLAN.md) | 9단계 digest/report export 계약 |
 | [docs/manual/](docs/manual/) | 사용자 교육 슬라이드·빠른 참조 |
 | [tasks/TASK_TEMPLATE.md](tasks/TASK_TEMPLATE.md) | 권한 매트릭스·DB 영향·완료 조건 템플릿 |

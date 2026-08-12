@@ -11,7 +11,7 @@ Browser
         ↓
 Root app/ adapters (page/layout/action/route)
         ↓
-lib auth/policy orchestration + repositories
+src/widgets/features/entities/shared public API
         ├─ MariaDB
         ├─ UPLOAD_DIR
         └─ LOG_DIR
@@ -33,7 +33,7 @@ lib auth/policy orchestration + repositories
 
 ### 인증
 
-`lib/auth.ts`가 NextAuth v4 설정의 단일 중심이다.
+`src/entities/user/api/auth.server.ts`가 NextAuth v4 설정의 단일 중심이다.
 
 1. Google OAuth가 설정된 경우 provider 활성화.
 2. sign-in callback이 DB user를 sync하고 action log 기록.
@@ -61,7 +61,7 @@ public  → 모든 인증 사용자
 private → author OR admin/superuser
 ```
 
-`submission-repository.ts`의 목록 함수는 `SubmissionVisibilityFilter`로 SQL에 조건을 붙인다. 하지만 안전한 경계는 제출물 row에서 끝나지 않는다.
+`src/entities/submission`의 목록 함수는 `SubmissionVisibilityFilter`로 SQL에 조건을 붙인다. 하지만 안전한 경계는 제출물 row에서 끝나지 않는다.
 
 - comments는 부모 submission이 보이는 경우에만 노출
 - attachment metadata와 binary도 부모 submission이 보이는 경우에만 노출
@@ -70,7 +70,7 @@ private → author OR admin/superuser
 
 ### 현재 확인된 보안 부채
 
-1. `app/tasks/page.tsx`는 submissions만 visibility-filtered이고 comments/attachments는 프로젝트 전체를 조회한다. 그 결과가 client component(`TaskCard`) props로 그대로 전달되므로 비공개 제출물의 댓글·첨부 metadata가 RSC payload에 실린다.
+1. `app/tasks/page.tsx`는 submissions만 visibility-filtered이고 comments/attachments는 프로젝트 전체를 조회한다. 그 결과가 client widget(`src/widgets/task-workspace`) props로 그대로 전달되므로 비공개 제출물의 댓글·첨부 metadata가 RSC payload에 실린다.
 2. `getSubmissionById`는 unscoped 단건 조회다. 두 attachment download handler는 조회 후 `canViewSubmission`으로 막고 있지만, 새 소비자가 이 정책 검사를 빠뜨리기 쉬운 형태다.
 3. 제출물·댓글의 update/delete action은 쓰기 역할만 확인하고 작성자 ownership을 확인하지 않는다. `updateSubmissionAction`은 `visibility`도 덮어쓴다.
 
@@ -78,7 +78,7 @@ private → author OR admin/superuser
 
 ## 5. 데이터 아키텍처
 
-`lib/database-admin.ts`가 현재 managed schema의 사실상 schema manager다.
+`src/shared/server/database-admin`이 현재 managed schema의 사실상 schema manager다.
 
 | 테이블 | 핵심 컬럼 | 관계/삭제 |
 | --- | --- | --- |
@@ -104,10 +104,10 @@ DB cascade는 파일 삭제를 하지 않는다. 삭제 action은 DB 삭제 전 
 
 ## 6. 파일·로그
 
-- `lib/submission-files.ts`: `UPLOAD_DIR`, 크기 제한, 안전한 경로 해석, 읽기/삭제.
+- `src/entities/submission/api/submission-files.server.ts`: `UPLOAD_DIR`, 크기 제한, 안전한 경로 해석, 읽기/삭제.
 - `next.config.ts`: 업로드 최대치 + 2MB로 Server Action body limit 계산.
 - 다운로드는 부모 제출물의 public/작성자/admin 가시성을 검사하고 `Cache-Control: private, no-store`, length/type/disposition을 반환한다.
-- `lib/logger.ts` 및 `instrumentation.ts`: `LOG_DIR` 롤링 로그와 구조화 action log.
+- `src/shared/server/logging` 및 `instrumentation.ts`: `LOG_DIR` 롤링 로그와 구조화 action log.
 - 파일 경로·비밀값·private content를 로그 metadata에 남기지 않는 방향으로 보강해야 한다.
 
 ## 7. 목표 FSD
@@ -122,7 +122,7 @@ src/shared/   도메인 비의존 UI/config/server utility
 
 허용 의존은 `app → widgets → features → entities → shared`; 실제 이전은 역순이다. slice 외부는 `index.ts` 공개 API만 사용하고, server-only 소비자가 필요하면 `index.server.ts`를 두 번째 공개 API로 둔다. server-only API가 client graph에 들어가지 않게 한다.
 
-`npm run check:fsd`(`scripts/check-fsd-boundaries.ts`)가 이 계약을 실행 가능한 게이트로 강제한다. 현재 `src/`에는 `shared/ui/markdown-content` slice만 있다.
+`npm run check:fsd`(`scripts/check-fsd-boundaries.ts`)가 이 계약을 실행 가능한 게이트로 강제한다. 2026-08-12 기준 M0~M5가 완료되어 `src/shared`, `src/entities`, `src/features`, `src/widgets`가 실제 런타임 구조다.
 
 ## 8. 품질 속성 및 우선순위
 

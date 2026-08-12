@@ -12,13 +12,13 @@ import {
   Typography,
 } from "@mui/material";
 import { redirect } from "next/navigation";
-import { getAuthSession, getSignInPath } from "@/lib/auth";
-import { getDatabaseAdminStatus } from "@/lib/database-admin";
-import { getRuntimeEnv } from "@/lib/env";
-import { listAllProjects } from "@/lib/repositories/project-repository";
-import { formatDate } from "@/lib/task-view";
-import { canAccessAdminPanel } from "@/models/user";
-import type { Project } from "@/models/project";
+import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
+import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
+import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
+import { listAllProjects } from "@/src/entities/project/index.server";
+import { formatDate } from "@/src/shared/lib/date";
+import { canAccessAdminPanel } from "@/src/entities/user";
+import type { Project } from "@/src/entities/project";
 import {
   createProjectAdminAction,
   deleteProjectAdminAction,

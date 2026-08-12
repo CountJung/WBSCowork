@@ -37,7 +37,7 @@
 | `-- --only-repo` | 저장소만 검사 |
 | `-- --json` | 기계 판독용 출력 |
 
-차단하는 위반: `layer-direction`, `cross-slice`, `deep-import`, `unknown-layer`, `client-server`. `legacy-import`(src 슬라이스가 `components/`·`lib/`·`models/` 참조)는 이동 중 남은 부채로 경고만 낸다.
+차단하는 위반: `layer-direction`, `cross-slice`, `deep-import`, `unknown-layer`, `client-server`. `legacy-import`(src 슬라이스가 `components/`·`lib/`·`models/` 참조)는 이동 중 남은 부채로 경고만 내지만, 8단계 M5 완료 후 현재 저장소에는 남기지 않는다.
 
 ## 3. 변경 유형별 최소 게이트
 
@@ -50,7 +50,7 @@
 | repository SQL | lint/typecheck/build, validate-only | 테스트 DB에서 CRUD/transaction/EXPLAIN |
 | schema | 위 + 실제 DB | fresh/existing upgrade, FK/cascade/index, rollback/backup |
 | upload/download | lint/typecheck/build | size limit, MIME/disposition, traversal, missing file, unauthorized 404 |
-| FSD 이동 | `npm run check:fsd`, lint/typecheck/build | 이동 전후 export/signature/SQL 동일성, 호환 re-export 동작 |
+| FSD 이동 | `npm run check:fsd`, lint/typecheck/build | 이동 전후 export/signature/SQL 동일성, public API 동작 |
 
 ## 4. DB 검증 층위
 
@@ -60,7 +60,7 @@
 npm run db:check -- --validate-only
 ```
 
-`lib/env.ts`의 필수 DB 설정과 숫자 범위를 확인하며 네트워크 연결은 하지 않는다.
+`src/shared/server/runtime-env`의 필수 DB 설정과 숫자 범위를 확인하며 네트워크 연결은 하지 않는다.
 
 ### B. 연결
 
@@ -68,11 +68,11 @@ npm run db:check -- --validate-only
 npm run db:check
 ```
 
-`lib/db.ts` pool로 실제 MariaDB에 연결한다. DB 미구성/접근 불가 환경의 실패를 코드 실패로 위장하지 않는다.
+`src/shared/server/database` pool로 실제 MariaDB에 연결한다. DB 미구성/접근 불가 환경의 실패를 코드 실패로 위장하지 않는다.
 
 ### C. managed schema
 
-슈퍼관리자로 `/admin/database`에서 상태를 확인하고 초기화를 실행한다. 현재 별도 CLI migration은 없고 `lib/database-admin.ts`가 database/table 생성과 일부 column 보정을 수행한다.
+슈퍼관리자로 `/admin/database`에서 상태를 확인하고 초기화를 실행한다. 현재 별도 CLI migration은 없고 `src/shared/server/database-admin`이 database/table 생성과 일부 column 보정을 수행한다.
 
 DB 변경 시 최소 확인 목록:
 
@@ -140,14 +140,14 @@ attachment handler는 부모 제출물의 가시성을 검사하고 unauthorized
 - `.vscode/launch.json` + `npm run dev:debug`.
 - 풀 스택 런치는 `debugWithChrome`으로 Chrome을 실행한다. 서버가 이미 떠 있으면 client-side 구성만 붙인다.
 
-## 10. 알려진 기준선 (2026-08-09)
+## 10. 알려진 기준선 (2026-08-12)
 
 | 명령 | 결과 |
 | --- | --- |
 | `npm run lint` | 통과 (0 errors, 0 warnings) |
 | `npm run typecheck` | 통과 |
 | `npm run check:fsd` | 통과 (self-test 5건, 저장소 위반 0건) |
-| `npm run build` | 성공. Node `[DEP0205] module.register()` 경고 잔존 — `tsx@4.21.0` 로더 문제이며 [TODO.md](TODO.md)에 추적 중 |
+| `npm run build` | 통과. Next.js 16.2.4 Turbopack production build 성공 |
 | `npm run db:check` | 미실행 — 이 환경에 MariaDB 인스턴스 없음 |
 
 DB 연결이 필요한 명령을 실행하지 못했으면 코드 실패로 위장하지 말고 미실행 사유를 남긴다.
@@ -169,7 +169,7 @@ git status --short
 
 ## 12. 다음 업데이트 트리거
 
-- FSD M1 이후 각 마일스톤 완료 시
+- FSD 구조나 경계 규칙 변경 시
 - digest D0 구현 시작 시
 - Synology NAS 배포 준비 시작 시
 - 새 검증 명령 추가 또는 블로커 발생/해소 시

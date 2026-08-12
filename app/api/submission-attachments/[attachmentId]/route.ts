@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/auth";
-import { logUserAction, logUserActionFailure } from "@/lib/logger";
-import { getSubmissionAttachmentById } from "@/lib/repositories/submission-attachment-repository";
-import { getSubmissionById } from "@/lib/repositories/submission-repository";
-import { readStoredSubmissionAttachment } from "@/lib/submission-files";
-import { canViewSubmission } from "@/models/submission";
-import { canManageAllSubmissions } from "@/models/user";
+import { getAuthSession } from "@/src/entities/user/index.server";
+import { logUserAction, logUserActionFailure } from "@/src/shared/server/logging/index.server";
+import { getSubmissionAttachmentById, getSubmissionById, readStoredSubmissionAttachment } from "@/src/entities/submission/index.server";
+import { canViewSubmission } from "@/src/entities/submission";
+import { canManageAllSubmissions } from "@/src/entities/user";
 
 type RouteContext = {
   params: Promise<{

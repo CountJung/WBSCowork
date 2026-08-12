@@ -8,7 +8,7 @@
 
 채택 패턴은 수집 → 정규화 snapshot → 렌더 → 저장 → 명시적 전달이다. 앱 프로세스 timer를 두지 않고 Synology Task Scheduler/cron이 인증된 HTTP endpoint를 호출한다. preview와 delivery를 분리하며 최초 운영 모드는 `dryRun=true`, `audienceMode=public_only`, `deliveryMode=none`이다.
 
-현재 `lib/database-admin.ts`의 managed schema에는 `projects`, `tasks`, `submissions`, `submission_attachments`, `comments`, `users`만 있다. task 상태/완료율/수정 시각, project membership/owner, report/run table은 없다. v1이 표현할 수 있는 사실은 다음뿐이다.
+현재 `src/shared/server/database-admin`의 managed schema에는 `projects`, `tasks`, `submissions`, `submission_attachments`, `comments`, `users`만 있다. task 상태/완료율/수정 시각, project membership/owner, report/run table은 없다. v1이 표현할 수 있는 사실은 다음뿐이다.
 
 - 프로젝트 기간, 태스크 수/계층/담당자, 예정 시작/종료
 - 기준 지역 날짜에서 `end_date < localDate`인 **기한 경과 태스크**(미완료/지연 확정 아님)
@@ -53,7 +53,7 @@ FSD 구현은 `docs/FSD_MIGRATION_PLAN.md`의 `shared → entities → features 
 
 ## 3. MariaDB schema·권한 계약
 
-현재는 migration runner가 없고 `lib/database-admin.ts`가 전체 managed schema를 생성/보정한다. report table을 곧바로 “migration 완료”로 표시하지 않는다. D3에서 먼저 **재실행 가능한 versioned migration script/기록 방식**을 정하고, 기존 DB와 빈 DB 양쪽에서 적용/rollback 절차를 검증한다.
+현재는 migration runner가 없고 `src/shared/server/database-admin`이 전체 managed schema를 생성/보정한다. report table을 곧바로 “migration 완료”로 표시하지 않는다. D3에서 먼저 **재실행 가능한 versioned migration script/기록 방식**을 정하고, 기존 DB와 빈 DB 양쪽에서 적용/rollback 절차를 검증한다.
 
 ### 목표 테이블
 

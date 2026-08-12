@@ -7,17 +7,16 @@
 | 경로 | 책임 | 핵심 파일 |
 | --- | --- | --- |
 | `app/` | Next.js 16 App Router 엔트리, Server Component, Server Action, Route Handler | `layout.tsx`, `page.tsx`, `tasks/*`, `admin/*`, `api/*` |
-| `components/` | MUI 화면 조립과 client leaf | `AppShell.tsx`, `gantt/ProjectGanttChart.tsx`, `task/*`, `admin/*` |
-| `lib/` | auth/env/db/log/file 및 application helper | `auth.ts`, `db.ts`, `database-admin.ts`, `submission-files.ts` |
-| `lib/repositories/` | MariaDB SQL CRUD | project/task/submission/attachment/comment/user repository |
-| `models/` | DB row, 도메인 타입, 순수 권한 helper | `user.ts`, `submission.ts`, task/project/comment/attachment |
-| `src/` | 점진 FSD 목표 구조. 현재 `shared` 레이어만 시작됨 | `shared/ui/markdown-content/` |
+| `src/shared/` | 도메인 비의존 UI/config/server utility | `ui/markdown-content`, `ui/providers`, `config/theme`, `server/*`, `lib/date` |
+| `src/entities/` | 도메인 모델·정책·MariaDB/file repository public API | project/task/submission/comment/user |
+| `src/features/` | Server Action use-case | task-workspace, database-manage, project-manage, settings-manage, user-role-change |
+| `src/widgets/` | MUI 화면 조립과 client leaf | app-shell, project-gantt, task-workspace, admin-database, admin-settings |
 | `scripts/` | 실제 CLI 하네스 | `run-next.ts`, `check-db.ts`, `check-fsd-boundaries.ts`, `fixtures/fsd/`, 문서 변환 스크립트 |
 | `docs/` | 모든 하위 문서 | 아래 4절 |
 | `.github/` | Copilot 규칙과 저장소 skills | instructions, document skills |
 | `tasks/` | 작업 인계 템플릿 | `TASK_TEMPLATE.md` |
 
-`src/`는 M1 진행 중이며 대부분의 런타임 코드는 아직 `app/`, `components/`, `lib/`, `models/`에 있다. FSD는 목표 구조이지 완료 구조가 아니다.
+`components/`, `lib/`, `models/` 호환 re-export는 8단계 M5에서 제거했다. 루트 `app/`은 Next.js 엔트리로 유지하며 `src/**` public API를 조립한다.
 
 ## 2. 런타임 라우트 맵
 
@@ -42,7 +41,7 @@
 
 ### 인증
 
-`GoogleProvider → lib/auth.ts callbacks → user-repository sync/role resolve → JWT token → session.user.{role,isSuperuser}`
+`GoogleProvider → src/entities/user auth.server callbacks → user repository sync/role resolve → JWT token → session.user.{role,isSuperuser}`
 
 ### 작업 화면 조회
 
@@ -53,9 +52,9 @@
 
 ### 쓰기
 
-`form → app/**/actions.ts → session/입력 검사 → repository → file/log/revalidate → redirect`
+`form → app/**/actions.ts adapter → src/features/* use-case → entity repository/file/log/revalidate → redirect`
 
-`app/tasks/actions.ts`가 큰 단일 action 모듈이다. FSD 전환 시 use-case별 feature로 분리하되 기능/권한 변경과 파일 이동을 분리한다.
+`app/tasks/actions.ts`는 `"use server"` adapter이고 실제 task/submission/comment mutation은 `src/features/task-workspace`에 있다.
 
 ### 프로젝트 종료·파기
 
@@ -65,7 +64,7 @@
 
 ### DB 초기화
 
-`/admin/database → app/admin/database/actions.ts → initializeDatabaseSchema() → CREATE DATABASE/TABLE + 일부 누락 컬럼 ALTER`
+`/admin/database → app/admin/database/actions.ts adapter → src/features/database-manage → initializeDatabaseSchema() → CREATE DATABASE/TABLE + 일부 누락 컬럼 ALTER`
 
 별도 migration history table/runner는 없다.
 
@@ -82,7 +81,7 @@ submissions 1 ── N comments
 users       1 ── N comments
 ```
 
-상세 DDL은 `ARCHITECTURE.md`와 `lib/database-admin.ts`를 본다.
+상세 DDL은 `ARCHITECTURE.md`와 `src/shared/server/database-admin`을 본다.
 
 ## 5. 변경 시 동반 확인
 
@@ -93,7 +92,7 @@ users       1 ── N comments
 | DB column/table | database-admin status, create/upgrade path, model mapper, repository SQL, `db:check` |
 | route/action | page form, redirect/revalidate, auth guard, structured log |
 | 파일 저장 | DB row lifecycle, path boundary, deletion cleanup, size/body limit |
-| FSD 이동 | public API, server/client boundary, alias `@/*`, legacy re-export, `npm run check:fsd` |
+| FSD 이동 | public API, server/client boundary, alias `@/*`, `npm run check:fsd` |
 | Next 설정 | `scripts/run-next.ts`, APP_PORT, build/start/dev 모두 |
 
 ## 6. 문서 지도
@@ -115,7 +114,7 @@ users       1 ── N comments
 ## 7. 권위 자료 우선순위
 
 1. 실제 코드와 `package.json`/lockfile
-2. `lib/database-admin.ts`의 실제 DDL
+2. `src/shared/server/database-admin`의 실제 DDL
 3. 운영 문서(`AGENTS.md`, 이 문서, `ARCHITECTURE.md`, `HARNESS_MAP.md`)
 4. `docs/`의 계획/이력 문서
 

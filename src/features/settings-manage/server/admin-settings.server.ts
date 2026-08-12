@@ -1,0 +1,47 @@
+import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
+import {
+  getEditableEnvEntries,
+  getEditableEnvFilePath,
+  getEditableEnvGroups,
+  getLegacyOverrideEnvPath,
+  getLegacyOverrideKeys,
+  saveEditableEnvEntries,
+  type EditableEnvEntry,
+} from "./env-file.server";
+import { getAbsoluteLogDirectory, listRecentLogFiles, type LogFileSummary } from "@/src/shared/server/logging/index.server";
+
+export type AdminSettingsSnapshot = {
+  revision: string;
+  envEntries: EditableEnvEntry[];
+  envFilePath: string;
+  envGroups: ReturnType<typeof getEditableEnvGroups>;
+  legacyOverrideEnvPath: string;
+  legacyOverrideKeys: string[];
+  logDirectoryPath: string;
+  logRetentionDays: number;
+  logMaxFileSizeMb: number;
+  logFiles: LogFileSummary[];
+};
+
+export async function getAdminSettingsSnapshot(): Promise<AdminSettingsSnapshot> {
+  const runtimeEnv = getRuntimeEnv();
+
+  return {
+    revision: new Date().toISOString(),
+    envEntries: await getEditableEnvEntries(),
+    envFilePath: getEditableEnvFilePath(),
+    envGroups: getEditableEnvGroups(),
+    legacyOverrideEnvPath: getLegacyOverrideEnvPath(),
+    legacyOverrideKeys: await getLegacyOverrideKeys(),
+    logDirectoryPath: getAbsoluteLogDirectory(),
+    logRetentionDays: runtimeEnv.logging.retentionDays,
+    logMaxFileSizeMb: runtimeEnv.logging.maxFileSizeMb,
+    logFiles: await listRecentLogFiles(10),
+  };
+}
+
+export async function saveAdminSettings(entries: Record<string, string>) {
+  await saveEditableEnvEntries(entries);
+
+  return getAdminSettingsSnapshot();
+}

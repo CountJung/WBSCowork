@@ -36,8 +36,8 @@
 
 ## Repository Shape
 
-- Keep root `app/` as the App Router entry. During gradual FSD migration, build/move small slices in `src/shared → src/entities → src/features → src/widgets → root app pages` order; do not create a duplicate `src/app` or `src/pages` layer, and do not mix behavior changes with structure moves.
-- Existing `lib/`, `models/`, and `components/` remain compatibility locations until their mapped slice is migrated; follow `docs/FSD_MIGRATION_PLAN.md` rather than performing a bulk move. Run `npm run check:fsd` whenever `src/` changes.
+- Keep root `app/` as the App Router entry. Runtime implementation now lives behind FSD public APIs in `src/shared`, `src/entities`, `src/features`, and `src/widgets`; do not create a duplicate `src/app` or `src/pages` layer, and do not mix behavior changes with structure moves.
+- `components/`, `lib/`, and `models/` compatibility re-exports were removed in FSD M5. New cross-route work should target the mapped FSD slice and expose a public `index.ts` or `index.server.ts` API. Run `npm run check:fsd` whenever `src/` changes.
 - Keep route handlers under app/api/.
 - Prefer Server Components by default and isolate client-only behavior into explicit Client Components.
 

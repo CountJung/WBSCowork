@@ -5,7 +5,7 @@ export async function register() {
     return;
   }
 
-  const { initializeServerLogging, logInfo } = await import("@/lib/logger");
+  const { initializeServerLogging, logInfo } = await import("@/src/shared/server/logging/index.server");
 
   await initializeServerLogging();
   await logInfo("instrumentation", "Next.js instrumentation registered", {
@@ -18,7 +18,7 @@ export const onRequestError: Instrumentation.onRequestError = async (error, requ
     return;
   }
 
-  const { logError, serializeError } = await import("@/lib/logger");
+  const { logError, serializeError } = await import("@/src/shared/server/logging/index.server");
 
   await logError("request", "Next.js request error captured", {
     error: serializeError(error),

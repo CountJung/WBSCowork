@@ -13,13 +13,13 @@ Apply the repository-wide guidance from ../copilot-instructions.md to all applic
 - Use the app/ directory and App Router for all routes.
 - Prefer Server Components by default. Add client components only for interactivity, browser APIs, or client-side state.
 - Do not use client-only workarounds inside server components. Move browser-dependent logic into explicit client components.
-- Do not call internal route handlers from server-rendered code only to reuse logic. Call the relevant compatibility `lib/` module or migrated FSD public API directly.
+- Do not call internal route handlers from server-rendered code only to reuse logic. Call the relevant migrated FSD public API directly.
 
 ## Project Structure
 
 - Keep top-level routes in root `app/`; route files remain thin entry adapters.
-- Follow `docs/FSD_MIGRATION_PLAN.md`: build/move in `src/shared → src/entities → src/features → src/widgets → root app pages` order. Do not bulk-move code, mix behavior changes with structure moves, or create duplicate `src/app`/`src/pages` layers.
-- Until a slice migrates, existing `components/`, `models/`, and `lib/` are compatibility locations. New cross-route domain work should target the mapped FSD slice and expose a public `index.ts` API.
+- Follow `docs/FSD_MIGRATION_PLAN.md`: implementation lives in `src/shared`, `src/entities`, `src/features`, and `src/widgets`; root `app/` remains route/page/action/handler adapter. Do not mix behavior changes with structure moves or create duplicate `src/app`/`src/pages` layers.
+- `components/`, `models/`, and `lib/` compatibility locations were removed in FSD M5. New cross-route domain work should target the mapped FSD slice and expose a public `index.ts` or `index.server.ts` API.
 - Keep domain types and model helpers aligned with Project, User, Task, Submission, and Comment from `docs/PRODUCT_SPEC.md`.
 
 ## TypeScript
@@ -57,8 +57,8 @@ Apply the repository-wide guidance from ../copilot-instructions.md to all applic
 
 ## Role and Visibility Rules
 
-- Use `canAccessAdminPanel(role, isSuperuser)` from `models/user.ts` to guard admin pages; add a narrower superuser check for `/admin/database`, `/admin/logs`, and `/admin/settings`.
+- Use `canAccessAdminPanel(role, isSuperuser)` from `src/entities/user` to guard admin pages; add a narrower superuser check for `/admin/database`, `/admin/logs`, and `/admin/settings`.
 - Use `canManageAllSubmissions(role, isSuperuser)` to determine if a user can see private submissions.
-- Pass `SubmissionVisibilityFilter` from `lib/repositories/submission-repository.ts` when listing submissions.
+- Pass `SubmissionVisibilityFilter` from `src/entities/submission` when listing submissions.
 - `/admin/users` allows admin and superuser sessions, but an admin may assign only `guest`/`member`; `/admin/database`, `/admin/logs`, and `/admin/settings` remain superuser-only.
 - All sub-documents live under `/docs/`. `docs/PROJECT_MAP.md` maps the code; `docs/HARNESS_MAP.md` holds the command harness.

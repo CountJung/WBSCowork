@@ -46,16 +46,11 @@ app/           Next.js App Router 라우트
   api/         Route Handlers
   admin/       관리자 페이지
   tasks/       메인 WBS 태스크 워크스페이스
-components/
-  AppShell.tsx 전역 앱바 + 역할별 관리자 메뉴
-  gantt/       frappe-gantt 래퍼
-  task/        태스크 제출물 패널
-lib/
-  auth.ts      NextAuth 설정
-  db.ts        MariaDB 풀
-  repositories/ DB 접근 계층
-models/        도메인 타입
-src/           점진 FSD 목표 구조 (shared 부터 구축 중)
+src/
+  shared/      공통 UI/config/server utility
+  entities/    도메인 타입·정책·repository
+  features/    Server Action use-case
+  widgets/     전역 앱바, 간트, 태스크 workspace, 관리자 panel
 docs/          모든 프로젝트 문서
 ```
 
@@ -232,7 +227,7 @@ LOG_MAX_FILE_SIZE_MB=100
 | 6단계 | 댓글 기능 | 완료 |
 | 7단계 | 파일 업로드 | 완료 |
 | 역할 확장 | 4단계 역할 + 제출물 공개/비공개 | 완료 |
-| 8단계 | Feature-Sliced Design 구조 정리 | 진행 중 (M0 완료) |
+| 8단계 | Feature-Sliced Design 구조 정리 | 완료 |
 | 9단계 | Scheduled digest + DOCX/PPTX report export | 예정 |
 | 10단계 | Synology NAS 배포 | 예정 |
 

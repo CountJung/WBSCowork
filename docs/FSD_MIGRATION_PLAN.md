@@ -1,6 +1,6 @@
 # 점진적 FSD 마이그레이션 계획
 
-> 상태: M0 완료(경계 하네스 가동), M1 진행 중 · 대규모 이동 금지. 범위: 루트 `app/`을 Next.js App Router 엔트리로 유지하고 구현을 `src/shared → src/entities → src/features → src/widgets → 루트 app page` 순서로 점진 이동한다.
+> 상태: M0~M5 완료(2026-08-12). 루트 `app/`은 Next.js App Router 엔트리로 유지하고 구현은 `src/shared`, `src/entities`, `src/features`, `src/widgets` 공개 API로 분리했다.
 
 ## 1. 구조 계약
 
@@ -68,35 +68,35 @@ src/shared/                  # 도메인을 모르는 UI/config/server utility
 
 **남은 M0 후속**: CI 워크플로가 없으므로 `check:fsd`는 아직 로컬 게이트다. CI 도입 시 lint/typecheck/build와 함께 연결한다.
 
-### M1 — shared 기반 (진행 중)
+### M1 — shared 기반 (완료, 2026-08-12)
 
-완료: `components/MarkdownContent.tsx` → `src/shared/ui/markdown-content/`, 기존 경로는 호환 re-export 유지.
+완료: `src/shared/ui/markdown-content`, `src/shared/ui/providers`, `src/shared/config/theme`, `src/shared/server/{runtime-env,database,database-admin,logging}`, `src/shared/lib/date`.
 
 도메인 비의존 UI/config부터 이동한다. `db`, `env`, `logger`, auth provider wiring 같은 server module은 각 파일에 server-only 경계를 두되 도메인 권한 helper를 shared로 끌어내리지 않는다.
 
-**게이트**: 기존 import 소비자는 호환 re-export로 유지, client 위반 fixture 실패, lint/build 통과. 기능·설정 키·로그 동작 변경 없음.
+**게이트**: 기능·설정 키·로그 동작 변경 없이 `npm run check:fsd`, `npm run typecheck`, `npm run lint` 통과.
 
-### M2 — entities
+### M2 — entities (완료, 2026-08-12)
 
-`project → task → submission → comment → user` 순으로 모델/순수 함수를 옮긴 뒤 repository를 같은 entity의 `api/*.server.ts`로 옮긴다. 모델 이동과 repository 이동도 별도 변경 단위로 수행한다.
+`project`, `task`, `submission`, `comment`, `user` 모델/정책과 repository를 entity slice의 public API로 이동했다.
 
 **게이트**: 이동 전후 export/signature/SQL/반환 shape가 동일해야 한다. visibility/권한 table test, `npm run db:check -- --validate-only`, 테스트 DB가 제공될 때 repository CRUD, lint/build 통과. Client graph에 `mariadb`, `node:fs`, server env가 없어야 한다.
 
-### M3 — features
+### M3 — features (완료, 2026-08-12)
 
-Server Action의 세션 확인, 입력 정규화, repository 호출, 행동 로그를 feature use-case로 추출한다. `revalidatePath`, redirect, FormData/HTTP 변환은 app adapter에 남긴다.
+Server Action의 세션 확인, 입력 정규화, repository 호출, 행동 로그를 feature use-case로 추출했다. `app/**/actions.ts`는 route-local `"use server"` adapter로 남는다.
 
 **게이트**: guest/member/admin/superuser 권한 매트릭스, private submission, 실패 로그, 기존 URL/Form action smoke test와 lint/build 통과. 이 단계에서 새 사용자 기능을 추가하지 않는다.
 
-### M4 — widgets
+### M4 — widgets (완료, 2026-08-12)
 
-`ProjectGanttChart`, task/submission panel, AppShell, admin panel을 하나씩 옮긴다. widget은 feature/entity 공개 API만 사용한다.
+`ProjectGanttChart`, task/submission panel, `AppShell`, admin panel을 widget slice로 이동했다. widget은 feature/entity/shared 공개 API만 사용한다.
 
 **게이트**: `/`, `/tasks`, `/admin`, `/admin/users` desktop/mobile·light/dark smoke test, focused task routing/Gantt 회귀 확인, lint/build 통과. UI redesign을 섞지 않는다.
 
-### M5 — 루트 app pages/adapters 전환 및 호환 제거
+### M5 — 루트 app pages/adapters 전환 및 호환 제거 (완료, 2026-08-12)
 
-루트 `app/**/page.tsx`가 안정화된 widget/use-case를 조립하도록 마지막에 전환한다. 남은 legacy import가 0인 slice만 `models/`, `components/`, `lib/repositories/` re-export를 제거한다.
+루트 `app/**/page.tsx`와 route handler가 widget/use-case/entity/shared 공개 API를 직접 조립하도록 전환했다. `components/`, `lib/`, `models/` 호환 re-export는 제거했다.
 
 **게이트**: `npm run check:fsd`가 역방향, cross-slice deep import, client→server import를 거부하고 전체 lint/build가 통과해야 한다. URL, Route Handler, Server Action entry는 루트 `app/`에 남는다.
 

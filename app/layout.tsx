@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
-import AppProviders from "@/components/AppProviders";
-import AppShell from "@/components/AppShell";
-import { getRuntimeEnv } from "@/lib/env";
+import AppProviders from "@/src/shared/ui/providers";
+import AppShell from "@/src/widgets/app-shell";
+import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import "../node_modules/frappe-gantt/dist/frappe-gantt.css";
 import "./globals.css";
 

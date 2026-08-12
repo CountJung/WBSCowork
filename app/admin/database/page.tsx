@@ -1,9 +1,10 @@
 import { Alert, Container, Stack, Typography } from "@mui/material";
 import { redirect } from "next/navigation";
-import DatabaseAdminPanel from "@/components/admin/DatabaseAdminPanel";
-import { getAuthSession, getSignInPath } from "@/lib/auth";
-import { getDatabaseAdminStatus } from "@/lib/database-admin";
-import { getRuntimeEnv } from "@/lib/env";
+import DatabaseAdminPanel from "@/src/widgets/admin-database";
+import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
+import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
+import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
+import { initializeDatabaseAction, refreshDatabaseStatusAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,11 @@ export default async function AdminDatabasePage() {
 
         <Alert severity="info">다른 관리자 화면 이동은 상단 앱바를 사용합니다.</Alert>
 
-        <DatabaseAdminPanel initialStatus={initialStatus} />
+        <DatabaseAdminPanel
+          initialStatus={initialStatus}
+          initializeDatabaseAction={initializeDatabaseAction}
+          refreshDatabaseStatusAction={refreshDatabaseStatusAction}
+        />
       </Stack>
     </Container>
   );
