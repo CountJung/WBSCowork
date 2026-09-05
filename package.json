@@ -10,7 +10,12 @@
     "start": "tsx scripts/run-next.ts start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "check:fsd": "tsx scripts/check-fsd-boundaries.ts"
+    "check:fsd": "tsx scripts/check-fsd-boundaries.ts",
+    "test": "tsx scripts/run-tests.ts",
+    "test:unit": "tsx scripts/run-tests.ts --unit",
+    "test:db:up": "tsx scripts/test-database.ts up",
+    "test:db:down": "tsx scripts/test-database.ts down",
+    "test:db:status": "tsx scripts/test-database.ts status"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -25,7 +30,7 @@
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
-    "tsx": "^4.21.0"
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -36,6 +41,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "pptxgenjs": "^4.0.1",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }

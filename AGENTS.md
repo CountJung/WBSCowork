@@ -48,7 +48,8 @@ src/
   entities/    # 도메인 타입·정책·repository public API
   features/    # Server Action use-case
   widgets/     # 전역 앱바, 간트, task workspace, admin panel
-scripts/       # 실행·검증 하네스 (run-next, check-db, check-fsd-boundaries)
+scripts/       # 실행·검증 하네스 (run-next, check-db, check-fsd-boundaries, run-tests, test-database)
+tests/         # node:test 기반 정책·가시성 e2e (helpers/ 에 fixture·세션 주입)
 docs/          # 모든 하위 문서 (루트에는 README/AGENTS/CLAUDE 만 둔다)
 ```
 
@@ -60,7 +61,7 @@ docs/          # 모든 하위 문서 (루트에는 README/AGENTS/CLAUDE 만 둔
 2. `canManageAllSubmissions(role, isSuperuser)` — 비공개 제출물 접근 확인
 3. `canWriteTaskContent(role, isSuperuser)` — 태스크/제출물 쓰기 확인
 4. Admin 패널 중 `/admin/database`, `/admin/logs`, `/admin/settings`는 `isSuperuser`만 접근 가능; `/admin/users`는 관리자 역할도 접근 가능 (`guest`·`member`만 부여)
-5. 제출물 목록 쿼리는 반드시 `SubmissionVisibilityFilter`를 사용할 것
+5. 제출물 목록 쿼리는 반드시 `SubmissionVisibilityFilter`를 사용할 것. 댓글·첨부의 프로젝트 조회는 `IdScope`로 가시 제출물에 한정하고, 단건은 `getSubmissionByIdForViewer`를 쓴다. 제출물·댓글 mutation은 상위 관계 재확인과 작성자/관리자 ownership 검사를 통과해야 한다
 6. 환경 변수 파일(`.env*`)을 AI 컨텍스트로 열지 않는다
 7. 경고·오류 무시 금지 — 해결 불가 시 `docs/TODO.md`(백로그)와 `docs/HARNESS_MAP.md`(기준선)에 기록
 8. FSD 의존 방향은 `app → widgets → features → entities → shared`, 구축/이동 순서는 `shared → entities → features → widgets → root app pages`이다. 루트 `app/`을 `src/app`으로 옮기지 않고 구조 이동과 기능 변경을 분리한다. `src/`를 건드리면 `npm run check:fsd`를 반드시 실행한다.
@@ -76,10 +77,15 @@ docs/          # 모든 하위 문서 (루트에는 README/AGENTS/CLAUDE 만 둔
 npm run lint          # ESLint 검사
 npm run typecheck     # tsc --noEmit
 npm run check:fsd     # FSD import 경계 (fixture self-test + 저장소 검사)
+npm test              # 단위 + 가시성 e2e (DB 없으면 DB suite는 사유 남기고 건너뜀)
+npm run test:db:up    # 테스트 전용 MariaDB 기동 (127.0.0.1:3307 / wbs_app_test)
+npm run test:db:down  # 테스트 DB 종료 및 데이터 폐기
 npm run build         # 프로덕션 빌드
 npm run db:check      # DB 연결 테스트
 npm run dev:debug     # Node 인스펙터 포함 dev 서버
 ```
+
+가시성·권한 경계를 건드리면 `npm test`를 반드시 실행한다. 테스트 DB는 개발용(3306)과 포트·DB 이름이 분리되어 있고, `_test`로 끝나지 않는 DB 이름은 하네스가 거부한다.
 
 기준선과 미실행 사유는 [docs/HARNESS_MAP.md](docs/HARNESS_MAP.md) 10절에 있다.
 

@@ -1,0 +1,24 @@
+# 테스트 전용 MariaDB.
+#
+# 개발용 DB와 절대 겹치지 않도록 포트(3307)와 DB 이름(wbs_app_test)을 분리한다.
+# 이 스택의 데이터는 fixture가 매 테스트마다 비우므로 volume을 두지 않는다.
+#
+#   npm run test:db:up      컨테이너 기동 + healthy 대기
+#   npm run test:db:down    컨테이너 제거
+services:
+  mariadb-test:
+    image: mariadb:11.4
+    container_name: wbs-mariadb-test
+    environment:
+      MARIADB_ROOT_PASSWORD: test_password
+      MARIADB_DATABASE: wbs_app_test
+    ports:
+      - "3307:3306"
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+      start_period: 10s

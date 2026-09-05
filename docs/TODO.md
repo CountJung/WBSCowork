@@ -1,7 +1,7 @@
 # WBS 태스크 — 진행 목록
 
 > **살아있는 문서** — 단계 범위, 검증 절차, 블로커가 바뀔 때마다 업데이트하십시오.
-> 최종 검토: 2026-08-12
+> 최종 검토: 2026-09-06
 
 ---
 
@@ -52,39 +52,44 @@
 
 ---
 
-## 보안·정합성 백로그 (2026-08-09 코드 검토에서 확인)
+## 보안·정합성 백로그
 
-FSD 이동과 섞지 않고 별도 변경으로 처리한다. 구조 이동보다 우선순위가 높다.
+- [x] **P0 — 비공개 제출물의 파생 데이터가 client payload로 노출된다.** (해소: 2026-09-05)
 
-- [ ] **P0 — 비공개 제출물의 파생 데이터가 client payload로 노출된다.**
+  `listCommentsByProject`, `listAttachmentsByProject`에 필수 `IdScope` 인자를 추가했다. `app/tasks/page.tsx`는 `SubmissionVisibilityFilter`를 통과한 제출물 id 집합으로 두 질의를 제한하므로, 비공개 제출물의 댓글 본문·작성자 이메일·첨부 파일명·저장 경로가 RSC payload에 실리지 않는다. 상단 `댓글 N` Chip도 가시 댓글만 센다. 범위 helper는 `src/shared/server/query-scope`이며 안전한 기본값이 없어 새 호출부는 범위를 반드시 명시해야 한다.
+- [x] **P1 — 제출물·댓글 mutation에 작성자 ownership 검사가 없다.** (해소: 2026-09-05)
 
-  `app/tasks/page.tsx`는 `listCommentsByProject`, `listAttachmentsByProject`로 프로젝트 전체를 조회한 뒤, 그룹화한 `commentsBySubmissionId`·`attachmentsBySubmissionId` **전체**를 client widget `src/widgets/task-workspace`에 props로 넘긴다. 제출물 목록만 `SubmissionVisibilityFilter`를 통과하므로, 조회 권한이 없는 비공개 제출물의 댓글 본문·작성자 이메일·첨부 파일명·저장 경로가 RSC payload에 실려 브라우저에 도달한다. 상단 `댓글 N` Chip도 비공개 댓글을 포함한 수치다.
+  `src/features/task-workspace/server/actions.ts`에 `requireVisibleSubmission` / `requireOwnedSubmission` / `requireOwnedComment`를 추가했다. `updateSubmissionAction`, `deleteSubmissionAction`, `deleteSubmissionAttachmentAction`, `updateCommentAction`, `deleteCommentAction`은 작성자 본인 또는 `canManageAllSubmissions` actor만 통과하고, `createSubmissionAction`·`createCommentAction`을 포함한 모든 경로가 폼이 주장한 project → task → submission → comment 관계를 서버에서 재확인한다. 볼 수 없는 자원은 존재하지 않는 자원과 같은 오류로 처리한다.
+- [x] **P1 — 단건 조회 `getSubmissionById`는 unscoped다.** (해소: 2026-09-05)
 
-  조치: 두 repository 함수에 viewer filter를 추가하거나 가시 제출물 id로 조회를 제한하고, 카드에 넘기는 map을 해당 태스크의 가시 제출물로 좁힌다. 회귀 방지 fixture는 `HARNESS_MAP.md` 6절 사양을 사용한다.
-- [ ] **P1 — 제출물·댓글 mutation에 작성자 ownership 검사가 없다.**
+  `getSubmissionByIdForViewer(id, filter)`를 추가하고 두 attachment route를 조회 후 policy check에서 질의 수준 필터로 교체했다. `SubmissionVisibilityFilter`에 `viewerEmail`을 추가해 세션 이메일만 있는 route handler도 DB 사용자 id 조회 없이 쓸 수 있다. `getSubmissionById`는 actor 권한을 이미 검증한 mutation 경로 전용임을 JSDoc으로 못박았다.
+- [x] **P2 — 로그 metadata에 파일 경로가 남는다.** (해소: 2026-09-05)
 
-  `app/tasks/actions.ts`의 `updateSubmissionAction`, `deleteSubmissionAction`, `updateCommentAction`, `deleteCommentAction`은 `requireWritableSession`(쓰기 역할)만 확인한다. 임의의 `member`가 타인의 제출물·댓글을 수정·삭제할 수 있고, `updateSubmissionAction`은 `visibility`도 함께 덮어쓰므로 타인의 비공개 제출물을 공개로 바꾸는 경로가 된다. `updateCommentAction`은 대상 댓글이 폼에 담긴 submission/project에 속하는지도 확인하지 않는다.
+  `src/shared/server/logging`이 `REDACTED_METADATA_KEYS`(`filePath`, `storedFilePath`, `absolutePath`, `uploadDir`, `path`)를 기록 시 `[redacted]` 또는 `[redacted]:<확장자>`로 축약한다. 호출부를 일일이 고치는 대신 기록 지점에서 한 번 막았으므로 새 action도 자동 적용된다.
 
-  조치: 작성자 본인 또는 `canManageAllSubmissions` 통과 actor만 허용하고, 대상 자원의 상위 관계(project/task/submission)를 서버에서 재확인한다.
-- [ ] **P1 — 단건 조회 `getSubmissionById`는 unscoped다.**
+- [x] **P1 — `/tasks` 프로젝트 CRUD server action이 쓰기 역할만 확인했다.** (2026-09-05 검토에서 확인·해소)
 
-  현재 두 attachment route는 조회 후 `canViewSubmission`으로 막고 있어 다운로드 경로는 닫혀 있다. 새 소비자가 정책 검사를 빠뜨리지 않도록 viewer-aware 단건 조회 API를 추가하거나 호출부 규약을 문서화한다.
-- [ ] **P2 — 로그 metadata에 파일 경로가 남는다.** `app/tasks/actions.ts`의 cleanup 실패 로그가 `filePath`를 기록한다. 비공개 산출물 경로가 로그로 새지 않도록 redaction 정책을 정한다.
+  `app/tasks/actions.ts`가 `createProjectAction`, `updateProjectAction`, `deleteProjectAction`을 export한다. `/tasks` 화면에는 이 폼이 없지만 `"use server"` 모듈의 export는 호출 가능한 엔드포인트로 등록되고, 구현부는 `canWriteTaskContent`만 확인했다. 즉 `member`가 프로젝트를 cascade 삭제(태스크·제출물·댓글·저장 파일)할 수 있었다. `requireProjectAdminSession`(`canAccessAdminPanel`)으로 막았다.
 
----
+- [ ] **정리 — 프로젝트 CRUD 경로가 이중이다.** `src/features/task-workspace`(권한 보강 완료, 화면 폼 없음)와 `src/features/project-manage`(`/admin/projects`, 파기 확인 포함)가 같은 기능을 갖는다. `/tasks`에 프로젝트 폼을 되살릴 계획이 없다면 task-workspace 쪽 3개 action과 `app/tasks/actions.ts` 어댑터를 지워 표면을 하나로 줄인다. 삭제 여부는 제품 판단이 필요해 남겨 둔다.
+
+> 회귀 방지 fixture(`HARNESS_MAP.md` 6절)는 2026-09-06에 `npm test`로 고정했다. P0/P1 수정을 각각 되돌려 테스트가 실제로 실패하는지 확인했다(P0 주입 시 6건, ownership 주입 시 2건 실패).
 
 ## 품질·운영 백로그
 
-- [ ] 자동화 테스트 러너 부재. `HARNESS_MAP.md` 6절의 가시성 fixture 사양이 문서로만 존재하고 `npm test`가 없다. P0/P1 수정과 함께 focused policy test 인프라를 도입한다.
+- [x] 자동화 테스트 러너 도입 (2026-09-06). Node 내장 `node:test` 기반 `npm test` — 단위 14건 + 가시성 e2e 33건. 새 테스트 의존성은 추가하지 않았고, 테스트 DB 백엔드는 docker/Homebrew MariaDB 중 사용 가능한 쪽을 자동 선택한다(`scripts/test-database.ts`).
+- [ ] 테스트 커버리지 확장. 현재 하네스는 가시성·권한 경계에 집중되어 있다. 다음 후보: 파일 업로드 경로 경계(traversal·크기 제한), task/project CRUD의 날짜·계층 규칙, admin 화면 action. HTTP 계층(미들웨어·OAuth 로그인)은 여전히 범위 밖이다.
 - [ ] versioned migration 없음. `src/shared/server/database-admin`이 `CREATE TABLE`과 일부 `ALTER ADD`만 수행하고 migration ledger/rollback 이력이 없다. 9단계 D3가 이를 전제로 한다.
 - [ ] runtime pool과 schema admin이 같은 `DB_*` credential을 사용한다. 최소권한 계정 분리 필요.
-- [ ] `npm run build`에서 Node `[DEP0205] module.register()` deprecation 경고가 남는다. 원인은 `tsx@4.21.0` 로더(Node v26). 다음 의존성 갱신에서 `tsx` 최신(4.23.x) 적용 후 경고 소멸 여부를 재확인한다.
+- [x] `npm run build`·`npm run check:fsd`의 Node `[DEP0205] module.register()` deprecation 경고 해소 (2026-09-05). `tsx`를 4.21.0 → 4.23.13으로 올려 경고가 사라졌다.
 - [ ] `next-env.d.ts`가 `.gitignore` 대상인데 `tsconfig.json` `include`에 남아 있다. 외장 볼륨 AppleDouble(`._next-env.d.ts`)과 함께 정리 대상인지 판단한다.
 
 ---
 
 ## 해소된 블로커
 
+- 2026-09-06: 가시성 fixture를 실행 가능한 게이트로 고정했다(`npm test`). Docker Hub에서 이미지를 받을 수 없는 환경이라 Homebrew MariaDB 백엔드를 함께 지원한다. 검증은 lint/typecheck/check:fsd/build/test 전부 통과.
+- 2026-09-05: 보안·정합성 백로그 P0/P1/P2와 새로 확인한 프로젝트 CRUD 권한 누락을 코드로 해소했다. 검증은 `npm run lint`, `npm run typecheck`, `npm run check:fsd`, `npm run build` 통과. `npm run db:check`는 이 환경에 MariaDB 인스턴스가 없어 미실행이다.
 - 2026-08-09: `npm run lint` 17건(오류 10, 경고 7) 해소. AppleDouble(`**/._*`), 벤더 skill 스크립트(`.github/skills/**`), 생성물·fixture를 `eslint.config.mjs`에서 제외하고, 문서 생성용 CommonJS 스크립트에 `sourceType: "commonjs"` override를 적용했으며 `scripts/generate-manual-docx.js`의 미사용 import를 제거했다.
 
 ---

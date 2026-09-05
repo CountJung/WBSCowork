@@ -23,8 +23,14 @@
 | `npm run check:fsd` | `tsx scripts/check-fsd-boundaries.ts` | FSD import 경계 | fixture self-test 5건 PASS + 저장소 위반 0 |
 | `npm run db:check -- --validate-only` | `tsx scripts/check-db.ts` | DB env 파싱만 | 연결 없이 validation passed |
 | `npm run db:check` | 동일 | 실제 pool 연결 | DB name/server version 출력, exit 0 |
+| `npm test` | `tsx scripts/run-tests.ts` | 단위 + 가시성 e2e | 전체 통과. DB 없으면 DB suite 미실행 사유 출력 |
+| `npm test -- --unit` | 위 + `--unit` | DB 없이 도는 suite만 | 정책·범위·로그 redaction 통과 |
+| `npm test -- --require-db` | 위 + `--require-db` | DB 미기동을 실패로 처리 | CI에서 조용한 건너뛰기 방지 |
+| `npm run test:db:up` | `tsx scripts/test-database.ts up` | 테스트 전용 MariaDB 기동 | `127.0.0.1:3307/wbs_app_test` 준비 |
+| `npm run test:db:down` | 동일 스크립트 `down` | 종료 및 데이터 폐기 | 컨테이너/프로세스와 datadir 제거 |
+| `npm run test:db:status` | 동일 스크립트 `status` | 기동 여부 확인 | up이면 버전 출력, down이면 exit 1 |
 
-현재 `test`, `db:migrate` script는 없다. 없는 명령을 문서에 기재하지 않는다.
+현재 `db:migrate` script는 없다. 없는 명령을 문서에 기재하지 않는다.
 
 ### `check:fsd` 세부
 
@@ -46,7 +52,7 @@
 | 문서만 | `git diff --check`; 링크/파일명 검토 | standalone HTML에서 외부 URL/CDN 없음 확인 |
 | TS/TSX/UI | `npm run lint`, `npm run typecheck`, `npm run build` | `/`, `/tasks`, 관련 admin desktop/mobile smoke |
 | role/auth | lint/typecheck/build | guest/member/admin/superuser matrix, 로그인/redirect/action 직접 호출 |
-| visibility | lint/typecheck/build | public/private × actor, comment/attachment metadata/download, IDOR |
+| visibility | lint/typecheck/build, `npm test` | public/private × actor, comment/attachment metadata/download, IDOR |
 | repository SQL | lint/typecheck/build, validate-only | 테스트 DB에서 CRUD/transaction/EXPLAIN |
 | schema | 위 + 실제 DB | fresh/existing upgrade, FK/cascade/index, rollback/backup |
 | upload/download | lint/typecheck/build | size limit, MIME/disposition, traversal, missing file, unauthorized 404 |
@@ -96,16 +102,25 @@ DB 변경 시 최소 확인 목록:
 
 attachment handler는 부모 제출물의 가시성을 검사하고 unauthorized/missing을 모두 404로 응답한다. 자동화된 private IDOR 회귀 테스트는 테스트 인프라 도입 시 추가한다.
 
-## 6. 가시성 focused test 사양(추가 예정)
+## 6. 가시성 focused test (구현 완료, 2026-09-06)
 
-테스트 인프라를 도입할 때 최소 fixture:
+fixture는 `tests/helpers/fixture.ts`, 검증은 `tests/visibility.e2e.test.ts`에 있다.
+
+```bash
+npm run test:db:up     # 테스트 전용 MariaDB 기동 (127.0.0.1:3307 / wbs_app_test)
+npm test               # 단위 + DB suite
+npm run test:db:down   # 종료 및 데이터 폐기
+```
+
+fixture:
 
 - public submission A, member1 private B, member2 private C
-- 각 제출물에 comment, legacy file, multi-attachment
+- 각 제출물에 comment, legacy file, multi-attachment(2건) — 저장 파일도 실제로 생성한다
 - guest/member1/member2/admin/superuser viewer
-- project/task가 다른 교차 식별자
+- project/task가 다른 교차 식별자(다른 프로젝트의 공개 제출물 D)
+- 존재하지 않는 submission/attachment id — 열거 방지 응답 비교용
 
-검증:
+검증(각 항목이 `describe` 블록 하나에 대응):
 
 1. 목록·댓글·첨부 metadata가 부모 가시성을 그대로 따름.
 2. 두 download URL의 직접 ID 접근도 같은 결과.
@@ -113,7 +128,28 @@ attachment handler는 부모 제출물의 가시성을 검사하고 unauthorized
 4. unauthorized/missing 응답이 자원 열거를 줄임.
 5. DB query가 UI 사후 필터가 아니라 bounded viewer filter를 수행.
 
-실제 script를 package.json에 추가하기 전에는 가상의 명령을 기재하지 않는다.
+### 하네스 구조와 한계
+
+- 러너는 Node 내장 `node:test`다. 새 테스트 의존성을 추가하지 않았다.
+- `tests/helpers/bootstrap.ts`가 실제 `getAuthSession()` 경로를 그대로 두고 `next-auth`의 `getServerSession`만 대체해 세션을 주입한다. 즉 인가 로직 자체는 production 코드가 실행된다.
+- Server Action은 성공·실패를 모두 `redirect()`로 끝내므로 `NEXT_REDIRECT` digest를 파싱해 결과를 판정한다(`tests/helpers/redirect.ts`).
+- `revalidatePath`, `server-only`은 Next 런타임 전용이라 no-op으로 대체한다. 캐시 무효화 동작은 이 하네스가 검증하지 않는다.
+- HTTP 계층(실제 next server + OAuth 로그인)은 검증 범위 밖이다. route handler의 `GET`을 직접 호출하므로 handler 로직·가시성 질의·응답 헤더까지는 확인하지만 미들웨어·라우팅은 확인하지 않는다.
+- 스키마는 앱의 `initializeDatabaseSchema()`를 그대로 호출한다. 테스트가 별도 DDL을 들고 있으면 운영 스키마와 조용히 어긋나기 때문이다.
+- fixture는 테스트마다 재시드해 실행 순서에 의존하지 않는다.
+
+### 테스트 DB 백엔드
+
+`scripts/test-database.ts`가 이 머신에서 실제로 쓸 수 있는 백엔드를 자동 선택한다.
+
+| 백엔드 | 조건 | 정의 |
+| --- | --- | --- |
+| docker | 데몬 기동 + `mariadb` 이미지 보유 | `docker-compose.test.yml` |
+| local | Homebrew MariaDB 설치됨 | 저장소 밖 임시 datadir에 매번 새로 기동 |
+
+어느 쪽이든 접속 계약은 `127.0.0.1:3307 / root / test_password / wbs_app_test`로 같다. 개발·운영 DB(기본 3306)와 포트·DB 이름이 모두 다르고, `applyTestEnv()`가 `_test`로 끝나지 않는 DB 이름을 거부한다. 테스트는 `.env*`를 읽지 않고 `TEST_DB_*`만 본다.
+
+DB가 없으면 `npm test`는 DB suite를 건너뛰고 사유를 출력한다. CI처럼 건너뛰기를 허용하지 않으려면 `npm test -- --require-db`를 쓴다.
 
 ## 7. 환경 변수 가정
 
@@ -140,7 +176,7 @@ attachment handler는 부모 제출물의 가시성을 검사하고 unauthorized
 - `.vscode/launch.json` + `npm run dev:debug`.
 - 풀 스택 런치는 `debugWithChrome`으로 Chrome을 실행한다. 서버가 이미 떠 있으면 client-side 구성만 붙인다.
 
-## 10. 알려진 기준선 (2026-08-12)
+## 10. 알려진 기준선 (2026-09-06)
 
 | 명령 | 결과 |
 | --- | --- |
@@ -148,7 +184,10 @@ attachment handler는 부모 제출물의 가시성을 검사하고 unauthorized
 | `npm run typecheck` | 통과 |
 | `npm run check:fsd` | 통과 (self-test 5건, 저장소 위반 0건) |
 | `npm run build` | 통과. Next.js 16.2.4 Turbopack production build 성공 |
-| `npm run db:check` | 미실행 — 이 환경에 MariaDB 인스턴스 없음 |
+| `npm test` | 통과 (단위 14건, 가시성 e2e 33건) |
+| `npm run db:check` | 미실행 — 앱 개발용 DB(3306) 인스턴스는 여전히 없음. 테스트용 3307과 별개다 |
+
+`tsx` 4.23.13 적용으로 `[DEP0205] module.register()` deprecation 경고는 더 이상 나오지 않는다. 남은 build 출력의 `⨯ turbopackFileSystemCacheForDev`는 실험 플래그 안내이며 실패가 아니다.
 
 DB 연결이 필요한 명령을 실행하지 못했으면 코드 실패로 위장하지 말고 미실행 사유를 남긴다.
 
