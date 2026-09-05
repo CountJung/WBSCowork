@@ -279,14 +279,22 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     viewerUserId: currentDbUserId,
   };
 
-  const [tasks, submissions, comments, attachments] = selectedProject
+  const [tasks, submissions] = selectedProject
+    ? await Promise.all([listTasksByProject(selectedProject.id), listSubmissionsByProject(selectedProject.id, visibilityFilter)])
+    : [[] as Task[], [] as Submission[]];
+
+  // 댓글·첨부 metadata는 부모 제출물의 공개 범위를 그대로 따라야 하므로,
+  // 가시 제출물 id로 조회 범위를 좁혀 비공개 제출물의 파생 데이터가 client payload에 실리지 않게 한다.
+  const visibleSubmissionScope = { ids: submissions.map((submission) => submission.id) };
+
+  const [comments, attachments] = selectedProject
     ? await Promise.all([
-        listTasksByProject(selectedProject.id),
-        listSubmissionsByProject(selectedProject.id, visibilityFilter),
-        listCommentsByProject(selectedProject.id),
-        listAttachmentsByProject(selectedProject.id).catch(() => [] as Awaited<ReturnType<typeof listAttachmentsByProject>>),
+        listCommentsByProject(selectedProject.id, visibleSubmissionScope),
+        listAttachmentsByProject(selectedProject.id, visibleSubmissionScope).catch(
+          () => [] as Awaited<ReturnType<typeof listAttachmentsByProject>>,
+        ),
       ])
-    : [[], [], [], []];
+    : [[] as Comment[], [] as SubmissionAttachment[]];
   const orderedTasks = getOrderedTasks(tasks);
   const selectedTask = getSelectedTask(orderedTasks, taskIdParam);
   const submissionsByTaskId = groupSubmissionsByTaskId(submissions);

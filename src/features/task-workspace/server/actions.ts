@@ -13,7 +13,7 @@ import {
   listAttachmentsByProject,
   createSubmission,
   deleteSubmission,
-  getSubmissionById,
+  getSubmissionByIdForViewer,
   updateSubmission,
   listSubmissionsByProject,
   listSubmissionsByTask,
@@ -25,9 +25,10 @@ import {
 } from "@/src/entities/submission/index.server";
 import { createComment, deleteComment, getCommentById, updateComment } from "@/src/entities/comment/index.server";
 import { createProject, deleteProject, updateProject } from "@/src/entities/project/index.server";
-import { createTask, deleteTask, listTasksByProject, updateTask } from "@/src/entities/task/index.server";
-import { canWriteTaskContent } from "@/src/entities/user";
-import type { SubmissionVisibility } from "@/src/entities/submission";
+import { createTask, deleteTask, getTaskById, listTasksByProject, updateTask } from "@/src/entities/task/index.server";
+import { canAccessAdminPanel, canManageAllSubmissions, canWriteTaskContent } from "@/src/entities/user";
+import type { Submission, SubmissionVisibility } from "@/src/entities/submission";
+import type { User } from "@/src/entities/user";
 
 function buildTasksPath(
   status: "success" | "error",
@@ -119,8 +120,10 @@ async function requireWritableSession(projectId?: number) {
   return session;
 }
 
-async function requirePersistedUser(projectId?: number) {
-  const session = await requireWritableSession(projectId);
+type WritableSession = Awaited<ReturnType<typeof requireWritableSession>>;
+
+/** 세션 이메일에 대응하는 DB 사용자. 소유권 판정은 항상 DB 사용자 id로 한다. */
+async function resolvePersistedUser(session: WritableSession): Promise<User> {
   const email = session.user.email?.trim().toLowerCase();
 
   if (!email) {
@@ -133,14 +136,105 @@ async function requirePersistedUser(projectId?: number) {
     throw new Error("쓰기 기능을 사용하려면 현재 로그인 사용자가 DB 사용자 테이블에 존재해야 합니다.");
   }
 
+  return user;
+}
+
+/**
+ * 프로젝트 CRUD는 관리자 이상 전용이다(AGENTS.md 역할 표, `/admin/projects`).
+ *
+ * `"use server"` 모듈에서 export된 action은 화면에 폼이 없어도 호출 가능한 엔드포인트이므로,
+ * 쓰기 역할(`canWriteTaskContent`)만으로는 member가 프로젝트를 cascade 삭제할 수 있다.
+ */
+async function requireProjectAdminSession(projectId?: number) {
+  const session = await requireWritableSession(projectId);
+
+  if (!canAccessAdminPanel(session.user.role, session.user.isSuperuser)) {
+    redirect(buildTasksPath("error", "프로젝트 생성·수정·삭제는 관리자 이상만 할 수 있습니다.", { projectId }));
+  }
+
+  return session;
+}
+
+async function requirePersistedUser(projectId?: number) {
+  const session = await requireWritableSession(projectId);
+
   return {
     session,
-    user,
+    user: await resolvePersistedUser(session),
   };
 }
 
+/** 폼이 주장한 project → task 관계를 서버에서 다시 확인한다. */
+async function requireProjectTask(projectId: number, taskId: number) {
+  const task = await getTaskById(taskId);
+
+  if (!task || task.projectId !== projectId) {
+    throw new Error("대상 작업을 찾을 수 없습니다.");
+  }
+
+  return task;
+}
+
+/**
+ * 폼이 주장한 project → task → submission 관계를 서버에서 다시 확인하고, 뷰어 공개 범위도 함께 적용한다.
+ *
+ * 볼 수 없는 제출물은 존재하지 않는 제출물과 같은 오류로 처리해 id 열거로 자원 존재를 알아내지 못하게 한다.
+ */
+async function requireVisibleSubmission(
+  session: WritableSession,
+  options: { projectId: number; taskId: number; submissionId: number },
+): Promise<{ submission: Submission; user: User; canManageAll: boolean }> {
+  const user = await resolvePersistedUser(session);
+  const canManageAll = canManageAllSubmissions(session.user.role, session.user.isSuperuser);
+  const submission = await getSubmissionByIdForViewer(options.submissionId, {
+    canSeeAll: canManageAll,
+    viewerUserId: user.id,
+  });
+
+  if (!submission || submission.taskId !== options.taskId) {
+    throw new Error("대상 제출물을 찾을 수 없습니다.");
+  }
+
+  await requireProjectTask(options.projectId, submission.taskId);
+
+  return { submission, user, canManageAll };
+}
+
+/** 제출물 수정·삭제·첨부 정리는 작성자 본인 또는 모든 제출물 관리 권한을 가진 actor만 가능하다. */
+async function requireOwnedSubmission(
+  session: WritableSession,
+  options: { projectId: number; taskId: number; submissionId: number },
+) {
+  const owned = await requireVisibleSubmission(session, options);
+
+  if (!owned.canManageAll && owned.submission.authorId !== owned.user.id) {
+    throw new Error("본인이 작성한 제출물만 수정하거나 삭제할 수 있습니다.");
+  }
+
+  return owned;
+}
+
+/** 댓글 수정·삭제는 작성자 본인 또는 모든 제출물 관리 권한을 가진 actor만 가능하다. */
+async function requireOwnedComment(
+  session: WritableSession,
+  options: { projectId: number; taskId: number; submissionId: number; commentId: number },
+) {
+  const { submission, user, canManageAll } = await requireVisibleSubmission(session, options);
+  const comment = await getCommentById(options.commentId);
+
+  if (!comment || comment.submissionId !== submission.id) {
+    throw new Error("대상 댓글을 찾을 수 없습니다.");
+  }
+
+  if (!canManageAll && comment.authorId !== user.id) {
+    throw new Error("본인이 작성한 댓글만 수정하거나 삭제할 수 있습니다.");
+  }
+
+  return { comment, submission, user, canManageAll };
+}
+
 export async function createProjectAction(formData: FormData) {
-  const session = await requireWritableSession();
+  const session = await requireProjectAdminSession();
 
   let redirectPath: string;
 
@@ -196,7 +290,7 @@ export async function createProjectAction(formData: FormData) {
 
 export async function updateProjectAction(formData: FormData) {
   const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
-  const session = await requireWritableSession(projectId);
+  const session = await requireProjectAdminSession(projectId);
 
   let redirectPath: string;
 
@@ -373,7 +467,8 @@ export async function deleteTaskAction(formData: FormData) {
 
     // 삭제 전에 해당 작업의 제출물과 첨부파일 목록 조회 (DB CASCADE 이전)
     const [submissionsToClean, attachmentsToClean] = await Promise.all([
-      listSubmissionsByTask(taskId),
+      // 작업 삭제도 하위 저장 파일 전체를 정리해야 한다.
+      listSubmissionsByTask(taskId, { canSeeAll: true }),
       listAttachmentsByTask(taskId),
     ]);
 
@@ -459,15 +554,16 @@ export async function deleteTaskAction(formData: FormData) {
 
 export async function deleteProjectAction(formData: FormData) {
   const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
-  const session = await requireWritableSession(projectId);
+  const session = await requireProjectAdminSession(projectId);
 
   let redirectPath = "/tasks";
 
   try {
     // 삭제 전에 프로젝트 전체 제출물, 첨부파일, 태스크 목록 조회 (DB CASCADE 이전)
     const [submissionsToClean, attachmentsToClean, tasksToClean] = await Promise.all([
-      listSubmissionsByProject(projectId),
-      listAttachmentsByProject(projectId),
+      // 프로젝트 삭제는 저장 파일 전체를 정리해야 하므로 뷰어 범위를 적용하지 않는다.
+      listSubmissionsByProject(projectId, { canSeeAll: true }),
+      listAttachmentsByProject(projectId, { unrestricted: true }),
       listTasksByProject(projectId),
     ]);
 
@@ -561,6 +657,8 @@ export async function createSubmissionAction(formData: FormData) {
   let redirectPath: string;
 
   try {
+    await requireProjectTask(projectId, taskId);
+
     const uploadedFiles = (formData.getAll("attachments") as (File | string)[]).filter(
       (v): v is File => v instanceof File && v.size > 0,
     );
@@ -642,11 +740,11 @@ export async function updateSubmissionAction(formData: FormData) {
 
   try {
     const submissionId = parseRequiredPositiveInteger(formData.get("submissionId"), "제출물");
-    const existingSubmission = await getSubmissionById(submissionId);
-
-    if (!existingSubmission) {
-      throw new Error("수정할 제출물을 찾을 수 없습니다.");
-    }
+    const { submission: existingSubmission } = await requireOwnedSubmission(session, {
+      projectId,
+      taskId,
+      submissionId,
+    });
 
     const clearAttachment = isChecked(formData.get("clearAttachment"));
     const uploadedFiles = (formData.getAll("attachments") as (File | string)[]).filter(
@@ -751,11 +849,11 @@ export async function deleteSubmissionAction(formData: FormData) {
 
   try {
     const submissionId = parseRequiredPositiveInteger(formData.get("submissionId"), "제출물");
-    const existingSubmission = await getSubmissionById(submissionId);
-
-    if (!existingSubmission) {
-      throw new Error("삭제할 제출물을 찾을 수 없습니다.");
-    }
+    const { submission: existingSubmission } = await requireOwnedSubmission(session, {
+      projectId,
+      taskId,
+      submissionId,
+    });
 
     // 삭제 전에 첨부파일 목록을 먼저 조회 (DB CASCADE 이전)
     const attachmentsToClean = await listAttachmentsBySubmission(submissionId);
@@ -855,6 +953,9 @@ export async function deleteSubmissionAttachmentAction(formData: FormData) {
 
   try {
     const submissionId = parseRequiredPositiveInteger(formData.get("submissionId"), "제출물");
+
+    await requireOwnedSubmission(session, { projectId, taskId, submissionId });
+
     const attachment = await getSubmissionAttachmentById(attachmentId);
 
     if (!attachment || attachment.submissionId !== submissionId) {
@@ -925,6 +1026,8 @@ export async function createCommentAction(formData: FormData) {
   let redirectPath: string;
 
   try {
+    await requireVisibleSubmission(session, { projectId, taskId, submissionId });
+
     const comment = await createComment({
       submissionId,
       authorId: user.id,
@@ -979,8 +1082,12 @@ export async function updateCommentAction(formData: FormData) {
   let redirectPath: string;
 
   try {
+    const commentId = parseRequiredPositiveInteger(formData.get("commentId"), "댓글");
+
+    await requireOwnedComment(session, { projectId, taskId, submissionId, commentId });
+
     const comment = await updateComment({
-      id: parseRequiredPositiveInteger(formData.get("commentId"), "댓글"),
+      id: commentId,
       content: getSingleValue(formData.get("content")),
     });
 
@@ -1033,11 +1140,12 @@ export async function deleteCommentAction(formData: FormData) {
 
   try {
     const commentId = parseRequiredPositiveInteger(formData.get("commentId"), "댓글");
-    const existingComment = await getCommentById(commentId);
-
-    if (!existingComment) {
-      throw new Error("삭제할 댓글을 찾을 수 없습니다.");
-    }
+    const { comment: existingComment } = await requireOwnedComment(session, {
+      projectId,
+      taskId,
+      submissionId,
+      commentId,
+    });
 
     const comment = await deleteComment(commentId);
 

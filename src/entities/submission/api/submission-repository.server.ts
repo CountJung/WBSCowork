@@ -2,14 +2,18 @@ import { getDatabasePool } from "@/src/shared/server/database/index.server";
 import { mapSubmissionRow, type Submission, type SubmissionRow, type SubmissionVisibility } from "../model/submission";
 
 /**
- * 제출물 목록 조회 시 역할별 공개 범위 필터 옵션
+ * 제출물 조회 시 역할별 공개 범위 필터 옵션
  * - canSeeAll=true (슈퍼관리자/관리자): 모든 제출물
- * - canSeeAll=false, viewerUserId 있음: 공개 제출물 + 본인 비공개 제출물
- * - canSeeAll=false, viewerUserId 없음: 공개 제출물만
+ * - canSeeAll=false, viewerUserId 또는 viewerEmail 있음: 공개 제출물 + 본인 비공개 제출물
+ * - canSeeAll=false, 뷰어 식별자 없음: 공개 제출물만
+ *
+ * `viewerUserId`는 DB 사용자 id를 이미 조회한 화면 경로용이고, `viewerEmail`은 세션 이메일만
+ * 가진 route handler 경로용이다. 둘 다 주면 어느 한쪽만 맞아도 본인 제출물로 본다.
  */
 export type SubmissionVisibilityFilter = {
   canSeeAll: boolean;
   viewerUserId?: number | null;
+  viewerEmail?: string | null;
 };
 
 export type CreateSubmissionInput = {
@@ -84,6 +88,12 @@ const submissionSelectColumns = `
       submissions.file_size_bytes,
       submissions.created_at`;
 
+/**
+ * 정책이 적용되지 않은 단건 조회.
+ *
+ * 공개 범위를 확인하지 않으므로 이미 actor 권한을 검증한 mutation 경로에서만 쓴다.
+ * 뷰어에게 자원을 노출하는 경로(다운로드, 상세 조회)는 `getSubmissionByIdForViewer`를 사용한다.
+ */
 export async function getSubmissionById(id: number): Promise<Submission | null> {
   const rows = (await getDatabasePool().query(
     `SELECT
@@ -100,24 +110,64 @@ export async function getSubmissionById(id: number): Promise<Submission | null> 
   return row ? mapSubmissionRow(row) : null;
 }
 
+/**
+ * 뷰어 공개 범위를 질의에 적용한 단건 조회.
+ *
+ * 볼 수 없는 제출물은 "없음"과 같은 null로 돌아오므로 호출부가 자원 존재 여부를 구분해 노출하지 않는다.
+ */
+export async function getSubmissionByIdForViewer(
+  id: number,
+  filter: SubmissionVisibilityFilter,
+): Promise<Submission | null> {
+  const { clause, params } = buildVisibilityWhere(filter);
+  const rows = (await getDatabasePool().query(
+    `SELECT
+      ${submissionSelectColumns}
+    FROM submissions
+    INNER JOIN users ON users.id = submissions.author_id
+    WHERE submissions.id = ? ${clause}
+    LIMIT 1`,
+    [id, ...params],
+  )) as SubmissionRow[];
+
+  const row = rows[0];
+
+  return row ? mapSubmissionRow(row) : null;
+}
+
 function buildVisibilityWhere(filter: SubmissionVisibilityFilter): { clause: string; params: unknown[] } {
   if (filter.canSeeAll) {
     return { clause: "", params: [] };
   }
 
+  const ownerConditions: string[] = [];
+  const params: unknown[] = [];
+
   if (filter.viewerUserId) {
-    return {
-      clause: "AND (submissions.visibility = 'public' OR submissions.author_id = ?)",
-      params: [filter.viewerUserId],
-    };
+    ownerConditions.push("submissions.author_id = ?");
+    params.push(filter.viewerUserId);
   }
 
-  return { clause: "AND submissions.visibility = 'public'", params: [] };
+  const viewerEmail = filter.viewerEmail?.trim().toLowerCase();
+
+  if (viewerEmail) {
+    ownerConditions.push("LOWER(users.email) = ?");
+    params.push(viewerEmail);
+  }
+
+  if (ownerConditions.length === 0) {
+    return { clause: "AND submissions.visibility = 'public'", params: [] };
+  }
+
+  return {
+    clause: `AND (submissions.visibility = 'public' OR ${ownerConditions.join(" OR ")})`,
+    params,
+  };
 }
 
 export async function listSubmissionsByProject(
   projectId: number,
-  filter: SubmissionVisibilityFilter = { canSeeAll: true },
+  filter: SubmissionVisibilityFilter,
 ): Promise<Submission[]> {
   const { clause, params } = buildVisibilityWhere(filter);
   const rows = (await getDatabasePool().query(
@@ -136,7 +186,7 @@ export async function listSubmissionsByProject(
 
 export async function listSubmissionsByTask(
   taskId: number,
-  filter: SubmissionVisibilityFilter = { canSeeAll: true },
+  filter: SubmissionVisibilityFilter,
 ): Promise<Submission[]> {
   const { clause, params } = buildVisibilityWhere(filter);
   const rows = (await getDatabasePool().query(

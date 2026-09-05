@@ -33,6 +33,7 @@ export type UserActionLogPayload = {
   submissionId?: number | null;
   commentId?: number | null;
   targetEmail?: string | null;
+  /** 경로성 키(`REDACTED_METADATA_KEYS`)는 기록 시 자동으로 축약된다. */
   metadata?: Record<string, unknown>;
 };
 
@@ -183,6 +184,36 @@ function normalizeDetails(details?: Record<string, unknown>) {
   return details;
 }
 
+/**
+ * 로그 metadata에 그대로 남기면 안 되는 키.
+ *
+ * 저장 경로는 비공개 산출물의 위치와 업로드 디렉터리 구조를 드러내므로 값 대신 파생 정보만 남긴다.
+ */
+const REDACTED_METADATA_KEYS = new Set(["filePath", "storedFilePath", "absolutePath", "uploadDir", "path"]);
+
+const REDACTED_PLACEHOLDER = "[redacted]";
+
+/** 경로 값을 마지막 확장자 정도의 비식별 정보로 축약한다. */
+function describeRedactedValue(value: unknown) {
+  if (typeof value !== "string" || !value) {
+    return REDACTED_PLACEHOLDER;
+  }
+
+  const extensionMatch = /\.([A-Za-z0-9]{1,10})$/.exec(value);
+
+  return extensionMatch ? `${REDACTED_PLACEHOLDER}:${extensionMatch[1].toLowerCase()}` : REDACTED_PLACEHOLDER;
+}
+
+function redactMetadata(metadata: Record<string, unknown>) {
+  const redacted: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(metadata)) {
+    redacted[key] = REDACTED_METADATA_KEYS.has(key) ? describeRedactedValue(value) : value;
+  }
+
+  return redacted;
+}
+
 function buildUserActionDetails(eventType: "user-action" | "user-action-failure", payload: UserActionLogPayload) {
   const details: Record<string, unknown> = {
     eventType,
@@ -220,7 +251,7 @@ function buildUserActionDetails(eventType: "user-action" | "user-action-failure"
   }
 
   if (payload.metadata && Object.keys(payload.metadata).length > 0) {
-    details.metadata = payload.metadata;
+    details.metadata = redactMetadata(payload.metadata);
   }
 
   return details;

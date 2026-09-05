@@ -32,7 +32,7 @@
 | `/admin/logs` | `app/admin/logs/page.tsx` | superuser only | rolling log tail |
 | `/admin/settings` | `app/admin/settings/page.tsx` | superuser only | env 설정 UI |
 | `/api/auth/[...nextauth]` | `app/api/auth/[...nextauth]/route.ts` | NextAuth | Google OAuth GET/POST |
-| `/api/submissions/[submissionId]/attachment` | 해당 `route.ts` | 로그인 + public/작성자/admin 가시성 | legacy 단일 첨부 download |
+| `/api/submissions/[submissionId]/attachment` | 해당 `route.ts` | 로그인 + `getSubmissionByIdForViewer` 가시성 | legacy 단일 첨부 download |
 | `/api/submission-attachments/[attachmentId]` | 해당 `route.ts` | 로그인 + 부모 제출물 가시성 | 다중 첨부 download |
 
 두 attachment route는 권한이 없거나 존재하지 않는 자원을 모두 404로 응답해 식별자 열거를 줄인다.
@@ -45,10 +45,10 @@
 
 ### 작업 화면 조회
 
-`app/tasks/page.tsx → database readiness → project/user 병렬 조회 → viewer DB id 해석 → task/submission/comment/attachment 병렬 조회 → task UI`
+`app/tasks/page.tsx → database readiness → project/user 병렬 조회 → viewer DB id 해석 → task/submission 조회 → 가시 submission id로 comment/attachment 조회 → task UI`
 
-- `submission-repository`에는 `SubmissionVisibilityFilter`가 있다.
-- comment/attachment project 조회는 부모 submission visibility와 동일한 filter를 받지 않고, 결과 전체가 client component props로 넘어간다. [TODO.md](TODO.md)의 P0 항목이다.
+- `submission-repository`의 `SubmissionVisibilityFilter`는 필수 인자다. 단건은 `getSubmissionByIdForViewer`를 쓴다.
+- comment/attachment project 조회는 필수 `IdScope`(`src/shared/server/query-scope`)를 받는다. 화면은 가시 submission id 집합을 넘기므로 비공개 제출물의 파생 데이터가 client props에 실리지 않는다. 파기·삭제 등 관리 경로만 `{ unrestricted: true }`를 명시한다.
 
 ### 쓰기
 

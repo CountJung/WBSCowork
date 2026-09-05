@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAuthSession } from "@/src/entities/user/index.server";
 import { logUserAction, logUserActionFailure } from "@/src/shared/server/logging/index.server";
-import { getSubmissionAttachmentById, getSubmissionById, readStoredSubmissionAttachment } from "@/src/entities/submission/index.server";
-import { canViewSubmission } from "@/src/entities/submission";
+import {
+  getSubmissionAttachmentById,
+  getSubmissionByIdForViewer,
+  readStoredSubmissionAttachment,
+} from "@/src/entities/submission/index.server";
 import { canManageAllSubmissions } from "@/src/entities/user";
 
 type RouteContext = {
@@ -31,10 +34,13 @@ export async function GET(request: Request, context: RouteContext) {
     return NextResponse.json({ message: "첨부파일이 없습니다." }, { status: 404 });
   }
 
-  const submission = await getSubmissionById(attachment.submissionId);
-  const canSeeAll = canManageAllSubmissions(session.user.role, session.user.isSuperuser);
+  // 공개 범위를 질의에 적용해, 볼 수 없는 제출물은 존재하지 않는 것과 같은 404로 응답한다.
+  const submission = await getSubmissionByIdForViewer(attachment.submissionId, {
+    canSeeAll: canManageAllSubmissions(session.user.role, session.user.isSuperuser),
+    viewerEmail: session.user.email,
+  });
 
-  if (!submission || !canViewSubmission(submission, { canSeeAll, email: session.user.email })) {
+  if (!submission) {
     return NextResponse.json({ message: "첨부파일이 없습니다." }, { status: 404 });
   }
 

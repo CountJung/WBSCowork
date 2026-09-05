@@ -159,8 +159,9 @@ export async function deleteProjectAdminAction(formData: FormData) {
     }
 
     const [submissionsToClean, attachmentsToClean, tasksToClean] = await Promise.all([
-      listSubmissionsByProject(projectId),
-      listAttachmentsByProject(projectId),
+      // 파기는 저장 파일 전체를 지워야 하므로 뷰어 범위를 적용하지 않는다.
+      listSubmissionsByProject(projectId, { canSeeAll: true }),
+      listAttachmentsByProject(projectId, { unrestricted: true }),
       listTasksByProject(projectId),
     ]);
     const project = await deleteProject(projectId);

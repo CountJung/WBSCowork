@@ -61,20 +61,28 @@ public  → 모든 인증 사용자
 private → author OR admin/superuser
 ```
 
-`src/entities/submission`의 목록 함수는 `SubmissionVisibilityFilter`로 SQL에 조건을 붙인다. 하지만 안전한 경계는 제출물 row에서 끝나지 않는다.
+`src/entities/submission`의 목록 함수는 `SubmissionVisibilityFilter`로 SQL에 조건을 붙인다. 하지만 안전한 경계는 제출물 row에서 끝나지 않으므로 다음 네 지점을 모두 질의 수준에서 막는다.
 
 - comments는 부모 submission이 보이는 경우에만 노출
 - attachment metadata와 binary도 부모 submission이 보이는 경우에만 노출
-- 단건 조회/download는 viewer-aware repository 또는 조회 후 policy check 필요
-- update/delete는 write role과 별도로 author/admin ownership 확인 필요
+- 단건 조회/download는 viewer-aware repository 사용
+- update/delete는 write role과 별도로 author/admin ownership 확인
 
-### 현재 확인된 보안 부채
+### 적용 방식 (2026-09-05)
 
-1. `app/tasks/page.tsx`는 submissions만 visibility-filtered이고 comments/attachments는 프로젝트 전체를 조회한다. 그 결과가 client widget(`src/widgets/task-workspace`) props로 그대로 전달되므로 비공개 제출물의 댓글·첨부 metadata가 RSC payload에 실린다.
-2. `getSubmissionById`는 unscoped 단건 조회다. 두 attachment download handler는 조회 후 `canViewSubmission`으로 막고 있지만, 새 소비자가 이 정책 검사를 빠뜨리기 쉬운 형태다.
-3. 제출물·댓글의 update/delete action은 쓰기 역할만 확인하고 작성자 ownership을 확인하지 않는다. `updateSubmissionAction`은 `visibility`도 덮어쓴다.
+| 경계 | 계약 |
+| --- | --- |
+| 제출물 목록 | `listSubmissionsByProject/ByTask(id, filter)` — `filter`는 필수. 관리 경로만 `{ canSeeAll: true }`를 명시한다. |
+| 댓글 목록 | `listCommentsByProject(projectId, scope)` — `scope`는 필수 `IdScope`. 화면은 가시 제출물 id(`{ ids }`), 파기 경로만 `{ unrestricted: true }`. |
+| 첨부 목록 | `listAttachmentsByProject(projectId, scope)` — 위와 동일. |
+| 단건 조회 | `getSubmissionByIdForViewer(id, filter)`가 공개 범위를 SQL에 적용한다. `getSubmissionById`는 unscoped이며 actor 권한을 이미 검증한 mutation 경로 전용이다. |
+| mutation ownership | `src/features/task-workspace`의 `requireVisibleSubmission` / `requireOwnedSubmission` / `requireOwnedComment`가 project → task → submission → comment 상위 관계를 서버에서 재확인하고 작성자 본인 또는 `canManageAllSubmissions` actor만 통과시킨다. |
 
-따라서 UI에서 private card가 숨겨진다는 사실만으로 데이터가 보호된다고 판단하지 않는다. 각 항목의 우선순위와 조치는 [TODO.md](TODO.md)의 보안·정합성 백로그에 있다.
+조회 범위 helper는 `src/shared/server/query-scope`의 `IdScope`, `buildIdScopeClause`, `isEmptyIdScope`다. 안전한 기본값을 두지 않아, 새 호출부가 범위를 명시하지 않으면 타입 검사에서 걸린다.
+
+볼 수 없는 자원은 "권한 없음"이 아니라 "찾을 수 없음"과 같은 응답으로 처리해 id 열거로 존재 여부를 알아내지 못하게 한다.
+
+UI에서 private card가 숨겨진다는 사실만으로 데이터가 보호된다고 판단하지 않는다. 남은 항목은 [TODO.md](TODO.md)의 보안·정합성 백로그에 있다.
 
 ## 5. 데이터 아키텍처
 
@@ -106,9 +114,9 @@ DB cascade는 파일 삭제를 하지 않는다. 삭제 action은 DB 삭제 전 
 
 - `src/entities/submission/api/submission-files.server.ts`: `UPLOAD_DIR`, 크기 제한, 안전한 경로 해석, 읽기/삭제.
 - `next.config.ts`: 업로드 최대치 + 2MB로 Server Action body limit 계산.
-- 다운로드는 부모 제출물의 public/작성자/admin 가시성을 검사하고 `Cache-Control: private, no-store`, length/type/disposition을 반환한다.
+- 다운로드는 `getSubmissionByIdForViewer`로 부모 제출물의 public/작성자/admin 가시성을 질의에 적용하고 `Cache-Control: private, no-store`, length/type/disposition을 반환한다.
 - `src/shared/server/logging` 및 `instrumentation.ts`: `LOG_DIR` 롤링 로그와 구조화 action log.
-- 파일 경로·비밀값·private content를 로그 metadata에 남기지 않는 방향으로 보강해야 한다.
+- action log metadata의 경로성 키(`filePath`, `storedFilePath`, `absolutePath`, `uploadDir`, `path`)는 기록 시 `[redacted]` 또는 `[redacted]:<확장자>`로 축약된다(`REDACTED_METADATA_KEYS`). 비밀값·private content는 애초에 metadata에 담지 않는다.
 
 ## 7. 목표 FSD
 

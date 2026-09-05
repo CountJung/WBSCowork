@@ -1,4 +1,5 @@
 import { getDatabasePool } from "@/src/shared/server/database/index.server";
+import { buildIdScopeClause, isEmptyIdScope, type IdScope } from "@/src/shared/server/query-scope/index.server";
 import { mapCommentRow, type Comment, type CommentRow } from "../model/comment";
 
 export type CreateCommentInput = {
@@ -70,7 +71,19 @@ export async function getCommentById(id: number): Promise<Comment | null> {
   return row ? mapCommentRow(row) : null;
 }
 
-export async function listCommentsByProject(projectId: number): Promise<Comment[]> {
+/**
+ * 프로젝트 댓글 목록.
+ *
+ * 댓글은 부모 제출물의 공개 범위를 그대로 따라야 한다. 이 repository는 제출물 정책을 알지 못하므로
+ * 호출부가 뷰어에게 보이는 제출물 id 집합(`{ ids }`)을 넘겨 질의를 bounded 하게 만들어야 하고,
+ * 프로젝트 파기처럼 전체가 필요한 관리 경로만 `{ unrestricted: true }`를 명시한다.
+ */
+export async function listCommentsByProject(projectId: number, scope: IdScope): Promise<Comment[]> {
+  if (isEmptyIdScope(scope)) {
+    return [];
+  }
+
+  const { clause, params } = buildIdScopeClause("comments.submission_id", scope);
   const rows = (await getDatabasePool().query(
     `SELECT
       comments.id,
@@ -84,9 +97,9 @@ export async function listCommentsByProject(projectId: number): Promise<Comment[
     INNER JOIN submissions ON submissions.id = comments.submission_id
     INNER JOIN tasks ON tasks.id = submissions.task_id
     INNER JOIN users ON users.id = comments.author_id
-    WHERE tasks.project_id = ?
+    WHERE tasks.project_id = ? ${clause}
     ORDER BY comments.created_at ASC, comments.id ASC`,
-    [projectId],
+    [projectId, ...params],
   )) as CommentRow[];
 
   return rows.map(mapCommentRow);
