@@ -18,18 +18,21 @@
 
 ---
 
-## 진행 표기
+## 진행 표기 범례
 
-체크박스는 **완료 여부만** 나타낸다. 체크되지 않은 항목이 착수 전인지 작업 중인지는 뒤따르는 상태 표시로 구분한다.
+| 표기 | 상태 | 뜻 | 다음 행동 |
+| --- | --- | --- | --- |
+| `- [ ]` | 대기 | 착수하지 않음. 막는 것은 없다 | 아무 때나 시작할 수 있다 |
+| `- [~]` | 진행 | 작업 중 | 끝내고 `[x]`로 바꾼다 |
+| `- [!]` | 보류 | 선행 조건이나 사람의 판단을 기다림 | 무엇을 기다리는지 항목에 적는다 |
+| `- [x]` | 완료 | 끝남 | 다음 정리 때 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮긴다 |
+| `- [-]` | 취소 | 하지 않기로 함 | 사유를 적고 남긴다. 번호는 회수하지 않는다 |
 
-| 표기 | 뜻 |
-| --- | --- |
-| `- [ ]` · `대기` | 착수하지 않음 |
-| `- [ ]` · `진행` | 작업 중 |
-| `- [ ]` · `보류` | 선행 조건이나 판단을 기다림 |
-| `- [x]` | 완료. 다음 정리 때 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮긴다 |
+`[!]`와 `[-]`를 구분하는 기준은 **되살아날 수 있는가**다. 판단을 기다리는 동안 멈춘 것은 `[!]`, 하지 않기로 결론이 난 것은 `[-]`다.
 
-**아래 「열린 항목」의 체크박스가 상태의 단일 출처다.** 「세부」의 착수 체크리스트는 그 항목 안에서의 진척을 보기 위한 것이고, 항목 자체의 완료 여부는 여기서만 관리한다. 두 곳에 같은 상태를 적으면 반드시 어긋난다.
+**표기가 상태의 단일 출처다.** 같은 줄이나 「세부」에 상태를 다시 적지 않는다. 두 곳에 적으면 반드시 어긋난다. 「세부」의 착수 체크리스트는 그 항목 **안에서의** 진척만 나타내며, 항목 자체의 상태는 아래 「열린 항목」에서만 관리한다.
+
+> GitHub는 GFM 사양에 따라 `[ ]`와 `[x]`만 실제 체크박스로 렌더링한다. `[~]`, `[!]`, `[-]`는 글자 그대로 보인다. 체크박스 위젯보다 상태 구분이 유용하다고 보고 이 표기를 택했다. 편집기에서 상태를 바꿀 때는 위젯 클릭이 아니라 글자를 직접 고친다.
 
 ---
 
@@ -37,26 +40,26 @@
 
 ### 정리·품질·운영
 
-- [ ] **[T-010](#t-010--프로젝트-crud-경로-이중화-정리)** 프로젝트 CRUD 경로 이중화 정리 · `보류` — 제품 판단 필요
-- [ ] **[T-011](#t-011--테스트-커버리지-확장)** 테스트 커버리지 확장 · `대기`
-- [ ] **[T-012](#t-012--versioned-migration-부재)** versioned migration 부재 · `대기`
-- [ ] **[T-013](#t-013--db-credential-최소권한-분리)** runtime pool과 schema admin의 credential 분리 · `대기`
-- [ ] **[T-014](#t-014--next-envdts와-tsconfig-include-정리)** `next-env.d.ts`와 tsconfig `include` 정리 · `보류` — 판단 필요
+- [!] **[T-010](#t-010--프로젝트-crud-경로-이중화-정리)** 프로젝트 CRUD 경로 이중화 정리 — 제품 판단 필요
+- [ ] **[T-011](#t-011--테스트-커버리지-확장)** 테스트 커버리지 확장
+- [ ] **[T-012](#t-012--versioned-migration-부재)** versioned migration 부재
+- [ ] **[T-013](#t-013--db-credential-최소권한-분리)** runtime pool과 schema admin의 credential 분리
+- [!] **[T-014](#t-014--next-envdts와-tsconfig-include-정리)** `next-env.d.ts`와 tsconfig `include` 정리 — 판단 필요
 
 ### 9단계 — digest/report export
 
 D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약이 두 벌이 된다.
 
-- [ ] **[T-015](#t-015--d0-versioned-digestsnapshot)** D0 versioned `DigestSnapshot` + privacy fixture · `대기`
-- [ ] **[T-016](#t-016--d1-manual-json-preview)** D1 admin/superuser용 manual JSON preview · `대기` — 선행 T-015
-- [ ] **[T-017](#t-017--d2-docxpptx-export)** D2 동일 snapshot 기반 DOCX/PPTX export · `대기` — 선행 T-015
-- [ ] **[T-018](#t-018--d3-scheduler-운영-기반)** D3 scheduler token·dry-run·migration·run ledger · `대기` — 선행 T-012, T-017
-- [ ] **[T-019](#t-019--d4-download-only-운영)** D4 download-only 운영 + artifact retention · `대기` — 선행 T-018
-- [ ] **[T-020](#t-020--d5-delivery-검토)** D5 consent·threat model 승인 후 delivery 검토 · `보류` — 선행 T-019
+- [ ] **[T-015](#t-015--d0-versioned-digestsnapshot)** D0 versioned `DigestSnapshot` + privacy fixture
+- [ ] **[T-016](#t-016--d1-manual-json-preview)** D1 admin/superuser용 manual JSON preview — 선행 T-015
+- [ ] **[T-017](#t-017--d2-docxpptx-export)** D2 동일 snapshot 기반 DOCX/PPTX export — 선행 T-015
+- [ ] **[T-018](#t-018--d3-scheduler-운영-기반)** D3 scheduler token·dry-run·migration·run ledger — 선행 T-012, T-017
+- [ ] **[T-019](#t-019--d4-download-only-운영)** D4 download-only 운영 + artifact retention — 선행 T-018
+- [!] **[T-020](#t-020--d5-delivery-검토)** D5 consent·threat model 승인 후 delivery 검토 — 선행 T-019
 
 ### 10단계 — 배포
 
-- [ ] **[T-021](#t-021--synology-nas-배포-준비)** Synology NAS 배포 준비 · `대기`
+- [ ] **[T-021](#t-021--synology-nas-배포-준비)** Synology NAS 배포 준비
 
 ---
 
@@ -64,7 +67,7 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 
 ### T-010 — 프로젝트 CRUD 경로 이중화 정리
 
-**분류** 정리 · **상태** `보류` — 제품 판단 필요
+**분류** 정리
 
 `src/features/task-workspace`와 `src/features/project-manage`가 같은 프로젝트 CRUD 기능을 갖는다.
 
@@ -89,7 +92,7 @@ T-007이 권한 구멍은 막았지만 중복 자체는 남아 있다. `/tasks`�
 
 ### T-011 — 테스트 커버리지 확장
 
-**분류** 품질 · **상태** `대기`
+**분류** 품질
 
 현재 하네스(T-009)는 가시성·권한 경계에 집중되어 있다. 우선순위 순으로:
 
@@ -103,7 +106,7 @@ HTTP 계층(미들웨어·OAuth 로그인)과 캐시 무효화는 현재 하네�
 
 ### T-012 — versioned migration 부재
 
-**분류** 운영 · **상태** `대기`
+**분류** 운영
 
 `src/shared/server/database-admin`이 `CREATE TABLE`과 일부 `ALTER ADD`만 수행하고 migration ledger나 rollback 이력이 없다.
 
@@ -121,7 +124,7 @@ T-018(D3)이 이것을 전제로 하므로 9단계 진입 전에 해결하는 �
 
 ### T-013 — DB credential 최소권한 분리
 
-**분류** 보안 · **상태** `대기`
+**분류** 보안
 
 runtime pool과 schema admin이 같은 `DB_*` credential을 쓴다. 평상시 애플리케이션 질의가 DDL 권한을 들고 다닌다는 뜻이다. 계정을 분리하고 runtime 쪽에서 DDL 권한을 뺀다.
 
@@ -138,7 +141,7 @@ T-018(D3)의 "최소권한" 요구와 같은 작업이다.
 
 ### T-014 — `next-env.d.ts`와 tsconfig `include` 정리
 
-**분류** 정리 · **상태** `보류` — 판단 필요
+**분류** 정리
 
 `next-env.d.ts`가 `.gitignore` 대상인데 `tsconfig.json`의 `include`에는 남아 있다. 외장 볼륨에서 생기는 AppleDouble(`._next-env.d.ts`)과 함께 정리 대상인지 판단한다.
 
@@ -163,37 +166,35 @@ T-018(D3)의 "최소권한" 요구와 같은 작업이다.
 
 #### T-015 — D0 versioned `DigestSnapshot`
 
-**상태** `대기`
-
 현재 DB 사실만 담는 versioned snapshot과 privacy fixture. 이후 D1·D2가 모두 이 snapshot 하나를 소비하므로 먼저 확정한다.
 
 #### T-016 — D1 manual JSON preview
 
-**상태** `대기` · **선행** T-015
+**선행** T-015
 
 admin/superuser용 수동 JSON 미리보기.
 
 #### T-017 — D2 DOCX/PPTX export
 
-**상태** `대기` · **선행** T-015
+**선행** T-015
 
 T-015의 snapshot을 그대로 쓰는 export와 권한 확인 다운로드. 다운로드 경로는 T-005의 viewer-aware 조회 규약을 따라야 한다.
 
 #### T-018 — D3 scheduler 운영 기반
 
-**상태** `대기` · **선행** T-012, T-017
+**선행** T-012, T-017
 
 scheduler token, dry-run, MariaDB versioned migration, 최소권한 계정, run ledger/idempotency. T-012·T-013과 범위가 겹치므로 함께 설계한다.
 
 #### T-019 — D4 download-only 운영
 
-**상태** `대기` · **선행** T-018
+**선행** T-018
 
 download-only 운영과 artifact retention.
 
 #### T-020 — D5 delivery 검토
 
-**상태** `보류` · **선행** T-019
+**선행** T-019
 
 membership/recipient consent와 threat model 승인 이후에만 delivery를 검토한다. 승인 전에는 착수하지 않는다.
 
@@ -201,7 +202,7 @@ membership/recipient consent와 threat model 승인 이후에만 delivery를 검
 
 ### T-021 — Synology NAS 배포 준비
 
-**분류** 10단계 · **상태** `대기`
+**분류** 10단계
 
 착수 체크리스트:
 
