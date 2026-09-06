@@ -63,7 +63,7 @@ docs/          # 모든 하위 문서 (루트에는 README/AGENTS/CLAUDE 만 둔
 4. Admin 패널 중 `/admin/database`, `/admin/logs`, `/admin/settings`는 `isSuperuser`만 접근 가능; `/admin/users`는 관리자 역할도 접근 가능 (`guest`·`member`만 부여)
 5. 제출물 목록 쿼리는 반드시 `SubmissionVisibilityFilter`를 사용할 것. 댓글·첨부의 프로젝트 조회는 `IdScope`로 가시 제출물에 한정하고, 단건은 `getSubmissionByIdForViewer`를 쓴다. 제출물·댓글 mutation은 상위 관계 재확인과 작성자/관리자 ownership 검사를 통과해야 한다
 6. 환경 변수 파일(`.env*`)을 AI 컨텍스트로 열지 않는다
-7. 경고·오류 무시 금지 — 해결 불가 시 `docs/TODO.md`(백로그)와 `docs/HARNESS_MAP.md`(기준선)에 기록
+7. 경고·오류 무시 금지 — 해결 불가 시 `docs/TODO.md`(다음 `T-###` 번호 발급)와 `docs/HARNESS_MAP.md`(기준선)에 기록. 완료 시 `docs/COMPLETED_LOG.md`로 번호를 유지한 채 옮긴다
 8. FSD 의존 방향은 `app → widgets → features → entities → shared`, 구축/이동 순서는 `shared → entities → features → widgets → root app pages`이다. 루트 `app/`을 `src/app`으로 옮기지 않고 구조 이동과 기능 변경을 분리한다. `src/`를 건드리면 `npm run check:fsd`를 반드시 실행한다.
 9. scheduled digest는 기본 dry-run/download-only이며, `SubmissionVisibilityFilter`, machine token, DB idempotency ledger 없이 활성화하지 않는다.
 10. report renderer는 동일한 versioned snapshot을 사용한다. DOCX는 `docx`, runtime PPTX는 브라우저 없는 `pptxgenjs` 직접 생성을 사용한다.
@@ -97,7 +97,8 @@ npm run dev:debug     # Node 인스펙터 포함 dev 서버
 
 | 문서 | 성격 |
 | --- | --- |
-| [docs/TODO.md](docs/TODO.md) | 단계 진행·백로그·블로커 (매 작업 시작·종료) |
+| [docs/TODO.md](docs/TODO.md) | 열린 항목만. `T-###` 고유번호로 추적 (매 작업 시작·종료) |
+| [docs/COMPLETED_LOG.md](docs/COMPLETED_LOG.md) | 완료 항목의 원인·조치·회귀 방지 기록 |
 | [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) | 제품 정의·MVP 범위·DB 설계 |
 | [docs/MASTER_PLAN.html](docs/MASTER_PLAN.html) | 사람용 운영 로드맵과 권한·가시성 우선순위 |
 | [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md) | App Router·repository·DB 작업별 진입점 |

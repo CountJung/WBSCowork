@@ -231,7 +231,7 @@ LOG_MAX_FILE_SIZE_MB=100
 | 9단계 | Scheduled digest + DOCX/PPTX report export | 예정 |
 | 10단계 | Synology NAS 배포 | 예정 |
 
-단계별 세부 항목과 블로커는 [TODO.md](TODO.md)가 단일 출처다.
+단계별 세부 항목과 블로커는 [TODO.md](TODO.md)가 단일 출처이며, 각 항목은 `T-###` 고유번호로 추적한다. 완료된 항목은 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮겨진다.
 
 ---
 

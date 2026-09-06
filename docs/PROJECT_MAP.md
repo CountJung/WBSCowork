@@ -1,6 +1,6 @@
 # WBSCowork 프로젝트 맵
 
-> 현재 코드의 탐색 지도. 실행·검증 명령은 [HARNESS_MAP.md](HARNESS_MAP.md), 진행 이력과 backlog는 [TODO.md](TODO.md)를 본다.
+> 현재 코드의 탐색 지도. 실행·검증 명령은 [HARNESS_MAP.md](HARNESS_MAP.md), 열린 항목은 [TODO.md](TODO.md), 완료 이력은 [COMPLETED_LOG.md](COMPLETED_LOG.md)를 본다.
 
 ## 1. 루트 지도
 
@@ -106,7 +106,8 @@ users       1 ── N comments
 | PROJECT_MAP.md (이 문서) | 코드 탐색 지도 | 어디를 고칠지 찾을 때 |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | 인증·인가·가시성·데이터 경계 | 정책/구조 변경 |
 | [HARNESS_MAP.md](HARNESS_MAP.md) | 실행·검증 명령과 기준선 | 검증 범위 결정 |
-| [TODO.md](TODO.md) | 단계 진행·백로그·블로커 | 매 작업 시작·종료 |
+| [TODO.md](TODO.md) | 열린 항목(`T-###`)·상태·선행 | 매 작업 시작·종료 |
+| [COMPLETED_LOG.md](COMPLETED_LOG.md) | 완료 항목의 원인·조치·회귀 방지 | 항목 완료 시 |
 | [FSD_MIGRATION_PLAN.md](FSD_MIGRATION_PLAN.md) | 8단계 M0~M5 계약 | 구조 이동 |
 | [PROJECT_DIGEST_REPORT_PLAN.md](PROJECT_DIGEST_REPORT_PLAN.md) | 9단계 D0~D5 계약 | digest/report |
 | [manual/](manual/) | 사용자 교육 자료(슬라이드·빠른 참조) | 교육·발표 |

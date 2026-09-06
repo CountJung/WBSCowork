@@ -117,7 +117,8 @@ npm run dev:debug     # Node 인스펙터 포함 dev 서버
 
 | 문서 | 내용 |
 | --- | --- |
-| [docs/TODO.md](docs/TODO.md) | 단계 진행 상황, 백로그, 블로커 |
+| [docs/TODO.md](docs/TODO.md) | 열린 항목(`T-###` 고유번호), 상태, 선행 관계 |
+| [docs/COMPLETED_LOG.md](docs/COMPLETED_LOG.md) | 완료 항목의 배경과 회귀 방지 수단 |
 | [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) | 제품 정의, MVP 범위, DB 설계 |
 | [docs/MASTER_PLAN.html](docs/MASTER_PLAN.html) | 운영 로드맵 (브라우저에서 열기) |
 | [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md) | 코드 탐색 지도 |

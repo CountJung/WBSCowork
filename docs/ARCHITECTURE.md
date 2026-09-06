@@ -82,7 +82,7 @@ private → author OR admin/superuser
 
 볼 수 없는 자원은 "권한 없음"이 아니라 "찾을 수 없음"과 같은 응답으로 처리해 id 열거로 존재 여부를 알아내지 못하게 한다.
 
-UI에서 private card가 숨겨진다는 사실만으로 데이터가 보호된다고 판단하지 않는다. 남은 항목은 [TODO.md](TODO.md)의 보안·정합성 백로그에 있다.
+UI에서 private card가 숨겨진다는 사실만으로 데이터가 보호된다고 판단하지 않는다. 이 경계를 만든 배경과 회귀 방지 수단은 [COMPLETED_LOG.md](COMPLETED_LOG.md)의 T-003~T-007에 있고, 남은 항목은 [TODO.md](TODO.md)에 있다.
 
 ## 5. 데이터 아키텍처
 
