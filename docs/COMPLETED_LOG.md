@@ -9,6 +9,22 @@
 
 ---
 
+## 완료 목록
+
+[TODO.md](TODO.md)와 같은 표기를 쓴다. 여기 있는 항목은 모두 완료 상태이므로 전부 체크되어 있고, 되돌아가는 항목이 생기면 TODO.md로 옮기면서 번호를 유지한 채 체크를 해제한다.
+
+- [x] **[T-001](#t-001--eslint-기준선-확보)** ESLint 기준선 확보 · 2026-08-09
+- [x] **[T-002](#t-002--feature-sliced-design-구조-정리-8단계)** Feature-Sliced Design 구조 정리(8단계) · 2026-08-12
+- [x] **[T-003](#t-003--비공개-제출물의-파생-데이터가-client-payload로-노출)** 비공개 제출물의 파생 데이터가 client payload로 노출 · 2026-09-05 · 보안 P0
+- [x] **[T-004](#t-004--제출물댓글-mutation에-작성자-ownership-검사-없음)** 제출물·댓글 mutation에 작성자 ownership 검사 없음 · 2026-09-05 · 보안 P1
+- [x] **[T-005](#t-005--단건-조회-getsubmissionbyid가-unscoped)** 단건 조회 `getSubmissionById`가 unscoped · 2026-09-05 · 보안 P1
+- [x] **[T-006](#t-006--로그-metadata에-저장-파일-경로가-남음)** 로그 metadata에 저장 파일 경로가 남음 · 2026-09-05 · 보안 P2
+- [x] **[T-007](#t-007--tasks-프로젝트-crud-server-action이-쓰기-역할만-확인)** `/tasks` 프로젝트 CRUD server action이 쓰기 역할만 확인 · 2026-09-05 · 보안 P1
+- [x] **[T-008](#t-008--dep0205-moduleregister-deprecation-경고-해소)** `[DEP0205]` deprecation 경고 해소 · 2026-09-05
+- [x] **[T-009](#t-009--가시성권한-회귀-테스트-하네스-도입)** 가시성·권한 회귀 테스트 하네스 도입 · 2026-09-06
+
+---
+
 ## 1. ID 체계 도입 이전에 인도된 기능
 
 아래는 항목 단위 추적을 시작하기 전에 완료된 단계다. 번호를 소급 부여하지 않는다.
