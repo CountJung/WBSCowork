@@ -29,7 +29,7 @@ try {
     const { logUserAction, listRecentUserActionEntries } = await import("../src/shared/server/logging/index.server");
     check(getRuntimeEnv().database.configured, "D1 binding configures database without MariaDB credentials");
     const status = await getDatabaseAdminStatus();
-    check(status.managedMigrations && status.existingTableCount === 8 && status.tables.every((t) => !t.missingColumns.length), "all eight domain tables migrated");
+    check(status.managedMigrations && status.existingTableCount === 9 && status.tables.every((t) => !t.missingColumns.length), "all nine domain tables migrated");
     await assert.rejects(initializeDatabaseSchema(), /migration/i); checks++;
     const guest = await upsertUser({ email: "guest@example.test", name: "Guest", role: "guest" });
     const member = await upsertUser({ email: "member1@example.test", name: "Member", role: "member" });

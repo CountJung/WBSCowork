@@ -4,11 +4,13 @@ import {
   getAuthSession,
   getSignInPath,
   getUserByEmail,
+  isSuperuserEmail,
 } from "@/src/entities/user/index.server";
 import {
   getBugReport,
   listBugReports,
   listBugEvents,
+  getBugPurgeSnapshot,
 } from "@/src/entities/bug-report/index.server";
 import {
   bugStatuses,
@@ -27,7 +29,8 @@ export async function requireBugViewer(
   if (!user) notFound();
   const viewer = {
     userId: user.id,
-    canReview: canAccessAdminPanel(user.role, session.user.isSuperuser),
+    canReview: canAccessAdminPanel(user.role, isSuperuserEmail(user.email)),
+    canPurge: isSuperuserEmail(user.email),
   };
   if (adminOnly && !viewer.canReview) notFound();
   return viewer;
@@ -35,9 +38,10 @@ export async function requireBugViewer(
 export async function loadBugList(
   params: Record<string, string | string[] | undefined>,
   adminOnly = false,
+  trash = false,
 ) {
   const viewer = await requireBugViewer(
-    adminOnly ? "/admin/bugs" : "/bugs",
+    adminOnly ? (trash ? "/admin/bugs/trash" : "/admin/bugs") : "/bugs",
     adminOnly,
   );
   const query =
@@ -57,13 +61,29 @@ export async function loadBugList(
     viewer,
     query,
     status,
-    ...(await listBugReports(scope, { page, query, status })),
+    ...(await listBugReports(scope, { page, query, status, trash })),
   };
 }
-export async function loadBugDetail(id: number, eventPage = 1) {
-  const viewer = await requireBugViewer(`/bugs/${id}`);
+export async function loadBugDetail(id: number, eventPage = 1, trash = false) {
+  const viewer = await requireBugViewer(
+    trash ? `/admin/bugs/trash/${id}` : `/bugs/${id}`,
+    trash,
+  );
   if (!Number.isSafeInteger(id) || id < 1) notFound();
-  const report = await getBugReport(id, viewer);
+  const report = await getBugReport(id, viewer, trash);
   if (!report) notFound();
-  return { viewer, report, events: await listBugEvents(id, viewer, eventPage) };
+  let purge = null;
+  if (trash && viewer.canPurge) {
+    try {
+      purge = await getBugPurgeSnapshot(id, viewer);
+    } catch {
+      /* Fail closed when full bounded snapshot is unavailable. */
+    }
+  }
+  return {
+    viewer,
+    report,
+    purge,
+    events: await listBugEvents(id, viewer, eventPage, trash),
+  };
 }

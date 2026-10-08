@@ -9,7 +9,7 @@ const worker = {
   async fetch(request: Request, env: HostedBindings, ctx: ExecutionContext) {
     return runWithHostedBindings(env, async () => {
       const pathname = new URL(request.url).pathname;
-      const bugRequest = pathname === "/bugs" || pathname.startsWith("/bugs/") || pathname === "/admin/bugs";
+      const bugRequest = pathname === "/bugs" || pathname.startsWith("/bugs/") || pathname === "/admin/bugs" || pathname.startsWith("/admin/bugs/");
       const requestLimit = bugRequest ? 64 * 1024 : MAX_REQUEST_BYTES;
       const limitMessage = bugRequest ? "버그 제보 요청은 64KB 이하로 제한됩니다." : "요청 크기는 22MB 이하로 제한됩니다.";
       const multipart = request.headers.get("Content-Type")?.startsWith("multipart/form-data") ?? false;

@@ -1,4 +1,5 @@
 import "../tests/helpers/bootstrap";
+import { verifyBugLifecycle } from "./verify-bug-lifecycle";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
@@ -249,6 +250,7 @@ try {
       Boolean(await getBugReport(id, admin)),
       "project deletion cannot erase independent bug archive",
     );
+    await verifyBugLifecycle(check);
     await db.prepare("DELETE FROM users WHERE id=1").run();
     check(
       (await getBugReport(id, admin))?.reporter_id === null &&

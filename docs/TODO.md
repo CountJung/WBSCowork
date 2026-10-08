@@ -59,7 +59,7 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 
 ### 10단계 — 배포
 
-- [!] **T-031** 합성 버그 제보 정리 방식 결정 — report1 「닷프로 검증용 버그」, version4/resolved, events1–4 보존. 기존 archive에는 삭제 endpoint가 없고 Sites 도구는 read-only다. owner Settings의 row-delete 지원은 확인하지 못했다. 임의 SQL·DML migration·숨은 endpoint 없이 지원 경로나 명시적으로 승인된 SU 정리 기능을 결정한 뒤, 정확한 대상의 영구 삭제를 별도 확인한다.
+- [~] **T-031** 버그 검증 완료·휴지통·영구 삭제 — 관리자 검증/휴지통/복원, SU 전용 현재 버전·전체 이력 지문·제목 확인 영구 삭제를 정식 기능으로 구현한다. 원문·이력은 최종 삭제 전 보존하고 최소 삭제 증빙은 별도 보존한다. 격리 D1/Worker 회귀·독립 안전성 검토·기존 MariaDB additive upgrade 포함. 실환경 합성 제보 #1의 검증/휴지통/복원은 승인된 테스트 범위이며 영구 삭제는 최신 정확한 대상을 보고한 뒤 별도 승인한다.
 - [ ] **T-032** 남은 의존성 보안 유지보수 — T-030은 실제 Worker RSC decoder의 특정 advisory만 해결했다. NextAuth4.24.15, native MariaDB3.5.3, Next/이미지·build-only tooling 등은 실제 실행 경로와 호환성을 구분해 검토한다. 전체 npm audit 해소를 주장하거나 일괄 major override를 하지 않는다.
 
 

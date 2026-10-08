@@ -44,16 +44,91 @@ export const fileCleanupJobs = sqliteTable("file_cleanup_jobs", {
 }, (t) => [index("file_cleanup_due_idx").on(t.notBefore)]);
 
 // Independent archive: no project FK; account removal unlinks identity without exposing reports.
-export const bugReports = sqliteTable("bug_reports", {
-  id: id(), reporterId: integer("reporter_id").references(() => users.id, { onDelete: "set null" }),
-  creationToken: text("creation_token").notNull().unique(), lastOperationToken: text("last_operation_token").notNull(),
-  title: text("title").notNull(), reproduction: text("reproduction").notNull(), expected: text("expected").notNull(), actual: text("actual").notNull(), pagePath: text("page_path").notNull().default(""),
-  status: text("status").notNull().default("new"), priority: text("priority").notNull().default("normal"), resolution: text("resolution").notNull().default(""), fixCommit: text("fix_commit").notNull().default(""),
-  version: integer("version").notNull().default(1), createdAt: createdAt(), updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-}, (t) => [index("bug_reports_reporter_idx").on(t.reporterId, t.id), index("bug_reports_status_idx").on(t.status, t.id), check("bug_status_check", sql`${t.status} IN ('new','in_progress','resolved','closed')`), check("bug_priority_check", sql`${t.priority} IN ('low','normal','high')`)]);
-export const bugReportEvents = sqliteTable("bug_report_events", {
-  id: id(), reportId: integer("report_id").notNull().references(() => bugReports.id), actorId: integer("actor_id").references(() => users.id, { onDelete: "set null" }),
-  operationToken: text("operation_token").notNull().unique(), kind: text("kind").notNull(), body: text("body").notNull().default(""),
-  status: text("status").notNull(), priority: text("priority").notNull(), resolution: text("resolution").notNull().default(""), fixCommit: text("fix_commit").notNull().default(""),
-  reportVersion: integer("report_version").notNull(), createdAt: createdAt(),
-}, (t) => [index("bug_events_report_idx").on(t.reportId, t.id), check("bug_event_kind_check", sql`${t.kind} IN ('created','addendum','review')`)]);
+export const bugReports = sqliteTable(
+  "bug_reports",
+  {
+    id: id(),
+    reporterId: integer("reporter_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    creationToken: text("creation_token").notNull().unique(),
+    lastOperationToken: text("last_operation_token").notNull(),
+    title: text("title").notNull(),
+    reproduction: text("reproduction").notNull(),
+    expected: text("expected").notNull(),
+    actual: text("actual").notNull(),
+    pagePath: text("page_path").notNull().default(""),
+    status: text("status").notNull().default("new"),
+    priority: text("priority").notNull().default("normal"),
+    resolution: text("resolution").notNull().default(""),
+    fixCommit: text("fix_commit").notNull().default(""),
+    verifiedAt: text("verified_at"),
+    verifiedBy: integer("verified_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    verificationNote: text("verification_note").notNull().default(""),
+    trashedAt: text("trashed_at"),
+    trashedBy: integer("trashed_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    version: integer("version").notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("bug_reports_reporter_idx").on(t.reporterId, t.id),
+    index("bug_reports_status_idx").on(t.status, t.id),
+    check(
+      "bug_status_check",
+      sql`${t.status} IN ('new','in_progress','resolved','closed')`,
+    ),
+    check("bug_priority_check", sql`${t.priority} IN ('low','normal','high')`),
+  ],
+);
+export const bugReportEvents = sqliteTable(
+  "bug_report_events",
+  {
+    id: id(),
+    reportId: integer("report_id")
+      .notNull()
+      .references(() => bugReports.id),
+    actorId: integer("actor_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    operationToken: text("operation_token").notNull().unique(),
+    kind: text("kind").notNull(),
+    body: text("body").notNull().default(""),
+    status: text("status").notNull(),
+    priority: text("priority").notNull(),
+    resolution: text("resolution").notNull().default(""),
+    fixCommit: text("fix_commit").notNull().default(""),
+    lifecycleAction: text("lifecycle_action").notNull().default(""),
+    reportVersion: integer("report_version").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("bug_events_report_idx").on(t.reportId, t.id),
+    check(
+      "bug_event_kind_check",
+      sql`${t.kind} IN ('created','addendum','review')`,
+    ),
+  ],
+);
+
+// Minimal durable audit receipt survives a separately confirmed permanent purge.
+export const bugReportPurgeReceipts = sqliteTable("bug_report_purge_receipts", {
+  reportId: integer("report_id").primaryKey(),
+  actorId: integer("actor_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  operationToken: text("operation_token").notNull().unique(),
+  fingerprint: text("fingerprint").notNull(),
+  reportVersion: integer("report_version").notNull(),
+  eventCount: integer("event_count").notNull(),
+  lastEventId: integer("last_event_id").notNull(),
+  purgedAt: text("purged_at")
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+});

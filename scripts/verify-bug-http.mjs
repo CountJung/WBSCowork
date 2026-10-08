@@ -1,3 +1,4 @@
+import { verifyBugLifecycleHttp } from "./verify-bug-lifecycle-http.mjs";
 import { randomUUID } from "node:crypto";
 import { encode } from "next-auth/jwt";
 /** Actual Worker routes/actions; no live users, real Google credentials or sessions. */
@@ -305,4 +306,5 @@ export async function verifyBugHttp({
     ).n === 3,
     "invalid, cross-user and stale operations add no archive events",
   );
+  await verifyBugLifecycleHttp({request,db,actorCookies,actionOrigin,check,id});
 }

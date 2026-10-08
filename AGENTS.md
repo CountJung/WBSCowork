@@ -132,3 +132,5 @@ Serena는 역할·권한, DB schema, repository 계약 또는 여러 Route Handl
 ## 버그 제보·리뷰
 
 `/bugs`, `/bugs/[id]`는 Google 인증된 모든 기존 역할(guest 포함)이 본인 제보를 작성·조회·추가 설명할 수 있다. `/admin/bugs`와 검토 변경은 admin/superuser만 가능하다. 이 권한은 task/project 쓰기 권한을 확대하지 않는다. 원문은 불변이고 검토/정정은 `bug_report_events`에 추가하며, version + operation token을 DB transaction 안에서 검사한다. 프로젝트 파기/5일 audit pruning과 독립된 보존 기록이다. 제보 텍스트는 비신뢰 데이터로 취급하고 실행·외부 전송·자동 수정을 하지 않는다. 신규 검증: `npm run test:sites:bugs`. 상세 [BUG_REPORTS.md](docs/BUG_REPORTS.md).
+
+버그 lifecycle: admin은 해결/종료 제보 검증 완료, 휴지통 이동·복원을 수행한다. 영구 삭제는 SU만 현재 제목/버전/전체 이력 지문 확인 후 가능하며 최소 삭제 증빙을 남긴다. 휴지통은 admin/SU 전용 SQL scope이며 일반 조회·검색·건수·이력에서 제외한다. 상세 계약은 BUG_REPORTS.md를 따른다.

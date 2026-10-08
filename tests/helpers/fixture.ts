@@ -51,7 +51,7 @@ async function truncateAll() {
   try {
     await connection.query("SET FOREIGN_KEY_CHECKS = 0");
 
-    for (const table of ["comments", "submission_attachments", "submissions", "tasks", "projects", "users"]) {
+    for (const table of ["bug_report_purge_receipts", "bug_report_events", "bug_reports", "comments", "submission_attachments", "submissions", "tasks", "projects", "users"]) {
       await connection.query(`TRUNCATE TABLE ${table}`);
     }
 

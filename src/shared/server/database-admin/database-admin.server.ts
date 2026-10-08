@@ -1,4 +1,4 @@
-import { bugSchemaStatements } from "./bug-schema.server";
+import { bugSchemaStatements, bugLifecycleColumns, bugEventLifecycleColumns } from "./bug-schema.server";
 import { pendingObjectCleanupCount } from "@/src/shared/server/object-cleanup/index.server";
 import { getHostedDatabase, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { createConnection } from "mariadb";
@@ -9,7 +9,7 @@ type ColumnDefinition = {
   definition: string;
 };
 
-const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments", "bug_reports", "bug_report_events"] as const;
+const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments", "bug_reports", "bug_report_events", "bug_report_purge_receipts"] as const;
 
 export type ManagedTableName = (typeof managedTableNames)[number];
 
@@ -131,8 +131,9 @@ const requiredSubmissionColumns: ColumnDefinition[] = [
 ];
 
 const requiredColumnsByTable: Partial<Record<ManagedTableName, string[]>> = {
-  bug_reports: ["reporter_id","creation_token","last_operation_token","title","reproduction","expected","actual","page_path","status","priority","resolution","fix_commit","version","created_at","updated_at"],
-  bug_report_events: ["report_id","actor_id","operation_token","kind","body","status","priority","resolution","fix_commit","report_version","created_at"],
+  bug_report_purge_receipts: ["actor_id","operation_token","fingerprint","report_version","event_count","last_event_id","purged_at"],
+  bug_reports: [...bugLifecycleColumns.map(c=>c.name),"reporter_id","creation_token","last_operation_token","title","reproduction","expected","actual","page_path","status","priority","resolution","fix_commit","version","created_at","updated_at"],
+  bug_report_events: ["lifecycle_action","report_id","actor_id","operation_token","kind","body","status","priority","resolution","fix_commit","report_version","created_at"],
   submissions: requiredSubmissionColumns.map((column) => column.name),
   users: requiredUsersColumns.map((column) => column.name),
 };
@@ -302,6 +303,12 @@ export async function initializeDatabaseSchema() {
 
     await ensureTableColumns(connection, databaseEnv.database, "users", requiredUsersColumns);
     await ensureTableColumns(connection, databaseEnv.database, "submissions", requiredSubmissionColumns);
+    await ensureTableColumns(connection, databaseEnv.database, "bug_reports", bugLifecycleColumns);
+    await ensureTableColumns(connection, databaseEnv.database, "bug_report_events", bugEventLifecycleColumns);
+    for (const column of ["verified_by", "trashed_by"]) {
+      const constraints = await connection.query("SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND TABLE_NAME='bug_reports' AND COLUMN_NAME=? AND REFERENCED_TABLE_NAME='users'",[databaseEnv.database,column]);
+      if (!constraints.length) await connection.query(`ALTER TABLE bug_reports ADD CONSTRAINT bug_reports_${column}_fk FOREIGN KEY (${column}) REFERENCES users(id) ON DELETE SET NULL`);
+    }
 
     await connection.query(
       "ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'member', 'guest') NOT NULL DEFAULT 'guest'",

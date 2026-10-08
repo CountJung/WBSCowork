@@ -18,7 +18,12 @@ export const bugPriorityLabels: Record<BugPriority, string> = {
   normal: "보통",
   high: "높음",
 };
-export type BugViewer = { userId: number; canReview: boolean };
+export type BugViewer = {
+  userId: number;
+  canReview: boolean;
+  canPurge?: boolean;
+};
+export type BugLifecycleAction = "verify" | "trash" | "restore";
 export type BugReport = {
   id: number;
   reporter_id: number | null;
@@ -34,12 +39,18 @@ export type BugReport = {
   version: number;
   created_at: Date | string;
   updated_at: Date | string;
+  verified_at: Date | string | null;
+  verified_by: number | null;
+  verification_note: string;
+  trashed_at: Date | string | null;
+  trashed_by: number | null;
 };
 export type BugEvent = {
   id: number;
   report_id: number;
   actor_id: number | null;
   kind: "created" | "addendum" | "review";
+  lifecycle_action: BugLifecycleAction | "";
   body: string;
   status: BugStatus;
   priority: BugPriority;
