@@ -261,3 +261,5 @@ Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
 - `npm run test:sites:auth`: credential-free 실제 Worker 계약 18건 통과.
 - `npm run test:sites:browser`: Python Playwright/Chromium가 필요하다. 이 클라우드에서는 Chromium IPC socket의 EPERM 때문에 시작하지 못했다. 기본 실행과 승인된 sandbox 외부 명령 재시도 모두 같은 제한. Chromium 자체 sandbox를 끄거나 보안 설정을 바꾸지 않았다. 시각/하이드레이션 QA를 통과로 기록하지 않는다 (T-023).
 - [최종 검증 기록](SITES_VALIDATION_2026-10-08.md).
+
+게시 후 지원되는 클라우드 브라우저에서 공개 홈의 1180px 및 500px 레이아웃과 실제 Google 로그인 진입을 확인했다. 사용자 브라우저의 로그인 성공 보고도 별도 기록했다. [게시 결과](SITES_PUBLICATION_2026-10-08.md).

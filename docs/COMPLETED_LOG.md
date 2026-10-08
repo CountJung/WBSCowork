@@ -209,3 +209,8 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 - [ARCHITECTURE.md](ARCHITECTURE.md) — 인증·인가·가시성·데이터 경계
 - [HARNESS_MAP.md](HARNESS_MAP.md) — 실행·검증 하네스
 - [FSD_MIGRATION_PLAN.md](FSD_MIGRATION_PLAN.md) — 8단계 구조 이동 계약
+
+
+## T-022 — Sites Worker 전환 및 공개 게시 (2026-10-08)
+
+기존 Google/NextAuth·MUI·역할 정책을 보존하여 D1/R2로 전환했다. 공식 save/deploy 결과 version1 terminal succeeded와 공개 URL을 확인했다. Node 단위14, Worker auth18, D1/R2 57, 실제 Worker HTTP92건 통과. 배포 SHA9938b584c08f805f1321061643a1b3fb6339260e. main과 이전 컨테이너 실측은 보존했다. 사용자 브라우저에서 로그인 성공이 보고됐고, 보호 화면 및 지정 계정 실환경 작업은 T-023/T-024로 따로 추적한다. [배포/디스크 기록](SITES_PUBLICATION_2026-10-08.md).

@@ -56,3 +56,8 @@ SUPERUSER_EMAIL 및 인증 비밀값은 배포 설정에서 소유자가 관리�
 ## 게시 대상
 
 동일 Site `wbscowork`를 사용한다. 사용자가 공개 audience를 명시적으로 선택했으며, 앱 데이터는 기존 Google 로그인과 역할 정책이 제한한다. 최종 게시 성공과 URL은 Sites 배포 결과로 검증해야 한다. 예약된 origin만으로 게시 완료를 표시하지 않는다.
+
+
+## 게시 후 확인
+
+[공개 게시 결과와 디스크 스냅샷](SITES_PUBLICATION_2026-10-08.md)에 terminal succeeded, 실제 URL, 적용 revision, 공개 홈의 desktop/narrow 폭 검증과 사용자 보고 로그인 성공을 기록했다. 지원되는 클라우드 브라우저가 있어 shell Chromium 제한과 전체 브라우저 가용성을 구분했다. 보호된 프로젝트 화면의 사용자 세션 검증은 별도 진행한다.
