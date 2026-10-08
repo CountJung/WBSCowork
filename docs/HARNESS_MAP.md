@@ -294,3 +294,7 @@ T-026: `scripts/verify-sites-crud.mjs`를 실제 Worker HTTP suite에서 실행�
 수정: native databaseBatch는 성공한 rollback·awaited release 후 1213만 전체 transaction을 최대3회/10·20ms 지연으로 재시도한다. 연결/commit 결과 불명·1205 timeout·SQL·권한 오류, rollback/release 실패는 재시도하지 않는다. D1 batch 경로는 바꾸지 않는다. tests/helpers/preload.mjs가 tsx 후 bootstrap을 await하고, test runner 및 D1 test scripts는 CLI mock flag와 함께 이 preload를 사용한다. NODE_OPTIONS에 실험 flag를 넣지 않는다.
 
 이 dot cloud(Node24.19.0)에서는 unit30(기존17+transaction12+preload1), lint/typecheck/FSD, bug D1 26, D1/R2 57가 exit0이다. 아직 수정 SHA의 실제 Node26/MariaDB 계약 결과는 기다리는 중이며 T-028을 완료로 표시하지 않는다. Worker build/HTTP는 다음 별도 security patch와 함께 최종 게이트를 실행하기 전이므로 이 native checkpoint만으로 production 재게시를 주장하지 않는다.
+
+## RSC 19.2.8 최소 보안 패치 게이트
+
+React/react-dom/RSC 19.2.8 trio에서 lint/types/FSD/build, unit30, D1/R2 57, bugD1 26, rebuilt WorkerHTTP185 및 auth18 통과. `npm run test:sites:decoder`는 실제 production chunk의 선택 action 1개/순회 후 decode 구현을 확인한다. 정적 회귀이며 공격·DoS 테스트가 아니다. [범위와 출처](SECURITY_PATCH_2026-10-08.md). Native f31f9dc의 실제 MariaDB 재검증은 별도 결과 대기이며 이 게이트로 대신하지 않는다.

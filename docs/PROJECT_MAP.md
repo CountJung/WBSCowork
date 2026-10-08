@@ -151,3 +151,5 @@ users       1 ── N comments
 - `src/entities/bug-report`: bounded validation, SQL-scoped list/count/detail/events, immutable originals, atomic version/idempotency guarded events.
 - `drizzle/0003_free_zarek.sql`: additive D1 report/archive migration. `src/shared/server/database-admin/bug-schema.server.ts`: matching native MariaDB schema.
 - `scripts/test-bug-reports.ts` / `verify-bug-http.mjs`: D1 archive/concurrency and actual Worker HTTP authorization/validation.
+
+- `scripts/check-rsc-decoder.mjs`: RSC 보안 패치 버전과 실제 Worker decoder fingerprint를 검사한다. 빌드 후 `npm run test:sites:decoder`.
