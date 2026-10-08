@@ -240,6 +240,7 @@ SHA `2f6b74d7b77106d38ad914eee14e1e073c61b039`의 격리 검증 결과는
 - Sites용 빌드·배포 환경을 준비한 뒤 작은 인증 검증본부터 실행한다.
 - Google OAuth/NextAuth v4의 실제 Worker 호환성과 외부 사용자 접근 범위는 미확인이다. 인증 경로가 성립한 뒤에만 D1/R2 전체 전환한다.
 - 실제 OAuth callback/secret 전달, 기존 데이터·role 이전, 유료 서비스는 별도 사용자 판단 지점이다. 인증 우회·ChatGPT 로그인 대체·개발 포트의 게시 대체를 하지 않는다.
+- `wbscowork` 사이트 등록과 예약 origin 확인은 완료했고 프로젝트 ID를 `.openai/hosting.json`에 보존했다. 초기 비공개·미게시 상태를 유지한다.
 - Worker 빌드·HTTP, D1/R2 전환, 실제 Google 로그인과 배포는 미실행이다.
 
 ---

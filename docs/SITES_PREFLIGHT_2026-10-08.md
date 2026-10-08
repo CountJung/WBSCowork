@@ -25,7 +25,21 @@
 
 현재 실행 환경에는 Sites용 빌드·배포 도구와 템플릿이 준비되지 않아 실제 Worker 검증을 실행하지 못했다. 해당 환경이 준비되면 전체 앱을 전환하기 전에 작은 인증 검증본부터 실행한다.
 
-Google OAuth, NextAuth v4, 기존 MUI 화면과 guest/member/admin/슈퍼관리자 정책을 유지해야 한다. 게시 주소의 외부 사용자 접근 범위와 Google 로그인 흐름도 확인해야 한다. 배포된 URL은 아직 없으며, 로컬 개발 포트는 게시 결과가 아니다.
+Google OAuth, NextAuth v4, 기존 MUI 화면과 guest/member/admin/슈퍼관리자 정책을 유지해야 한다. 게시 주소의 외부 사용자 접근 범위와 Google 로그인 흐름도 확인해야 한다. 예약된 사이트 주소는 아래와 같고 실제 배포는 아직 완료하지 않았다. 로컬 개발 포트는 게시 결과가 아니다.
+
+### 사이트 등록 체크포인트
+
+| 항목 | 확인된 값 |
+| --- | --- |
+| 사이트 이름 / slug | `wbscowork` |
+| 프로젝트 ID | `appgprj_6ac75dba14348191801b002e0f2a0937` |
+| 예약 origin | `https://wbscowork.cometgnome.chatgpt.site` |
+| Google OAuth callback 등록 후보 | `https://wbscowork.cometgnome.chatgpt.site/api/auth/callback/google` |
+| 현재 접근 범위 | 비공개 (`custom`), 공개 범위 변경 없음 |
+| 선택 가능한 접근 모드 | `custom`, `public` |
+| 현재 게시 상태 | 미게시, 버전 0, live/preview URL 없음 |
+
+프로젝트 ID는 `.openai/hosting.json`에 보존했다. 예약 origin은 실제 등록에서 반환된 주소이며 게시 완료나 Google 로그인 성공을 뜻하지 않는다. callback 후보는 기존 NextAuth Google callback 경로를 붙인 값이다. OAuth 설정 변경과 실제 로그인 검증은 별도 단계다. 사이트 이름을 인증 비밀키로 사용하지 않았다.
 
 [Vinext 공식 README](https://github.com/cloudflare/vinext)는 Next API를 재구현하는 방식으로 동작하며 앱별 호환성 검증을 요구한다. 기존 `next build` 결과만으로 WBSCowork의 Sites 호환성을 확인할 수는 없다.
 
