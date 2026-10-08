@@ -31,7 +31,8 @@
 - NextAuth v4 (Google OAuth)
 
 ## 데이터베이스
-- MariaDB
+- Node 실행: MariaDB
+- Sites 실행: D1/SQLite (Drizzle migration), 첨부 bytes는 비공개 R2
 
 ## 기타 라이브러리
 - TanStack Query
@@ -132,7 +133,7 @@ comments (
 # 5. 환경변수
 
 ## 필수 정책
-- 모든 설정값은 `.env` 사용
+- Node 실행의 설정값은 `.env` 사용; Sites 운영 설정은 호스팅 환경 변수/secret에 저장하고 소스 및 클라이언트에 노출하지 않음
 - 코드 내 하드코딩 금지
 - `.env*` 파일은 AI 작업 컨텍스트에서 제외
 

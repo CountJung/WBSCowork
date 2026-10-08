@@ -2,7 +2,9 @@
 
 ## 1. 시스템 경계
 
-WBSCowork는 Next.js 16 App Router 단일 애플리케이션이다. UI, Server Components, Server Actions, Route Handlers가 같은 배포 단위에서 동작하고 MariaDB 및 로컬/NAS 파일 저장소를 직접 사용한다.
+WBSCowork는 Next.js 16 App Router 단일 애플리케이션이다. UI, Server Components, Server Actions, Route Handlers가 같은 배포 단위에서 동작한다. Node 실행은 MariaDB 및 로컬/NAS 파일 저장소를, Sites 실행은 Vinext/Workers + D1/SQLite + 비공개 R2를 사용한다. Google NextAuth와 FSD 경계는 동일하다.
+
+Sites의 정확한 구현/검증 계약은 [최종 검증 기록](SITES_VALIDATION_2026-10-08.md)과 [게시 결과](SITES_PUBLICATION_2026-10-08.md)를 참고한다. 아래 MariaDB/파일 경로 설명은 Node 경로를 보존한 것이다.
 
 ```text
 Browser
@@ -17,7 +19,16 @@ src/widgets/features/entities/shared public API
         └─ LOG_DIR
 ```
 
-현재 별도 REST API 계층, ORM, test runner, background worker, migration framework는 없다.
+별도 REST API 계층은 없다. Node의 node:test 하네스를 유지하며 Sites는 Drizzle schema/migration과 Miniflare/workerd 검증을 추가한다. 애플리케이션 질의는 작은 prepared-query adapter를 통한다. Sites 런타임에서는 DDL이나 .env 편집을 실행하지 않는다.
+
+### Sites 저장 경계
+
+- `sites/worker.ts` → request-scoped `hosted-runtime` → D1/R2 bindings.
+- DB parent/attachment 변경 및 task 계층 갱신은 atomic batch를 사용한다.
+- R2 객체는 두 인증 download route로만 읽으며 공개 URL을 제공하지 않는다.
+- cascade/교체/중단 업로드는 durable cleanup ledger와 지연 재시도로 정리한다.
+- 감사 상세는 D1의 제한된 보존 정책, console은 비민감 요약이다. 감사 저장 장애 시 상세 기록을 보장하지 않는 best-effort 정책을 명시한다.
+- 앱의 superuser 설정 화면은 배포 설정 유무만 표시한다. 실제 secret 및 SUPERUSER_EMAIL은 소유자의 Sites 설정에서 관리한다.
 
 ## 2. Next.js 렌더링과 조립
 

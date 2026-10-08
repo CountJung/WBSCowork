@@ -6,6 +6,15 @@ Next.js App Router 기반 태스크 중심 WBS 협업 시스템입니다.
 
 ---
 
+## Sites 배포 브랜치
+
+공개 서비스: https://wbscowork.cometgnome.chatgpt.site
+
+- Sites: `npm run build` → `npm run start:sites` (로컬 Worker). 운영 배포는 동일 Site의 공식 게시 절차를 사용합니다.
+- 기존 Node/Next: `npm run dev`; production은 `npm run build:next` → `npm run start`입니다.
+- Sites는 D1/R2와 배포 환경 설정을 사용합니다. 아래 MariaDB/로컬 파일/.env 안내는 **Node 실행 경로**에 해당합니다. 인증 secret은 Sites 설정에서 직접 입력하며 소스에 저장하지 않습니다.
+- [게시 결과·현재 환경 용량](docs/SITES_PUBLICATION_2026-10-08.md), [검증 범위](docs/SITES_VALIDATION_2026-10-08.md), [하네스 명령](docs/HARNESS_MAP.md).
+
 ## 빠른 시작
 
 ```bash
@@ -15,7 +24,7 @@ npm run dev
 
 브라우저에서 [http://localhost:3000](http://localhost:3000) 을 엽니다.
 
-`.env`에 `APP_PORT`를 설정하면 지정 포트로 실행됩니다. `build`와 `start` 스크립트 모두 동일한 env 파일을 사용합니다.
+`.env`에 `APP_PORT`를 설정하면 지정 포트로 실행됩니다. Node용 `build:next`와 `start` 스크립트는 동일한 env 파일을 사용합니다.
 
 ---
 
@@ -43,7 +52,7 @@ npm run dev
 
 - `/`: 인증 사용자에게 선택 프로젝트 간트와 태스크 목록을 간략히 보여줍니다.
 - `/tasks`: 프로젝트·태스크 CRUD, 간트 검토, 태스크 집중 라우팅, 제출물 관리 메인 공간입니다.
-- 쓰기 권한 사용자(`member`, 관리자, 슈퍼관리자)는 프로젝트 카드에서 직접 삭제할 수 있습니다.
+- 프로젝트 생성·수정·삭제는 관리자와 슈퍼관리자만 실행할 수 있습니다. member는 태스크·제출물·댓글 쓰기 권한을 갖습니다.
 - 각 태스크에는 Markdown 제출물·댓글·첨부파일 영역이 포함됩니다.
 - 제출물에 공개/비공개를 설정할 수 있습니다. 비공개 제출물은 작성자 본인과 관리자만 조회 가능합니다.
 
@@ -54,7 +63,7 @@ npm run dev
 - Google OAuth를 통해 NextAuth로 로그인합니다.
 - `.env`에 `SUPERUSER_EMAIL`을 설정하면 해당 Google 계정이 슈퍼관리자로 동작합니다.
 - 새 Google 로그인은 기본적으로 `guest` 권한으로 저장됩니다.
-- 슈퍼관리자 또는 관리자는 `/admin/users`에서 사용자 역할(관리자/일반사용자/게스트)을 변경할 수 있습니다.
+- `/admin/users`에서 슈퍼관리자는 admin/member/guest, 일반 관리자는 member/guest만 부여할 수 있습니다.
 - `/admin/database`는 슈퍼관리자 전용 DB 관리 화면입니다.
 - `/admin/logs`와 `/admin/settings`는 슈퍼관리자 전용입니다.
 
