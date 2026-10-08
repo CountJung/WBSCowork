@@ -241,4 +241,4 @@ Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
 
 설치 실측 체크포인트는 `feat/sites-deployment`의 `26ed97397aafa43b5e0844a5b6fe44bf2ff229d0`에 push했고 원격 SHA를 확인했다. 원격 main은 `2f6b74d7b77106d38ad914eee14e1e073c61b039` 그대로다.
 
-[SITES_PREFLIGHT_2026-10-08.md](SITES_PREFLIGHT_2026-10-08.md)에 current Sites 스킬·실제 read API 성공·공식 helper bundle 부재·SQLite/Worker 한도와 Google OAuth 검증 게이트를 기록했다. 실제 Worker build/HTTP, Google 로그인, D1/R2, 게시 native 성공·URL은 **미실행**이다. Node/Next 기존 PASS로 대체하지 않는다. T-023이 이 재개 blocker를 추적한다.
+[SITES_PREFLIGHT_2026-10-08.md](SITES_PREFLIGHT_2026-10-08.md)에 배포 환경 준비, SQLite/Worker 한도와 Google OAuth 검증 항목을 기록했다. 실제 Worker 빌드·HTTP, Google 로그인, D1/R2 전환과 배포는 **미실행**이다. 기존 Node/Next 검사 통과로 대체하지 않는다. T-023에서 남은 작업을 추적한다.
