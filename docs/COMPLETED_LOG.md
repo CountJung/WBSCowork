@@ -228,3 +228,7 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 - 새 계약 37개를 포함해 `npm run test:sites:http` 149개 통과. 기존 57개 storage 계약은 중단/실패 업로드·보상 실패·삭제 복구/backoff를 포함해 재검증했다.
 - 첫 테스트의 edit action 추출은 Client dialog가 action을 RSC reference로 전달하는 구조 때문에 실패했다. UI에서 제공된 serialized reference도 해석하도록 테스트를 바로잡고 재실행했다. 제품 코드 결함은 발견하지 않았다.
 - 모든 생성/삭제는 격리 Miniflare 합성 데이터다. 실서비스 생성·수정·업로드·삭제 검증으로 계산하지 않는다. 테스트-only 변경이므로 배포된 앱 코드는 T-025 버전을 유지한다.
+
+## T-023 — 인증 후 보호 화면 실환경 브라우저 검증 (2026-10-08)
+
+소유자가 직접 로그인한 클라우드 브라우저로 /tasks, /admin, /admin/database, /admin/settings, /admin/logs를 확인했다. 별도 승인된 합성 프로젝트에서 생성·수정·업로드·다운로드 및 1180px/502px 표시를 검증했다. [상세 근거와 한계](SITES_LIVE_QA_2026-10-08.md). 실환경 다른 사용자 계정/role 변경, 강제 장애 주입, 영구 파기는 수행하지 않았다. 삭제는 T-024에서 별도 확인한다.
