@@ -81,3 +81,11 @@ shell에서 시작한 별도 Chromium은 IPC EPERM으로 실패했다. 이 제�
 - deployment `appgdep_6ac7a743cd608191882d9a80fc0d84dd`: 14:23:10 UTC succeeded, public/환경 revision 11.
 - 사용자 화면: https://wbscowork.cometgnome.chatgpt.site/bugs . 관리자 리뷰: https://wbscowork.cometgnome.chatgpt.site/admin/bugs . 기존 Google/역할 세션으로 보호한다.
 - 실제 empty-page/nav/form rendering과 1181px/503px 폭 확인, DB schema에 독립 archive 두 테이블 추가, 조회 당시 둘 다 0건. Worker 최근 error event 0. 실제 제보 작성은 T-029, native DB runtime은 T-028에서 별도 추적한다.
+
+## RSC 보안 패치 게시 — version4
+
+- 소스 `9a5367d607ce9a515b794d9a963a673a404a00f9`, tree `7b860f4dc247b4582ee8c2c2cbac1b13994068de`.
+- version `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_1e4ba05b765c8191b8fa314649acf891`.
+- deployment `appgdep_6ac7b2f65b08819184da0c608035c5f8`: 15:13:05 UTC succeeded, 동일 public origin/환경 revision11.
+- native 저장 archive content hash `sha256:7d056c7b52951a5eceb40bb21bad517eed13e9beb0d206e62fbb5bf16a254124`, 295 files, normalized tar4,454,400bytes.
+- 독립 검토된 실제 decoder가 포함된 archive이며 기존 세션으로 실제 bug 제보/검토/해결까지 확인했다. [security 범위](SECURITY_PATCH_2026-10-08.md), [live bug QA](SITES_BUG_QA_2026-10-08.md).

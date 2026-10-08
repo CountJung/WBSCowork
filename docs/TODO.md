@@ -1,7 +1,7 @@
 # WBS 태스크 — 진행 목록
 
 > **살아있는 문서** — 단계 범위, 검증 절차, 블로커가 바뀔 때마다 업데이트하십시오.
-> 최종 검토: 2026-10-08 · 다음 번호: **T-031**
+> 최종 검토: 2026-10-08 · 다음 번호: **T-033**
 
 완료된 항목은 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮긴다. 이 문서에는 열린 항목만 남긴다.
 
@@ -59,9 +59,9 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 
 ### 10단계 — 배포
 
-- [~] **T-028** native MariaDB 버그 제보 호환성 — exact f294edd의 별도 Node26/MariaDB11.4 검사에서 15 PASS/2 FAIL: 동시 검토 deadlock이 정상 stale/replay 결과 대신 노출되며, 160회 상태·이력 정합성은 유지됨. 1213 한정 rollback-confirmed 전체 transaction 재시도(최대3회)와 ordered test preload를 수정했다. dot cloud unit30/lint/types/FSD/D1 회귀 통과, 수정 SHA의 saved-cloud native 재검증 대기. 운영 D1 장애로 해석하지 않는다.
-- [~] **T-029** 게시된 버그 제보·검토 쓰기 시나리오 — /bugs와 /admin/bugs 화면·nav·empty state 및 1181px/503px 표시 확인. 명확히 표시한 합성 제보 1건의 실제 저장·리뷰·해결을 사용자가 승인했다. RSC 보안 패치 게시 후 검사하며, 삭제는 정확한 생성 대상 확인 후 별도 승인한다.
-- [~] **T-030** React RSC pre-auth DoS security patch — GHSA-wx67-qw84-cm4g/CVE-2026-44907에 해당하는 실제 번들 decoder를 React/react-dom/react-server-dom-webpack 19.2.8 trio로 교체하고, plugin direct-alias resolution과 built fingerprint·기존 역할/첨부/action 계약을 검증 후 같은 Site에 게시한다. 다른 npm audit 항목을 모두 해결했다는 뜻이 아니다.
+- [!] **T-031** 합성 버그 제보 정리 방식 결정 — report1 「닷프로 검증용 버그」, version4/resolved, events1–4 보존. 기존 archive에는 삭제 endpoint가 없고 Sites 도구는 read-only다. owner Settings의 row-delete 지원은 확인하지 못했다. 임의 SQL·DML migration·숨은 endpoint 없이 지원 경로나 명시적으로 승인된 SU 정리 기능을 결정한 뒤, 정확한 대상의 영구 삭제를 별도 확인한다.
+- [ ] **T-032** 남은 의존성 보안 유지보수 — T-030은 실제 Worker RSC decoder의 특정 advisory만 해결했다. NextAuth4.24.15, native MariaDB3.5.3, Next/이미지·build-only tooling 등은 실제 실행 경로와 호환성을 구분해 검토한다. 전체 npm audit 해소를 주장하거나 일괄 major override를 하지 않는다.
+
 
 
 - [ ] **[T-021](#t-021--synology-nas-배포-준비)** Synology NAS 배포 준비

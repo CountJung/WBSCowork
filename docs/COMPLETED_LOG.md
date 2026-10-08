@@ -243,3 +243,22 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 - 원격 commit `f294edd620bee5cc557989a690e95dddfefb1354`, exact tree `da81b6eadfe58f61dfc6a9a2853840c46eb92e85`. [검증 계약](BUG_REPORTS.md).
 - version 3 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_7648d00bc3448191be2a284d814dc067`, deployment `appgdep_6ac7a743cd608191882d9a80fc0d84dd` 14:23:10 UTC succeeded. public/환경 revision 11 유지.
 - 실제 owner 세션으로 /bugs, /admin/bugs 메뉴·검색·필터·empty state와 1181px/503px form layout을 확인했다. 수평 overflow 없음, desktop 창 복원. D1 두 신규 테이블은 비어 있고 기존 사용자·감사 기록은 유지된다. 현재 실제 제보 쓰기는 T-029 승인 대기이며 local 합성 Worker 검증과 구분한다. Native MariaDB 실행은 T-028에서 별도로 추적한다.
+
+## T-028 — Node/MariaDB 동시 검토 및 테스트 로더 호환성 (2026-10-08)
+
+- 수정 commit `f31f9dc18ca9848e648035ed602cba5b9731d9f1`의 실제 saved-cloud 재검증 결과: Node26.11.1/npm11.20/MariaDB11.4.13/connector3.5.2. 외부 NODE_OPTIONS 없이 `npm test -- --require-db` unit30+DB33 PASS, skip0; lint/typecheck/FSD5 PASS; native bug17와 retry boundary23 PASS.
+- 별도 동시성160회에서 API 결과·state/history 계약 PASS. 서로 다른 token/같은 version은 40회 모두 승자1+정상 stale1; 같은 token/같은 version은 40회 모두 양쪽 성공+event1. 생성40회 성공80, same-token/different-version40회 성공64/stale16. 노출된 SQL 오류나 외부 요청 재시도 없음.
+- 내부 deadlock 268건은 없어지지 않았으며 제한된 rollback-confirmed 재시도가 처리했다. 최대3회, 1205/SQL/auth/connection/uncertain commit/rollback·release 실패는 재시도하지 않는다. boundary23은 mock connection 테스트이며 실제 네트워크 fault injection이 아니다.
+- synthetic DB451reports/817events에서 version/count/max-version mismatch·duplicate version·orphan 0. fixture DB는 정지 보존했고 원본 측정 환경/기존57개 증거 hash는 바꾸지 않았다는 해당 작업 보고를 받았다.
+- 위 exact commit은 React19.2.6이다. 이후 19.2.8 security patch의 native 전체 실행 결과로 확대 해석하지 않는다. Sites D1 계약은 별도 검증이다.
+
+## T-030 — 실제 Worker RSC decoder 보안 패치 (2026-10-08)
+
+- React/react-dom/react-server-dom-webpack만 19.2.8로 고정하여 GHSA-wx67-qw84-cm4g를 수정했다. direct-package alias와 active artifact fingerprint를 독립 검토했다. [범위·근거](SECURITY_PATCH_2026-10-08.md).
+- 원격/게시 commit `9a5367d607ce9a515b794d9a963a673a404a00f9`, tree `7b860f4dc247b4582ee8c2c2cbac1b13994068de`.
+- version4 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_1e4ba05b765c8191b8fa314649acf891`, deployment `appgdep_6ac7b2f65b08819184da0c608035c5f8` 15:13:05 UTC succeeded. public/환경 revision11 유지.
+- unit30, actual WorkerHTTP185/auth18, D1bug26/storage57, lint/types/FSD/build 및 static decoder checker 통과. 기존 소유자 세션과 승인된 실제 report 작성/검토 흐름도 확인했다. 전체 의존성 advisory 해소는 T-032와 구분한다.
+
+## T-029 — 버그 제보·리뷰 실환경 쓰기 검증 (2026-10-08)
+
+승인된 합성 report1 한 건으로 제보→추가 설명→검토 중→해결, 원문 보존, Git SHA 기록, 검색/상태 필터를 실제 브라우저에서 확인했다. version4와 events1–4를 native read-only DB 도구로 확인했다. [상세](SITES_BUG_QA_2026-10-08.md). 기존 사용자/역할/운영 데이터 변경 없음. 삭제는 실행하지 않았으며 T-031에서 지원 경로와 별도 승인을 결정한다.

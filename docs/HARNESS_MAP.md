@@ -298,3 +298,9 @@ T-026: `scripts/verify-sites-crud.mjs`를 실제 Worker HTTP suite에서 실행�
 ## RSC 19.2.8 최소 보안 패치 게이트
 
 React/react-dom/RSC 19.2.8 trio에서 lint/types/FSD/build, unit30, D1/R2 57, bugD1 26, rebuilt WorkerHTTP185 및 auth18 통과. `npm run test:sites:decoder`는 실제 production chunk의 선택 action 1개/순회 후 decode 구현을 확인한다. 정적 회귀이며 공격·DoS 테스트가 아니다. [범위와 출처](SECURITY_PATCH_2026-10-08.md). Native f31f9dc의 실제 MariaDB 재검증은 별도 결과 대기이며 이 게이트로 대신하지 않는다.
+
+## Exact native retest 결과 및 repaired live QA
+
+saved-cloud가 exact `f31f9dc18ca9848e648035ed602cba5b9731d9f1`을 외부 preload 없이 다시 검사해 unit30+real MariaDB33(skip0), native bug17, retry boundary23, 별도 concurrency160회의 기대 API/state/history 계약을 모두 통과했다고 보고했다. 내부 deadlock268건은 bounded retry로 처리됐고 DB 재시도 경계 mock tests와 실제 SQL 경쟁 검사는 구분한다. 이 SHA의 React는19.2.6이며 이후 security patch의 native 전체 실행을 증명하지 않는다.
+
+`9a5367d` React19.2.8 build는 이 dot cloud에서 WorkerHTTP185/auth18/D1bug26/storage57/unit30/lint/types/FSD/build/static decoder PASS. 게시 version4 owner 세션에서 승인된 bug record1의 작성·추가 설명·검토·해결과 검색 필터가 실제로 성공했다. native와 D1, 합성 세션과 실제 owner session 근거를 혼합하지 않는다.

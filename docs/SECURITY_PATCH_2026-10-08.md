@@ -28,3 +28,5 @@ npm audit의 33건은 영향받는 package entry 수이며, 33개의 서로 다�
 ## 독립 산출물 확인
 
 읽기 전용 검토에서 active import 경로 `dist/server/index.js` → `_next/static/rsc-BV_Dc-WK.js` → `framework~index~page~actions~page~page~page~actions~page~actions~page~actions~page~page~pag~i89odak0-9XpujYZx.js`를 확인했다. 마지막 chunk SHA-256은 `a75c3e7add6877c6d33f32aeb7dbe8bc56abd29735f8d5ffce777743b45b764f`다. decodeAction/decodeFormState가 순회 후 한 번 decode하는 구현이며, 직접 설치된 19.2.8 경로를 사용한다. 게시 전 검토 통과이며 실제 배포 완료는 별도 publication 기록으로 확인한다.
+
+게시 확인: source9a5367d, Siteversion4/deployment appgdep_6ac7b2f65b08819184da0c608035c5f8가 15:13:05 UTC succeeded. 기존 owner 세션으로 승인된 합성 bug 작성·추가 설명·검토·해결 UI를 확인했다. Native DB 재검증은 직전f31f9dc/React19.2.6 범위이며 이를 새 React native 실행 증거로 확대하지 않는다.
