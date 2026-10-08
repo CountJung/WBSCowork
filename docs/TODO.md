@@ -231,6 +231,19 @@ SHA `2f6b74d7b77106d38ad914eee14e1e073c61b039`의 격리 검증 결과는
 
 ---
 
+### T-023 — Sites 공식 실행 환경과 Google OAuth 지원 게이트
+
+**분류** 승인된 Sites 게시 / 환경 blocker (2026-10-08)
+
+[SITES_PREFLIGHT_2026-10-08.md](SITES_PREFLIGHT_2026-10-08.md)에 실제 도구/스킬 점검과 재개 조건을 기록했다. `feat/sites-deployment` 브랜치에 실측 체크포인트를 push했다. main은 원본 SHA를 보존한다.
+
+- Sites native 읽기 API는 성공했으나 executor에 공식 setup/install/build/source helper bundle이 없다. 현재 통합 Sites 스킬 및 storage/identity 문서는 읽었고 옛 별도 이름의 스킬/참고문서는 제공되지 않았다.
+- Google OAuth/NextAuth v4의 실제 Sites Worker 호환성과 외부 audience 지원은 미확인이다. 공식 bundle이 있는 환경에서 작은 검증본부터 실행하고 지원 경로가 성립한 뒤에만 D1/R2 전체 전환한다.
+- 실제 OAuth callback/secret 전달, 기존 데이터·role 이전, 유료 서비스는 별도 사용자 판단 지점이다. 인증 우회·ChatGPT 로그인 대체·개발 포트의 게시 대체를 하지 않는다.
+- Sites 생성/Worker build/D1·R2/배포 URL은 아직 미실행이다. 이것을 완료나 기술적 불가능으로 표시하지 않는다.
+
+---
+
 ## 참고 문서
 
 - [COMPLETED_LOG.md](COMPLETED_LOG.md) — 완료 항목과 그 배경

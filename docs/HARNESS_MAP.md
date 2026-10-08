@@ -236,3 +236,9 @@ Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
 미해결 환경 전제/경고는 T-022에 있다. Docker/Compose는 기존 기반 이미지 도구를 사용했고 MariaDB 이미지 하나를 추가했다. 브라우저는 설치·사용하지 않았다.
 기존 compose의 공개 포트 매핑 대신 별도 overlay로 host network의 `127.0.0.1:3307`에만 DB를 바인딩했다. 원본 compose는 변경하지 않았다.
 종료 시 DB 컨테이너는 정지 상태로 보존했고 디스크 datadir, 소스, 설치물, 다운로드 캐시를 삭제하지 않았다.
+
+## 14. Sites 사전검증 게이트 (2026-10-08)
+
+설치 실측 체크포인트는 `feat/sites-deployment`의 `26ed97397aafa43b5e0844a5b6fe44bf2ff229d0`에 push했고 원격 SHA를 확인했다. 원격 main은 `2f6b74d7b77106d38ad914eee14e1e073c61b039` 그대로다.
+
+[SITES_PREFLIGHT_2026-10-08.md](SITES_PREFLIGHT_2026-10-08.md)에 current Sites 스킬·실제 read API 성공·공식 helper bundle 부재·SQLite/Worker 한도와 Google OAuth 검증 게이트를 기록했다. 실제 Worker build/HTTP, Google 로그인, D1/R2, 게시 native 성공·URL은 **미실행**이다. Node/Next 기존 PASS로 대체하지 않는다. T-023이 이 재개 blocker를 추적한다.
