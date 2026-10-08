@@ -30,3 +30,5 @@
 - 공개 production의 실제 제보 쓰기 테스트는 사용자 승인 범위와 별도로 기록한다. 합성 local 검사를 실사용자 다중 계정 검사로 표현하지 않는다.
 
 2026-10-08 게시 전 검증: lint/types/FSD/build 통과, unit 17, D1/R2 57, bug D1 26, actual Worker HTTP 185, credential-free auth 18 통과. 독립 리뷰 지적의 replay-race와 native upsert ambiguity를 수정 후 재검증했다. Native MariaDB daemon은 없어 실행 미검증(T-028).
+
+현재 public Site version 3에서 위 화면과 빈 데이터 상태를 실제 소유자 세션으로 확인했다. 원본 QA 프로젝트의 승인된 파기는 완료됐고 사용자/감사 기록은 보존했다. 이 feature 자체의 실제 제보 저장·검토는 T-029의 별도 승인 후 확인한다.

@@ -73,3 +73,11 @@ shell에서 시작한 별도 Chromium은 IPC EPERM으로 실패했다. 이 제�
 - version `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_7ea31832eb848191b1f5928c64f56ad8`.
 - deployment `appgdep_6ac79a4f82888191b8617754bdb85177`: 13:27:53 UTC succeeded. public, 동일 origin/환경 revision 11.
 - 소유자 로그인 세션으로 수정된 /admin D1/R2·슈퍼관리자·Sites 설정·감사 보존 안내를 직접 확인했다.
+
+## 버그 제보·리뷰 게시 — version 3
+
+- 소스 `f294edd620bee5cc557989a690e95dddfefb1354`, tree `da81b6eadfe58f61dfc6a9a2853840c46eb92e85`.
+- version `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_7648d00bc3448191be2a284d814dc067`.
+- deployment `appgdep_6ac7a743cd608191882d9a80fc0d84dd`: 14:23:10 UTC succeeded, public/환경 revision 11.
+- 사용자 화면: https://wbscowork.cometgnome.chatgpt.site/bugs . 관리자 리뷰: https://wbscowork.cometgnome.chatgpt.site/admin/bugs . 기존 Google/역할 세션으로 보호한다.
+- 실제 empty-page/nav/form rendering과 1181px/503px 폭 확인, DB schema에 독립 archive 두 테이블 추가, 조회 당시 둘 다 0건. Worker 최근 error event 0. 실제 제보 작성은 T-029, native DB runtime은 T-028에서 별도 추적한다.

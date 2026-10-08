@@ -236,3 +236,10 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 ## T-024 — 승인된 실환경 QA 데이터 정리 (2026-10-08)
 
 실환경 CRUD/다운로드 검증 후 사용자에게 project 1 / tasks 1·2 / submissions 1·2 / comment 1 / attachments 1·2·3의 영구 파기를 확인받았다. 14:04 UTC 정리 직전에 대상 변동이 없음을 재확인하고 정상 관리 UI로 파기했다. 성공 안내 및 5개 데이터 테이블·정리 ledger 0건, 사용자 1명(admin)과 감사 기록 보존을 확인했다. [실환경 QA 기록](SITES_LIVE_QA_2026-10-08.md). 이 승인은 미래의 임의 데이터 삭제에 대한 포괄 승인으로 사용하지 않는다.
+
+## T-027 — 비공개 버그 제보·리뷰 게시 (2026-10-08)
+
+- guest 포함 인증 사용자의 본인 제보, admin/superuser 검토, 원문 보존과 append-only 처리 기록, SQL 조회 범위와 원자적 version/idempotency 검사, D1/Node additive schema를 구현했다. 외부 전송/알림/첨부/자동 실행/일반 삭제 기능은 추가하지 않았다.
+- 원격 commit `f294edd620bee5cc557989a690e95dddfefb1354`, exact tree `da81b6eadfe58f61dfc6a9a2853840c46eb92e85`. [검증 계약](BUG_REPORTS.md).
+- version 3 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_7648d00bc3448191be2a284d814dc067`, deployment `appgdep_6ac7a743cd608191882d9a80fc0d84dd` 14:23:10 UTC succeeded. public/환경 revision 11 유지.
+- 실제 owner 세션으로 /bugs, /admin/bugs 메뉴·검색·필터·empty state와 1181px/503px form layout을 확인했다. 수평 overflow 없음, desktop 창 복원. D1 두 신규 테이블은 비어 있고 기존 사용자·감사 기록은 유지된다. 현재 실제 제보 쓰기는 T-029 승인 대기이며 local 합성 Worker 검증과 구분한다. Native MariaDB 실행은 T-028에서 별도로 추적한다.

@@ -1,7 +1,7 @@
 # WBS 태스크 — 진행 목록
 
 > **살아있는 문서** — 단계 범위, 검증 절차, 블로커가 바뀔 때마다 업데이트하십시오.
-> 최종 검토: 2026-10-08 · 다음 번호: **T-029**
+> 최종 검토: 2026-10-08 · 다음 번호: **T-030**
 
 완료된 항목은 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮긴다. 이 문서에는 열린 항목만 남긴다.
 
@@ -59,8 +59,8 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 
 ### 10단계 — 배포
 
-- [~] **T-027** 버그 제보와 관리자 리뷰 기록 — Google 로그인 사용자(guest 포함)는 본인 제보를 제출·조회, admin/superuser는 전체 검토. 기본 author+admin 비공개, 원문 보존·추가 설명·상태/검토 이력·해결 및 수정 commit 기록. 독립 D1/MariaDB 테이블과 제한된 입력·원자적 이력·교차사용자 회귀를 포함하고 기존 데이터를 보존한다. 알림/첨부/외부 issue 연동/자동 수정은 범위 밖.
-- [!] **T-028** 버그 제보의 native MariaDB 실행 검증 — 호환 DDL/transaction/upsert와 readiness는 구현·리뷰했으나 이 dot cloud에는 MariaDB/Docker가 없고 127.0.0.1:3307은 ECONNREFUSED. Sites D1 배포와 분리하여 native DB fixture로 실행해야 한다.
+- [~] **T-028** 버그 제보의 native MariaDB 실행 검증 — 호환 DDL/transaction/upsert와 readiness는 구현·리뷰했으나 이 dot cloud에는 MariaDB/Docker가 없고 127.0.0.1:3307은 ECONNREFUSED. Sites D1 배포와 분리하여 원래 측정 환경의 별도 checkout/fixture DB에서 exact commit f294edd에 대한 읽기 전용 검증을 진행 중이다.
+- [!] **T-029** 게시된 버그 제보·검토 쓰기 시나리오 — /bugs와 /admin/bugs 화면·nav·empty state 및 1181px/503px 표시 확인. 명확히 표시한 합성 제보 1건을 실제 저장·리뷰·해결하는 검사는 사용자 승인 대기. 새 기록을 임의 생성/삭제하지 않는다.
 
 
 - [ ] **[T-021](#t-021--synology-nas-배포-준비)** Synology NAS 배포 준비
