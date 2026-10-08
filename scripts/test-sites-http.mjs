@@ -62,11 +62,19 @@ try {
     check(html.includes("PRIVATE_OWNER1_83827")===["member1","admin","superuser"].includes(a.name),`${a.name}: owner1 private content boundary in SSR`);
     check(html.includes("PRIVATE_OWNER2_83827")===["member2","admin","superuser"].includes(a.name),`${a.name}: owner2 private content boundary in SSR`);
     if(a.name==="member1"){memberHtml=html;memberCookie=cookie;}
-    for(const route of ["/admin/users","/admin/database","/admin/settings","/admin/logs"]){
+    for(const route of ["/admin","/admin/users","/admin/database","/admin/settings","/admin/logs"]){
       const response=await request(route,cookie);const content=await response.text();
-      const allowed=a.name==="superuser"||(a.name==="admin"&&route==="/admin/users");
+      const allowed=a.name==="superuser"||(a.name==="admin"&&["/admin","/admin/users"].includes(route));
       check(allowed?response.status===200:response.status>=300&&response.status<400,`${a.name}: ${route} authorization`);
       check(!content.includes(secret)&&!content.includes(providerSecret),`${a.name}: no runtime secrets in ${route}`);
+      if(allowed&&route==="/admin") {
+        check(content.includes("DB 대상: Sites D1 (DB)")&&!content.includes("DB 대상: undefined"),`${a.name}: hosted overview identifies D1 binding`);
+        check(content.includes("R2 첨부파일")&&!content.includes("MariaDB")&&!content.includes("파일 로그"),`${a.name}: hosted overview uses current storage copy`);
+        check(content.includes("슈퍼관리자 계정으로 로그인된 상태입니다.")===(a.name==="superuser"),`${a.name}: overview identity matches effective privilege`);
+      }
+      if(allowed&&route==="/admin/database") check(content.includes("저장소: Sites D1")&&content.includes("바인딩: DB")&&!content.includes("Port: 0")&&!content.includes("DB 및 기본 테이블 생성"),"hosted database panel uses binding metadata without initialization controls");
+      if(allowed&&route==="/admin/users") check(content.includes("로그·세팅·DB 관리는 슈퍼관리자 전용"),`${a.name}: user policy describes narrower superuser access`);
+      if(allowed&&route==="/admin/logs") check(content.includes("보존 기간 내 D1 감사 로그")&&!content.includes("영구 감사 로그")&&!content.includes("로그 파일이 없습니다"),"hosted audit view uses retention and date labels");
     }
     for(const route of ["/api/submission-attachments/2","/api/submissions/2/attachment"]){
       const response=await request(route,cookie);const content=await response.text();const allowed=["member1","admin","superuser"].includes(a.name);

@@ -1,3 +1,4 @@
+import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { Alert, Button, Chip, Container, Divider, List, ListItem, ListItemText, Paper, Stack, Typography } from "@mui/material";
 import { redirect } from "next/navigation";
 import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
@@ -53,6 +54,8 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
     redirect("/");
   }
 
+  const hosted = isHostedRuntime();
+  const logLabel = (name: string) => hosted ? name.replace(/^application-(\d{4}-\d{2}-\d{2})-1\.log$/, "$1") : name;
   const params = await searchParams;
   const selectedFileParam = getSingleSearchParam(params.file);
   const logFiles = await listRecentLogFiles(20);
@@ -68,7 +71,7 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
         <Stack spacing={1}>
           <Typography variant="h3">관리 로그</Typography>
           <Typography variant="body1" color="text.secondary">
-            슈퍼유저 전용 페이지입니다. 최근 사용자 액션 이력과 영구 감사 로그을 같은 화면에서 확인합니다.
+            {hosted ? "슈퍼유저 전용 페이지입니다. 보존 기간 내 D1 감사 로그와 최근 사용자 액션을 확인합니다." : "슈퍼유저 전용 페이지입니다. 롤링 파일 로그와 최근 사용자 액션을 확인합니다."}
           </Typography>
         </Stack>
 
@@ -90,7 +93,7 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
                     <ListItem key={`${entry.fileName}-${entry.timestamp}-${entry.message}`} disableGutters>
                       <ListItemText
                         primary={`${summary.action} · ${summary.actorEmail}`}
-                        secondary={`${entry.timestamp} · ${summary.entity} · ${entry.fileName}`}
+                        secondary={`${entry.timestamp} · ${summary.entity} · ${logLabel(entry.fileName)}`}
                       />
                     </ListItem>
                   );
@@ -107,25 +110,25 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
         <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
           <Stack spacing={2}>
             <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ justifyContent: "space-between" }}>
-              <Typography variant="h5">로그 날짜 선택</Typography>
-              <Chip label={`파일 ${logFiles.length}개`} variant="outlined" />
+              <Typography variant="h5">{hosted ? "로그 날짜 선택" : "로그 파일 선택"}</Typography>
+              <Chip label={`${hosted ? "날짜" : "파일"} ${logFiles.length}개`} variant="outlined" />
             </Stack>
 
             {logFiles.length > 0 ? (
               <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ flexWrap: "wrap" }}>
                 {logFiles.map((logFile) => (
                   <Button
-                    key={logFile.name}
+                    key={logLabel(logFile.name)}
                     href={`/admin/logs?file=${encodeURIComponent(logFile.name)}`}
                     variant={selectedFile?.name === logFile.name ? "contained" : "outlined"}
                   >
-                    {logFile.name}
+                    {logLabel(logFile.name)}
                   </Button>
                 ))}
               </Stack>
             ) : (
               <Typography variant="body2" color="text.secondary">
-                아직 생성된 로그 파일이 없습니다.
+                {hosted ? "보존 기간 내 감사 로그가 없습니다." : "아직 생성된 로그 파일이 없습니다."}
               </Typography>
             )}
           </Stack>
@@ -137,9 +140,9 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
             {selectedFile ? (
               <Stack spacing={2}>
                 <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
-                  <Chip label={selectedFile.name} color="primary" />
+                  <Chip label={logLabel(selectedFile.name)} color="primary" />
                   <Chip label={`수정 ${selectedFile.modifiedAt}`} variant="outlined" />
-                  <Chip label={`${selectedFile.sizeBytes} bytes`} variant="outlined" />
+                  {!hosted && <Chip label={`${selectedFile.sizeBytes} bytes`} variant="outlined" />}
                 </Stack>
                 <Divider />
                 {selectedEntries.length > 0 ? (
@@ -168,13 +171,13 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
                   </List>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
-                    선택한 파일에 표시할 최근 로그 항목이 없습니다.
+                    선택한 로그에 표시할 최근 항목이 없습니다.
                   </Typography>
                 )}
               </Stack>
             ) : (
               <Typography variant="body2" color="text.secondary">
-                표시할 로그 파일이 없습니다.
+                표시할 로그가 없습니다.
               </Typography>
             )}
           </Stack>

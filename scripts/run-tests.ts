@@ -13,7 +13,7 @@ import { spawn } from "node:child_process";
 import { createConnection } from "mariadb";
 import { applyTestEnv, testDatabaseEnv } from "../tests/helpers/test-env";
 
-const UNIT_TESTS = ["tests/policy.test.ts", "tests/query-scope.test.ts", "tests/log-redaction.test.ts"];
+const UNIT_TESTS = ["tests/policy.test.ts", "tests/query-scope.test.ts", "tests/log-redaction.test.ts", "tests/admin-runtime.test.ts"];
 const DATABASE_TESTS = ["tests/visibility.e2e.test.ts"];
 
 applyTestEnv();

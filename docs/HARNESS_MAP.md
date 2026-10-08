@@ -263,3 +263,13 @@ Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
 - [최종 검증 기록](SITES_VALIDATION_2026-10-08.md).
 
 게시 후 지원되는 클라우드 브라우저에서 공개 홈의 1180px 및 500px 레이아웃과 실제 Google 로그인 진입을 확인했다. 사용자 브라우저의 로그인 성공 보고도 별도 기록했다. [게시 결과](SITES_PUBLICATION_2026-10-08.md).
+
+## 관리자 runtime 표시 회귀 — 2026-10-08 13:24 UTC
+
+새로 복원한 dot cloud checkout(Node 24.19.0)에서 T-025 표시 변경을 확인했다.
+- 단위 17건(기존 14 + hosted/native 표시 3), lint/typecheck/FSD(5 self-test), Worker production build: 모두 exit 0.
+- 실제 로컬 D1/R2 실패 복구 57건, 빌드 산출물의 Worker HTTP 역할·표시 112건, credential-free 인증 계약 18건: 모두 통과.
+- `/admin`의 D1 대상과 effective superuser 표시, ordinary admin 안내, hosted DB binding 표시·DDL 버튼 부재, 보존 기간 기반 로그 안내를 추가 확인한다. Node 모드 안내는 순수 함수 단위 검사로 확인하며 MariaDB 실제 DB suite는 이번 표시 수정에서 실행하지 않았다.
+- 기존 npm http-proxy/Node mock experimental 경고, Vinext proxy·plugin timing·정적 route 분류 안내, Drizzle 의존성의 @esbuild-kit deprecation을 관찰했다. 잠금파일/의존성 변경은 하지 않았으며 기존 runtime 계약으로 검증 범위를 한정한다.
+- 독립 읽기 전용 리뷰에서 인가·저장소 동작 변경 없이 표시 정정만 이루어졌음을 확인했다.
+- 실제 Google 로그인은 합성 테스트와 별도로, 같은 날 13:14 UTC 소유자가 직접 인증한 클라우드 브라우저의 /tasks 및 /admin에서 확인했다. 운영 계정/비밀값은 테스트 fixture나 문서에 복사하지 않았다.

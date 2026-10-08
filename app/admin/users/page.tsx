@@ -66,7 +66,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         <Stack spacing={3}>
           <Typography variant="h3">사용자 관리</Typography>
           <Alert severity="warning">
-            DB env가 완전하지 않아 사용자 권한을 제어할 수 없습니다. 데이터베이스 연결과 배포 migration 상태를 먼저 점검해야 합니다.
+            DB env가 완전하지 않아 사용자 권한을 제어할 수 없습니다. MariaDB 연결 설정을 먼저 점검해야 합니다.
           </Alert>
           <Typography variant="body2" color="text.secondary">
             다른 관리자 화면 이동은 상단 앱바를 사용합니다.
@@ -85,10 +85,10 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         <Stack spacing={3}>
           <Typography variant="h3">사용자 관리</Typography>
           <Alert severity="warning">
-            users 테이블 또는 Google 로그인 메타데이터 컬럼이 아직 준비되지 않았습니다. 먼저 DB 관리 페이지에서 DB와 기본 테이블을 초기화해야 합니다.
+            {databaseStatus.managedMigrations ? "users 테이블 또는 Google 로그인 메타데이터 컬럼이 아직 준비되지 않았습니다. Sites 배포의 migration 적용 결과를 확인하세요." : "users 테이블 또는 Google 로그인 메타데이터 컬럼이 아직 준비되지 않았습니다. 슈퍼관리자가 DB 관리 페이지에서 DB와 기본 테이블을 초기화해야 합니다."}
           </Alert>
           <Typography variant="body2" color="text.secondary">
-            초기화 후 상단 앱바의 관리자 항목으로 다시 접근할 수 있습니다.
+            테이블 준비 후 상단 앱바의 관리자 항목으로 다시 접근할 수 있습니다.
           </Typography>
         </Stack>
       </Container>
@@ -132,7 +132,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
               env에 설정된 SUPERUSER_EMAIL 계정은 슈퍼관리자로 고정되며, 새 Google 로그인 사용자는 기본적으로 게스트로 등록됩니다. 로그인 시 Google 식별자, 프로필 이미지, 최근 로그인 시각도 함께 동기화합니다.
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              관리자(admin)는 관리자 메뉴(로그, 세팅 등)에 접근하고 모든 비공개 제출물을 확인할 수 있습니다. 일반사용자는 공개 제출물참조 및 작성 권한이 있으며, 게스트는 공개 제출물 읽기만 가능합니다.
+              관리자(admin)는 관리 개요·프로젝트·사용자 관리와 모든 비공개 제출물에 접근할 수 있습니다. 로그·세팅·DB 관리는 슈퍼관리자 전용입니다. 일반사용자는 공개 및 본인 비공개 제출물을 조회하고 작성할 수 있으며, 게스트는 조회만 가능합니다.
             </Typography>
             <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
               <Chip label={`전체 사용자 ${users.length}`} color="primary" />

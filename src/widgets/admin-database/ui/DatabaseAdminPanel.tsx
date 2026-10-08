@@ -53,10 +53,15 @@ export default function DatabaseAdminPanel({
         <Stack spacing={2}>
           <Typography variant="h5">DB 대상 정보</Typography>
           <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
-            <Chip label={`Host: ${status.host}`} />
-            <Chip label={`Port: ${status.port}`} />
-            <Chip label={`User: ${status.user}`} />
-            <Chip label={`DB: ${status.databaseName}`} color={status.databaseExists ? "success" : "warning"} />
+            {status.managedMigrations ? <>
+              <Chip label="저장소: Sites D1" />
+              <Chip label={`바인딩: ${status.databaseName}`} color={status.databaseExists ? "success" : "warning"} />
+            </> : <>
+              <Chip label={`Host: ${status.host}`} />
+              <Chip label={`Port: ${status.port}`} />
+              <Chip label={`User: ${status.user}`} />
+              <Chip label={`DB: ${status.databaseName}`} color={status.databaseExists ? "success" : "warning"} />
+            </>}
           </Stack>
           <Typography variant="body2" color="text.secondary">
             DB 존재 여부: {status.databaseExists ? "생성됨" : "아직 없음"}

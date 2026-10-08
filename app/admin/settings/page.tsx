@@ -27,7 +27,7 @@ export default async function AdminSettingsPage() {
           <Stack spacing={1}>
             <Typography variant="h3">시스템 세팅</Typography>
             <Typography variant="body1" color="text.secondary">
-              슈퍼유저 전용 페이지입니다. 호스팅 설정 상태와 감사 로그 보존 정책을 확인합니다.
+              {initialSnapshot.managedRuntime ? "슈퍼유저 전용 페이지입니다. 호스팅 설정 상태와 감사 로그 보존 정책을 확인합니다." : "슈퍼유저 전용 페이지입니다. env 설정, 앱 포트와 파일 로그 정책을 관리합니다."}
             </Typography>
           </Stack>
         </Stack>

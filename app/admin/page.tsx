@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getAdminOverview } from "@/src/features/admin-overview/index.server";
 import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
+import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
+import { getAdminRuntimePresentation } from "@/src/shared/config/admin-runtime";
 import { canAccessAdminPanel } from "@/src/entities/user";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +21,7 @@ export default async function AdminPage() {
   }
 
   const runtimeEnv = getRuntimeEnv();
+  const presentation = getAdminRuntimePresentation({ hosted: isHostedRuntime(), databaseConfigured: runtimeEnv.database.configured, databaseName: runtimeEnv.database.database });
   const adminOverview = runtimeEnv.database.configured ? await getAdminOverview() : null;
 
   function formatOptionalDate(value: Date | null) {
@@ -31,7 +34,7 @@ export default async function AdminPage() {
         <Stack spacing={1}>
           <Typography variant="h3">관리자 전용 페이지</Typography>
           <Typography variant="body1" color="text.secondary">
-            슈퍼유저 계정으로 로그인된 상태입니다. 여기에서 시스템 초기화와 관리자 전용 기능 진입점을 제어합니다.
+            {session.user.isSuperuser ? "슈퍼관리자 계정으로 로그인된 상태입니다." : "관리자 계정으로 로그인된 상태입니다."} 현재 시스템 상태와 접근 가능한 관리 기능을 확인합니다.
           </Typography>
         </Stack>
 
@@ -39,16 +42,16 @@ export default async function AdminPage() {
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
           <Chip label={`계정: ${session.user.email ?? "이메일 없음"}`} />
-          <Chip label={`권한: ${session.user.role}`} color="success" />
+          <Chip label={`권한: ${session.user.isSuperuser ? "슈퍼관리자" : session.user.role}`} color="success" />
           <Chip
-            label={runtimeEnv.database.configured ? `DB 대상: ${runtimeEnv.database.database}` : "DB env 미설정"}
+            label={presentation.databaseLabel}
             color={runtimeEnv.database.configured ? "primary" : "warning"}
           />
         </Stack>
 
         {!runtimeEnv.database.configured ? (
           <Alert severity="warning">
-            DB env가 아직 완전하지 않습니다. DB 관리 페이지 진입 전 DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME을 확인해야 합니다.
+            {presentation.databaseSetupMessage}
           </Alert>
         ) : null}
 
@@ -56,7 +59,7 @@ export default async function AdminPage() {
           <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
             <Stack spacing={2}>
               <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ alignItems: { md: "center" } }}>
-                <Typography variant="h5">Stage 4 운영 요약</Typography>
+                <Typography variant="h5">운영 요약</Typography>
                 <Chip label={`사용자 ${adminOverview.userCount}`} color={adminOverview.ready ? "success" : "default"} />
                 <Chip label={`프로젝트 ${adminOverview.projectCount}`} color={adminOverview.ready ? "primary" : "default"} />
               </Stack>
@@ -106,14 +109,14 @@ export default async function AdminPage() {
         ) : null}
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={3} sx={{ alignItems: "stretch" }}>
-          <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 4 }}>
+          {session.user.isSuperuser && <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 4 }}>
             <Stack spacing={2}>
               <Typography variant="h5">DB 관리</Typography>
               <Typography variant="body2" color="text.secondary">
-                env에 설정된 MariaDB 연결 정보로 실제 DB와 기본 테이블을 생성하고 상태를 확인합니다. 이동은 상단 앱바의 DB 관리 항목을 사용합니다.
+                {presentation.databaseDescription}
               </Typography>
             </Stack>
-          </Paper>
+          </Paper>}
 
           <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 4 }}>
             <Stack spacing={2}>
@@ -124,23 +127,23 @@ export default async function AdminPage() {
             </Stack>
           </Paper>
 
-          <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 4 }}>
+          {session.user.isSuperuser && <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 4 }}>
             <Stack spacing={2}>
               <Typography variant="h5">시스템 세팅</Typography>
               <Typography variant="body2" color="text.secondary">
-                파일 로그 롤링 정책, 앱 포트, 전체 env 설정을 편집합니다. 이동은 상단 앱바의 세팅 항목을 사용합니다.
+                {presentation.settingsDescription}
               </Typography>
             </Stack>
-          </Paper>
+          </Paper>}
 
-          <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 4 }}>
+          {session.user.isSuperuser && <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 4 }}>
             <Stack spacing={2}>
               <Typography variant="h5">로그 확인</Typography>
               <Typography variant="body2" color="text.secondary">
-                최근 사용자 액션 이력과 원본 로그 파일 tail을 검토합니다. 이동은 상단 앱바의 로그 항목을 사용합니다.
+                {presentation.logsDescription}
               </Typography>
             </Stack>
-          </Paper>
+          </Paper>}
         </Stack>
       </Stack>
     </Container>

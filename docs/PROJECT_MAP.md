@@ -135,3 +135,8 @@ users       1 ── N comments
 - `src/shared/server/object-cleanup`: 참조 중 객체 삭제 거부, 지연 재시도/backoff, 만료된 staging 객체 복구.
 - `src/entities/submission/api/submission-files.server.ts`: Worker에서는 known-length Blob을 R2에 전달하고 다운로드를 stream으로 읽는다. Node는 파일 저장소를 유지한다.
 - `scripts/test-sites-{auth.mjs,storage.ts,http.mjs,browser.py}`: 인증·저장소·실제 Worker HTTP·시각 QA의 검증 경계를 구분한다.
+
+## 관리자 운영 표시
+
+- `src/shared/config/admin-runtime`: 비밀값 없는 runtime metadata로 hosted D1/R2·Sites 설정과 native MariaDB·파일 로그 안내를 분기한다. 인가나 환경 설정은 변경하지 않는다.
+- `tests/admin-runtime.test.ts`: hosted / configured native / unconfigured native 표시 회귀. Worker HTTP suite는 `/admin`을 포함한 실제 역할별 SSR과 DB/log/user 안내를 확인한다.
