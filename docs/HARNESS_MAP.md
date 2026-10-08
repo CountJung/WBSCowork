@@ -273,3 +273,5 @@ Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
 - 기존 npm http-proxy/Node mock experimental 경고, Vinext proxy·plugin timing·정적 route 분류 안내, Drizzle 의존성의 @esbuild-kit deprecation을 관찰했다. 잠금파일/의존성 변경은 하지 않았으며 기존 runtime 계약으로 검증 범위를 한정한다.
 - 독립 읽기 전용 리뷰에서 인가·저장소 동작 변경 없이 표시 정정만 이루어졌음을 확인했다.
 - 실제 Google 로그인은 합성 테스트와 별도로, 같은 날 13:14 UTC 소유자가 직접 인증한 클라우드 브라우저의 /tasks 및 /admin에서 확인했다. 운영 계정/비밀값은 테스트 fixture나 문서에 복사하지 않았다.
+
+T-026: `scripts/verify-sites-crud.mjs`를 실제 Worker HTTP suite에서 실행한다. 2026-10-08 13:31 UTC 총 149개 통과(112+CRUD 37), 변경된 테스트 JS ESLint 통과. 앱 소스 변경 없이 T-025 빌드 산출물을 재사용했다. 별도 live test 데이터는 소유자가 승인한 QA 프로젝트에 한하며 영구 파기는 별도 확인한다.

@@ -66,3 +66,10 @@ shell에서 시작한 별도 Chromium은 IPC EPERM으로 실패했다. 이 제�
 소유자가 직접 Google 인증을 완료한 뒤 에이전트가 같은 클라우드 브라우저에서 /tasks의 로그아웃·슈퍼관리자 표시와 /admin의 인증된 계정·관리 개요를 직접 확인했다. DB role은 admin이고 구성된 슈퍼관리자 판정도 적용되었다. 개인 이메일·비밀번호·토큰은 이 기록에 저장하지 않는다. 사용자 1명, 프로젝트 0개였으며 조회만 했고 데이터·권한을 변경하지 않았다. 이 결과는 이전의 사용자 보고 및 Google 식별자 진입 검사보다 강한 실제 앱 인증 근거다.
 
 관리 개요에서 D1 대상이 undefined로 보이고 과거 MariaDB/파일 로그 설명이 남는 표시 결함을 발견했다. T-025에서 수정·재게시하며, 프로젝트 쓰기 실환경 검사는 T-024 승인 후 별도로 다룬다.
+
+## 관리자 표시 수정 게시 — version 2
+
+- 소스 `8fc2cc69cdc8548739ae9ae2ed208ebc6fe47ce7`, tree `684bd70633a73fe21aacdc8b4155e8570db4582a`.
+- version `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_7ea31832eb848191b1f5928c64f56ad8`.
+- deployment `appgdep_6ac79a4f82888191b8617754bdb85177`: 13:27:53 UTC succeeded. public, 동일 origin/환경 revision 11.
+- 소유자 로그인 세션으로 수정된 /admin D1/R2·슈퍼관리자·Sites 설정·감사 보존 안내를 직접 확인했다.

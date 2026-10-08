@@ -140,3 +140,5 @@ users       1 ── N comments
 
 - `src/shared/config/admin-runtime`: 비밀값 없는 runtime metadata로 hosted D1/R2·Sites 설정과 native MariaDB·파일 로그 안내를 분기한다. 인가나 환경 설정은 변경하지 않는다.
 - `tests/admin-runtime.test.ts`: hosted / configured native / unconfigured native 표시 회귀. Worker HTTP suite는 `/admin`을 포함한 실제 역할별 SSR과 DB/log/user 안내를 확인한다.
+
+- `scripts/verify-sites-crud.mjs`: HTTP suite의 실제 form/RSC action reference로 isolated CRUD lifecycle과 cross-user denied writes를 확인한다. 운영 데이터/계정을 사용하지 않는다.

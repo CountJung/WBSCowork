@@ -214,3 +214,17 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 ## T-022 — Sites Worker 전환 및 공개 게시 (2026-10-08)
 
 기존 Google/NextAuth·MUI·역할 정책을 보존하여 D1/R2로 전환했다. 공식 save/deploy 결과 version1 terminal succeeded와 공개 URL을 확인했다. Node 단위14, Worker auth18, D1/R2 57, 실제 Worker HTTP92건 통과. 배포 SHA9938b584c08f805f1321061643a1b3fb6339260e. main과 이전 컨테이너 실측은 보존했다. 사용자 브라우저에서 로그인 성공이 보고됐고, 보호 화면 및 지정 계정 실환경 작업은 T-023/T-024로 따로 추적한다. [배포/디스크 기록](SITES_PUBLICATION_2026-10-08.md).
+
+## T-025 — hosted 관리자 runtime 표시 정정 (2026-10-08)
+
+- D1 대상 undefined, MariaDB/파일 로그/로컬 설정 안내 잔재를 runtime별로 분리했다. 로그의 날짜·보존 기간·저장 단위 설명과 ordinary admin/superuser 소개를 실제 동작에 맞췄다. 인가·설정·저장소 동작은 바꾸지 않았다.
+- unit 17 / D1-R2 57 / Worker HTTP 112 / auth 18, lint/typecheck/FSD/build 통과. 독립 읽기 전용 리뷰 통과.
+- commit `8fc2cc69cdc8548739ae9ae2ed208ebc6fe47ce7`, tree `684bd70633a73fe21aacdc8b4155e8570db4582a` GitHub push 및 Site source 일치. version 2 / deployment `appgdep_6ac79a4f82888191b8617754bdb85177` 13:27:53 UTC succeeded, 환경 revision 11 유지.
+- 같은 소유자 세션에서 /admin 새로고침 후 D1/R2·슈퍼관리자·Sites 설정·감사 보존 안내를 직접 확인했다.
+
+## T-026 — 격리 Worker 업무 흐름 회귀 검증 (2026-10-08)
+
+- 실제 빌드 workerd에 합성 JWT와 로컬 D1/R2를 사용하여 프로젝트 생성·수정·파기 확인, 부모/자식 task 생성·수정·삭제 후 재루팅, private 제출 및 동일 파일명 추가업로드·조회·삭제, 댓글 CRUD를 검사했다. 다른 멤버의 private 조회·수정·댓글 금지, guest task 삭제 금지, member project 생성 금지를 직접 HTTP Server Action으로 검증했다.
+- 새 계약 37개를 포함해 `npm run test:sites:http` 149개 통과. 기존 57개 storage 계약은 중단/실패 업로드·보상 실패·삭제 복구/backoff를 포함해 재검증했다.
+- 첫 테스트의 edit action 추출은 Client dialog가 action을 RSC reference로 전달하는 구조 때문에 실패했다. UI에서 제공된 serialized reference도 해석하도록 테스트를 바로잡고 재실행했다. 제품 코드 결함은 발견하지 않았다.
+- 모든 생성/삭제는 격리 Miniflare 합성 데이터다. 실서비스 생성·수정·업로드·삭제 검증으로 계산하지 않는다. 테스트-only 변경이므로 배포된 앱 코드는 T-025 버전을 유지한다.
