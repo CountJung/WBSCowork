@@ -4,7 +4,7 @@
  * WBSCowork 사용설명서 PowerPoint 생성 스크립트
  *
  * 사용법:
- *   node scripts/convert-manual-to-pptx.js
+ *   node scripts/convert-manual-to-pptx.cjs
  *
  * 필수 설치:
  *   npm install --save-dev pptxgenjs

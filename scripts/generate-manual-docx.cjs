@@ -4,7 +4,7 @@
  * WBSCowork 상세 사용설명서 Word 문서 생성 스크립트
  *
  * 사용법:
- *   node scripts/generate-manual-docx.js
+ *   node scripts/generate-manual-docx.cjs
  *
  * 필수 설치:
  *   npm install --save-dev docx

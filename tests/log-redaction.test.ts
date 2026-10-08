@@ -4,11 +4,11 @@ import { test, describe, before } from "node:test";
 import assert from "node:assert/strict";
 import { readFile, readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
-import {
+const {
   getAbsoluteLogDirectory,
   logUserAction,
   logUserActionFailure,
-} from "@/src/shared/server/logging/index.server";
+} = await import("@/src/shared/server/logging/index.server");
 
 /** 기록된 로그 파일에서 마지막 항목을 읽는다. redaction 이 "기록 시점"에 일어나는지 확인하기 위함이다. */
 async function readLastLoggedEntry() {

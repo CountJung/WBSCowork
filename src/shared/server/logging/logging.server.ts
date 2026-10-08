@@ -51,6 +51,7 @@ type LoggerGlobals = typeof globalThis & {
 const globalForLogger = globalThis as LoggerGlobals;
 const logFilePrefix = "application";
 const userActionEventTypes = new Set(["user-action", "user-action-failure"]);
+const workerRuntime = typeof __WBSCOWORK_WORKER__ !== "undefined" && __WBSCOWORK_WORKER__;
 
 function getBaseConsole() {
   if (!globalForLogger.__wbsBaseConsole) {
@@ -296,6 +297,13 @@ export function serializeError(error: unknown) {
 }
 
 export async function logEvent(level: LogLevel, source: string, message: string, details?: Record<string, unknown>) {
+  if (workerRuntime) {
+    getBaseConsole()[level](JSON.stringify({
+      timestamp: new Date().toISOString(), level, source, message,
+      details: normalizeDetails(details),
+    }));
+    return;
+  }
   await queueLogWrite(() =>
     appendLogEntry({
       timestamp: new Date().toISOString(),
@@ -449,6 +457,11 @@ export async function listRecentLogFiles(limit = 10): Promise<LogFileSummary[]> 
 }
 
 export async function initializeServerLogging() {
+  if (workerRuntime) {
+    // Workers has no durable application filesystem. Preserve structured logs
+    // in the host's logging sink, without recursively intercepting console.
+    return;
+  }
   if (process.env.NEXT_RUNTIME === "edge") {
     return;
   }

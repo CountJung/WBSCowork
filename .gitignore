@@ -46,3 +46,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Sites generated output and local Worker state
+/dist/
+/.wrangler/
+/.sites-runtime/
+.dev.vars
+.dev.vars.*
+/.vinext/

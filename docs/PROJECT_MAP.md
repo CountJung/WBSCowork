@@ -120,3 +120,9 @@ users       1 ── N comments
 4. `docs/`의 계획/이력 문서
 
 문서와 코드가 다르면 차이를 기록하고 코드를 근거로 운영한다.
+
+## Sites Worker 빌드 진입점
+
+- `vite.config.mts`, `sites/worker.ts`: 기존 App Router를 Worker 산출물로 빌드한다. Google/NextAuth와 MUI는 유지한다.
+- `scripts/test-sites-auth.mjs`: 빌드 산출물을 workerd에서 실행하는 인증/익명 접근 계약. 가상 테스트 설정만 사용한다.
+- `docs/SITES_WORKER_AUTH_2026-10-08.md`: 통과 범위와 운영 검증의 남은 단계.

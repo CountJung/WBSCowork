@@ -14,8 +14,8 @@
 | [`USER_MANUAL.html`](USER_MANUAL.html) | standalone HTML | 브라우저 슬라이드 쇼, PPTX 변환 소스 | 발표 30~40분 |
 | [`USER_MANUAL.md`](USER_MANUAL.md) | Markdown | 이 문서 — 변환·커스터마이징·발표 가이드 | 10분 |
 | [`QUICK_REFERENCE.md`](QUICK_REFERENCE.md) | Markdown | 인쇄용 1장 요약, 온보딩 핸드아웃 | 2~3분 |
-| [`../../scripts/convert-manual-to-pptx.js`](../../scripts/convert-manual-to-pptx.js) | Node 스크립트 | PPTX 생성 | — |
-| [`../../scripts/generate-manual-docx.js`](../../scripts/generate-manual-docx.js) | Node 스크립트 | DOCX 생성 | — |
+| [`../../scripts/convert-manual-to-pptx.cjs`](../../scripts/convert-manual-to-pptx.cjs) | Node 스크립트 | PPTX 생성 | — |
+| [`../../scripts/generate-manual-docx.cjs`](../../scripts/generate-manual-docx.cjs) | Node 스크립트 | DOCX 생성 | — |
 
 빠르게 열기:
 
@@ -90,8 +90,8 @@ open docs/manual/USER_MANUAL.html
 저장소 안의 스크립트를 사용합니다. 출력물은 항상 `scripts/outputs/`에 씁니다.
 
 ```bash
-node scripts/convert-manual-to-pptx.js   # → scripts/outputs/WBSCowork_Manual.pptx
-node scripts/generate-manual-docx.js     # → scripts/outputs/WBSCowork_UserManual.docx
+node scripts/convert-manual-to-pptx.cjs   # → scripts/outputs/WBSCowork_Manual.pptx
+node scripts/generate-manual-docx.cjs     # → scripts/outputs/WBSCowork_UserManual.docx
 ```
 
 - 의존성 `pptxgenjs`, `docx`는 이미 devDependencies에 있습니다. 전역 설치는 필요 없습니다.

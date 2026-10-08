@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "dist/**",
+    ".wrangler/**",
     "next-env.d.ts",
     // macOS AppleDouble sidecars on external volumes are not source files.
     "**/._*",
@@ -22,7 +24,7 @@ const eslintConfig = defineConfig([
   ]),
   {
     // Document authoring scripts are plain CommonJS run directly with node.
-    files: ["scripts/**/*.js"],
+    files: ["scripts/**/*.js", "scripts/**/*.cjs"],
     languageOptions: {
       sourceType: "commonjs",
     },

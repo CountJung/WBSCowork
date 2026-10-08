@@ -9,7 +9,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 프레임워크 | Next.js 16 App Router, TypeScript, MUI |
+| 프레임워크 | Next.js 16 App Router, TypeScript, MUI; Sites 빌드는 Vinext/Workers |
 | DB | MariaDB (mariadb npm 풀) |
 | 인증 | NextAuth v4 (Google OAuth) |
 | 차트 | frappe-gantt |
@@ -80,7 +80,9 @@ npm run check:fsd     # FSD import 경계 (fixture self-test + 저장소 검사)
 npm test              # 단위 + 가시성 e2e (DB 없으면 DB suite는 사유 남기고 건너뜀)
 npm run test:db:up    # 테스트 전용 MariaDB 기동 (127.0.0.1:3307 / wbs_app_test)
 npm run test:db:down  # 테스트 DB 종료 및 데이터 폐기
-npm run build         # 프로덕션 빌드
+npm run build         # Sites Worker 프로덕션 빌드
+npm run build:next    # 기존 Node/Next 빌드
+npm run test:sites:auth # 실제 workerd 인증 계약 (가상 테스트 값만)
 npm run db:check      # DB 연결 테스트
 npm run dev:debug     # Node 인스펙터 포함 dev 서버
 ```

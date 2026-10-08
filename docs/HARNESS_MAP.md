@@ -14,19 +14,21 @@
 
 | 명령 | 구현 | 목적 | 성공 기준 |
 | --- | --- | --- | --- |
-| `npm run dev` | `tsx scripts/run-next.ts dev` | 개발 서버 | APP_PORT 출력 후 route 응답 |
+| `npm run dev` | `node --import tsx scripts/run-next.ts dev` | 개발 서버 | APP_PORT 출력 후 route 응답 |
 | `npm run dev:debug` | 위 명령 + `--inspect` | 서버 디버깅 | inspector와 dev server 기동 |
-| `npm run build` | `tsx scripts/run-next.ts build` | production compile/build | exit 0, route 생성 성공 |
-| `npm run start` | `tsx scripts/run-next.ts start` | production server | 선행 build 후 APP_PORT listen |
+| `npm run build` | `vinext build` | Sites Worker build | exit 0, dist/server/index.js 생성 |
+| `npm run build:next` | `node --import tsx scripts/run-next.ts build` | 기존 Node/Next 빌드 | exit 0, route 생성 |
+| `npm run test:sites:auth` | `node scripts/test-sites-auth.mjs` | 빌드한 Worker의 NextAuth 계약 | 18건 통과; 실제 Google 로그인과 구분 |
+| `npm run start` | `node --import tsx scripts/run-next.ts start` | production server | 선행 build 후 APP_PORT listen |
 | `npm run lint` | `eslint` | 정적 검사 | error/warning 0 |
 | `npm run typecheck` | `tsc --noEmit` | 타입 검사 | 출력 없이 exit 0 |
-| `npm run check:fsd` | `tsx scripts/check-fsd-boundaries.ts` | FSD import 경계 | fixture self-test 5건 PASS + 저장소 위반 0 |
-| `npm run db:check -- --validate-only` | `tsx scripts/check-db.ts` | DB env 파싱만 | 연결 없이 validation passed |
+| `npm run check:fsd` | `node --import tsx scripts/check-fsd-boundaries.ts` | FSD import 경계 | fixture self-test 5건 PASS + 저장소 위반 0 |
+| `npm run db:check -- --validate-only` | `node --import tsx scripts/check-db.ts` | DB env 파싱만 | 연결 없이 validation passed |
 | `npm run db:check` | 동일 | 실제 pool 연결 | DB name/server version 출력, exit 0 |
-| `npm test` | `tsx scripts/run-tests.ts` | 단위 + 가시성 e2e | 전체 통과. DB 없으면 DB suite 미실행 사유 출력 |
+| `npm test` | `node --import tsx scripts/run-tests.ts` | 단위 + 가시성 e2e | 전체 통과. DB 없으면 DB suite 미실행 사유 출력 |
 | `npm test -- --unit` | 위 + `--unit` | DB 없이 도는 suite만 | 정책·범위·로그 redaction 통과 |
 | `npm test -- --require-db` | 위 + `--require-db` | DB 미기동을 실패로 처리 | CI에서 조용한 건너뛰기 방지 |
-| `npm run test:db:up` | `tsx scripts/test-database.ts up` | 테스트 전용 MariaDB 기동 | `127.0.0.1:3307/wbs_app_test` 준비 |
+| `npm run test:db:up` | `node --import tsx scripts/test-database.ts up` | 테스트 전용 MariaDB 기동 | `127.0.0.1:3307/wbs_app_test` 준비 |
 | `npm run test:db:down` | 동일 스크립트 `down` | 종료 및 데이터 폐기 | 컨테이너/프로세스와 datadir 제거 |
 | `npm run test:db:status` | 동일 스크립트 `status` | 기동 여부 확인 | up이면 버전 출력, down이면 exit 1 |
 
@@ -244,3 +246,7 @@ Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
 [SITES_PREFLIGHT_2026-10-08.md](SITES_PREFLIGHT_2026-10-08.md)에 배포 환경 준비, SQLite/Worker 한도와 Google OAuth 검증 항목을 기록했다. 실제 Worker 빌드·HTTP, Google 로그인, D1/R2 전환과 배포는 **미실행**이다. 기존 Node/Next 검사 통과로 대체하지 않는다. T-023에서 남은 작업을 추적한다.
 
 `wbscowork` 등록 후 `.openai/hosting.json`에 프로젝트 ID를 보존했다. 예약 origin은 `https://wbscowork.cometgnome.chatgpt.site`이고 현재 비공개·미게시(버전 0)다. 등록은 실제 배포·OAuth 검증과 별개다.
+
+## Sites Worker 추가 기준선 — 2026-10-08
+
+[Sites Worker 인증 체크포인트](SITES_WORKER_AUTH_2026-10-08.md)를 참고한다. lint/typecheck/FSD, 단위 14건, Worker 빌드와 인증 HTTP 계약 18건 통과. DB suite는 이 환경에서 미실행이며 이전 컨테이너의 33건을 가져와 통과로 기록하지 않는다. Vinext scanner의 next-auth unsupported 경고는 Vite 8 CommonJS 호환 모드와 실제 Worker 테스트로 범위를 구분한다. 실제 OAuth와 운영 DB/R2는 아직 미검증이다. Node module-mocking 실험 경고, 환경의 npm http-proxy 설정 경고, Vinext route 분류/플러그인 성능 안내는 알려진 도구 출력이며 테스트 통과의 증거로 사용하지 않는다.

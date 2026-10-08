@@ -63,3 +63,7 @@ graph. Only read source files when (a) modifying/debugging specific code, (b) th
 the needed detail, or (c) the graph is missing or stale.
 
 Type `/graphify` in Copilot Chat to build or update the graph.
+
+## Sites deployment branch
+
+`npm run build` generates the existing application as a Worker with Vinext; `npm run build:next` preserves the Node/Next build. Preserve NextAuth Google behavior, role checks and MUI. Keep Vite 8 CommonJS interoperability for NextAuth v4 and run `npm run test:sites:auth` against the built Worker. This contract suite uses synthetic local configuration; it never proves actual Google login. Generated `.vinext`, `.wrangler` and `dist` state must not be committed.
