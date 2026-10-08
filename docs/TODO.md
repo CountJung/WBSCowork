@@ -213,6 +213,24 @@ membership/recipient consent와 threat model 승인 이후에만 delivery를 검
 
 ---
 
+### T-022 — 클라우드 검증 환경의 빌드·인증 전제 확정
+
+**분류** 환경 / 배포 전제 (2026-10-08)
+
+SHA `2f6b74d7b77106d38ad914eee14e1e073c61b039`의 격리 검증 결과는
+[CLOUD_INSTALL_REPORT_2026-10-08.md](CLOUD_INSTALL_REPORT_2026-10-08.md)에 기록했다.
+
+- 기본 `npm run build`는 Google Fonts Roboto 다운로드 실패로 exit 1이다. 공식 Google fonts 저장소의 실제 폰트와 별도 response fixture를 쓰는 오프라인 Turbopack 빌드는 exit 0이다. 이 환경 보완은 원본 소스 변경이나 기본 빌드의 네트워크 성공을 뜻하지 않는다.
+- 자격증명을 사용·생성하지 않은 production HTTP 검사에서 `/privacy`는 200이고 인증 의존 경로는 NextAuth `NO_SECRET`로 500이다. 배포 담당자는 승인된 호스팅과 기존 OAuth callback/secret 전달 방식을 확정해야 한다. 기존 `users.role` 유지에는 기존 DB 연결 또는 별도 승인된 이전이 필요하다.
+- Linux native DB 탐지의 `spawnSync('command', ['-v', ...])`는 `ENOENT`다. 환경 전용 shim을 별도 준비했고 앱/기존 하네스는 수정하지 않았다. 정식 지원을 결정할 때 Linux 탐지를 보완한다.
+- Node 26 `mock.module()`의 `ExperimentalWarning`은 테스트 계약의 현재 한계다. suppression 없이 로그를 보존했다.
+- MariaDB 컨테이너는 `io_uring` EPERM 후 libaio로 동작한다. 디스크 DB의 `max_open_files` 상한 경고도 기록했다. 47건 테스트는 통과했고 호스트 보안·sysctl·리소스 설정은 변경하지 않았다. 운영 DB 요구량은 대상 호스팅에서 다시 확인한다.
+- npm 11.20의 최초 설치 훅 미승인 경고는 별도 고정 버전 설정과 `npm rebuild esbuild sharp unrs-resolver`로 보완했다. 원본 package/lock은 그대로다.
+
+외부 게시, 실제 Google 로그인, 인증된 production HTTP 역할 매트릭스, 운영 DB와 브라우저 검증은 이 작업 범위에서 미실행이다.
+
+---
+
 ## 참고 문서
 
 - [COMPLETED_LOG.md](COMPLETED_LOG.md) — 완료 항목과 그 배경

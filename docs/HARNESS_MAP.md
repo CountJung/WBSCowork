@@ -212,3 +212,27 @@ git status --short
 - digest D0 구현 시작 시
 - Synology NAS 배포 준비 시작 시
 - 새 검증 명령 추가 또는 블로커 발생/해소 시
+
+## 13. 클라우드 실측 기준선 (2026-10-08)
+
+체크아웃 SHA: `2f6b74d7b77106d38ad914eee14e1e073c61b039`.
+Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
+[CLOUD_INSTALL_REPORT_2026-10-08.md](CLOUD_INSTALL_REPORT_2026-10-08.md)에 있다.
+
+| 명령 | 실제 결과 |
+| --- | --- |
+| `npm ci --include=dev` | exit 0, 541개 설치. 최초 install hook 정책 경고는 별도 설정의 scoped rebuild로 보완 |
+| `npm run lint` / `typecheck` / `check:fsd` | 모두 exit 0, FSD self-test 5건 |
+| `npm run test:unit` | exit 0, 14건 PASS |
+| DB 없는 `npm test` | exit 0, unit만 PASS, DB suite 미실행 |
+| DB 없는 `npm test -- --require-db` | exit 1, DB 부재를 실패 처리 |
+| tmpfs DB의 `npm test -- --require-db` | exit 0, unit 14 + DB 33 PASS |
+| 디스크 DB의 `TEST_DB_PORT=3308 npm test -- --require-db` | exit 0, unit 14 + DB 33 PASS, 재기동 후 6개 테이블/역할 fixture 보존 확인 |
+| 격리 DB의 `npm run db:check` / `-- --validate-only` | 모두 exit 0; 운영 DB 접근 없음 |
+| 기본 `npm run build` | exit 1, Google Fonts Roboto 다운로드 실패 |
+| 환경 전용 폰트 response fixture + 로컬 폰트 HTTP의 build | exit 0, Turbopack production build. 실제 공식 폰트 bytes SHA 일치 |
+| 실제 production HTTP | `/privacy` 200; `/`, tasks/admin/auth/download 경로는 secret 미설정으로 `NO_SECRET` 500 |
+
+미해결 환경 전제/경고는 T-022에 있다. Docker/Compose는 기존 기반 이미지 도구를 사용했고 MariaDB 이미지 하나를 추가했다. 브라우저는 설치·사용하지 않았다.
+기존 compose의 공개 포트 매핑 대신 별도 overlay로 host network의 `127.0.0.1:3307`에만 DB를 바인딩했다. 원본 compose는 변경하지 않았다.
+종료 시 DB 컨테이너는 정지 상태로 보존했고 디스크 datadir, 소스, 설치물, 다운로드 캐시를 삭제하지 않았다.
