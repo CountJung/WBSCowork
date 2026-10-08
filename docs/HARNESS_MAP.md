@@ -286,3 +286,11 @@ T-026: `scripts/verify-sites-crud.mjs`를 실제 Worker HTTP suite에서 실행�
 - `npm run test:sites:auth`: credential-free workerd 18 PASS.
 - 독립 security/storage 리뷰: transaction 밖 token precheck만으로는 동시 요청에서 이력 없는 갱신이 가능하다는 문제를 발견했고 atomic UPDATE의 NOT EXISTS(operation_token)으로 수정했다. MariaDB upsert RHS target table qualification도 보완했다. 후속 source review에서 두 지적 해결 확인.
 - 도구 경고는 기존 proxy/experimental mock/Vinext plugin timing·route static-analysis 안내다. Prettier 임시 실행의 기본 cache 경로 ENOENT는 `/tmp/wbscowork-npm-cache`를 사용해 해결했다. 중단된 build wait는 완료로 계산하지 않고 final build를 다시 실행해 exit 0을 확인했다.
+
+## Native 호환성 수정 checkpoint — 2026-10-08 14:57 UTC
+
+원래 측정 saved cloud의 exact f294edd 재검증(Node26.11.1/MariaDB11.4.13)에서 bug contract 15 PASS/2 FAIL이 보고됐다. ER_LOCK_DEADLOCK(1213/40001)이 동시 요청의 stale-version 또는 idempotent replay 기대 대신 노출됐으며 4×40회 검사에서 상태/이력 불일치는 없었다. 기존 required DB suite는 test graph linking의 ERR_INTERNAL_ASSERTION 때문에 기본 명령에서 실패했고, 환경 ordered preload로 unit17+DB33 skip0가 통과했다.
+
+수정: native databaseBatch는 성공한 rollback·awaited release 후 1213만 전체 transaction을 최대3회/10·20ms 지연으로 재시도한다. 연결/commit 결과 불명·1205 timeout·SQL·권한 오류, rollback/release 실패는 재시도하지 않는다. D1 batch 경로는 바꾸지 않는다. tests/helpers/preload.mjs가 tsx 후 bootstrap을 await하고, test runner 및 D1 test scripts는 CLI mock flag와 함께 이 preload를 사용한다. NODE_OPTIONS에 실험 flag를 넣지 않는다.
+
+이 dot cloud(Node24.19.0)에서는 unit30(기존17+transaction12+preload1), lint/typecheck/FSD, bug D1 26, D1/R2 57가 exit0이다. 아직 수정 SHA의 실제 Node26/MariaDB 계약 결과는 기다리는 중이며 T-028을 완료로 표시하지 않는다. Worker build/HTTP는 다음 별도 security patch와 함께 최종 게이트를 실행하기 전이므로 이 native checkpoint만으로 production 재게시를 주장하지 않는다.

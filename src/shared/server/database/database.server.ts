@@ -1,3 +1,4 @@
+import { withDeadlockRetry } from "./transaction-retry.server";
 import { createConnection, createPool, type Pool } from "mariadb";
 import { getHostedDatabase, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { requireDatabaseEnv } from "@/src/shared/server/runtime-env/index.server";
@@ -102,17 +103,12 @@ export async function databaseBatch(statements: readonly QueryStatement[]) {
   if (isHostedRuntime()) {
     return getHostedDatabase().batch(statements.map(({ sql, params }) => getHostedDatabase().prepare(sql).bind(...boundValues(params))));
   }
-  const connection = await getMariaDatabasePool().getConnection();
-  try {
-    await connection.beginTransaction();
-    const results = [];
-    for (const { sql, params } of statements) results.push(await connection.query(sql, params ? [...params] : undefined));
-    await connection.commit();
-    return results;
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  return withDeadlockRetry(
+    () => getMariaDatabasePool().getConnection(),
+    async (connection) => {
+      const results = [];
+      for (const { sql, params } of statements) results.push(await connection.query(sql, params ? [...params] : undefined));
+      return results;
+    },
+  );
 }

@@ -59,7 +59,7 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 
 ### 10단계 — 배포
 
-- [~] **T-028** 버그 제보의 native MariaDB 실행 검증 — 호환 DDL/transaction/upsert와 readiness는 구현·리뷰했으나 이 dot cloud에는 MariaDB/Docker가 없고 127.0.0.1:3307은 ECONNREFUSED. Sites D1 배포와 분리하여 원래 측정 환경의 별도 checkout/fixture DB에서 exact commit f294edd에 대한 읽기 전용 검증을 진행 중이다.
+- [~] **T-028** native MariaDB 버그 제보 호환성 — exact f294edd의 별도 Node26/MariaDB11.4 검사에서 15 PASS/2 FAIL: 동시 검토 deadlock이 정상 stale/replay 결과 대신 노출되며, 160회 상태·이력 정합성은 유지됨. 1213 한정 rollback-confirmed 전체 transaction 재시도(최대3회)와 ordered test preload를 수정했다. dot cloud unit30/lint/types/FSD/D1 회귀 통과, 수정 SHA의 saved-cloud native 재검증 대기. 운영 D1 장애로 해석하지 않는다.
 - [!] **T-029** 게시된 버그 제보·검토 쓰기 시나리오 — /bugs와 /admin/bugs 화면·nav·empty state 및 1181px/503px 표시 확인. 명확히 표시한 합성 제보 1건을 실제 저장·리뷰·해결하는 검사는 사용자 승인 대기. 새 기록을 임의 생성/삭제하지 않는다.
 
 

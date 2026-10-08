@@ -13,7 +13,7 @@ import { spawn } from "node:child_process";
 import { createConnection } from "mariadb";
 import { applyTestEnv, testDatabaseEnv } from "../tests/helpers/test-env";
 
-const UNIT_TESTS = ["tests/policy.test.ts", "tests/query-scope.test.ts", "tests/log-redaction.test.ts", "tests/admin-runtime.test.ts"];
+const UNIT_TESTS = ["tests/policy.test.ts", "tests/query-scope.test.ts", "tests/log-redaction.test.ts", "tests/admin-runtime.test.ts", "tests/transaction-retry.test.ts", "tests/test-preload.test.ts"];
 const DATABASE_TESTS = ["tests/visibility.e2e.test.ts"];
 
 applyTestEnv();
@@ -44,7 +44,7 @@ function runNodeTest(files: string[]) {
   return new Promise<number>((resolve) => {
     const child = spawn(
       process.execPath,
-      ["--import", "tsx", "--test", "--experimental-test-module-mocks", "--test-reporter=spec", ...files],
+      ["--import", new URL("../tests/helpers/preload.mjs", import.meta.url).href, "--test", "--experimental-test-module-mocks", "--test-reporter=spec", ...files],
       { stdio: "inherit", env: process.env },
     );
 
