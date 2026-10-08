@@ -68,11 +68,11 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
         <Stack spacing={1}>
           <Typography variant="h3">관리 로그</Typography>
           <Typography variant="body1" color="text.secondary">
-            슈퍼유저 전용 페이지입니다. 최근 사용자 액션 이력과 원본 로그 파일 tail을 같은 화면에서 확인합니다.
+            슈퍼유저 전용 페이지입니다. 최근 사용자 액션 이력과 영구 감사 로그을 같은 화면에서 확인합니다.
           </Typography>
         </Stack>
 
-        <Alert severity="info">다른 관리자 화면 이동은 상단 앱바를 사용합니다. 이 화면은 최근 액션 추적과 장애 분석용 원본 로그 확인에 집중합니다.</Alert>
+        <Alert severity="info">다른 관리자 화면 이동은 상단 앱바를 사용합니다. 이 화면은 최근 액션 추적과 장애 분석용 감사 기록 확인에 집중합니다.</Alert>
 
         <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
           <Stack spacing={2}>
@@ -107,7 +107,7 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
         <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
           <Stack spacing={2}>
             <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ justifyContent: "space-between" }}>
-              <Typography variant="h5">로그 파일 선택</Typography>
+              <Typography variant="h5">로그 날짜 선택</Typography>
               <Chip label={`파일 ${logFiles.length}개`} variant="outlined" />
             </Stack>
 
@@ -133,7 +133,7 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
 
         <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
           <Stack spacing={2}>
-            <Typography variant="h5">선택 파일 상세</Typography>
+            <Typography variant="h5">선택 로그 상세</Typography>
             {selectedFile ? (
               <Stack spacing={2}>
                 <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>

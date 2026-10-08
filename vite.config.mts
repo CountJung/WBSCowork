@@ -25,6 +25,8 @@ export default defineConfig(async () => {
           main: "./sites/worker.ts",
           compatibility_date: "2026-05-15",
           compatibility_flags: ["nodejs_compat"],
+          d1_databases: [{ binding: "DB", database_name: "wbscowork-local", database_id: "00000000-0000-4000-8000-000000000000", migrations_dir: "drizzle" }],
+          r2_buckets: [{ binding: "ATTACHMENTS", bucket_name: "wbscowork-attachments-local" }],
         },
       }),
     ],

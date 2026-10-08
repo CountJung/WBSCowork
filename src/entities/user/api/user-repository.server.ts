@@ -1,3 +1,4 @@
+import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
 import { getDatabasePool } from "@/src/shared/server/database/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
@@ -106,7 +107,14 @@ export async function upsertUser(input: UpsertUserInput): Promise<User> {
   const name = normalizeName(input.name);
 
   await getDatabasePool().query(
-    `INSERT INTO users (email, name, role, google_id, avatar_url, last_login_at, last_synced_at)
+    isHostedRuntime() ? `INSERT INTO users (email, name, role, google_id, avatar_url, last_login_at, last_synced_at)
+     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+     ON CONFLICT(email) DO UPDATE SET
+       name = excluded.name, google_id = excluded.google_id, avatar_url = excluded.avatar_url,
+       last_login_at = CURRENT_TIMESTAMP, last_synced_at = CURRENT_TIMESTAMP,
+       role = CASE WHEN users.role = 'admin' OR excluded.role = 'admin' THEN 'admin'
+         WHEN users.role = 'member' AND excluded.role = 'guest' THEN 'member' ELSE excluded.role END`
+    : `INSERT INTO users (email, name, role, google_id, avatar_url, last_login_at, last_synced_at)
      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
      ON DUPLICATE KEY UPDATE
        name = VALUES(name),

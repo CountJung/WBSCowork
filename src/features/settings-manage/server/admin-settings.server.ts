@@ -1,3 +1,4 @@
+import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import {
   getEditableEnvEntries,
@@ -11,6 +12,7 @@ import {
 import { getAbsoluteLogDirectory, listRecentLogFiles, type LogFileSummary } from "@/src/shared/server/logging/index.server";
 
 export type AdminSettingsSnapshot = {
+  managedRuntime?: boolean;
   revision: string;
   envEntries: EditableEnvEntry[];
   envFilePath: string;
@@ -27,6 +29,7 @@ export async function getAdminSettingsSnapshot(): Promise<AdminSettingsSnapshot>
   const runtimeEnv = getRuntimeEnv();
 
   return {
+    managedRuntime: isHostedRuntime(),
     revision: new Date().toISOString(),
     envEntries: await getEditableEnvEntries(),
     envFilePath: getEditableEnvFilePath(),

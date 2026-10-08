@@ -27,14 +27,14 @@ export default async function AdminSettingsPage() {
           <Stack spacing={1}>
             <Typography variant="h3">시스템 세팅</Typography>
             <Typography variant="body1" color="text.secondary">
-              슈퍼유저 전용 페이지입니다. 파일 로그 롤링 정책, 앱 포트, 환경 변수를 편집할 수 있습니다.
+              슈퍼유저 전용 페이지입니다. 호스팅 설정 상태와 감사 로그 보존 정책을 확인합니다.
             </Typography>
           </Stack>
         </Stack>
 
-        <Alert severity="info">
+        {!initialSnapshot.managedRuntime && <Alert severity="info">
           세팅은 {initialSnapshot.envFilePath} 파일에 저장됩니다. 다른 관리자 화면 이동은 상단 앱바를 사용합니다. APP_PORT는 build와 start 스크립트가 참조하며, NextAuth 공급자나 DB 연결처럼 모듈 초기화 시점에 고정되는 설정은 저장 후 서버 재시작이 필요할 수 있습니다.
-        </Alert>
+        </Alert>}
 
         {initialSnapshot.legacyOverrideKeys.length > 0 ? (
           <Alert severity="warning">
@@ -42,7 +42,13 @@ export default async function AdminSettingsPage() {
           </Alert>
         ) : null}
 
-        <SettingsAdminPanel initialSnapshot={initialSnapshot} saveSettingsAction={saveSettingsAction} />
+        {initialSnapshot.managedRuntime ? (
+          <Stack spacing={2}>
+            <Alert severity="info">설정 변경은 Sites → wbscowork → More actions → Settings에서 소유자가 직접 수행한 후 재배포합니다. 비밀값은 이 화면에 제공하지 않습니다.</Alert>
+            {initialSnapshot.envEntries.map((entry) => <Typography key={entry.key}>{entry.key}: {entry.value}</Typography>)}
+            <Typography>감사 로그 보존: {initialSnapshot.logRetentionDays}일. 오래된 항목은 다음 로그 기록 시 순차 정리합니다.</Typography>
+          </Stack>
+        ) : <SettingsAdminPanel initialSnapshot={initialSnapshot} saveSettingsAction={saveSettingsAction} />}
       </Stack>
     </Container>
   );

@@ -42,3 +42,15 @@ Vinext scanner는 next-auth를 포괄적으로 unsupported로 분류한다. 이 
 - Google callback: `https://wbscowork.cometgnome.chatgpt.site/api/auth/callback/google`
 
 다음은 D1 migration/SQL, R2 비공개 첨부와 부분 실패 정리, 영구 감사 로그/관리 설정의 호스팅 대응, 역할/소유권/업로드 실패 회귀 검사, 실제 Google 로그인, 승인된 접근 범위의 배포 검증이다. 기존 사용자 데이터/role의 이전이나 실제 사용자 승급은 이 변경에 포함하지 않는다.
+
+
+## D1 추가 체크포인트
+
+- generated Drizzle migration에 기존 6개 domain table과 감사 로그 table을 정의했다. 실제 요청 중 DDL은 금지하고 관리 화면은 migration 상태를 조회한다.
+- Worker는 request-scoped DB/R2 binding을 사용한다. 기존 MariaDB 실행 경로는 보존했다.
+- user upsert의 기존 admin/member 보존, 가시성 SQL, 99개 ID + project ID 분할, UTC timestamp, D1 atomic batch를 검증했다.
+- superuser 설정 화면에는 설정 유무만 제공한다. OAuth secret/SUPERUSER_EMAIL 변경은 앱에서 차단하고 Sites 소유자 설정으로 안내한다. superuser 인증/인가 guard는 유지한다.
+- 영구 감사 기록은 D1 audit_logs에 저장한다. 5일 기본 보존이며 새 기록 시 만료분을 최대 500건씩 정리하고, 조회에서 보존 기간 밖 항목은 즉시 제외한다. 유휴 상태의 자동 삭제는 아직 보장하지 않는다.
+- `npm run test:sites:storage`: 실제 Miniflare D1 binding, 가상 사용자/데이터로 **21건 통과**. 이 검사는 Google 로그인 성공의 증거가 아니다.
+- R2 bytes, 업로드/삭제 실패 복구, 전체 Worker 역할/실제 Google 로그인과 게시는 아직 남아 있다.
+- Drizzle 설치 의존성의 @esbuild-kit deprecation 안내는 도구 의존성 경고로 기록한다. 런타임 에러를 숨기는 조치는 하지 않았다.

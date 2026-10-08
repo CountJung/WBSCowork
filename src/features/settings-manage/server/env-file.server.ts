@@ -1,3 +1,4 @@
+import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { access, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { constants as fsConstants } from "node:fs";
@@ -55,7 +56,7 @@ const defaultEnvValues: Record<string, string> = {
   NEXTAUTH_URL: "http://localhost:3000",
   SUPERUSER_EMAIL: "admin@example.com",
   UPLOAD_DIR: "./uploads",
-  UPLOAD_MAX_FILE_SIZE_MB: "200",
+  UPLOAD_MAX_FILE_SIZE_MB: "20",
   LOG_DIR: "./logs",
   LOG_RETENTION_DAYS: "5",
   LOG_MAX_FILE_SIZE_MB: "100",
@@ -76,6 +77,7 @@ export function getManagedEnvKeys() {
 }
 
 export function getEditableEnvFilePath() {
+  if (isHostedRuntime()) return "Sites runtime settings";
   return path.join(getWorkspaceRoot(), ".env");
 }
 
@@ -147,6 +149,7 @@ async function readEnvFileMap() {
 }
 
 export async function getLegacyOverrideKeys() {
+  if (isHostedRuntime()) return [];
   const legacyOverrideFilePath = getLegacyOverrideEnvFilePath();
 
   try {
@@ -195,6 +198,11 @@ async function syncLegacyOverrideFile() {
 }
 
 export async function getEditableEnvEntries(): Promise<EditableEnvEntry[]> {
+  if (isHostedRuntime()) {
+    // Only configuration presence is sent to the browser, including for the superuser.
+    const keys = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "NEXTAUTH_SECRET", "NEXTAUTH_URL", "SUPERUSER_EMAIL", "UPLOAD_MAX_FILE_SIZE_MB", "LOG_RETENTION_DAYS"];
+    return keys.map((key) => ({ key, value: process.env[key]?.trim() ? "설정됨" : "미설정 (기본값 사용 가능)", source: "process" }));
+  }
   const fileEntries = await readEnvFileMap();
   const extraKeys = [...fileEntries.keys()].filter((key) => !knownEnvKeys.includes(key)).sort();
   const orderedKeys = [...knownEnvKeys, ...extraKeys];
@@ -225,6 +233,7 @@ export async function getEditableEnvEntries(): Promise<EditableEnvEntry[]> {
 }
 
 export async function saveEditableEnvEntries(entries: Record<string, string>) {
+  if (isHostedRuntime()) throw new Error("호스팅 설정은 Sites → wbscowork → More actions → Settings에서 소유자가 직접 변경하고 재배포해야 합니다.");
   const normalizedEntries = Object.entries(entries)
     .map(([key, value]) => [key.trim(), value] as const)
     .filter(([key]) => key.length > 0);

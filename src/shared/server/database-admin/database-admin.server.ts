@@ -1,3 +1,4 @@
+import { getHostedDatabase, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { createConnection } from "mariadb";
 import { requireDatabaseEnv } from "@/src/shared/server/runtime-env/index.server";
 
@@ -11,6 +12,7 @@ const managedTableNames = ["users", "projects", "tasks", "submissions", "submiss
 export type ManagedTableName = (typeof managedTableNames)[number];
 
 export type DatabaseAdminStatus = {
+  managedMigrations?: boolean;
   host: string;
   port: number;
   user: string;
@@ -197,6 +199,15 @@ async function withDatabaseConnection<T>(callback: (connection: Awaited<ReturnTy
 }
 
 export async function getDatabaseAdminStatus(): Promise<DatabaseAdminStatus> {
+  if (isHostedRuntime()) {
+    const db = getHostedDatabase();
+    const tables = await Promise.all(managedTableNames.map(async (name) => {
+      const columns = await db.prepare(`PRAGMA table_info(${name})`).all<{ name: string }>();
+      const found = new Set(columns.results.map((row) => row.name));
+      return { name, exists: found.size > 0, missingColumns: (requiredColumnsByTable[name] ?? []).filter((column) => !found.has(column)) };
+    }));
+    return { managedMigrations: true, host: "Sites D1", port: 0, user: "Worker binding", databaseName: "DB", databaseExists: true, tables, existingTableCount: tables.filter((table) => table.exists).length, managedTableCount: tables.length };
+  }
   const databaseEnv = requireDatabaseEnv();
 
   const databaseExists = await withServerConnection(async (connection) => {
@@ -268,6 +279,7 @@ export async function getDatabaseAdminStatus(): Promise<DatabaseAdminStatus> {
 }
 
 export async function initializeDatabaseSchema() {
+  if (isHostedRuntime()) throw new Error("Sites manages schema migrations during deployment. Runtime DDL is disabled.");
   const databaseEnv = requireDatabaseEnv();
   const quotedDatabaseName = quoteIdentifier(databaseEnv.database);
 

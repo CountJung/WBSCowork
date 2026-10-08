@@ -1,5 +1,5 @@
 import { getDatabasePool } from "@/src/shared/server/database/index.server";
-import { buildIdScopeClause, isEmptyIdScope, type IdScope } from "@/src/shared/server/query-scope/index.server";
+import { buildIdScopeClause, isEmptyIdScope, splitIdScope, type IdScope } from "@/src/shared/server/query-scope/index.server";
 import { mapSubmissionAttachmentRow, type SubmissionAttachment, type SubmissionAttachmentRow } from "../model/submission-attachment";
 
 export type CreateSubmissionAttachmentInput = {
@@ -48,6 +48,13 @@ export async function createSubmissionAttachment(input: CreateSubmissionAttachme
 export async function listAttachmentsByProject(projectId: number, scope: IdScope): Promise<SubmissionAttachment[]> {
   if (isEmptyIdScope(scope)) {
     return [];
+  }
+
+  const chunks = splitIdScope(scope);
+  if (chunks.length > 1) {
+    const rows = [];
+    for (const chunk of chunks) rows.push(...await listAttachmentsByProject(projectId, chunk));
+    return rows.sort((left, right) => left.id - right.id);
   }
 
   const { clause, params } = buildIdScopeClause("sa.submission_id", scope);

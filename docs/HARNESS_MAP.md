@@ -250,3 +250,5 @@ Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
 ## Sites Worker 추가 기준선 — 2026-10-08
 
 [Sites Worker 인증 체크포인트](SITES_WORKER_AUTH_2026-10-08.md)를 참고한다. lint/typecheck/FSD, 단위 14건, Worker 빌드와 인증 HTTP 계약 18건 통과. DB suite는 이 환경에서 미실행이며 이전 컨테이너의 33건을 가져와 통과로 기록하지 않는다. Vinext scanner의 next-auth unsupported 경고는 Vite 8 CommonJS 호환 모드와 실제 Worker 테스트로 범위를 구분한다. 실제 OAuth와 운영 DB/R2는 아직 미검증이다. Node module-mocking 실험 경고, 환경의 npm http-proxy 설정 경고, Vinext route 분류/플러그인 성능 안내는 알려진 도구 출력이며 테스트 통과의 증거로 사용하지 않는다.
+
+`npm run db:generate`는 `db/schema.ts`의 SQLite schema에서 Drizzle migration을 생성한다. `npm run test:sites:storage`는 실제 로컬 D1/R2 binding에서 합성 데이터만 사용하며 현재 D1 계약 21건 통과. 본문 이전 MariaDB 기준은 Node 실행 경로의 기준이다.

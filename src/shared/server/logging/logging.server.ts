@@ -1,4 +1,5 @@
 import "server-only";
+import { getHostedDatabase, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 
 import { appendFile, mkdir, open, readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
@@ -51,7 +52,7 @@ type LoggerGlobals = typeof globalThis & {
 const globalForLogger = globalThis as LoggerGlobals;
 const logFilePrefix = "application";
 const userActionEventTypes = new Set(["user-action", "user-action-failure"]);
-const workerRuntime = typeof __WBSCOWORK_WORKER__ !== "undefined" && __WBSCOWORK_WORKER__;
+
 
 function getBaseConsole() {
   if (!globalForLogger.__wbsBaseConsole) {
@@ -76,6 +77,7 @@ function getWorkspaceRoot() {
 }
 
 export function getAbsoluteLogDirectory() {
+  if (isHostedRuntime()) return "Sites D1 audit_logs";
   const logDirectory = getLogConfig().directory;
 
   return path.isAbsolute(logDirectory)
@@ -297,11 +299,19 @@ export function serializeError(error: unknown) {
 }
 
 export async function logEvent(level: LogLevel, source: string, message: string, details?: Record<string, unknown>) {
-  if (workerRuntime) {
-    getBaseConsole()[level](JSON.stringify({
-      timestamp: new Date().toISOString(), level, source, message,
-      details: normalizeDetails(details),
-    }));
+  if (isHostedRuntime()) {
+    const entry = { timestamp: new Date().toISOString(), level, source, message, details: normalizeDetails(details) };
+    getBaseConsole()[level](JSON.stringify(entry));
+    try {
+      const db = getHostedDatabase();
+      await db.batch([
+        db.prepare("DELETE FROM audit_logs WHERE id IN (SELECT id FROM audit_logs WHERE timestamp < ? LIMIT 500)").bind(auditCutoff()),
+        db.prepare("INSERT INTO audit_logs (timestamp, level, source, message, details) VALUES (?, ?, ?, ?, ?)")
+          .bind(entry.timestamp, level, source, message, entry.details ? JSON.stringify(entry.details) : null),
+      ]);
+    } catch {
+      getBaseConsole().error("Audit storage unavailable; structured event retained in Worker logs.");
+    }
     return;
   }
   await queueLogWrite(() =>
@@ -392,6 +402,13 @@ function parseLogEntry(line: string, fileName: string): LogEntryWithFile | null 
 }
 
 export async function readRecentLogEntries(fileName: string, limit = 200): Promise<LogEntryWithFile[]> {
+  if (isHostedRuntime()) {
+    const match = /^application-(\d{4}-\d{2}-\d{2})-1\.log$/.exec(fileName);
+    if (!match) throw new Error("유효한 감사 로그 날짜가 아닙니다.");
+    const result = await getHostedDatabase().prepare("SELECT timestamp, level, source, message, details FROM audit_logs WHERE substr(timestamp, 1, 10) = ? AND timestamp >= ? ORDER BY timestamp DESC, id DESC LIMIT ?")
+      .bind(match[1], auditCutoff(), Math.min(500, Math.max(1, limit))).all<AuditRow>();
+    return result.results.map((row) => ({ ...row, level: row.level as LogLevel, details: row.details ? JSON.parse(row.details) : undefined, fileName }));
+  }
   await ensureLogDirectory();
   const normalizedFileName = normalizeLogFileName(fileName);
   const filePath = resolveLogFilePath(normalizedFileName);
@@ -432,6 +449,11 @@ export async function listRecentUserActionEntries(limit = 50): Promise<LogEntryW
 }
 
 export async function listRecentLogFiles(limit = 10): Promise<LogFileSummary[]> {
+  if (isHostedRuntime()) {
+    const result = await getHostedDatabase().prepare("SELECT substr(timestamp, 1, 10) AS day, MAX(timestamp) AS modifiedAt, SUM(length(message) + COALESCE(length(details), 0)) AS sizeBytes FROM audit_logs WHERE timestamp >= ? GROUP BY day ORDER BY day DESC LIMIT ?")
+      .bind(auditCutoff(), Math.min(90, Math.max(1, limit))).all<{day: string; modifiedAt: string; sizeBytes: number}>();
+    return result.results.map((row) => ({ name: `application-${row.day}-1.log`, path: "D1 audit_logs", sizeBytes: row.sizeBytes, modifiedAt: row.modifiedAt }));
+  }
   await ensureLogDirectory();
   const logDirectory = getAbsoluteLogDirectory();
   const fileNames = await readdir(logDirectory);
@@ -457,7 +479,7 @@ export async function listRecentLogFiles(limit = 10): Promise<LogFileSummary[]> 
 }
 
 export async function initializeServerLogging() {
-  if (workerRuntime) {
+  if (isHostedRuntime()) {
     // Workers has no durable application filesystem. Preserve structured logs
     // in the host's logging sink, without recursively intercepting console.
     return;
@@ -509,4 +531,9 @@ export async function initializeServerLogging() {
     retentionDays: getLogConfig().retentionDays,
     maxFileSizeMb: getLogConfig().maxFileSizeMb,
   });
+}
+
+type AuditRow = { timestamp: string; level: string; source: string; message: string; details: string | null };
+function auditCutoff() {
+  return new Date(Date.now() - getLogConfig().retentionDays * 86400000).toISOString();
 }

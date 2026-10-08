@@ -46,7 +46,7 @@ export default async function AdminDatabasePage() {
           <Stack spacing={1}>
             <Typography variant="h3">DB 관리</Typography>
             <Typography variant="body1" color="text.secondary">
-              슈퍼유저 전용 페이지입니다. 현재 env로 지정된 MariaDB 대상에 DB와 기본 테이블을 생성하고 상태를 확인할 수 있습니다.
+              슈퍼유저 전용 페이지입니다. 설정된 데이터베이스의 테이블 상태를 확인합니다. Sites에서는 게시 시 migration을 적용합니다.
             </Typography>
           </Stack>
         </Stack>

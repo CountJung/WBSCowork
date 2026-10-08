@@ -1,11 +1,12 @@
 import { createConnection, createPool, type Pool } from "mariadb";
+import { getHostedDatabase, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { requireDatabaseEnv } from "@/src/shared/server/runtime-env/index.server";
 
 const globalForDatabase = globalThis as typeof globalThis & {
   __wbsMariaDbPool?: Pool;
 };
 
-export function getDatabasePool() {
+function getMariaDatabasePool() {
   if (!globalForDatabase.__wbsMariaDbPool) {
     const databaseEnv = requireDatabaseEnv();
 
@@ -63,4 +64,55 @@ export async function closeDatabasePool() {
 
   await globalForDatabase.__wbsMariaDbPool.end();
   globalForDatabase.__wbsMariaDbPool = undefined;
+}
+
+
+export type QueryStatement = { sql: string; params?: readonly unknown[] };
+function boundValues(params: readonly unknown[] = []) {
+  if (params.length > 100) throw new Error("D1 statements may bind at most 100 parameters.");
+  return params.map((value) => {
+    if (value === null || typeof value === "string" || value instanceof ArrayBuffer) return value;
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "boolean") return value ? 1 : 0;
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === "bigint" && Number.isSafeInteger(Number(value))) return Number(value);
+    throw new Error("Unsupported or missing SQL parameter.");
+  });
+}
+export function getDatabasePool() {
+  if (!isHostedRuntime()) return getMariaDatabasePool();
+  return {
+    async query(sql: string, params?: readonly unknown[]) {
+      const result = await getHostedDatabase().prepare(sql).bind(...boundValues(params)).all();
+      if (!result.success) throw new Error("D1 statement failed.");
+      if (/^\s*(SELECT|WITH|PRAGMA|EXPLAIN)\b/i.test(sql) || /\bRETURNING\b/i.test(sql)) return result.results.map((row) => Object.fromEntries(Object.entries(row).map(([key, value]) => [key,
+        key.endsWith("_at") && typeof value === "string" && /^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/.test(value)
+          ? value.replace(" ", "T") + "Z" : value,
+      ])));
+      return { insertId: result.meta.last_row_id, affectedRows: result.meta.changes };
+    },
+    async getConnection(): Promise<never> {
+      throw new Error("D1 uses atomic databaseBatch, not connection transactions.");
+    },
+  };
+}
+/** Executes related mutations atomically in either supported database runtime. */
+export async function databaseBatch(statements: readonly QueryStatement[]) {
+  if (!statements.length) return [];
+  if (isHostedRuntime()) {
+    return getHostedDatabase().batch(statements.map(({ sql, params }) => getHostedDatabase().prepare(sql).bind(...boundValues(params))));
+  }
+  const connection = await getMariaDatabasePool().getConnection();
+  try {
+    await connection.beginTransaction();
+    const results = [];
+    for (const { sql, params } of statements) results.push(await connection.query(sql, params ? [...params] : undefined));
+    await connection.commit();
+    return results;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }

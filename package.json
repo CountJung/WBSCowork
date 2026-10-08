@@ -19,13 +19,16 @@
     "build:next": "node --import tsx scripts/run-next.ts build",
     "dev:sites": "vinext dev",
     "start:sites": "wrangler dev --config dist/server/wrangler.json --local --ip 127.0.0.1 --inspector-port 0",
-    "test:sites:auth": "node scripts/test-sites-auth.mjs"
+    "test:sites:auth": "node scripts/test-sites-auth.mjs",
+    "db:generate": "drizzle-kit generate",
+    "test:sites:storage": "node --import tsx --experimental-test-module-mocks scripts/test-sites-storage.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^9.0.0",
     "@mui/material-nextjs": "^9.0.0",
+    "drizzle-orm": "0.45.2",
     "frappe-gantt": "^1.2.2",
     "mariadb": "^3.5.2",
     "next": "16.2.4",
@@ -46,6 +49,7 @@
     "@vitejs/plugin-rsc": "0.5.26",
     "babel-plugin-react-compiler": "1.0.0",
     "docx": "^9.6.1",
+    "drizzle-kit": "0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "pptxgenjs": "^4.0.1",

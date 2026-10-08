@@ -79,12 +79,12 @@ export default function DatabaseAdminPanel({
         <Stack spacing={2}>
           <Typography variant="h5">관리 작업</Typography>
           <Typography variant="body2" color="text.secondary">
-            아래 작업은 현재 env에 설정된 MariaDB 연결 정보로 대상 DB를 만들고, 마스터 플랜 기준 기본 테이블을 보장합니다.
+            {status.managedMigrations ? "Sites가 게시 시 versioned migration을 적용합니다. 이 화면에서는 상태만 조회합니다." : "현재 env에 설정된 MariaDB의 DB와 기본 테이블을 관리합니다."}
           </Typography>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-            <form action={initializeFormAction}>
+            {!status.managedMigrations && <form action={initializeFormAction}>
               <DatabaseActionButton>DB 및 기본 테이블 생성</DatabaseActionButton>
-            </form>
+            </form>}
             <form action={refreshFormAction}>
               <DatabaseActionButton>상태 새로고침</DatabaseActionButton>
             </form>

@@ -40,3 +40,14 @@ export function buildIdScopeClause(column: string, scope: IdScope): { clause: st
     params: uniqueIds,
   };
 }
+
+/** Each project query reserves one binding for its project ID. */
+export function splitIdScope(scope: IdScope, reservedParameters = 1): IdScope[] {
+  if (isUnrestrictedScope(scope)) return [scope];
+  const maximum = 100 - reservedParameters;
+  if (maximum < 1 || !Number.isInteger(maximum)) throw new Error("Invalid parameter budget.");
+  const ids = [...new Set(scope.ids)];
+  const scopes: IdScope[] = [];
+  for (let offset = 0; offset < ids.length; offset += maximum) scopes.push({ ids: ids.slice(offset, offset + maximum) });
+  return scopes;
+}

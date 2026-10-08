@@ -1,3 +1,4 @@
+import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 type RuntimeEnv = {
   appName: string;
   appPort: number;
@@ -113,7 +114,7 @@ export function getRuntimeEnv(): RuntimeEnv {
       database: databaseName,
       connectionLimit: readPositiveIntegerEnv("DB_CONNECTION_LIMIT", 5),
       connectTimeoutMs: readPositiveIntegerEnv("DB_CONNECT_TIMEOUT_MS", 10000),
-      configured: Boolean(databaseHost && databaseUser && databasePassword !== undefined && databaseName),
+      configured: isHostedRuntime() || Boolean(databaseHost && databaseUser && databasePassword !== undefined && databaseName),
     },
     logging: {
       directory: readOptionalEnv("LOG_DIR") ?? "./logs",

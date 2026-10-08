@@ -1,5 +1,5 @@
 import { getDatabasePool } from "@/src/shared/server/database/index.server";
-import { buildIdScopeClause, isEmptyIdScope, type IdScope } from "@/src/shared/server/query-scope/index.server";
+import { buildIdScopeClause, isEmptyIdScope, splitIdScope, type IdScope } from "@/src/shared/server/query-scope/index.server";
 import { mapCommentRow, type Comment, type CommentRow } from "../model/comment";
 
 export type CreateCommentInput = {
@@ -81,6 +81,13 @@ export async function getCommentById(id: number): Promise<Comment | null> {
 export async function listCommentsByProject(projectId: number, scope: IdScope): Promise<Comment[]> {
   if (isEmptyIdScope(scope)) {
     return [];
+  }
+
+  const chunks = splitIdScope(scope);
+  if (chunks.length > 1) {
+    const rows = [];
+    for (const chunk of chunks) rows.push(...await listCommentsByProject(projectId, chunk));
+    return rows.sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime() || left.id - right.id);
   }
 
   const { clause, params } = buildIdScopeClause("comments.submission_id", scope);

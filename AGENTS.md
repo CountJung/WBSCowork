@@ -10,7 +10,7 @@
 | 항목 | 값 |
 | --- | --- |
 | 프레임워크 | Next.js 16 App Router, TypeScript, MUI; Sites 빌드는 Vinext/Workers |
-| DB | MariaDB (mariadb npm 풀) |
+| DB | Node: MariaDB; Sites Worker: D1/SQLite, Drizzle migrations |
 | 인증 | NextAuth v4 (Google OAuth) |
 | 차트 | frappe-gantt |
 | 데이터 조회 | TanStack Query (클라이언트), Server Components (서버) |
