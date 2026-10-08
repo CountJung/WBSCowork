@@ -1,3 +1,4 @@
+import { pendingObjectCleanupCount } from "@/src/shared/server/object-cleanup/index.server";
 import { getHostedDatabase, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { createConnection } from "mariadb";
 import { requireDatabaseEnv } from "@/src/shared/server/runtime-env/index.server";
@@ -13,6 +14,7 @@ export type ManagedTableName = (typeof managedTableNames)[number];
 
 export type DatabaseAdminStatus = {
   managedMigrations?: boolean;
+  pendingCleanupCount?: number;
   host: string;
   port: number;
   user: string;
@@ -206,7 +208,7 @@ export async function getDatabaseAdminStatus(): Promise<DatabaseAdminStatus> {
       const found = new Set(columns.results.map((row) => row.name));
       return { name, exists: found.size > 0, missingColumns: (requiredColumnsByTable[name] ?? []).filter((column) => !found.has(column)) };
     }));
-    return { managedMigrations: true, host: "Sites D1", port: 0, user: "Worker binding", databaseName: "DB", databaseExists: true, tables, existingTableCount: tables.filter((table) => table.exists).length, managedTableCount: tables.length };
+    return { managedMigrations: true, pendingCleanupCount: await pendingObjectCleanupCount(), host: "Sites D1", port: 0, user: "Worker binding", databaseName: "DB", databaseExists: true, tables, existingTableCount: tables.filter((table) => table.exists).length, managedTableCount: tables.length };
   }
   const databaseEnv = requireDatabaseEnv();
 

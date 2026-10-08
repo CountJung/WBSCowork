@@ -21,7 +21,7 @@ export const tasks = sqliteTable("tasks", {
 export const submissions = sqliteTable("submissions", {
   id: id(), taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
   authorId: integer("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  content: text("content").notNull(), visibility: text("visibility").notNull().default("public"),
+  creationToken: text("creation_token").unique(), content: text("content").notNull(), visibility: text("visibility").notNull().default("public"),
   filePath: text("file_path"), fileName: text("file_name"), fileMimeType: text("file_mime_type"), fileSizeBytes: integer("file_size_bytes"),
   createdAt: createdAt(),
 }, (t) => [index("submissions_task_idx").on(t.taskId), index("submissions_author_idx").on(t.authorId), check("submissions_visibility_check", sql`${t.visibility} IN ('public','private')`)]);
@@ -38,3 +38,7 @@ export const auditLogs = sqliteTable("audit_logs", {
   id: id(), timestamp: text("timestamp").notNull(), level: text("level").notNull(),
   source: text("source").notNull(), message: text("message").notNull(), details: text("details"),
 }, (t) => [index("audit_logs_timestamp_idx").on(t.timestamp)]);
+export const fileCleanupJobs = sqliteTable("file_cleanup_jobs", {
+  objectKey: text("object_key").primaryKey(), notBefore: text("not_before").notNull(),
+  attempts: integer("attempts").notNull().default(0), createdAt: createdAt(),
+}, (t) => [index("file_cleanup_due_idx").on(t.notBefore)]);

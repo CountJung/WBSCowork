@@ -1,4 +1,7 @@
-import { getDatabasePool } from "@/src/shared/server/database/index.server";
+import { randomUUID } from "node:crypto";
+import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
+import type { StoredSubmissionAttachment } from "./submission-files.server";
+import { getDatabasePool, databaseBatch } from "@/src/shared/server/database/index.server";
 import { mapSubmissionRow, type Submission, type SubmissionRow, type SubmissionVisibility } from "../model/submission";
 
 /**
@@ -279,4 +282,39 @@ export async function deleteSubmission(submissionId: number): Promise<Submission
   await getDatabasePool().query("DELETE FROM submissions WHERE id = ?", [submissionId]);
 
   return existingSubmission;
+}
+
+
+function attachmentInsert(submissionId: number, attachment: StoredSubmissionAttachment) {
+  return { sql: "INSERT INTO submission_attachments (submission_id,file_path,file_name,file_mime_type,file_size_bytes) VALUES (?,?,?,?,?)",
+    params: [submissionId, attachment.filePath, attachment.fileName, attachment.fileMimeType, attachment.fileSizeBytes] };
+}
+/** Uploaded bytes are staged first; all D1 parent/attachment metadata commits together. */
+export async function createSubmissionWithAttachments(input: CreateSubmissionInput, attachments: StoredSubmissionAttachment[]): Promise<number> {
+  await Promise.all([ensureTaskExists(input.taskId), ensureAuthorExists(input.authorId)]);
+  const content = normalizeContent(input.content);
+  if (isHostedRuntime()) {
+    const token = randomUUID();
+    const result = await databaseBatch([
+      { sql: "INSERT INTO submissions (task_id,author_id,content,visibility,creation_token) VALUES (?,?,?,?,?)", params: [input.taskId,input.authorId,content,input.visibility ?? "public",token] },
+      ...attachments.map((file) => ({ sql: "INSERT INTO submission_attachments (submission_id,file_path,file_name,file_mime_type,file_size_bytes) SELECT id,?,?,?,? FROM submissions WHERE creation_token=?", params: [file.filePath,file.fileName,file.fileMimeType,file.fileSizeBytes,token] })),
+    ]);
+    return (result[0] as {meta:{last_row_id:number}}).meta.last_row_id;
+  }
+  const submission = await createSubmission(input);
+  try { await databaseBatch(attachments.map((file) => attachmentInsert(submission.id, file))); }
+  catch (error) { await deleteSubmission(submission.id); throw error; }
+  return submission.id;
+}
+export async function updateSubmissionWithAttachments(input: UpdateSubmissionInput, attachments: StoredSubmissionAttachment[]): Promise<void> {
+  const existing = await getSubmissionById(input.id);
+  if (!existing) throw new Error("수정할 제출물을 찾을 수 없습니다.");
+  await databaseBatch([
+    { sql: "UPDATE submissions SET content=?,visibility=?,file_path=?,file_name=?,file_mime_type=?,file_size_bytes=? WHERE id=?", params: [normalizeContent(input.content), input.visibility ?? existing.visibility,
+      input.replaceAttachment ? input.filePath ?? null : existing.filePath,
+      input.replaceAttachment ? input.fileName ?? null : existing.fileName,
+      input.replaceAttachment ? input.fileMimeType ?? null : existing.fileMimeType,
+      input.replaceAttachment ? input.fileSizeBytes ?? null : existing.fileSizeBytes, input.id] },
+    ...attachments.map((file) => attachmentInsert(input.id, file)),
+  ]);
 }

@@ -1,7 +1,7 @@
 # WBS 태스크 — 진행 목록
 
 > **살아있는 문서** — 단계 범위, 검증 절차, 블로커가 바뀔 때마다 업데이트하십시오.
-> 최종 검토: 2026-10-08 · 다음 번호: **T-023**
+> 최종 검토: 2026-10-08 · 다음 번호: **T-024**
 
 완료된 항목은 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮긴다. 이 문서에는 열린 항목만 남긴다.
 
@@ -59,7 +59,9 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 
 ### 10단계 — 배포
 
-- [~] **T-022** Sites Worker 전환 — 최소 NextAuth 런타임 계약 18건 통과. D1/R2·관리 설정/로그·권한 회귀·실제 Google 로그인·게시 검증은 진행 중. [체크포인트](SITES_WORKER_AUTH_2026-10-08.md).
+- [!] **T-023** 실제 브라우저 desktop/mobile와 Google 로그인 최종 확인 — 클라우드 Chromium IPC socket EPERM으로 자동 시각 QA가 차단됨. 게시 후 지원되는 브라우저에서 실제 로그인과 화면을 확인해야 함. [최종 검증 기록](SITES_VALIDATION_2026-10-08.md).
+
+- [~] **T-022** Sites Worker 전환 — NextAuth 18, D1/R2 57, 실제 Worker HTTP 92건 통과. 실제 Google 로그인·게시 검증은 진행 중. [체크포인트](SITES_WORKER_AUTH_2026-10-08.md).
 
 - [ ] **[T-021](#t-021--synology-nas-배포-준비)** Synology NAS 배포 준비
 

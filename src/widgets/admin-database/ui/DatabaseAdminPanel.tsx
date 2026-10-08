@@ -9,6 +9,7 @@ import type { DatabaseAdminActionState } from "@/src/features/database-manage";
 type DatabaseAdminPanelProps = {
   initialStatus: DatabaseAdminStatus;
   initializeDatabaseAction: (previousState: DatabaseAdminActionState) => Promise<DatabaseAdminActionState>;
+  retryStorageCleanupAction: (previousState: DatabaseAdminActionState) => Promise<DatabaseAdminActionState>;
   refreshDatabaseStatusAction: (previousState: DatabaseAdminActionState) => Promise<DatabaseAdminActionState>;
 };
 
@@ -26,6 +27,7 @@ export default function DatabaseAdminPanel({
   initialStatus,
   initializeDatabaseAction,
   refreshDatabaseStatusAction,
+  retryStorageCleanupAction,
 }: DatabaseAdminPanelProps) {
   const baseState: DatabaseAdminActionState = {
     success: null,
@@ -33,9 +35,12 @@ export default function DatabaseAdminPanel({
     status: initialStatus,
   };
 
-  const [initializeState, initializeFormAction] = useActionState(initializeDatabaseAction, baseState);
-  const [refreshState, refreshFormAction] = useActionState(refreshDatabaseStatusAction, baseState);
-  const activeState = refreshState.success === null ? initializeState : refreshState;
+  const [activeState, formAction] = useActionState(async (previous: DatabaseAdminActionState, data: FormData) => {
+    const intent = data.get("intent");
+    if (intent === "initialize") return initializeDatabaseAction(previous);
+    if (intent === "cleanup") return retryStorageCleanupAction(previous);
+    return refreshDatabaseStatusAction(previous);
+  }, baseState);
   const status = activeState.status;
 
   return (
@@ -81,11 +86,13 @@ export default function DatabaseAdminPanel({
           <Typography variant="body2" color="text.secondary">
             {status.managedMigrations ? "Sites가 게시 시 versioned migration을 적용합니다. 이 화면에서는 상태만 조회합니다." : "현재 env에 설정된 MariaDB의 DB와 기본 테이블을 관리합니다."}
           </Typography>
+          {status.managedMigrations ? <Typography>저장 파일 정리 대기: {status.pendingCleanupCount ?? 0}개 (진행 중인 업로드 포함)</Typography> : null}
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-            {!status.managedMigrations && <form action={initializeFormAction}>
+            {status.managedMigrations ? <form action={formAction}><input type="hidden" name="intent" value="cleanup" /><DatabaseActionButton>실패한 파일 정리 재시도</DatabaseActionButton></form> : null}
+            {!status.managedMigrations && <form action={formAction}><input type="hidden" name="intent" value="initialize" />
               <DatabaseActionButton>DB 및 기본 테이블 생성</DatabaseActionButton>
             </form>}
-            <form action={refreshFormAction}>
+            <form action={formAction}><input type="hidden" name="intent" value="refresh" />
               <DatabaseActionButton>상태 새로고침</DatabaseActionButton>
             </form>
           </Stack>

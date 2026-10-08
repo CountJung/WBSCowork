@@ -66,7 +66,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         <Stack spacing={3}>
           <Typography variant="h3">사용자 관리</Typography>
           <Alert severity="warning">
-            DB env가 완전하지 않아 사용자 권한을 제어할 수 없습니다. DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME을 먼저 점검해야 합니다.
+            DB env가 완전하지 않아 사용자 권한을 제어할 수 없습니다. 데이터베이스 연결과 배포 migration 상태를 먼저 점검해야 합니다.
           </Alert>
           <Typography variant="body2" color="text.secondary">
             다른 관리자 화면 이동은 상단 앱바를 사용합니다.

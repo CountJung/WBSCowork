@@ -1,5 +1,6 @@
 "use server";
 
+import { retryObjectCleanup } from "@/src/shared/server/object-cleanup/index.server";
 import { revalidatePath } from "next/cache";
 import { requireSuperuserSession, upsertUser } from "@/src/entities/user/index.server";
 import { getDatabaseAdminStatus, initializeDatabaseSchema, type DatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
@@ -119,5 +120,17 @@ export async function refreshDatabaseStatusAction(
       success: false,
       message: error instanceof Error ? error.message : "DB 상태 조회 중 알 수 없는 오류가 발생했습니다.",
     };
+  }
+}
+
+export async function retryStorageCleanupAction(previousState: DatabaseAdminActionState): Promise<DatabaseAdminActionState> {
+  const session = await requireSuperuserSession();
+  if (!session) return { ...previousState, success: false, message: "슈퍼유저만 저장 파일 정리를 실행할 수 있습니다." };
+  try {
+    const result = await retryObjectCleanup(100);
+    await logUserAction("admin.storage", { actorEmail: session.user.email ?? null, action: "storage.cleanup.retry", entityType: "storage", metadata: result });
+    return { success: result.failed === 0, message: `${result.removed}개 정리 완료, ${result.remaining}개 대기, ${result.failed}개 실패(지연 후 재시도)입니다.`, status: await getDatabaseAdminStatus() };
+  } catch (error) {
+    return { ...previousState, success: false, message: error instanceof Error ? error.message : "저장 파일 정리를 완료하지 못했습니다." };
   }
 }

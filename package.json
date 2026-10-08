@@ -21,7 +21,9 @@
     "start:sites": "wrangler dev --config dist/server/wrangler.json --local --ip 127.0.0.1 --inspector-port 0",
     "test:sites:auth": "node scripts/test-sites-auth.mjs",
     "db:generate": "drizzle-kit generate",
-    "test:sites:storage": "node --import tsx --experimental-test-module-mocks scripts/test-sites-storage.ts"
+    "test:sites:storage": "node --import tsx --experimental-test-module-mocks scripts/test-sites-storage.ts",
+    "test:sites:http": "node scripts/test-sites-http.mjs",
+    "test:sites:browser": "node scripts/test-sites-http.mjs --browser"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

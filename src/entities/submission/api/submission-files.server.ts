@@ -1,3 +1,5 @@
+import { getHostedAttachments, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
+import { queueObjectCleanup, deleteUnreferencedObject, retryObjectCleanup, validateObjectKey } from "@/src/shared/server/object-cleanup/index.server";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -72,6 +74,22 @@ export async function saveUploadedSubmissionAttachment(
     throw new Error(`첨부파일은 ${runtimeEnv.uploadMaxFileSizeMb}MB 이하만 업로드할 수 있습니다.`);
   }
 
+  if (isHostedRuntime()) {
+    if (!Number.isSafeInteger(input.taskId) || input.taskId <= 0 || !Number.isSafeInteger(input.authorId) || input.authorId <= 0) throw new Error("Invalid attachment owner or task.");
+    const filePath = `submissions/${input.taskId}/${input.authorId}/${randomUUID()}-${sanitizeFileName(file.name)}`;
+    await queueObjectCleanup(filePath, 60 * 60 * 1000);
+    try {
+      // R2 requires a known length. File/Blob retains that length and streams
+      // without allocating a second full-file Buffer or ArrayBuffer.
+      await getHostedAttachments().put(filePath, file as unknown as import("@cloudflare/workers-types").Blob, {
+        httpMetadata: { contentType: "application/octet-stream" },
+      });
+    } catch (error) {
+      await deleteUnreferencedObject(filePath).catch(() => undefined);
+      throw error;
+    }
+    return { absolutePath: filePath, filePath, fileMimeType: file.type || "application/octet-stream", fileName: sanitizeDisplayFileName(file.name), fileSizeBytes: file.size };
+  }
   const uploadRoot = getAbsoluteUploadDirectory();
   const relativeDirectory = path.join("submissions", String(input.taskId), String(input.authorId));
   const absoluteDirectory = assertPathWithinRoot(uploadRoot, path.join(uploadRoot, relativeDirectory));
@@ -98,6 +116,11 @@ export async function deleteStoredSubmissionAttachment(filePath: string | null |
     return;
   }
 
+  if (isHostedRuntime()) {
+    await deleteUnreferencedObject(filePath);
+    return;
+  }
+
   await rm(resolveStoredSubmissionAttachmentPath(filePath), { force: true });
 }
 
@@ -108,6 +131,11 @@ export function resolveStoredSubmissionAttachmentPath(filePath: string) {
 }
 
 export async function readStoredSubmissionAttachment(filePath: string) {
+  if (isHostedRuntime()) {
+    const object = await getHostedAttachments().get(validateObjectKey(filePath));
+    if (!object) throw new Error("Attachment object not found.");
+    return { absolutePath: filePath, buffer: object.body as unknown as ReadableStream<Uint8Array>, fileSizeBytes: object.size };
+  }
   const absolutePath = resolveStoredSubmissionAttachmentPath(filePath);
   const [buffer, fileStats] = await Promise.all([readFile(absolutePath), stat(absolutePath)]);
 
@@ -147,6 +175,7 @@ async function removeEmptyDirectory(absoluteDir: string, uploadRoot: string) {
  * 내부에 남은 하위 폴더가 없으면 taskId 디렉터리를 삭제합니다.
  */
 export async function cleanupTaskUploadDirectory(taskId: number) {
+  if (isHostedRuntime()) { await retryObjectCleanup(); return; }
   const uploadRoot = getAbsoluteUploadDirectory();
   const taskDir = assertPathWithinRoot(uploadRoot, path.join(uploadRoot, "submissions", String(taskId)));
 
@@ -166,6 +195,18 @@ export async function cleanupTaskUploadDirectory(taskId: number) {
 }
 
 export async function deleteProjectUploadDirectories(taskIds: number[]) {
+  if (isHostedRuntime()) {
+    for (const taskId of taskIds) {
+      if (!Number.isSafeInteger(taskId) || taskId <= 0) throw new Error("Invalid cleanup task.");
+      let cursor: string | undefined;
+      do {
+        const page = await getHostedAttachments().list({ prefix: `submissions/${taskId}/`, limit: 100, cursor });
+        for (const object of page.objects) await deleteUnreferencedObject(object.key);
+        cursor = page.truncated ? page.cursor : undefined;
+      } while (cursor);
+    }
+    return;
+  }
   const uploadRoot = getAbsoluteUploadDirectory();
 
   for (const taskId of taskIds) {

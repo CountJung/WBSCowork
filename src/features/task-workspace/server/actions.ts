@@ -1,20 +1,20 @@
 "use server";
 
+import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAuthSession, getSignInPath, getUserByEmail } from "@/src/entities/user/index.server";
 import { logUserAction, logUserActionFailure } from "@/src/shared/server/logging/index.server";
 import {
-  createSubmissionAttachment,
   deleteSubmissionAttachment,
   getSubmissionAttachmentById,
   listAttachmentsBySubmission,
   listAttachmentsByTask,
   listAttachmentsByProject,
-  createSubmission,
+  createSubmissionWithAttachments,
   deleteSubmission,
   getSubmissionByIdForViewer,
-  updateSubmission,
+  updateSubmissionWithAttachments,
   listSubmissionsByProject,
   listSubmissionsByTask,
   deleteStoredSubmissionAttachment,
@@ -29,6 +29,13 @@ import { createTask, deleteTask, getTaskById, listTasksByProject, updateTask } f
 import { canAccessAdminPanel, canManageAllSubmissions, canWriteTaskContent } from "@/src/entities/user";
 import type { Submission, SubmissionVisibility } from "@/src/entities/submission";
 import type { User } from "@/src/entities/user";
+
+function validateUploadBatch(files: File[]) {
+  const maximum = getRuntimeEnv().uploadMaxFileSizeMb * 1024 * 1024;
+  if (files.length > 20 || files.some((file) => file.size > maximum) || files.reduce((total, file) => total + file.size, 0) > maximum) {
+    throw new Error(`첨부파일 합계는 ${getRuntimeEnv().uploadMaxFileSizeMb}MB 이하, 최대 20개여야 합니다.`);
+  }
+}
 
 function buildTasksPath(
   status: "success" | "error",
@@ -460,10 +467,13 @@ export async function deleteTaskAction(formData: FormData) {
   const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
   const session = await requireWritableSession(projectId);
 
+  let cleanupFailed = false;
   let redirectPath: string;
 
   try {
     const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
+
+    await requireProjectTask(projectId, taskId);
 
     // 삭제 전에 해당 작업의 제출물과 첨부파일 목록 조회 (DB CASCADE 이전)
     const [submissionsToClean, attachmentsToClean] = await Promise.all([
@@ -478,6 +488,7 @@ export async function deleteTaskAction(formData: FormData) {
     for (const sub of submissionsToClean) {
       if (sub.filePath) {
         await deleteStoredSubmissionAttachment(sub.filePath).catch(async (cleanupError) => {
+        cleanupFailed = true;
           await logUserActionFailure(
             "tasks",
             {
@@ -498,6 +509,7 @@ export async function deleteTaskAction(formData: FormData) {
     // submission_attachments 파일 정리 (DB 레코드는 CASCADE로 이미 삭제됨)
     for (const attachment of attachmentsToClean) {
       await deleteStoredSubmissionAttachment(attachment.filePath).catch(async (cleanupError) => {
+        cleanupFailed = true;
         await logUserActionFailure(
           "tasks",
           {
@@ -529,7 +541,7 @@ export async function deleteTaskAction(formData: FormData) {
       taskId: task.id,
     });
 
-    redirectPath = buildTasksPath("success", `${task.title} 작업을 삭제했습니다.`, { projectId });
+    redirectPath = buildTasksPath(cleanupFailed ? "error" : "success", cleanupFailed ? `${task.title} 작업 DB는 삭제됐고 파일 정리는 재시도 대기 중입니다.` : `${task.title} 작업을 삭제했습니다.`, { projectId });
   } catch (error) {
     await logUserActionFailure(
       "tasks",
@@ -556,6 +568,7 @@ export async function deleteProjectAction(formData: FormData) {
   const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
   const session = await requireProjectAdminSession(projectId);
 
+  let cleanupFailed = false;
   let redirectPath = "/tasks";
 
   try {
@@ -573,6 +586,7 @@ export async function deleteProjectAction(formData: FormData) {
     for (const sub of submissionsToClean) {
       if (sub.filePath) {
         await deleteStoredSubmissionAttachment(sub.filePath).catch(async (cleanupError) => {
+        cleanupFailed = true;
           await logUserActionFailure(
             "tasks",
             {
@@ -592,6 +606,7 @@ export async function deleteProjectAction(formData: FormData) {
     // submission_attachments 파일 정리 (DB 레코드는 CASCADE로 이미 삭제됨)
     for (const attachment of attachmentsToClean) {
       await deleteStoredSubmissionAttachment(attachment.filePath).catch(async (cleanupError) => {
+        cleanupFailed = true;
         await logUserActionFailure(
           "tasks",
           {
@@ -624,7 +639,7 @@ export async function deleteProjectAction(formData: FormData) {
       projectId: project.id,
     });
 
-    redirectPath = buildTasksPath("success", `${project.name} 프로젝트를 삭제했습니다.`);
+    redirectPath = buildTasksPath(cleanupFailed ? "error" : "success", cleanupFailed ? `${project.name} 프로젝트 DB는 삭제됐고 파일 정리는 재시도 대기 중입니다.` : `${project.name} 프로젝트를 삭제했습니다.`);
   } catch (error) {
     await logUserActionFailure(
       "tasks",
@@ -653,6 +668,7 @@ export async function createSubmissionAction(formData: FormData) {
   const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
   const { session, user } = await requirePersistedUser(projectId);
   const savedAttachments: StoredSubmissionAttachment[] = [];
+  let metadataCommitted = false;
 
   let redirectPath: string;
 
@@ -663,28 +679,11 @@ export async function createSubmissionAction(formData: FormData) {
       (v): v is File => v instanceof File && v.size > 0,
     );
 
-    const submission = await createSubmission({
-      taskId,
-      authorId: user.id,
-      content: getSingleValue(formData.get("content")),
-      visibility: parseVisibility(formData.get("visibility")),
-      filePath: null,
-      fileName: null,
-      fileMimeType: null,
-      fileSizeBytes: null,
-    });
-
-    for (const file of uploadedFiles) {
-      const stored = await saveUploadedSubmissionAttachment(file, { authorId: user.id, taskId });
-      savedAttachments.push(stored);
-      await createSubmissionAttachment({
-        submissionId: submission.id,
-        filePath: stored.filePath,
-        fileName: stored.fileName,
-        fileMimeType: stored.fileMimeType,
-        fileSizeBytes: stored.fileSizeBytes,
-      });
-    }
+    validateUploadBatch(uploadedFiles);
+    for (const file of uploadedFiles) savedAttachments.push(await saveUploadedSubmissionAttachment(file, { authorId: user.id, taskId }));
+    const submissionId = await createSubmissionWithAttachments({ taskId, authorId: user.id,
+      content: getSingleValue(formData.get("content")), visibility: parseVisibility(formData.get("visibility")) }, savedAttachments);
+    metadataCommitted = true;
 
     revalidatePath("/");
     revalidatePath("/tasks");
@@ -693,10 +692,10 @@ export async function createSubmissionAction(formData: FormData) {
       actorEmail: session.user.email ?? null,
       action: "submission.create",
       entityType: "submission",
-      entityId: submission.id,
+      entityId: submissionId,
       projectId,
       taskId,
-      submissionId: submission.id,
+      submissionId,
       metadata: {
         attachmentCount: uploadedFiles.length,
       },
@@ -704,7 +703,7 @@ export async function createSubmissionAction(formData: FormData) {
 
     redirectPath = buildTasksPath("success", "제출물을 등록했습니다.", { projectId, taskId });
   } catch (error) {
-    for (const saved of savedAttachments) {
+    for (const saved of metadataCommitted ? [] : savedAttachments) {
       await deleteStoredSubmissionAttachment(saved.filePath).catch(() => undefined);
     }
 
@@ -722,7 +721,7 @@ export async function createSubmissionAction(formData: FormData) {
 
     redirectPath = buildTasksPath(
       "error",
-      error instanceof Error ? error.message : "제출물 등록 중 알 수 없는 오류가 발생했습니다.",
+      metadataCommitted ? "제출물은 저장됐지만 화면 갱신 중 오류가 발생했습니다. 다시 등록하지 말고 목록을 확인해 주세요." : error instanceof Error ? error.message : "제출물 등록 중 알 수 없는 오류가 발생했습니다.",
       { projectId, taskId },
     );
   }
@@ -735,7 +734,9 @@ export async function updateSubmissionAction(formData: FormData) {
   const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
   const session = await requireWritableSession(projectId);
   const savedAttachments: StoredSubmissionAttachment[] = [];
+  let metadataCommitted = false;
 
+  let cleanupFailed = false;
   let redirectPath: string;
 
   try {
@@ -751,7 +752,9 @@ export async function updateSubmissionAction(formData: FormData) {
       (v): v is File => v instanceof File && v.size > 0,
     );
 
-    const submission = await updateSubmission({
+    validateUploadBatch(uploadedFiles);
+    for (const file of uploadedFiles) savedAttachments.push(await saveUploadedSubmissionAttachment(file, { authorId: existingSubmission.authorId, taskId }));
+    await updateSubmissionWithAttachments({
       id: submissionId,
       content: getSingleValue(formData.get("content")),
       visibility: parseVisibility(formData.get("visibility")),
@@ -760,10 +763,12 @@ export async function updateSubmissionAction(formData: FormData) {
       fileName: null,
       fileMimeType: null,
       fileSizeBytes: null,
-    });
+    }, savedAttachments);
+    metadataCommitted = true;
 
     if (clearAttachment && existingSubmission.filePath) {
       await deleteStoredSubmissionAttachment(existingSubmission.filePath).catch(async (cleanupError) => {
+        cleanupFailed = true;
         await logUserActionFailure(
           "tasks",
           {
@@ -781,21 +786,6 @@ export async function updateSubmissionAction(formData: FormData) {
       });
     }
 
-    for (const file of uploadedFiles) {
-      const stored = await saveUploadedSubmissionAttachment(file, {
-        authorId: existingSubmission.authorId,
-        taskId,
-      });
-      savedAttachments.push(stored);
-      await createSubmissionAttachment({
-        submissionId,
-        filePath: stored.filePath,
-        fileName: stored.fileName,
-        fileMimeType: stored.fileMimeType,
-        fileSizeBytes: stored.fileSizeBytes,
-      });
-    }
-
     revalidatePath("/");
     revalidatePath("/tasks");
 
@@ -803,18 +793,18 @@ export async function updateSubmissionAction(formData: FormData) {
       actorEmail: session.user.email ?? null,
       action: "submission.update",
       entityType: "submission",
-      entityId: submission.id,
+      entityId: submissionId,
       projectId,
       taskId,
-      submissionId: submission.id,
+      submissionId,
       metadata: {
         addedAttachmentCount: uploadedFiles.length,
       },
     });
 
-    redirectPath = buildTasksPath("success", "제출물을 수정했습니다.", { projectId, taskId });
+    redirectPath = buildTasksPath(cleanupFailed ? "error" : "success", cleanupFailed ? "제출물 변경은 저장됐고 이전 파일 정리는 재시도 대기 중입니다." : "제출물을 수정했습니다.", { projectId, taskId });
   } catch (error) {
-    for (const saved of savedAttachments) {
+    for (const saved of metadataCommitted ? [] : savedAttachments) {
       await deleteStoredSubmissionAttachment(saved.filePath).catch(() => undefined);
     }
 
@@ -832,7 +822,7 @@ export async function updateSubmissionAction(formData: FormData) {
 
     redirectPath = buildTasksPath(
       "error",
-      error instanceof Error ? error.message : "제출물 수정 중 알 수 없는 오류가 발생했습니다.",
+      metadataCommitted ? "변경은 저장됐지만 화면 갱신 중 오류가 발생했습니다. 목록을 확인해 주세요." : error instanceof Error ? error.message : "제출물 수정 중 알 수 없는 오류가 발생했습니다.",
       { projectId, taskId },
     );
   }
@@ -845,6 +835,7 @@ export async function deleteSubmissionAction(formData: FormData) {
   const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
   const session = await requireWritableSession(projectId);
 
+  let cleanupFailed = false;
   let redirectPath: string;
 
   try {
@@ -863,6 +854,7 @@ export async function deleteSubmissionAction(formData: FormData) {
     // 레거시 단일 파일 정리
     if (existingSubmission.filePath) {
       await deleteStoredSubmissionAttachment(existingSubmission.filePath).catch(async (cleanupError) => {
+        cleanupFailed = true;
         await logUserActionFailure(
           "tasks",
           {
@@ -885,6 +877,7 @@ export async function deleteSubmissionAction(formData: FormData) {
     // submission_attachments 파일 정리 (DB 레코드는 CASCADE로 이미 삭제됨)
     for (const attachment of attachmentsToClean) {
       await deleteStoredSubmissionAttachment(attachment.filePath).catch(async (cleanupError) => {
+        cleanupFailed = true;
         await logUserActionFailure(
           "tasks",
           {
@@ -919,7 +912,7 @@ export async function deleteSubmissionAction(formData: FormData) {
       },
     });
 
-    redirectPath = buildTasksPath("success", "제출물을 삭제했습니다.", { projectId, taskId });
+    redirectPath = buildTasksPath(cleanupFailed ? "error" : "success", cleanupFailed ? "제출물 DB는 삭제됐고 파일 정리는 재시도 대기 중입니다." : "제출물을 삭제했습니다.", { projectId, taskId });
   } catch (error) {
     await logUserActionFailure(
       "tasks",
@@ -949,6 +942,7 @@ export async function deleteSubmissionAttachmentAction(formData: FormData) {
   const attachmentId = parseRequiredPositiveInteger(formData.get("attachmentId"), "첨부파일");
   const session = await requireWritableSession(projectId);
 
+  let cleanupFailed = false;
   let redirectPath: string;
 
   try {
@@ -964,6 +958,7 @@ export async function deleteSubmissionAttachmentAction(formData: FormData) {
 
     await deleteSubmissionAttachment(attachmentId);
     await deleteStoredSubmissionAttachment(attachment.filePath).catch(async (cleanupError) => {
+        cleanupFailed = true;
       await logUserActionFailure(
         "tasks",
         {
@@ -993,7 +988,7 @@ export async function deleteSubmissionAttachmentAction(formData: FormData) {
       metadata: { fileName: attachment.fileName },
     });
 
-    redirectPath = buildTasksPath("success", "첨부파일을 삭제했습니다.", { projectId, taskId });
+    redirectPath = buildTasksPath(cleanupFailed ? "error" : "success", cleanupFailed ? "첨부 정보는 삭제됐고 파일 정리는 재시도 대기 중입니다." : "첨부파일을 삭제했습니다.", { projectId, taskId });
   } catch (error) {
     await logUserActionFailure(
       "tasks",

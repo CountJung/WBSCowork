@@ -4,7 +4,7 @@ import DatabaseAdminPanel from "@/src/widgets/admin-database";
 import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
 import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
-import { initializeDatabaseAction, refreshDatabaseStatusAction } from "./actions";
+import { initializeDatabaseAction, refreshDatabaseStatusAction, retryStorageCleanupAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ export default async function AdminDatabasePage() {
         <Stack spacing={3}>
           <Typography variant="h3">DB 관리</Typography>
           <Alert severity="warning">
-            DB env가 완전하지 않아 관리 기능을 실행할 수 없습니다. DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME을 먼저 점검해야 합니다.
+            DB env가 완전하지 않아 관리 기능을 실행할 수 없습니다. 데이터베이스 연결과 배포 migration 상태를 먼저 점검해야 합니다.
           </Alert>
           <Typography variant="body2" color="text.secondary">
             관리자 하위 화면 이동은 상단 앱바를 사용합니다.
@@ -55,6 +55,7 @@ export default async function AdminDatabasePage() {
 
         <DatabaseAdminPanel
           initialStatus={initialStatus}
+          retryStorageCleanupAction={retryStorageCleanupAction}
           initializeDatabaseAction={initializeDatabaseAction}
           refreshDatabaseStatusAction={refreshDatabaseStatusAction}
         />

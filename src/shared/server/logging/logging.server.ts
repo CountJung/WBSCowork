@@ -301,7 +301,7 @@ export function serializeError(error: unknown) {
 export async function logEvent(level: LogLevel, source: string, message: string, details?: Record<string, unknown>) {
   if (isHostedRuntime()) {
     const entry = { timestamp: new Date().toISOString(), level, source, message, details: normalizeDetails(details) };
-    getBaseConsole()[level](JSON.stringify(entry));
+    getBaseConsole()[level](JSON.stringify({ timestamp: entry.timestamp, level, source, message }));
     try {
       const db = getHostedDatabase();
       await db.batch([
@@ -310,7 +310,7 @@ export async function logEvent(level: LogLevel, source: string, message: string,
           .bind(entry.timestamp, level, source, message, entry.details ? JSON.stringify(entry.details) : null),
       ]);
     } catch {
-      getBaseConsole().error("Audit storage unavailable; structured event retained in Worker logs.");
+      getBaseConsole().error("Audit storage unavailable; event summary retained in Worker logs.");
     }
     return;
   }

@@ -14,14 +14,14 @@ export async function GET(request: Request, context: RouteContext) {
   const session = await getAuthSession();
 
   if (!session?.user) {
-    return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
+    return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401, headers: { "Cache-Control": "private, no-store" } });
   }
 
   const params = await context.params;
   const submissionId = Number(params.submissionId);
 
   if (!Number.isInteger(submissionId) || submissionId <= 0) {
-    return NextResponse.json({ message: "올바른 제출물 식별자가 아닙니다." }, { status: 400 });
+    return NextResponse.json({ message: "올바른 제출물 식별자가 아닙니다." }, { status: 400, headers: { "Cache-Control": "private, no-store" } });
   }
 
   // 공개 범위를 질의에 적용해, 볼 수 없는 제출물은 존재하지 않는 것과 같은 404로 응답한다.
@@ -31,13 +31,13 @@ export async function GET(request: Request, context: RouteContext) {
   });
 
   if (!submission?.filePath || !submission.fileName) {
-    return NextResponse.json({ message: "첨부파일이 없습니다." }, { status: 404 });
+    return NextResponse.json({ message: "첨부파일이 없습니다." }, { status: 404, headers: { "Cache-Control": "private, no-store" } });
   }
 
   try {
     const attachment = await readStoredSubmissionAttachment(submission.filePath);
     const url = new URL(request.url);
-    const inline = url.searchParams.get("inline") === "1";
+    const inline = url.searchParams.get("inline") === "1" && /^(image\/(png|jpeg|gif|webp|avif)|application\/pdf|text\/plain)$/.test(submission.fileMimeType ?? "");
     const disposition = inline
       ? `inline; filename*=UTF-8''${encodeURIComponent(submission.fileName)}`
       : `attachment; filename*=UTF-8''${encodeURIComponent(submission.fileName)}`;
@@ -57,6 +57,8 @@ export async function GET(request: Request, context: RouteContext) {
     return new NextResponse(attachment.buffer, {
       headers: {
         "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'",
         "Content-Disposition": disposition,
         "Content-Length": String(submission.fileSizeBytes ?? attachment.fileSizeBytes),
         "Content-Type": submission.fileMimeType ?? "application/octet-stream",
@@ -76,6 +78,6 @@ export async function GET(request: Request, context: RouteContext) {
       error,
     );
 
-    return NextResponse.json({ message: "첨부파일을 불러오지 못했습니다." }, { status: 404 });
+    return NextResponse.json({ message: "첨부파일을 불러오지 못했습니다." }, { status: 404, headers: { "Cache-Control": "private, no-store" } });
   }
 }

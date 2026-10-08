@@ -236,7 +236,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         <Stack spacing={3}>
           <Typography variant="h3">작업 관리</Typography>
           <Alert severity="warning">
-            DB env가 완전하지 않아 작업 데이터를 불러올 수 없습니다. DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME을 먼저 점검해야 합니다.
+            DB env가 완전하지 않아 작업 데이터를 불러올 수 없습니다. 데이터베이스 연결과 배포 migration 상태를 먼저 점검해야 합니다.
           </Alert>
         </Stack>
       </Container>

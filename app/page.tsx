@@ -33,7 +33,7 @@ export default async function Home({ searchParams }: HomePageProps) {
           <Stack spacing={1.5}>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
               <Chip label={runtimeEnv.auth.googleProviderConfigured ? "Google OAuth 준비됨" : "Google OAuth 환경 변수 필요"} color={runtimeEnv.auth.googleProviderConfigured ? "success" : "warning"} variant="outlined" />
-              <Chip label={runtimeEnv.database.configured ? "MariaDB 환경 준비됨" : "MariaDB 환경 변수 필요"} color={runtimeEnv.database.configured ? "success" : "warning"} variant="outlined" />
+              <Chip label={runtimeEnv.database.configured ? "데이터베이스 연결 준비됨" : "데이터베이스 설정 필요"} color={runtimeEnv.database.configured ? "success" : "warning"} variant="outlined" />
             </Stack>
             <Typography variant="h3">{runtimeEnv.appName}</Typography>
             <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
@@ -60,7 +60,7 @@ export default async function Home({ searchParams }: HomePageProps) {
         <Stack spacing={3}>
           <Typography variant="h3">홈</Typography>
           <Alert severity="warning">
-            DB 환경 변수가 준비되지 않아 프로젝트 개요를 불러올 수 없습니다. 관리자 설정에서 DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME을 먼저 점검해야 합니다.
+            DB 환경 변수가 준비되지 않아 프로젝트 개요를 불러올 수 없습니다. 관리자 설정에서 데이터베이스 연결과 배포 migration 상태를 먼저 점검해야 합니다.
           </Alert>
         </Stack>
       </Container>
@@ -77,7 +77,7 @@ export default async function Home({ searchParams }: HomePageProps) {
         <Stack spacing={3}>
           <Typography variant="h3">홈</Typography>
           <Alert severity="warning">
-            홈 화면에 필요한 프로젝트 또는 작업 테이블이 아직 준비되지 않았습니다. 먼저 관리자 DB 페이지에서 기본 테이블을 초기화해야 합니다.
+            홈 화면에 필요한 프로젝트 또는 작업 테이블이 아직 준비되지 않았습니다. 관리자 DB 페이지에서 테이블과 배포 migration 상태를 확인해 주세요.
           </Alert>
           <Typography variant="body2" color="text.secondary">
             관리자와 작업 화면 이동은 상단 앱바를 사용합니다.

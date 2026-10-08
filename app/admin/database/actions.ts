@@ -1,6 +1,7 @@
 "use server";
 
 import {
+  retryStorageCleanupAction as retryStorageCleanupActionImpl,
   initializeDatabaseAction as initializeDatabaseActionImpl,
   refreshDatabaseStatusAction as refreshDatabaseStatusActionImpl,
 } from "@/src/features/database-manage/index.server";
@@ -12,4 +13,8 @@ export async function initializeDatabaseAction(previousState: DatabaseAdminActio
 
 export async function refreshDatabaseStatusAction(previousState: DatabaseAdminActionState) {
   return refreshDatabaseStatusActionImpl(previousState);
+}
+
+export async function retryStorageCleanupAction(previousState: DatabaseAdminActionState) {
+  return retryStorageCleanupActionImpl(previousState);
 }

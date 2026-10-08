@@ -126,3 +126,12 @@ users       1 ── N comments
 - `vite.config.mts`, `sites/worker.ts`: 기존 App Router를 Worker 산출물로 빌드한다. Google/NextAuth와 MUI는 유지한다.
 - `scripts/test-sites-auth.mjs`: 빌드 산출물을 workerd에서 실행하는 인증/익명 접근 계약. 가상 테스트 설정만 사용한다.
 - `docs/SITES_WORKER_AUTH_2026-10-08.md`: 통과 범위와 운영 검증의 남은 단계.
+
+
+## D1/R2 및 실패 복구
+
+- `db/schema.ts`, `drizzle/`: 기존 6개 domain table, 감사 로그, 저장 객체 정리 ledger와 cascade/staging trigger. 배포된 migration은 수정하지 않고 추가한다.
+- `src/shared/server/hosted-runtime`: request-scoped D1/R2 binding. MariaDB 실행 경로와 분리한다.
+- `src/shared/server/object-cleanup`: 참조 중 객체 삭제 거부, 지연 재시도/backoff, 만료된 staging 객체 복구.
+- `src/entities/submission/api/submission-files.server.ts`: Worker에서는 known-length Blob을 R2에 전달하고 다운로드를 stream으로 읽는다. Node는 파일 저장소를 유지한다.
+- `scripts/test-sites-{auth.mjs,storage.ts,http.mjs,browser.py}`: 인증·저장소·실제 Worker HTTP·시각 QA의 검증 경계를 구분한다.

@@ -83,6 +83,8 @@ npm run test:db:down  # 테스트 DB 종료 및 데이터 폐기
 npm run build         # Sites Worker 프로덕션 빌드
 npm run build:next    # 기존 Node/Next 빌드
 npm run test:sites:auth # 실제 workerd 인증 계약 (가상 테스트 값만)
+npm run test:sites:storage # 로컬 D1/R2 및 실패 복구
+npm run test:sites:http # 실제 Worker HTTP 권한/업로드 계약
 npm run db:check      # DB 연결 테스트
 npm run dev:debug     # Node 인스펙터 포함 dev 서버
 ```

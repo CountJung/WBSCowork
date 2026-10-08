@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: "WBSCowork에서 처리하는 개인정보와 프로젝트 종료 시 파기 절차를 안내합니다.",
 };
 
-const effectiveDate = "2026년 8월 9일";
+const effectiveDate = "2026년 10월 8일";
 
 const collectedItems = [
   {
@@ -98,8 +98,8 @@ export default function PrivacyPage() {
               파기합니다. 프로젝트 삭제만으로 여러 프로젝트에서 공유하는 계정 정보가 자동 삭제되지는 않습니다.
             </Typography>
             <Typography variant="body1">
-              사용자 작업 로그의 기본 보존 설정은 5일입니다. 새 로그가 기록될 때 만료 로그를 정리하므로 서비스가
-              비활성 상태인 기간에는 다음 로그 기록 또는 운영자의 수동 정리 시점까지 남을 수 있습니다. 관련 법령에
+              Sites에서 사용자 작업 감사 기록은 D1에 저장하며 기본 보존 설정은 5일입니다. 기간 밖 기록은 조회에서 제외하고 새 로그가 기록될 때 최대 500건씩 정리하므로 서비스가
+              비활성 상태인 기간에는 다음 로그 기록 또는 운영자의 수동 정리 시점까지 남을 수 있습니다. 호스팅 사업자의 별도 진단 로그에는 시각·기능·처리 결과 요약이 남을 수 있으며, 그 보존 기간은 호스팅 사업자 정책에 따릅니다. 관련 법령에
               따라 별도 보존이 필요한 경우에는 해당 정보만 분리하여 법정 기간 동안 보관할 수 있습니다.
             </Typography>
           </Stack>
@@ -123,7 +123,7 @@ export default function PrivacyPage() {
             <ListItem component="li" sx={{ display: "list-item", pl: 0 }}>
               <ListItemText
                 primary="전자파일 파기"
-                secondary="업로드 저장소에 남아 있는 제출물 파일을 파일 시스템에서 삭제하고 빈 프로젝트 디렉터리를 정리합니다."
+                secondary="Sites에서는 비공개 R2 객체를 삭제합니다. DB 삭제 시 정리 대상을 함께 기록하며 파일 삭제에 실패하면 재시도 대기 상태로 남깁니다. 다음 쓰기 요청 또는 슈퍼관리자의 정리 재시도로 완료하고, 모든 파일 삭제가 확인되기 전에는 파기가 완료된 것으로 보지 않습니다. Node 운영 환경은 기존 파일 저장소를 사용합니다."
               />
             </ListItem>
             <ListItem component="li" sx={{ display: "list-item", pl: 0 }}>

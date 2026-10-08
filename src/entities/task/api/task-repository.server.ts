@@ -1,4 +1,4 @@
-import { getDatabasePool } from "@/src/shared/server/database/index.server";
+import { getDatabasePool, databaseBatch, type QueryStatement } from "@/src/shared/server/database/index.server";
 import { mapTaskRow, type Task, type TaskRow } from "../model/task";
 
 export type CreateTaskInput = {
@@ -130,8 +130,8 @@ async function getNextOrderIndex(projectId: number) {
   return Number(rows[0]?.maxOrderIndex ?? -1) + 1;
 }
 
-async function rebuildTaskDepths(projectId: number) {
-  const tasks = await listTasksByProject(projectId);
+function buildTaskDepthUpdates(tasks: Task[]) {
+  const statements: QueryStatement[] = [];
   const tasksById = new Map(tasks.map((task) => [task.id, task]));
   const memoizedDepths = new Map<number, number>();
   const visitingTaskIds = new Set<number>();
@@ -170,8 +170,9 @@ async function rebuildTaskDepths(projectId: number) {
       continue;
     }
 
-    await getDatabasePool().query("UPDATE tasks SET depth = ? WHERE id = ?", [nextDepth, task.id]);
+    statements.push({ sql: "UPDATE tasks SET depth = ? WHERE id = ?", params: [nextDepth, task.id] });
   }
+  return statements;
 }
 
 export async function getTaskById(id: number): Promise<Task | null> {
@@ -262,7 +263,7 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
     insertId: number;
   };
 
-  await rebuildTaskDepths(input.projectId);
+  await databaseBatch(buildTaskDepthUpdates(await listTasksByProject(input.projectId)));
 
   const task = await getTaskById(Number(result.insertId));
 
@@ -298,11 +299,9 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
     ensureAssigneeExists(input.assigneeId ?? null),
   ]);
 
-  await getDatabasePool().query(
-    `UPDATE tasks
+  await databaseBatch([{ sql: `UPDATE tasks
     SET parent_id = ?, title = ?, description = ?, start_date = ?, end_date = ?, assignee_id = ?
-    WHERE id = ?`,
-    [
+    WHERE id = ?`, params: [
       parentTask?.id ?? null,
       normalizeTitle(input.title),
       normalizeDescription(input.description),
@@ -310,10 +309,7 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
       toSqlDate(input.endDate),
       assigneeId,
       existingTask.id,
-    ],
-  );
-
-  await rebuildTaskDepths(existingTask.projectId);
+    ] }, ...buildTaskDepthUpdates(tasks.map((task) => task.id === existingTask.id ? { ...task, parentId: parentTask?.id ?? null } : task))]);
 
   const task = await getTaskById(existingTask.id);
 
@@ -331,9 +327,13 @@ export async function deleteTask(taskId: number) {
     throw new Error("삭제할 작업 정보를 찾을 수 없습니다.");
   }
 
-  await getDatabasePool().query("UPDATE tasks SET parent_id = ? WHERE parent_id = ?", [existingTask.parentId, existingTask.id]);
-  await getDatabasePool().query("DELETE FROM tasks WHERE id = ?", [existingTask.id]);
-  await rebuildTaskDepths(existingTask.projectId);
+  const tasks = await listTasksByProject(existingTask.projectId);
+  const remaining = tasks.filter((task) => task.id !== existingTask.id).map((task) => task.parentId === existingTask.id ? { ...task, parentId: existingTask.parentId } : task);
+  await databaseBatch([
+    { sql: "UPDATE tasks SET parent_id = ? WHERE parent_id = ?", params: [existingTask.parentId, existingTask.id] },
+    { sql: "DELETE FROM tasks WHERE id = ?", params: [existingTask.id] },
+    ...buildTaskDepthUpdates(remaining),
+  ]);
 
   return existingTask;
 }

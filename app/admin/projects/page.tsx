@@ -187,7 +187,7 @@ export default async function AdminProjectsPage({ searchParams }: AdminProjectsP
         <Stack spacing={3}>
           <Typography variant="h3">프로젝트 관리</Typography>
           <Alert severity="warning">
-            프로젝트 테이블이 아직 준비되지 않았습니다. 먼저 관리자 DB 페이지에서 기본 테이블을 초기화해야 합니다.
+            프로젝트 테이블이 아직 준비되지 않았습니다. 관리자 DB 페이지에서 테이블과 배포 migration 상태를 확인해 주세요.
           </Alert>
         </Stack>
       </Container>
