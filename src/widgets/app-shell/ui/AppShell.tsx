@@ -46,6 +46,7 @@ const taskNavItem: NavItem = { href: "/tasks", label: "작업" };
 const superuserAdminNavItems: NavItem[] = [
   { href: "/admin", label: "관리 개요" },
   { href: "/admin/projects", label: "프로젝트 관리" },
+  { href: "/admin/bugs", label: "버그 리뷰" },
   { href: "/admin/logs", label: "로그" },
   { href: "/admin/settings", label: "세팅" },
   { href: "/admin/users", label: "사용자 관리" },
@@ -56,6 +57,7 @@ const superuserAdminNavItems: NavItem[] = [
 const adminRoleNavItems: NavItem[] = [
   { href: "/admin", label: "관리 개요" },
   { href: "/admin/projects", label: "프로젝트 관리" },
+  { href: "/admin/bugs", label: "버그 리뷰" },
   { href: "/admin/users", label: "사용자 관리" },
 ];
 
@@ -88,7 +90,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
   const { mode, setMode, systemMode } = useColorScheme();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [adminMenuAnchorEl, setAdminMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const navItems = [...defaultNavItems, taskNavItem];
+  const navItems = [...defaultNavItems, taskNavItem, {href:"/bugs",label:"버그 제보"}];
   const adminMenuOpen = Boolean(adminMenuAnchorEl);
   const isSuperuser = Boolean(session?.user?.isSuperuser);
   const isAdminRole = session?.user?.role === "admin";

@@ -142,3 +142,12 @@ users       1 ── N comments
 - `tests/admin-runtime.test.ts`: hosted / configured native / unconfigured native 표시 회귀. Worker HTTP suite는 `/admin`을 포함한 실제 역할별 SSR과 DB/log/user 안내를 확인한다.
 
 - `scripts/verify-sites-crud.mjs`: HTTP suite의 실제 form/RSC action reference로 isolated CRUD lifecycle과 cross-user denied writes를 확인한다. 운영 데이터/계정을 사용하지 않는다.
+
+## 버그 제보·리뷰 (T-027)
+
+- `app/bugs`, `app/admin/bugs`: thin page adapters.
+- `src/widgets/bug-reports`: MUI own queue/create/detail/history/admin triage; pending submit button.
+- `src/features/bug-report-manage`: fresh authenticated actor, independent report rights, fixed redirect actions.
+- `src/entities/bug-report`: bounded validation, SQL-scoped list/count/detail/events, immutable originals, atomic version/idempotency guarded events.
+- `drizzle/0003_free_zarek.sql`: additive D1 report/archive migration. `src/shared/server/database-admin/bug-schema.server.ts`: matching native MariaDB schema.
+- `scripts/test-bug-reports.ts` / `verify-bug-http.mjs`: D1 archive/concurrency and actual Worker HTTP authorization/validation.

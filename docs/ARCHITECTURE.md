@@ -162,3 +162,7 @@ src/shared/   도메인 비의존 UI/config/server utility
 - scheduler/report route 및 machine authentication 도입
 
 이 경우 `docs/ARCHITECTURE.md`, `docs/PROJECT_MAP.md`, `docs/HARNESS_MAP.md`와 관련 `docs/` 계획을 함께 갱신한다.
+
+## 비공개 버그 제보 기록
+
+bug_reports / bug_report_events는 프로젝트·작업·제출물과 독립적이며 프로젝트 파기나 audit_logs 보존 정리에 연동되지 않는다. reporter_id/actor_id는 계정 삭제 시 SET NULL이며 이후 동일 이메일 신규 계정에 기록 권한이 상속되지 않는다. SQL scope가 author id 또는 admin/superuser 판정을 적용하고 count/search/events도 같은 범위를 사용한다. 원문 UPDATE/일반 DELETE endpoint는 없다. 버전 검사와 operation-token NOT EXISTS 조건을 포함한 state UPDATE, event INSERT를 D1 batch/Node transaction으로 함께 수행한다. 변경 기록은 제보자에게도 표시된다.

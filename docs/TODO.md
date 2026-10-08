@@ -1,7 +1,7 @@
 # WBS 태스크 — 진행 목록
 
 > **살아있는 문서** — 단계 범위, 검증 절차, 블로커가 바뀔 때마다 업데이트하십시오.
-> 최종 검토: 2026-10-08 · 다음 번호: **T-028**
+> 최종 검토: 2026-10-08 · 다음 번호: **T-029**
 
 완료된 항목은 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮긴다. 이 문서에는 열린 항목만 남긴다.
 
@@ -59,8 +59,8 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 
 ### 10단계 — 배포
 
-- [!] **T-024** 합성 실환경 QA 데이터 정리 — 생성·수정·업로드·다운로드 및 반응형 검증 완료. project 1, tasks 1/2, submissions 1/2, comment 1, attachments 1/2/3 보존. 해당 항목들의 영구 파기만 별도 확인 대기. 운영 권한은 변경하지 않는다. [실환경 QA](SITES_LIVE_QA_2026-10-08.md).
 - [~] **T-027** 버그 제보와 관리자 리뷰 기록 — Google 로그인 사용자(guest 포함)는 본인 제보를 제출·조회, admin/superuser는 전체 검토. 기본 author+admin 비공개, 원문 보존·추가 설명·상태/검토 이력·해결 및 수정 commit 기록. 독립 D1/MariaDB 테이블과 제한된 입력·원자적 이력·교차사용자 회귀를 포함하고 기존 데이터를 보존한다. 알림/첨부/외부 issue 연동/자동 수정은 범위 밖.
+- [!] **T-028** 버그 제보의 native MariaDB 실행 검증 — 호환 DDL/transaction/upsert와 readiness는 구현·리뷰했으나 이 dot cloud에는 MariaDB/Docker가 없고 127.0.0.1:3307은 ECONNREFUSED. Sites D1 배포와 분리하여 native DB fixture로 실행해야 한다.
 
 
 - [ ] **[T-021](#t-021--synology-nas-배포-준비)** Synology NAS 배포 준비

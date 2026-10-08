@@ -232,3 +232,7 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 ## T-023 — 인증 후 보호 화면 실환경 브라우저 검증 (2026-10-08)
 
 소유자가 직접 로그인한 클라우드 브라우저로 /tasks, /admin, /admin/database, /admin/settings, /admin/logs를 확인했다. 별도 승인된 합성 프로젝트에서 생성·수정·업로드·다운로드 및 1180px/502px 표시를 검증했다. [상세 근거와 한계](SITES_LIVE_QA_2026-10-08.md). 실환경 다른 사용자 계정/role 변경, 강제 장애 주입, 영구 파기는 수행하지 않았다. 삭제는 T-024에서 별도 확인한다.
+
+## T-024 — 승인된 실환경 QA 데이터 정리 (2026-10-08)
+
+실환경 CRUD/다운로드 검증 후 사용자에게 project 1 / tasks 1·2 / submissions 1·2 / comment 1 / attachments 1·2·3의 영구 파기를 확인받았다. 14:04 UTC 정리 직전에 대상 변동이 없음을 재확인하고 정상 관리 UI로 파기했다. 성공 안내 및 5개 데이터 테이블·정리 ledger 0건, 사용자 1명(admin)과 감사 기록 보존을 확인했다. [실환경 QA 기록](SITES_LIVE_QA_2026-10-08.md). 이 승인은 미래의 임의 데이터 삭제에 대한 포괄 승인으로 사용하지 않는다.

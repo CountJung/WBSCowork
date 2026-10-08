@@ -1,3 +1,4 @@
+import { bugSchemaStatements } from "./bug-schema.server";
 import { pendingObjectCleanupCount } from "@/src/shared/server/object-cleanup/index.server";
 import { getHostedDatabase, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { createConnection } from "mariadb";
@@ -8,7 +9,7 @@ type ColumnDefinition = {
   definition: string;
 };
 
-const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments"] as const;
+const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments", "bug_reports", "bug_report_events"] as const;
 
 export type ManagedTableName = (typeof managedTableNames)[number];
 
@@ -112,6 +113,7 @@ const createSchemaStatements = [
     CONSTRAINT comments_submission_fk FOREIGN KEY (submission_id) REFERENCES submissions (id) ON DELETE CASCADE,
     CONSTRAINT comments_author_fk FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  ...bugSchemaStatements,
 ] as const;
 
 const requiredUsersColumns: ColumnDefinition[] = [
@@ -129,6 +131,8 @@ const requiredSubmissionColumns: ColumnDefinition[] = [
 ];
 
 const requiredColumnsByTable: Partial<Record<ManagedTableName, string[]>> = {
+  bug_reports: ["reporter_id","creation_token","last_operation_token","title","reproduction","expected","actual","page_path","status","priority","resolution","fix_commit","version","created_at","updated_at"],
+  bug_report_events: ["report_id","actor_id","operation_token","kind","body","status","priority","resolution","fix_commit","report_version","created_at"],
   submissions: requiredSubmissionColumns.map((column) => column.name),
   users: requiredUsersColumns.map((column) => column.name),
 };

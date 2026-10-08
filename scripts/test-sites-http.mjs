@@ -6,6 +6,7 @@ import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Miniflare, Log, LogLevel } from "miniflare";
 import { encode } from "next-auth/jwt";
+import { verifyBugHttp } from "./verify-bug-http.mjs";
 import { verifySitesCrud } from "./verify-sites-crud.mjs";
 
 const origin = "https://wbscowork.cometgnome.chatgpt.site";
@@ -116,6 +117,7 @@ try {
   check(uploaded.results.length===1&&uploaded.results[0].file_size_bytes===20*1024*1024,"large-upload metadata commits once");
   check((await bucket.head(uploaded.results[0].file_path))?.size===20*1024*1024,"large-upload R2 bytes match declared size");
   check((await request("/api/auth/session",memberCookie)).status===200,"Worker remains responsive after maximum upload");
+  await verifyBugHttp({request,db,actorCookies,actionOrigin,secret,check});
   await verifySitesCrud({request,db,bucket,actorCookies,actionOrigin,check});
   await db.prepare("UPDATE users SET role='guest' WHERE id=2").run();
   const refreshed=await(await request("/api/auth/session",memberCookie)).json();

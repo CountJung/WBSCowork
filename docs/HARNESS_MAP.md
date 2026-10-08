@@ -275,3 +275,14 @@ Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
 - 실제 Google 로그인은 합성 테스트와 별도로, 같은 날 13:14 UTC 소유자가 직접 인증한 클라우드 브라우저의 /tasks 및 /admin에서 확인했다. 운영 계정/비밀값은 테스트 fixture나 문서에 복사하지 않았다.
 
 T-026: `scripts/verify-sites-crud.mjs`를 실제 Worker HTTP suite에서 실행한다. 2026-10-08 13:31 UTC 총 149개 통과(112+CRUD 37), 변경된 테스트 JS ESLint 통과. 앱 소스 변경 없이 T-025 빌드 산출물을 재사용했다. 별도 live test 데이터는 소유자가 승인한 QA 프로젝트에 한하며 영구 파기는 별도 확인한다.
+
+## 버그 제보·리뷰 게이트 — 2026-10-08 14:18 UTC
+
+- lint/typecheck/FSD(5 checker fixtures), Worker production build: exit 0.
+- `npm test`: unit 17 PASS; native MariaDB suite skipped with ECONNREFUSED 127.0.0.1:3307. Docker/MariaDB executable absent. T-028 tracks native bug schema/query runtime validation; source review is not execution evidence.
+- `npm run test:sites:storage`: 57 PASS, additive migration 후 domain table 8개 확인.
+- `npm run test:sites:bugs`: 26 actual D1 archive/transaction/input contracts PASS. Failure trigger rollback, same-token/different-version concurrency, stale-review conflict, account/project deletion retention 포함.
+- `npm run test:sites:http`: final rebuilt Worker + synthetic signed sessions 185 checks PASS (기존 CRUD 및 신규 bug HTTP 36 포함). 두 guest·두 member·admin·superuser, counts/search/details/history authorization, forged owner/status, cross-user addendum, escaped XSS, size/URL limits, cross-origin action, alternate-route validation, role refresh 검증.
+- `npm run test:sites:auth`: credential-free workerd 18 PASS.
+- 독립 security/storage 리뷰: transaction 밖 token precheck만으로는 동시 요청에서 이력 없는 갱신이 가능하다는 문제를 발견했고 atomic UPDATE의 NOT EXISTS(operation_token)으로 수정했다. MariaDB upsert RHS target table qualification도 보완했다. 후속 source review에서 두 지적 해결 확인.
+- 도구 경고는 기존 proxy/experimental mock/Vinext plugin timing·route static-analysis 안내다. Prettier 임시 실행의 기본 cache 경로 ENOENT는 `/tmp/wbscowork-npm-cache`를 사용해 해결했다. 중단된 build wait는 완료로 계산하지 않고 final build를 다시 실행해 exit 0을 확인했다.

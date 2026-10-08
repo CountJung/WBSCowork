@@ -23,7 +23,8 @@
     "db:generate": "drizzle-kit generate",
     "test:sites:storage": "node --import tsx --experimental-test-module-mocks scripts/test-sites-storage.ts",
     "test:sites:http": "node scripts/test-sites-http.mjs",
-    "test:sites:browser": "node scripts/test-sites-http.mjs --browser"
+    "test:sites:browser": "node scripts/test-sites-http.mjs --browser",
+    "test:sites:bugs": "node --import tsx --experimental-test-module-mocks scripts/test-bug-reports.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

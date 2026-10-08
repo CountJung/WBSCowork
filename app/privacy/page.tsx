@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 const effectiveDate = "2026년 10월 8일";
 
 const collectedItems = [
+  { primary: "버그 제보 및 검토 기록", secondary: "작성자 계정 참조, 제목, 재현 방법, 예상·실제 결과, 내부 페이지 경로, 추가 설명, 상태·우선순위·해결 내용과 수정 commit 기록" },
   {
     primary: "Google 로그인 정보",
     secondary: "이메일 주소, 이름, Google 계정 식별자, 프로필 이미지 주소, 최근 로그인·동기화 시각",
@@ -36,6 +37,7 @@ const collectedItems = [
 ];
 
 const purposes = [
+  "비공개 버그 제보 접수, 재현 검토, 개선 상태와 처리 이력 보존",
   "Google 계정을 이용한 본인 확인과 로그인 세션 제공",
   "게스트·일반사용자·관리자 권한 부여 및 비공개 제출물 접근 통제",
   "WBS 작업 배정, 제출물·댓글·첨부파일 기반 프로젝트 협업",
@@ -104,6 +106,8 @@ export default function PrivacyPage() {
             </Typography>
           </Stack>
         </PolicySection>
+
+        <Paper sx={{p:3,borderRadius:3}}><Typography variant="h5">버그 제보의 별도 보존</Typography><Typography>버그 제보는 작성자와 관리자만 조회하며 프로젝트와 독립된 검토 기록으로 보관합니다. 원문은 보존하고 정정·검토 내용은 이력으로 추가합니다. 프로젝트 삭제나 5일 운영 로그 정리는 버그 제보를 삭제하지 않습니다. 서비스 개선·재발 방지에 필요한 동안 보관하고, 목적이 끝났거나 개인정보 삭제 요청이 있으면 운영 관리자가 별도로 검토·처리합니다. 계정 파기 시 계정 연결은 제거되지만 본문에 직접 입력한 개인정보까지 자동 제거되지는 않으므로 별도 확인이 필요합니다. 비밀번호·토큰·고객 개인정보를 제보에 포함하지 마세요.</Typography></Paper>
 
         <PolicySection number="4" title="프로젝트 종료 시 파기 절차와 방법">
           <Alert severity="warning" sx={{ mb: 1 }}>
