@@ -21,6 +21,7 @@ import { listTasksByProject, listTaskEventsByProject } from "@/src/entities/task
 import { getOrderedTasks, getSelectedTask, parsePersonalWorkReturnTo } from "@/src/entities/task";
 import { getSelectedProject } from "@/src/entities/project";
 import { formatDate } from "@/src/shared/lib/date";
+import SubmitButton from "@/src/shared/ui/submit-button";
 import ProjectGanttChart from "@/src/widgets/project-gantt";
 import { TaskCard, TaskFocusController } from "@/src/widgets/task-workspace";
 import type { Comment } from "@/src/entities/comment";
@@ -151,7 +152,7 @@ function TaskCreateForm({
           <TextField name="endDate" label="종료일" type="date" defaultValue={formatDate(project.endDate)} required fullWidth slotProps={{ inputLabel: { shrink: true } }} />
         </Stack>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-          <Button type="submit" variant="contained">작업 생성</Button>
+          <SubmitButton pendingLabel="작업 생성 중…" variant="contained">작업 생성</SubmitButton>
         </Stack>
       </Stack>
     </Paper>

@@ -433,3 +433,17 @@ exact `b0353724f3277479813352efdd5b47cd2939939d`에서 MariaDB11.4.13 / Node26.1
 ### 최종 P0 completion guard 보강
 
 검토 없는 완료의 담당자 자격도 transaction 안에서 현재 DB role/SU 이메일로 다시 검사하도록 보강했다. 사전 검증과 실제 쓰기의 조건이 같아지며 기존 역할을 확대하지 않는다. native 검토 하네스에 mine/contributed/review SQL 실행·중복 없는 bounded 결과의 읽기 전용 검사를 추가했다. 배포에는 이 최종 source를 사용하며 이전 saved version7은 게시하지 않는다.
+
+### PRD-038/039 최종 native 결과
+
+exact `d18cef86d4b7ed9063d92d41f8b4563ec58e4602` / tree `a24b50a79d1d0e847f175f77d5b59fd1cc147496`에서 native harness77·migration unit15·lint/types/FSD PASS. 내 업무 SQL9조합과 추가 읽기 전용18조합/37 SELECT도 통과했다. 기존 DB72개에 새 합성 DB17개를 더해89개를 보존했고 재시작 전후 snapshot/첨부 bytes가 동일했다. 기존 검증 artifact196개와 별도 DB파일719개는 변하지 않았으며 최종3307 listener 없음.
+
+정확한 한계: 별도 담당자 강등 interleaving은 native에서 재현하지 않았고, native queue는 최종 상태의 빈 검토 대기를 주로 확인하여 양성 pending-review 행을 확인한 것으로 계산하지 않는다. 실제 pending-review 행·1건 count·정확한 제출 버전 링크 및 이후 부적격 조건 제거는 D1 Worker412 시나리오에서 통과했다. 별도 차단된 cleanup runner 재현은 계속 제외했다. 이 결과는 운영 MariaDB 계정 최소권한 적용 또는 운영 데이터 검증을 뜻하지 않는다.
+
+### PRD-044 공개 HTTPS 중간 검증 / 저장 대기 표시
+
+version8은 source `d18cef86d4b7ed9063d92d41f8b4563ec58e4602`에서 2026-10-09 12:07:47 UTC terminal succeeded했다. 추가 migration0005–0009 적용 후 기존 user1/최소 purge receipt1이 같고, 검증 전 운영 프로젝트·업무·제출·첨부·댓글·버그·정리 대기는 모두0인 기준선을 보존했다. 환경 revision11과 공개 audience는 유지했다.
+
+인증된 기존 사용자로 합성 project2, task3/4/5를 생성하고 내 담당 목록→카드→제출3 v1/v2→이전 버전 링크/첨부 원문 보존, 버전2 댓글을 실제 UI에서 확인했다. v1(44bytes)/v2(71bytes) 다운로드와 v2 이후 v1 다운로드의 SHA256이 각각 원본과 같다. 취소한 수정 초안은 저장되지 않았다. 전체 판정·모바일·완료 상태의 최종 결과는 아래 후속 기록에서 확정한다. 계정 역할 변경이나 영구 삭제는 하지 않았다.
+
+일부 버튼의 첫 클릭 직후에는 화면 피드백이 없었으나 같은 요청의 재시도 후 task가1개만 저장됐다. 요청 미전달 원인을 확정하거나 데이터 손실로 단정하지 않는다. 이 UX를 개선해 task 생성/수정/상태, 제출 생성/새 버전, 댓글 생성/수정7곳에 부모 form의 pending 상태를 표시하고 재클릭을 막는 공통 버튼을 추가했다. action/token/권한/삭제 확인은 그대로이며 독립 정적 리뷰에서 변경 누락을 찾지 않았다. lint/types/FSD/build/decoder 검사 통과. UI 변경 후 Worker workflow 첫 실행은 기존 동시 검토 요청 한 건의 HTTP503으로 중단됐고, 같은 명령의 별도 재실행은412 PASS했다. 최초503의 원인을 확인한 것으로 주장하지 않으며 결과를 구분해 보존한다.

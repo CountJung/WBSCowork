@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, Checkbox, FormControlLabel, Chip, Divider, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import MarkdownContent from "@/src/shared/ui/markdown-content";
+import SubmitButton from "@/src/shared/ui/submit-button";
 import TaskSubmissionPanel from "./TaskSubmissionPanel";
 import { formatDate } from "@/src/shared/lib/date";
 import { getUserRoleLabel } from "@/src/entities/user";
@@ -138,7 +139,7 @@ export default function TaskCard({
 
         {canExecute ? <Stack component="form" action={changeTaskStatusAction} spacing={1.5}>
           <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={projectId}/><input type="hidden" name="taskId" value={task.id}/><input type="hidden" name="version" value={task.version}/><input type="hidden" name="operationToken" value={statusToken}/>
-          <Stack direction={{xs:"column",sm:"row"}} spacing={1.5}><TextField select name="taskStatus" label="진행 상태" defaultValue={['planned','in_progress','blocked','done'].includes(task.status)?task.status:'in_progress'} fullWidth><MenuItem value="planned">예정</MenuItem><MenuItem value="in_progress">진행 중</MenuItem><MenuItem value="blocked">차단됨</MenuItem>{!task.reviewRequired?<MenuItem value="done">완료</MenuItem>:null}</TextField><Button type="submit" variant="outlined">상태 저장</Button></Stack>
+          <Stack direction={{xs:"column",sm:"row"}} spacing={1.5}><TextField select name="taskStatus" label="진행 상태" defaultValue={['planned','in_progress','blocked','done'].includes(task.status)?task.status:'in_progress'} fullWidth><MenuItem value="planned">예정</MenuItem><MenuItem value="in_progress">진행 중</MenuItem><MenuItem value="blocked">차단됨</MenuItem>{!task.reviewRequired?<MenuItem value="done">완료</MenuItem>:null}</TextField><SubmitButton pendingLabel="상태 저장 중…" variant="outlined">상태 저장</SubmitButton></Stack>
           <TextField name="note" label="상태 변경 근거 · 차단/완료/재개 시 필요" helperText="모든 인증 사용자에게 보이는 업무 기록입니다. 비공개 제출물 내용은 적지 마세요." multiline slotProps={{htmlInput:{maxLength:2000}}}/>
         </Stack>:null}
         {events.length?<Stack spacing={0.5}><Typography variant="subtitle2">업무 변경 이력 (최근 {events.length}건)</Typography>{events.map(event=><Typography key={event.id} variant="body2">v{event.task_version} · {event.kind==="baseline"?"이력 도입 시점":event.actor_name??"계정 삭제됨"} · {taskStatusLabels[event.status]} · 담당 {event.assignee_name??"미지정"} · 검토 {event.reviewer_name??"미지정"}{event.note?` · ${event.note}`:''}</Typography>)}</Stack>:null}
@@ -206,9 +207,9 @@ export default function TaskCard({
                 />
               </Stack>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                <Button type="submit" variant="contained">
+                <SubmitButton pendingLabel="작업 저장 중…" variant="contained">
                   저장
-                </Button>
+                </SubmitButton>
                 <Button type="button" variant="text" onClick={() => setIsEditing(false)}>
                   취소
                 </Button>

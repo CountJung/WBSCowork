@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Button, Checkbox, Chip, Divider, FormControl, FormControlLabel, FormLabel, Paper, Radio, RadioGroup, Stack, TextField, Typography } from "@mui/material";
 import MarkdownContent from "@/src/shared/ui/markdown-content";
+import SubmitButton from "@/src/shared/ui/submit-button";
 import type { Comment } from "@/src/entities/comment";
 import type { SubmissionAttachment, Submission } from "@/src/entities/submission";
 
@@ -699,9 +700,9 @@ export default function TaskSubmissionPanel({
                                           <input type="hidden" name="commentId" value={String(comment.id)} />
                                           <TextField name="content" label="댓글 수정" defaultValue={comment.content} multiline minRows={3} />
                                           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
-                                            <Button type="submit" variant="outlined">
+                                            <SubmitButton pendingLabel="댓글 저장 중…" variant="outlined">
                                               저장
-                                            </Button>
+                                            </SubmitButton>
                                             <Button type="button" variant="text" onClick={() => setEditingCommentId(null)}>
                                               취소
                                             </Button>
@@ -733,9 +734,9 @@ export default function TaskSubmissionPanel({
                             required
                           />
                           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
-                            <Button type="submit" variant="outlined">
+                            <SubmitButton pendingLabel="댓글 등록 중…" variant="outlined">
                               댓글 등록
-                            </Button>
+                            </SubmitButton>
                           </Stack>
                         </Stack>
                       )}
@@ -773,9 +774,9 @@ export default function TaskSubmissionPanel({
                               <FormControlLabel control={<Checkbox name="clearAttachment" />} label="새 버전에서 기존 단일 첨부 제외 (이전 버전 보존)" />
                             ) : null}
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
-                              <Button type="submit" variant="outlined">
+                              <SubmitButton pendingLabel="제출물 저장 중…" variant="outlined">
                                 저장
-                              </Button>
+                              </SubmitButton>
                               <Button type="button" variant="text" onClick={() => setEditingSubmissionId(null)}>
                                 취소
                               </Button>
@@ -811,9 +812,9 @@ export default function TaskSubmissionPanel({
               <VisibilityRadio defaultValue="public" />
               <AttachmentInput helperText="문서, 이미지, 압축파일 등 여러 파일을 동시에 선택할 수 있습니다." />
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
-                <Button type="submit" variant="contained">
+                <SubmitButton pendingLabel="제출 등록 중…" variant="contained">
                   제출 등록
-                </Button>
+                </SubmitButton>
               </Stack>
             </Stack>
           </>
