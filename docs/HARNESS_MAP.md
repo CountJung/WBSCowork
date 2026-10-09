@@ -493,3 +493,12 @@ source `82d7d516ef34ed8718dbfe09d6189b7f81cacfe8` / tree `4144cbda144bc79311f82d
 - 최종 검토에서 보완 요청 판정의 transaction-time 선행 업무 조건 한 곳을 추가했다. 일반 blocked-predecessor 거부 회귀는 추가했으며 차단된 삭제/cleanup race나 별도 interleaving은 실행하지 않았다.
 - 신규 HTTP 테스트의 첫2회는 테스트 작성 오류로 중단됐다: Miniflare FormData 전달이 action으로 해석되지 않아200/무변경으로 끝났고, 반환 Location의 절대 URL을 상대 문자열로 비교했다. 기존 수동 multipart fixture와 URL pathname/search 검증으로 수정한 뒤472 PASS, 최종 코드 rebuild 후472 PASS를 확인했다. 앱 권한을 완화하거나 실패 요청을 자동 재시도하지 않았다.
 - 새 D1 0012/native v8은 읽음 receipt 표만 추가한다. 검색/알림 보관 설명을 개인정보 안내에 반영했다. Native 최종 exact-SHA 검증과 같은 Site 게시, live UI 인수는 후속 게이트로 남아 있다.
+
+
+### P1 최종 native·게시·실환경 읽기 인수
+
+- exact `3b4af81` native 전체99 PASS + 새 합성 관계 교체/rollback/복원4 PASS. 초기1142 권한 중단은 실패로 남겼고 사용자 승인 후 새 실행DB.task_dependencies 한 표에만 DELETE를 추가했다. 기존119DB unchanged, 신규18 포함137DB/파일/좁은 권한의 restart snapshot 동일, 최종3307 listener 없음. SQL 관측 집계 일부 유실로 완전한 SQL trace 확보를 주장하지 않는다.
+- 같은 source version10, deployment `appgdep_6ac92c90e644819192a066f2b25c9d6c`, 2026-10-09 18:04:25 UTC terminal succeeded, public URL/env revision11 유지. 기존13개 표 전체 row와 사용자/기존 purge receipt 보존, 새 표3개0건 확인. 감사 전체 row나 직접 R2 inventory 비교는 수행하지 않았다.
+- 기존 실제 로그인으로 검색 GET/필터 유지/0건과 알림 unread/all을 확인하고 알림500px·검색485px의 가로 넘침 없음, 모바일 메뉴·light/dark를 검사했다. System/원래 창 크기를 복원했다. 새 운영 테스트 자료는 생성하지 않았다.
+- 게시 직후 옛 route404 및 새 AppShell 청크의 일시적 fetch 실패가 있었고 추가 배포 없이 reload1회 후 정상화됐다. 정확한 원인 확정은 아니다. 뒤의 별도 HTTP 관찰 프로세스는 네트워크 승인 취소로 결과 수집이 중단되어 재시도하지 않았다. 이미 관찰한 익명 session200/빈 객체, 새 route307 및 실제 UI와 구분한다.
+- 로컬 합성 browser preview는 별도 browser에서 localhost 연결 실패/오류탭 URL 정책 차단으로 중단했다. 로컬 템플릿 클릭·실제 다중 Google 사용자의 채워진 UI는 미실행. QLT-015/기존 native purge/별도 강등 interleaving은 재시도하지 않았다. [전체 인수와 한계](P1_ACCEPTANCE_2026-10-09.md).
