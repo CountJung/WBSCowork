@@ -8,7 +8,6 @@ import { redirect } from "next/navigation";
 import { getAuthSession, getSignInPath, getUserByEmail } from "@/src/entities/user/index.server";
 import { logUserAction, logUserActionFailure } from "@/src/shared/server/logging/index.server";
 import {
-  deleteSubmissionAttachment,
   getSubmissionAttachmentById,
   listAttachmentsBySubmission,
   listAttachmentsByTask,
@@ -17,12 +16,13 @@ import {
   getSubmissionByIdForViewer,
   updateSubmissionWithAttachments,
   listSubmissionsByTask,
+  listRevisionFilePathsBySubmission, listRevisionFilePathsByTask, getSubmissionRevisionForViewer,
   deleteStoredSubmissionAttachment,
   saveUploadedSubmissionAttachment,
-  cleanupTaskUploadDirectory,
+  deleteProjectUploadDirectories,
   type StoredSubmissionAttachment,
 } from "@/src/entities/submission/index.server";
-import { createComment, deleteComment, getCommentById, updateComment } from "@/src/entities/comment/index.server";
+import { createComment, deleteComment, getCommentForViewer, updateComment } from "@/src/entities/comment/index.server";
 import { createTask, deleteTask, getTaskById, updateTask, changeTaskStatus } from "@/src/entities/task/index.server";
 import { canManageAllSubmissions, canWriteTaskContent } from "@/src/entities/user";
 import type { Submission, SubmissionVisibility } from "@/src/entities/submission";
@@ -205,7 +205,7 @@ async function requireOwnedComment(
   options: { projectId: number; taskId: number; submissionId: number; commentId: number },
 ) {
   const { submission, user, canManageAll } = await requireVisibleSubmission(session, options);
-  const comment = await getCommentById(options.commentId);
+  const comment = await getCommentForViewer(options.commentId,{canSeeAll:canManageAll,viewerUserId:user.id});
 
   if (!comment || comment.submissionId !== submission.id) {
     throw new Error("대상 댓글을 찾을 수 없습니다.");
@@ -366,13 +366,16 @@ export async function deleteTaskAction(formData: FormData) {
     await requireProjectTask(projectId, taskId);
 
     // 삭제 전에 해당 작업의 제출물과 첨부파일 목록 조회 (DB CASCADE 이전)
-    const [submissionsToClean, attachmentsToClean] = await Promise.all([
+    const [submissionsToClean, attachmentsToClean, revisionFilesToClean] = await Promise.all([
       // 작업 삭제도 하위 저장 파일 전체를 정리해야 한다.
       listSubmissionsByTask(taskId, { canSeeAll: true }),
-      listAttachmentsByTask(taskId),
+      listAttachmentsByTask(taskId, {allRevisions:true}),
+      listRevisionFilePathsByTask(taskId),
     ]);
 
+    if(getSingleValue(formData.get("confirmRevisionDeletion"))!=="yes")throw new Error("작업과 제출물의 모든 버전 삭제를 확인해야 합니다.");
     const task = await deleteTask(taskId);
+    for(const filePath of new Set(revisionFilesToClean))await deleteStoredSubmissionAttachment(filePath).catch(()=>{cleanupFailed=true;});
 
     // 레거시 단일 파일 정리
     for (const sub of submissionsToClean) {
@@ -417,7 +420,7 @@ export async function deleteTaskAction(formData: FormData) {
     }
 
     // 빈 폴더 정리
-    await cleanupTaskUploadDirectory(taskId).catch(() => undefined);
+    await deleteProjectUploadDirectories([taskId]).catch(() => undefined);
 
     revalidatePath("/tasks");
 
@@ -473,8 +476,11 @@ export async function createSubmissionAction(formData: FormData) {
     validateUploadBatch(uploadedFiles);
     for (const file of uploadedFiles) savedAttachments.push(await saveUploadedSubmissionAttachment(file, { authorId: user.id, taskId }));
     const submissionId = await createSubmissionWithAttachments({ taskId, authorId: user.id,
+      actor:{userId:user.id,isAdmin:canManageAllSubmissions(user.role,session.user.isSuperuser),isSuperuser:!!session.user.isSuperuser},token:workOperationToken(formData.get("operationToken")),materialUrl:getSingleValue(formData.get("materialUrl")),changeSummary:getSingleValue(formData.get("changeSummary")),
       content: getSingleValue(formData.get("content")), visibility: parseVisibility(formData.get("visibility")) }, savedAttachments);
     metadataCommitted = true;
+    // Matching retries may have staged fresh keys; reference guards retain every committed version.
+    for(const saved of savedAttachments)await deleteStoredSubmissionAttachment(saved.filePath).catch(()=>undefined);
 
     revalidatePath("/");
     revalidatePath("/tasks");
@@ -527,12 +533,11 @@ export async function updateSubmissionAction(formData: FormData) {
   const savedAttachments: StoredSubmissionAttachment[] = [];
   let metadataCommitted = false;
 
-  let cleanupFailed = false;
   let redirectPath: string;
 
   try {
     const submissionId = parseRequiredPositiveInteger(formData.get("submissionId"), "제출물");
-    const { submission: existingSubmission } = await requireOwnedSubmission(session, {
+    const { submission: existingSubmission, user } = await requireOwnedSubmission(session, {
       projectId,
       taskId,
       submissionId,
@@ -546,6 +551,7 @@ export async function updateSubmissionAction(formData: FormData) {
     validateUploadBatch(uploadedFiles);
     for (const file of uploadedFiles) savedAttachments.push(await saveUploadedSubmissionAttachment(file, { authorId: existingSubmission.authorId, taskId }));
     await updateSubmissionWithAttachments({
+      actor:{userId:user.id,isAdmin:canManageAllSubmissions(user.role,session.user.isSuperuser),isSuperuser:!!session.user.isSuperuser},token:workOperationToken(formData.get("operationToken")),expectedRevision:parseRequiredPositiveInteger(formData.get("expectedRevision"),"제출 버전"),materialUrl:getSingleValue(formData.get("materialUrl")),changeSummary:getSingleValue(formData.get("changeSummary")),
       id: submissionId,
       content: getSingleValue(formData.get("content")),
       visibility: parseVisibility(formData.get("visibility")),
@@ -556,26 +562,8 @@ export async function updateSubmissionAction(formData: FormData) {
       fileSizeBytes: null,
     }, savedAttachments);
     metadataCommitted = true;
-
-    if (clearAttachment && existingSubmission.filePath) {
-      await deleteStoredSubmissionAttachment(existingSubmission.filePath).catch(async (cleanupError) => {
-        cleanupFailed = true;
-        await logUserActionFailure(
-          "tasks",
-          {
-            actorEmail: session.user.email ?? null,
-            action: "submission.attachment.cleanup",
-            entityType: "submission",
-            entityId: submissionId,
-            projectId,
-            taskId,
-            submissionId,
-            metadata: { filePath: existingSubmission.filePath },
-          },
-          cleanupError,
-        );
-      });
-    }
+    // Matching retries may have staged fresh keys; reference guards retain every committed version.
+    for(const saved of savedAttachments)await deleteStoredSubmissionAttachment(saved.filePath).catch(()=>undefined);
 
     revalidatePath("/");
     revalidatePath("/tasks");
@@ -593,7 +581,7 @@ export async function updateSubmissionAction(formData: FormData) {
       },
     });
 
-    redirectPath = buildTasksPath(cleanupFailed ? "error" : "success", cleanupFailed ? "제출물 변경은 저장됐고 이전 파일 정리는 재시도 대기 중입니다." : "제출물을 수정했습니다.", { projectId, taskId });
+    redirectPath = buildTasksPath("success", "새 제출 버전을 저장했습니다. 이전 버전은 보존됩니다.", { projectId, taskId });
   } catch (error) {
     for (const saved of metadataCommitted ? [] : savedAttachments) {
       await deleteStoredSubmissionAttachment(saved.filePath).catch(() => undefined);
@@ -638,9 +626,12 @@ export async function deleteSubmissionAction(formData: FormData) {
     });
 
     // 삭제 전에 첨부파일 목록을 먼저 조회 (DB CASCADE 이전)
-    const attachmentsToClean = await listAttachmentsBySubmission(submissionId);
+    const attachmentsToClean = await listAttachmentsBySubmission(submissionId,{allRevisions:true});
+    const revisionFilesToClean=await listRevisionFilePathsBySubmission(submissionId);
+    if(getSingleValue(formData.get("confirmRevisionDeletion"))!=="yes")throw new Error("제출물과 모든 버전 삭제를 확인해야 합니다.");
 
     const submission = await deleteSubmission(submissionId);
+    for(const filePath of new Set(revisionFilesToClean))await deleteStoredSubmissionAttachment(filePath).catch(()=>{cleanupFailed=true;});
 
     // 레거시 단일 파일 정리
     if (existingSubmission.filePath) {
@@ -727,80 +718,21 @@ export async function deleteSubmissionAction(formData: FormData) {
   redirect(redirectPath);
 }
 
-export async function deleteSubmissionAttachmentAction(formData: FormData) {
-  const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
-  const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
-  const attachmentId = parseRequiredPositiveInteger(formData.get("attachmentId"), "첨부파일");
-  const session = await requireWritableSession(projectId);
-
-  let cleanupFailed = false;
-  let redirectPath: string;
-
+/** Removal creates a new version; old metadata and bytes remain available in history. */
+export async function deleteSubmissionAttachmentAction(formData:FormData) {
+  const projectId=parseRequiredPositiveInteger(formData.get("projectId"),"프로젝트"),taskId=parseRequiredPositiveInteger(formData.get("taskId"),"작업");
+  const session=await requireWritableSession(projectId);
+  let path:string;
   try {
-    const submissionId = parseRequiredPositiveInteger(formData.get("submissionId"), "제출물");
-
-    await requireOwnedSubmission(session, { projectId, taskId, submissionId });
-
-    const attachment = await getSubmissionAttachmentById(attachmentId);
-
-    if (!attachment || attachment.submissionId !== submissionId) {
-      throw new Error("삭제할 첨부파일을 찾을 수 없습니다.");
-    }
-
-    await deleteSubmissionAttachment(attachmentId);
-    await deleteStoredSubmissionAttachment(attachment.filePath).catch(async (cleanupError) => {
-        cleanupFailed = true;
-      await logUserActionFailure(
-        "tasks",
-        {
-          actorEmail: session.user.email ?? null,
-          action: "submission.attachment.delete.file",
-          entityType: "submission",
-          entityId: submissionId,
-          projectId,
-          taskId,
-          submissionId,
-          metadata: { filePath: attachment.filePath },
-        },
-        cleanupError,
-      );
-    });
-
-    revalidatePath("/tasks");
-
-    await logUserAction("tasks", {
-      actorEmail: session.user.email ?? null,
-      action: "submission.attachment.delete",
-      entityType: "submission",
-      entityId: submissionId,
-      projectId,
-      taskId,
-      submissionId,
-      metadata: { fileName: attachment.fileName },
-    });
-
-    redirectPath = buildTasksPath(cleanupFailed ? "error" : "success", cleanupFailed ? "첨부 정보는 삭제됐고 파일 정리는 재시도 대기 중입니다." : "첨부파일을 삭제했습니다.", { projectId, taskId });
-  } catch (error) {
-    await logUserActionFailure(
-      "tasks",
-      {
-        actorEmail: session.user.email ?? null,
-        action: "submission.attachment.delete",
-        entityType: "submission",
-        projectId,
-        taskId,
-      },
-      error,
-    );
-
-    redirectPath = buildTasksPath(
-      "error",
-      error instanceof Error ? error.message : "첨부파일 삭제 중 알 수 없는 오류가 발생했습니다.",
-      { projectId, taskId },
-    );
-  }
-
-  redirect(redirectPath);
+    const submissionId=parseRequiredPositiveInteger(formData.get("submissionId"),"제출물"),attachmentId=parseRequiredPositiveInteger(formData.get("attachmentId"),"첨부");
+    const {submission,user}=await requireOwnedSubmission(session,{projectId,taskId,submissionId});
+    const attachment=await getSubmissionAttachmentById(attachmentId);
+    if(!attachment||attachment.submissionId!==submissionId||attachment.revisionNumber!==submission.currentRevision)throw new Error("현재 버전의 첨부파일을 찾을 수 없습니다.");
+    await updateSubmissionWithAttachments({id:submissionId,actor:{userId:user.id,isAdmin:canManageAllSubmissions(user.role,session.user.isSuperuser),isSuperuser:!!session.user.isSuperuser},token:workOperationToken(formData.get("operationToken")),expectedRevision:parseRequiredPositiveInteger(formData.get("expectedRevision"),"제출 버전"),content:submission.content,visibility:submission.visibility,materialUrl:submission.materialUrl,changeSummary:`현재 버전에서 첨부 제외: ${attachment.fileName}`,removeAttachmentIds:[attachmentId]},[]);
+    revalidatePath("/tasks");revalidatePath(`/submissions/${submissionId}`);
+    path=buildTasksPath('success','새 버전에서 첨부를 제외했습니다. 이전 버전의 파일은 보존됩니다.',{projectId,taskId});
+  }catch(error){path=buildTasksPath('error',error instanceof Error?error.message:'첨부 제외 실패',{projectId,taskId});}
+  redirect(path);
 }
 
 export async function createCommentAction(formData: FormData) {
@@ -812,9 +744,12 @@ export async function createCommentAction(formData: FormData) {
   let redirectPath: string;
 
   try {
-    await requireVisibleSubmission(session, { projectId, taskId, submissionId });
+    const {submission}=await requireVisibleSubmission(session, { projectId, taskId, submissionId });
+    const revisionNumber=formData.has("revisionNumber")?parseRequiredPositiveInteger(formData.get("revisionNumber"),"제출 버전"):submission.currentRevision;
+    if(!await getSubmissionRevisionForViewer(submissionId,revisionNumber,{canSeeAll:canManageAllSubmissions(user.role,session.user.isSuperuser),viewerUserId:user.id}))throw new Error("제출 버전을 찾을 수 없습니다.");
 
     const comment = await createComment({
+      revisionNumber,
       submissionId,
       authorId: user.id,
       content: getSingleValue(formData.get("content")),

@@ -8,6 +8,9 @@ export type SubmissionRow = {
   author_email: string;
   content: string;
   visibility: SubmissionVisibility;
+  current_revision: number;
+  version: number;
+  material_url: string;
   file_path: string | null;
   file_name: string | null;
   file_mime_type: string | null;
@@ -23,6 +26,9 @@ export type Submission = {
   authorEmail: string;
   content: string;
   visibility: SubmissionVisibility;
+  currentRevision: number;
+  version: number;
+  materialUrl: string;
   filePath: string | null;
   fileName: string | null;
   fileMimeType: string | null;
@@ -51,6 +57,9 @@ export function mapSubmissionRow(row: SubmissionRow): Submission {
     authorEmail: row.author_email,
     content: row.content,
     visibility: row.visibility ?? "public",
+    currentRevision: Number(row.current_revision),
+    version: Number(row.version),
+    materialUrl: row.material_url ?? "",
     filePath: row.file_path,
     fileName: row.file_name,
     fileMimeType: row.file_mime_type,

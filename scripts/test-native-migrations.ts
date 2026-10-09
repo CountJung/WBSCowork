@@ -102,6 +102,28 @@ try {
     check(Number((await resumeV3.connection.query('SELECT COUNT(*) AS n FROM task_events WHERE task_id=1'))[0].n)===1,'v3 replay preserves one baseline');
   }finally{await resumeV3.connection.end();}
 
+  const resumeV4=await fresh('resume_v4');
+  try {
+    let interrupted=false;
+    const proxy:MigrationConnection={query:async(sql,params)=>{
+      const result=await resumeV4.connection.query(sql,params);
+      if(!interrupted&&sql.includes('ADD COLUMN current_revision ')){interrupted=true;throw new Error('synthetic interrupted v4');}
+      return result;
+    }};
+    await assert.rejects(runNativeMigrations(proxy,resumeV4.name),/interrupted v4/);checks++;
+    check(Number((await resumeV4.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===3,'interrupted v4 retains released ledgers only');
+    await resumeV4.connection.query("INSERT INTO users(id,email,name,role) VALUES(1,'legacy@revision.test','Legacy','member')");
+    await resumeV4.connection.query("INSERT INTO projects(id,name,start_date,end_date) VALUES(1,'Legacy','2026-01-01','2026-12-31')");
+    await resumeV4.connection.query("INSERT INTO tasks(id,project_id,title,start_date,end_date) VALUES(1,1,'Legacy','2026-01-01','2026-12-31')");
+    await resumeV4.connection.query("INSERT INTO submissions(id,task_id,author_id,content,visibility,file_path,file_name,file_mime_type,file_size_bytes) VALUES(1,1,1,'Preserved private body','private','legacy/file.txt','file.txt','text/plain',14)");
+    await resumeV4.connection.query("INSERT INTO comments(id,submission_id,author_id,content) VALUES(1,1,1,'Legacy comment')");
+    await runNativeMigrations(resumeV4.connection,resumeV4.name);
+    const row=(await resumeV4.connection.query('SELECT * FROM submission_revisions WHERE submission_id=1'))[0];
+    check(row.content==='Preserved private body'&&row.visibility==='private'&&row.file_path==='legacy/file.txt'&&row.editor_id===null&&row.source==='legacy','v4 resumes and preserves surviving private body/file as labeled snapshot');
+    await runNativeMigrations(resumeV4.connection,resumeV4.name);
+    check(Number((await resumeV4.connection.query('SELECT COUNT(*) AS n FROM submission_revisions WHERE submission_id=1'))[0].n)===1&&(await resumeV4.connection.query('SELECT revision_number FROM comments WHERE id=1'))[0].revision_number===null,'v4 repeat retains one snapshot and unknown legacy comment revision');
+  }finally{await resumeV4.connection.end();}
+
   const execution=await fresh('execution');
   try {
     await runNativeMigrations(execution.connection,execution.name);

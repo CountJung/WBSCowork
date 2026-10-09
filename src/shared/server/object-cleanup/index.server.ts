@@ -6,18 +6,27 @@ export function validateObjectKey(key: string) {
 }
 export async function queueObjectCleanup(key: string, delayMs = 0) {
   validateObjectKey(key);
-  await getHostedDatabase().prepare("INSERT INTO file_cleanup_jobs (object_key, not_before) VALUES (?, ?) ON CONFLICT(object_key) DO UPDATE SET not_before = MIN(file_cleanup_jobs.not_before, excluded.not_before)")
-    .bind(key, new Date(Date.now() + delayMs).toISOString()).run();
+  const scheduled=new Date(Date.now()+delayMs).toISOString();
+  // Retry scheduling never creates, extends, or revives a staging lease.
+  await getHostedDatabase().prepare("INSERT INTO file_cleanup_jobs (object_key,not_before,staging_expires_at) VALUES(?,?,?) ON CONFLICT(object_key) DO UPDATE SET not_before=MIN(file_cleanup_jobs.not_before,excluded.not_before),staging_expires_at=CASE WHEN excluded.staging_expires_at IS NULL THEN NULL ELSE file_cleanup_jobs.staging_expires_at END")
+    .bind(key,scheduled,delayMs>0?scheduled:null).run();
 }
 export async function objectIsReferenced(key: string) {
-  const row = await getHostedDatabase().prepare("SELECT EXISTS(SELECT 1 FROM submission_attachments WHERE file_path = ? UNION ALL SELECT 1 FROM submissions WHERE file_path = ?) AS live").bind(key, key).first<{live:number}>();
-  return Boolean(row?.live);
+  const row = await getHostedDatabase().prepare("SELECT EXISTS(SELECT 1 FROM submission_attachments WHERE file_path = ? UNION ALL SELECT 1 FROM submissions WHERE file_path = ? UNION ALL SELECT 1 FROM submission_revisions WHERE file_path = ?) AS live").bind(key, key, key).first<{live:number}>();
+  if(!row)throw new Error("Attachment reference status unavailable.");
+  return Boolean(row.live);
 }
 export async function deleteUnreferencedObject(key: string) {
   validateObjectKey(key);
-  // A response failure after DB commit must never delete a referenced object.
+  const db=getHostedDatabase();
+  // Revoke commit eligibility first. A metadata batch either won already (then it
+  // is protected by its live refs), or it can no longer attach this staged key.
+  await db.prepare("UPDATE file_cleanup_jobs SET staging_expires_at=NULL WHERE object_key=?").bind(key).run();
   if (await objectIsReferenced(key)) throw new Error("Attachment is still referenced; storage cleanup refused.");
   await queueObjectCleanup(key);
+  // If a metadata commit won immediately before the revocation, its references
+  // must be checked after the revoked cleanup row is established as well.
+  if (await objectIsReferenced(key)) throw new Error("Attachment is still referenced; storage cleanup refused.");
   await getHostedAttachments().delete(key);
   await getHostedDatabase().prepare("DELETE FROM file_cleanup_jobs WHERE object_key = ?").bind(key).run();
 }
@@ -30,6 +39,8 @@ export async function retryObjectCleanup(limit = 20) {
   let failed = 0;
   for (const {object_key:key, attempts} of due.results) {
     try {
+      const claimed=await db.prepare("UPDATE file_cleanup_jobs SET staging_expires_at=NULL WHERE object_key=? AND not_before<=? AND (staging_expires_at IS NULL OR staging_expires_at<=?)").bind(key,new Date().toISOString(),new Date().toISOString()).run();
+      if(!claimed.meta.changes)continue;
       if (await objectIsReferenced(key)) {
         await db.prepare("DELETE FROM file_cleanup_jobs WHERE object_key = ?").bind(key).run();
         continue;

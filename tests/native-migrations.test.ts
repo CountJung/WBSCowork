@@ -4,6 +4,9 @@ import assert from "node:assert/strict";
 import { nativeMigrationManifest, migrationChecksum, validateMigrationLedger, splitSchemaEntries, runNativeMigrations, readNativeMigrationStatus } from "@/src/shared/server/database-admin/native-migrations.server";
 const v1 = nativeMigrationManifest[0];
 const ledger = [{ version: v1.version, name: v1.name, checksum: migrationChecksum(v1) }];
+test("immutable submission-revision specification is pinned", () => {
+  assert.equal(migrationChecksum(nativeMigrationManifest[3]), "8b9a88eb95a0fba48613658ecbf049f3b79f6cc4f39f463b6063818eebdd296c");
+});
 test("immutable task-execution specification is pinned", () => {
   assert.equal(migrationChecksum(nativeMigrationManifest[2]), "c175311bceb4f66d8f0808e7eff68e85f15344acd27c250197af01a6ad81c080");
 });

@@ -1,3 +1,4 @@
+import { seedSubmissionRevisionFixtures } from "./seed-submission-revision-fixture.mjs";
 /** Exercises the production bundle in workerd with synthetic signed JWTs and local D1/R2. */
 import { spawn } from "node:child_process";
 import assert from "node:assert/strict";
@@ -54,6 +55,7 @@ try {
     await db.prepare("INSERT INTO submissions(id,task_id,author_id,content,visibility,file_path,file_name,file_mime_type,file_size_bytes) VALUES(?,1,?,?,?,?,?,'text/plain',?)").bind(id,author,marker,visibility,key,`fixture-${id}.txt`,marker.length).run();
     await db.prepare("INSERT INTO submission_attachments(id,submission_id,file_path,file_name,file_mime_type,file_size_bytes) VALUES(?,?,?,?, 'text/plain',?)").bind(id,id,key,`fixture-${id}.txt`,marker.length).run();
   }
+  await seedSubmissionRevisionFixtures(db);
   const anonymous=await request("/api/auth/session");const anonymousBody=await anonymous.text();check(anonymous.status===200&&Object.keys(JSON.parse(anonymousBody)).length===0,`Worker anonymous session empty (${anonymous.status}: ${anonymousBody.slice(0,220)})`);
   let memberHtml="",memberCookie="";
   const actorCookies={};

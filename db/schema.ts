@@ -25,17 +25,20 @@ export const tasks = sqliteTable("tasks", {
 export const submissions = sqliteTable("submissions", {
   id: id(), taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
   authorId: integer("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  currentRevision: integer("current_revision").notNull().default(1), version: integer("version").notNull().default(1), lastOperationToken: text("last_operation_token"), materialUrl: text("material_url").notNull().default(""),
   creationToken: text("creation_token").unique(), content: text("content").notNull(), visibility: text("visibility").notNull().default("public"),
   filePath: text("file_path"), fileName: text("file_name"), fileMimeType: text("file_mime_type"), fileSizeBytes: integer("file_size_bytes"),
   createdAt: createdAt(),
 }, (t) => [index("submissions_task_idx").on(t.taskId), index("submissions_author_idx").on(t.authorId), check("submissions_visibility_check", sql`${t.visibility} IN ('public','private')`)]);
 export const submissionAttachments = sqliteTable("submission_attachments", {
   id: id(), submissionId: integer("submission_id").notNull().references(() => submissions.id, { onDelete: "cascade" }),
+  revisionNumber: integer("revision_number").notNull().default(1),
   filePath: text("file_path").notNull(), fileName: text("file_name").notNull(), fileMimeType: text("file_mime_type").notNull().default("application/octet-stream"),
   fileSizeBytes: integer("file_size_bytes").notNull(), createdAt: createdAt(),
 }, (t) => [index("submission_attachments_submission_idx").on(t.submissionId)]);
 export const comments = sqliteTable("comments", {
   id: id(), submissionId: integer("submission_id").notNull().references(() => submissions.id, { onDelete: "cascade" }),
+  revisionNumber: integer("revision_number"),
   authorId: integer("author_id").notNull().references(() => users.id, { onDelete: "cascade" }), content: text("content").notNull(), createdAt: createdAt(),
 }, (t) => [index("comments_submission_idx").on(t.submissionId), index("comments_author_idx").on(t.authorId)]);
 export const auditLogs = sqliteTable("audit_logs", {
@@ -43,7 +46,7 @@ export const auditLogs = sqliteTable("audit_logs", {
   source: text("source").notNull(), message: text("message").notNull(), details: text("details"),
 }, (t) => [index("audit_logs_timestamp_idx").on(t.timestamp)]);
 export const fileCleanupJobs = sqliteTable("file_cleanup_jobs", {
-  objectKey: text("object_key").primaryKey(), notBefore: text("not_before").notNull(),
+  objectKey: text("object_key").primaryKey(), notBefore: text("not_before").notNull(), stagingExpiresAt: text("staging_expires_at"),
   attempts: integer("attempts").notNull().default(0), createdAt: createdAt(),
 }, (t) => [index("file_cleanup_due_idx").on(t.notBefore)]);
 
@@ -146,3 +149,14 @@ export const taskEvents = sqliteTable("task_events", {
   reviewerId: integer("reviewer_id").references(() => users.id, { onDelete: "set null" }),
   note: text("note").notNull().default(""), taskVersion: integer("task_version").notNull(), createdAt: createdAt(),
 }, t => [index("task_events_task_idx").on(t.taskId,t.id), uniqueIndex("task_events_version_unique").on(t.taskId,t.taskVersion)]);
+
+export const submissionRevisions = sqliteTable("submission_revisions", {
+  id:id(), submissionId:integer("submission_id").notNull().references(()=>submissions.id,{onDelete:"cascade"}),
+  revisionNumber:integer("revision_number").notNull(), editorId:integer("editor_id").references(()=>users.id,{onDelete:"set null"}),
+  content:text("content").notNull(), visibility:text("visibility").notNull(), materialUrl:text("material_url").notNull().default(""), changeSummary:text("change_summary").notNull().default(""),
+  filePath:text("file_path"),fileName:text("file_name"),fileMimeType:text("file_mime_type"),fileSizeBytes:integer("file_size_bytes"),source:text("source").notNull().default("live"),createdAt:createdAt(),
+},t=>[uniqueIndex("submission_revision_unique").on(t.submissionId,t.revisionNumber),index("submission_revisions_submission_idx").on(t.submissionId,t.id)]);
+export const submissionEvents = sqliteTable("submission_events", {
+  id:id(),submissionId:integer("submission_id").notNull().references(()=>submissions.id,{onDelete:"cascade"}),revisionNumber:integer("revision_number").notNull(),actorId:integer("actor_id").references(()=>users.id,{onDelete:"set null"}),
+  operationToken:text("operation_token").notNull().unique(),requestFingerprint:text("request_fingerprint").notNull(),kind:text("kind").notNull(),body:text("body").notNull().default(""),createdAt:createdAt(),
+},t=>[index("submission_events_submission_idx").on(t.submissionId,t.id)]);

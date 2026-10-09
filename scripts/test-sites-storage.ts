@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { StoredSubmissionAttachment } from "../src/entities/submission/index.server";
 import "../tests/helpers/bootstrap";
 import assert from "node:assert/strict";
@@ -23,7 +24,7 @@ try {
     const { upsertUser, getUserByEmail, resolveUserRoleForSession } = await import("../src/entities/user/api/user-repository.server");
     const { createProject } = await import("../src/entities/project/index.server");
     const { createTask } = await import("../src/entities/task/index.server");
-    const { createSubmission, getSubmissionByIdForViewer, listSubmissionsByProject, createSubmissionAttachment, listAttachmentsByProject } = await import("../src/entities/submission/index.server");
+    const { createSubmission, getSubmissionByIdForViewer, listSubmissionsByProject, listAttachmentsByProject } = await import("../src/entities/submission/index.server");
     const { createComment, listCommentsByProject } = await import("../src/entities/comment/index.server");
     const { getAdminSettingsSnapshot, saveAdminSettings } = await import("../src/features/settings-manage/index.server");
     const { logUserAction, listRecentUserActionEntries } = await import("../src/shared/server/logging/index.server");
@@ -41,8 +42,9 @@ try {
     check((await getUserByEmail(admin.email))?.role === "admin", "repeat Google sync preserves admin role");
     const project = await createProject({ name: "Synthetic", startDate: "2026-01-01", endDate: "2026-12-31" });
     const task = await createTask({ projectId: project.id, title: "Task", startDate: "2026-01-01", endDate: "2026-12-31" });
-    const visible = await createSubmission({ taskId: task.id, authorId: member.id, content: "Public", visibility: "public" });
-    const hidden = await createSubmission({ taskId: task.id, authorId: member.id, content: "Private", visibility: "private" });
+    const actor={userId:member.id,isAdmin:false,isSuperuser:false};
+    const visible = await createSubmission({actor,token:randomUUID(), taskId: task.id, authorId: member.id, content: "Public", visibility: "public" });
+    const hidden = await createSubmission({actor,token:randomUUID(), taskId: task.id, authorId: member.id, content: "Private", visibility: "private" });
     for (const [name, email, canSeeAll, count] of [["guest", guest.email, false, 1], ["owner", member.email, false, 2], ["other member", other.email, false, 1], ["admin", admin.email, true, 2], ["superuser", "superuser@example.test", true, 2]] as const) {
       check((await listSubmissionsByProject(project.id, { viewerEmail: email, canSeeAll })).length === count, `${name}: exact submission visibility`);
     }
@@ -56,16 +58,17 @@ try {
     await assert.rejects(getDatabasePool().query(`SELECT ${Array.from({length:101},()=>"?").join(",")}`, Array(101).fill(1)), /100 parameters/); checks++;
     const ids = [visible.id];
     for (let index=0;index<104;index++) {
-      const item = await createSubmission({taskId:task.id,authorId:member.id,content:`Visible ${index}`});
+      const item = await createSubmission({actor,token:randomUUID(),taskId:task.id,authorId:member.id,content:`Visible ${index}`});
       ids.push(item.id);
       await createComment({submissionId:item.id,authorId:member.id,content:`Comment ${index}`});
-      await createSubmissionAttachment({submissionId:item.id,filePath:`synthetic/${index}`,fileName:"test.txt",fileMimeType:"text/plain",fileSizeBytes:1});
+      await DB.prepare("INSERT INTO submission_attachments(submission_id,revision_number,file_path,file_name,file_mime_type,file_size_bytes) VALUES(?,1,?,?,?,1)").bind(item.id,`synthetic/${index}`,"test.txt","text/plain").run();
     }
-    check((await listCommentsByProject(project.id,{ids})).length===104,"comment scopes over100 IDs are bounded without lost rows");
-    check((await listAttachmentsByProject(project.id,{ids})).length===104,"attachment scopes over100 IDs are bounded without lost rows");
-    check((await listCommentsByProject(project.id,{ids:[]})).length===0,"empty scope never widens access");
+    check((await listCommentsByProject(project.id,{ids},{canSeeAll:false,viewerUserId:member.id})).length===104,"comment scopes over100 IDs are bounded without lost rows");
+    check((await listAttachmentsByProject(project.id,{ids},{canSeeAll:false,viewerUserId:member.id})).length===104,"attachment scopes over100 IDs are bounded without lost rows");
+    check((await listCommentsByProject(project.id,{ids:[]},{canSeeAll:false,viewerUserId:member.id})).length===0,"empty scope never widens access");
     await getDatabasePool().query("UPDATE users SET role='guest' WHERE id=?",[member.id]);
     check(await resolveUserRoleForSession(member.email)==="guest","session role refresh observes downgrade");
+    await getDatabasePool().query("UPDATE users SET role='member' WHERE id=?",[member.id]);
     await logUserAction("test",{actorEmail:member.email,action:"synthetic.write",entityType:"submission",metadata:{filePath:"private/secret.pdf"}});
     const logs=await listRecentUserActionEntries();
     check(logs.some((row)=>row.message.includes("synthetic.write")) && !JSON.stringify(logs).includes("private/secret.pdf"),"durable audit read preserves path redaction");
@@ -80,7 +83,7 @@ try {
     const { GET: downloadLegacy } = await import("../app/api/submissions/[submissionId]/attachment/route");
     const upload = await saveUploadedSubmissionAttachment(new File(["private contents"], "비공개.txt", {type:"text/plain"}), {authorId:member.id,taskId:task.id});
     check((await pendingObjectCleanupCount()) === 1, "R2 upload creates durable staging cleanup intent");
-    const withFile = await createSubmissionWithAttachments({taskId:task.id,authorId:member.id,content:"private with file",visibility:"private"},[upload]);
+    const withFile = await createSubmissionWithAttachments({actor,token:randomUUID(),taskId:task.id,authorId:member.id,content:"private with file",visibility:"private"},[upload]);
     check((await pendingObjectCleanupCount()) === 0, "atomic metadata commit clears staging intent");
     const attachments = await listAttachmentsBySubmission(withFile);
     check(attachments.length === 1 && (await new Response((await readStoredSubmissionAttachment(upload.filePath)).buffer).text()) === "private contents", "private R2 object streams exact bytes");
@@ -94,7 +97,7 @@ try {
     }
     setSession(null);
     check((await download(new Request("https://test.invalid/file"),{params:Promise.resolve({attachmentId:String(attachments[0].id)})})).status===401,"anonymous R2 download denied");
-    const legacy = await createSubmission({taskId:task.id,authorId:member.id,content:"legacy",visibility:"private",filePath:upload.filePath,fileName:"private.txt",fileMimeType:"text/plain",fileSizeBytes:16});
+    const legacy = await createSubmission({actor,token:randomUUID(),taskId:task.id,authorId:member.id,content:"legacy",visibility:"private",filePath:upload.filePath,fileName:"private.txt",fileMimeType:"text/plain",fileSizeBytes:16});
     setSession(sessionFor(testActors.member2));
     check((await downloadLegacy(new Request("https://test.invalid/file"),{params:Promise.resolve({submissionId:String(legacy.id)})})).status===404,"legacy attachment denies cross-user access");
     setSession(sessionFor(testActors.member1));
@@ -103,7 +106,7 @@ try {
     const staged2=await saveUploadedSubmissionAttachment(new File(["two"],"same.txt"),{taskId:task.id,authorId:member.id});
     check(staged1.filePath!==staged2.filePath,"repeated filenames never overwrite another upload");
     const beforeCount=await DB.prepare("SELECT COUNT(*) AS n FROM submissions").first<{n:number}>();
-    await assert.rejects(createSubmissionWithAttachments({taskId:task.id,authorId:member.id,content:"must rollback"},[staged1,{...staged2,filePath:null} as unknown as StoredSubmissionAttachment]));checks++;
+    await assert.rejects(createSubmissionWithAttachments({actor,token:randomUUID(),taskId:task.id,authorId:member.id,content:"must rollback"},[staged1,{...staged2,filePath:null} as unknown as StoredSubmissionAttachment]));checks++;
     check((await DB.prepare("SELECT COUNT(*) AS n FROM submissions").first<{n:number}>())?.n===beforeCount?.n,"second metadata failure rolls back parent and every attachment");
     check(await ATTACHMENTS.head(staged1.filePath),"uncommitted bytes remain tracked for cleanup");
     await deleteStoredSubmissionAttachment(staged1.filePath);await deleteStoredSubmissionAttachment(staged2.filePath);
@@ -132,7 +135,7 @@ try {
     const oversized=new File([new Uint8Array(20*1024*1024+1)],"too-large.bin");
     await assert.rejects(saveUploadedSubmissionAttachment(oversized,{taskId:task.id,authorId:member.id}),/20MB/);checks++;
     const unchanged = await getSubmissionByIdForViewer(hidden.id,{canSeeAll:true});
-    await assert.rejects(updateSubmissionWithAttachments({id:hidden.id,content:"should not apply",visibility:"public"},[{...upload,filePath:null} as unknown as StoredSubmissionAttachment]));checks++;
+    await assert.rejects(updateSubmissionWithAttachments({actor,token:randomUUID(),expectedRevision:hidden.currentRevision,changeSummary:"Synthetic revision",id:hidden.id,content:"should not apply",visibility:"public"},[{...upload,filePath:null} as unknown as StoredSubmissionAttachment]));checks++;
     check((await getSubmissionByIdForViewer(hidden.id,{canSeeAll:true}))?.content===unchanged?.content,"failed edit/attachment batch retains old text and visibility");
     console.log(`D1/R2 contract checks passed: ${checks}. Synthetic local data and mocked app sessions only; actual Google login is separate.`);
 

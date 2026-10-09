@@ -1,3 +1,5 @@
+import {verifySubmissionRevisionWorkflow} from "./verify-submission-revisions-http.mjs";
+import { seedSubmissionRevisionFixtures } from "./seed-submission-revision-fixture.mjs";
 import { randomUUID } from "node:crypto";
 /** Product P0 contracts on local synthetic D1/R2. Never invokes permanent deletion. */
 export async function verifyTeamWorkflow(argumentsContext) {
@@ -29,13 +31,16 @@ export async function verifyTeamWorkflow(argumentsContext) {
     const id=direct||(ref&&`$ACTION_ID_${ref}#${name}`);
     check(Boolean(id),`workflow: rendered ${name}`);return id;
   };
-  async function form(route,cookie,id,fields) {
+  async function form(route,cookie,id,fields,files=[]) {
     if(id.endsWith('#updateTaskAction')) { fields={...fields,version:fields.version??(await db.prepare('SELECT version FROM tasks WHERE id=?').bind(Number(fields.taskId)).first())?.version,operationToken:fields.operationToken??randomUUID()}; }
     if(id.endsWith('#createTaskAction')) fields={...fields,operationToken:fields.operationToken??randomUUID()};
-    const boundary='wbs-workflow-form';let body='';
-    for(const [key,value]of[[id,''],...Object.entries(fields)])body+=`--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`;
-    body+=`--${boundary}--\r\n`;
-    const response=await request(route,cookie,{method:'POST',headers:{Origin:argumentsContext.actionOrigin,'Content-Type':`multipart/form-data; boundary=${boundary}`},body});
+    if(id.endsWith('#createSubmissionAction')) fields={...fields,operationToken:fields.operationToken??randomUUID()};
+    if(id.endsWith('#updateSubmissionAction')||id.endsWith('#deleteSubmissionAttachmentAction')) fields={...fields,operationToken:fields.operationToken??randomUUID(),expectedRevision:fields.expectedRevision??(await db.prepare('SELECT current_revision FROM submissions WHERE id=?').bind(Number(fields.submissionId)).first())?.current_revision,changeSummary:fields.changeSummary??'Synthetic revised output'};
+    const boundary='wbs-workflow-form',parts=[];
+    for(const [key,value]of[[id,''],...Object.entries(fields)])parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`));
+    for(const file of files)parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="attachments"; filename="${file.name}"\r\nContent-Type: ${file.mime??'text/plain'}\r\n\r\n`),Buffer.from(file.bytes),Buffer.from('\r\n'));
+    parts.push(Buffer.from(`--${boundary}--\r\n`));
+    const response=await request(route,cookie,{method:'POST',headers:{Origin:argumentsContext.actionOrigin,'Content-Type':`multipart/form-data; boundary=${boundary}`},body:Buffer.concat(parts)});
     await response.text();check(response.status===303,`workflow: form response ${response.status}`);return response;
   }
   const adminHtml=await(await request('/admin/projects',admin)).text();
@@ -105,6 +110,7 @@ export async function verifyTeamWorkflow(argumentsContext) {
   await db.prepare("UPDATE users SET role='member' WHERE id=3").run();
   const completionBefore=JSON.stringify(await readCard());await state(actorCookies.member2,'done','완료');check(JSON.stringify(await readCard())===completionBefore,'workflow: completion needs assignee submission evidence');
   await db.prepare("INSERT INTO submissions(task_id,author_id,content,visibility) VALUES(?,3,'WORKFLOW_EVIDENCE','private')").bind(card.id).run();
+  await seedSubmissionRevisionFixtures(db);
   await state(actorCookies.member2,'done','완료 기준 확인');check((await readCard()).status==='done','workflow: no-review assignee completes with deliverable, criteria and evidence');
   const done=JSON.stringify(await readCard());await state(actorCookies.member2,'in_progress');check(JSON.stringify(await readCard())===done,'workflow: reopening completed work requires reason');
   await state(actorCookies.member2,'in_progress','추가 확인');check((await readCard()).status==='in_progress','workflow: reasoned reopen retains completion history');
@@ -121,5 +127,6 @@ export async function verifyTeamWorkflow(argumentsContext) {
   await db.prepare("CREATE TRIGGER reject_synthetic_history BEFORE INSERT ON task_events WHEN NEW.task_id IN (SELECT id FROM tasks WHERE title='WORKFLOW_ROLLBACK') BEGIN SELECT RAISE(ABORT,'synthetic history fault'); END").run();
   await form(route,member,createTask,{projectId:goals.id,title:'WORKFLOW_ROLLBACK',...dates});
   check(!(await db.prepare("SELECT id FROM tasks WHERE title='WORKFLOW_ROLLBACK'").first()),'workflow: history failure rolls back task creation atomically');
+  await verifySubmissionRevisionWorkflow({...argumentsContext,form,renderedAction,route,projectId:goals.id,taskId:card.id});
 
 }

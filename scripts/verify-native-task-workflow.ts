@@ -1,3 +1,4 @@
+import {verifyNativeSubmissionRevisions} from "./verify-native-submission-revisions";
 /** Receives one freshly created synthetic DB only. No delete or purge paths. */
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
@@ -40,5 +41,6 @@ export async function verifyNativeTaskWorkflow(database:string,check:(value:unkn
     check((await getTaskById(taskId))!.status==='done','native no-review completion requires evidence and criteria');
     const state=(await getTaskById(taskId))!,events=await listTaskEvents(taskId);
     check(events.length===state.version&&new Set(events.map(e=>e.task_version)).size===events.length&&Math.max(...events.map(e=>e.task_version))===state.version,'native task state/history invariants hold');
+    await verifyNativeSubmissionRevisions(taskId,check);
   }finally{await closeDatabasePool();}
 }

@@ -261,11 +261,12 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const projectsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "projects" && table.exists && table.missingColumns.length === 0);
   const tasksTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "tasks" && table.exists && table.missingColumns.length === 0);
   const submissionsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "submissions" && table.exists && table.missingColumns.length === 0);
-  const commentsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "comments" && table.exists);
+  const commentsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "comments" && table.exists && table.missingColumns.length===0);
   const usersTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "users" && table.exists && table.missingColumns.length === 0);
 
   const taskEventsReady=databaseStatus.tables.some(table=>table.name==="task_events"&&table.exists&&table.missingColumns.length===0);
-  if (!taskEventsReady || !projectsTableReady || !tasksTableReady || !submissionsTableReady || !commentsTableReady || !usersTableReady) {
+  const revisionsReady=["submission_revisions","submission_events","submission_attachments"].every(name=>databaseStatus.tables.some(table=>table.name===name&&table.exists&&table.missingColumns.length===0));
+  if (!revisionsReady || !taskEventsReady || !projectsTableReady || !tasksTableReady || !submissionsTableReady || !commentsTableReady || !usersTableReady) {
     return (
       <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
@@ -305,10 +306,8 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   const [comments, attachments] = selectedProject
     ? await Promise.all([
-        listCommentsByProject(selectedProject.id, visibleSubmissionScope),
-        listAttachmentsByProject(selectedProject.id, visibleSubmissionScope).catch(
-          () => [] as Awaited<ReturnType<typeof listAttachmentsByProject>>,
-        ),
+        listCommentsByProject(selectedProject.id, visibleSubmissionScope, visibilityFilter),
+        listAttachmentsByProject(selectedProject.id, visibleSubmissionScope, visibilityFilter),
       ])
     : [[] as Comment[], [] as SubmissionAttachment[]];
   const taskEvents=selectedProject?await listTaskEventsByProject(selectedProject.id):[];

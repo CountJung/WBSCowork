@@ -61,7 +61,7 @@ docs/          # 모든 하위 문서 (루트에는 README/AGENTS/CLAUDE 만 둔
 2. `canManageAllSubmissions(role, isSuperuser)` — 비공개 제출물 접근 확인
 3. `canWriteTaskContent(role, isSuperuser)` — 태스크/제출물 쓰기 확인
 4. Admin 패널 중 `/admin/database`, `/admin/logs`, `/admin/settings`는 `isSuperuser`만 접근 가능; `/admin/users`는 관리자 역할도 접근 가능 (`guest`·`member`만 부여)
-5. 제출물 목록 쿼리는 반드시 `SubmissionVisibilityFilter`를 사용할 것. 댓글·첨부의 프로젝트 조회는 `IdScope`로 가시 제출물에 한정하고, 단건은 `getSubmissionByIdForViewer`를 쓴다. 제출물·댓글 mutation은 상위 관계 재확인과 작성자/관리자 ownership 검사를 통과해야 한다
+5. 제출물 목록 쿼리는 반드시 `SubmissionVisibilityFilter`를 사용할 것. 댓글·첨부의 프로젝트 조회는 `IdScope`와 viewer filter를 함께 전달하여 매 SQL에서 현재/해당 버전 가시성을 재검사하고, 단건은 `getSubmissionByIdForViewer`를 쓴다. 제출물·댓글 mutation은 상위 관계 재확인과 작성자/관리자 ownership 검사를 통과해야 한다
 6. 환경 변수 파일(`.env*`)을 AI 컨텍스트로 열지 않는다
 7. 경고·오류 무시 금지 — 해결 불가 시 `docs/TODO.md`(해당 섹션 `QLT/RPT/OPS/PRD-###` 번호 발급)와 `docs/HARNESS_MAP.md`(기준선)에 기록. 완료 시 `docs/COMPLETED_LOG.md`로 번호를 유지한 채 옮긴다
 8. FSD 의존 방향은 `app → widgets → features → entities → shared`, 구축/이동 순서는 `shared → entities → features → widgets → root app pages`이다. 루트 `app/`을 `src/app`으로 옮기지 않고 구조 이동과 기능 변경을 분리한다. `src/`를 건드리면 `npm run check:fsd`를 반드시 실행한다.
@@ -138,3 +138,5 @@ Serena는 역할·권한, DB schema, repository 계약 또는 여러 Route Handl
 버그 lifecycle: admin은 해결/종료 제보 검증 완료, 휴지통 이동·복원을 수행한다. 영구 삭제는 SU만 현재 제목/버전/전체 이력 지문 확인 후 가능하며 최소 삭제 증빙을 남긴다. 휴지통은 admin/SU 전용 SQL scope이며 일반 조회·검색·건수·이력에서 제외한다. 상세 계약은 BUG_REPORTS.md를 따른다.
 
 Native MariaDB schema 변경은 DB_SCHEMA_USER/DB_SCHEMA_PASSWORD 전용 연결과 불변 version/checksum ledger를 사용한다. 일반 DB_* runtime/readiness와 분리하며 fallback하지 않는다. DDL은 transaction rollback 대상이 아니므로 자동 down/DROP이나 ledger 강제 수정은 없다. 실제 운영 적용/계정 권한 변경은 별도 승인 범위다. [Native 운영](docs/NATIVE_DATABASE_MIGRATIONS.md).
+
+산출물 버전: 쓰기는 canonical submission revision batch만 사용한다. 현재 projection·불변 snapshot·버전 첨부·event를 같은 transaction에 저장하고 expected revision/stable token/bytes fingerprint를 검사한다. 이전 파일 제외는 새 버전일 뿐 물리 삭제가 아니다. current/historical visibility를 함께 검사하며 담당자/검토자 지정으로 private 접근이 늘지 않는다. `/submissions/[id]`의 이력 보존 정책은 TEAM_WORKFLOW_PLAN.md와 privacy 화면을 따른다.

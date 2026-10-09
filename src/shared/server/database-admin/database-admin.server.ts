@@ -10,7 +10,7 @@ type ColumnDefinition = {
   definition: string;
 };
 
-const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments", "bug_reports", "bug_report_events", "bug_report_purge_receipts", "task_events"] as const;
+const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments", "bug_reports", "bug_report_events", "bug_report_purge_receipts", "task_events", "submission_revisions", "submission_events"] as const;
 
 export type ManagedTableName = (typeof managedTableNames)[number];
 
@@ -54,7 +54,11 @@ const requiredColumnsByTable: Partial<Record<ManagedTableName, string[]>> = {
   projects: ["goal", "success_criteria"],
   tasks: ["deliverable", "definition_of_done", "review_required", "status", "version", "workflow_note", "reviewer_id", "last_operation_token", "creation_token"],
   task_events: ["task_id", "actor_id", "operation_token", "request_fingerprint", "kind", "status", "assignee_id", "reviewer_id", "note", "task_version"],
-  submissions: requiredSubmissionColumns.map((column) => column.name),
+  submissions: [...requiredSubmissionColumns.map((column) => column.name),"creation_token","current_revision","version","last_operation_token","material_url"],
+  submission_attachments:["revision_number"],
+  comments:["revision_number"],
+  submission_revisions:["submission_id","revision_number","editor_id","content","visibility","material_url","change_summary","file_path","file_name","file_mime_type","file_size_bytes","source"],
+  submission_events:["submission_id","revision_number","actor_id","operation_token","request_fingerprint","kind","body"],
   users: requiredUsersColumns.map((column) => column.name),
 };
 

@@ -1,107 +1,142 @@
 import { getDatabasePool } from "@/src/shared/server/database/index.server";
-import { buildIdScopeClause, isEmptyIdScope, splitIdScope, type IdScope } from "@/src/shared/server/query-scope/index.server";
+import { buildIdScopeClause, isEmptyIdScope, isUnrestrictedScope, splitIdScope, type IdScope } from "@/src/shared/server/query-scope/index.server";
 import { mapSubmissionAttachmentRow, type SubmissionAttachment, type SubmissionAttachmentRow } from "../model/submission-attachment";
+import { buildSubmissionVisibilityWhere, type SubmissionVisibilityFilter } from "./submission-repository.server";
 
-export type CreateSubmissionAttachmentInput = {
-  submissionId: number;
-  filePath: string;
-  fileName: string;
-  fileMimeType: string;
-  fileSizeBytes: number;
+export type SubmissionAttachmentHistoryOptions = {
+  /** Reserved for authorized destruction/file-cleanup paths. Normal lists use the current revision. */
+  allRevisions?: boolean;
 };
 
-export async function getSubmissionAttachmentById(id: number): Promise<SubmissionAttachment | null> {
-  const rows = (await getDatabasePool().query(
-    `SELECT id, submission_id, file_path, file_name, file_mime_type, file_size_bytes, created_at
-     FROM submission_attachments WHERE id = ? LIMIT 1`,
-    [id],
-  )) as SubmissionAttachmentRow[];
+export type SubmissionAttachmentListOptions =
+  | (SubmissionAttachmentHistoryOptions & { revisionNumber?: never; filter?: never })
+  | { revisionNumber: number; filter: SubmissionVisibilityFilter; allRevisions?: never };
 
-  const row = rows[0];
+const attachmentColumns = `sa.id, sa.submission_id, sa.revision_number, sa.file_path,
+  sa.file_name, sa.file_mime_type, sa.file_size_bytes, sa.created_at`;
 
-  return row ? mapSubmissionAttachmentRow(row) : null;
+function validateRevisionNumber(revisionNumber: number) {
+  if (!Number.isSafeInteger(revisionNumber) || revisionNumber < 1) {
+    throw new Error("올바른 제출물 버전이 아닙니다.");
+  }
 }
 
-export async function createSubmissionAttachment(input: CreateSubmissionAttachmentInput): Promise<SubmissionAttachment> {
-  const result = (await getDatabasePool().query(
-    `INSERT INTO submission_attachments (submission_id, file_path, file_name, file_mime_type, file_size_bytes)
-     VALUES (?, ?, ?, ?, ?)`,
-    [input.submissionId, input.filePath, input.fileName, input.fileMimeType, input.fileSizeBytes],
-  )) as { insertId: number };
+/** Unfiltered metadata for already-authorized mutations and cleanup only. */
+export async function getSubmissionAttachmentById(id: number): Promise<SubmissionAttachment | null> {
+  const rows = (await getDatabasePool().query(
+    `SELECT ${attachmentColumns} FROM submission_attachments sa WHERE sa.id = ? LIMIT 1`,
+    [id],
+  )) as SubmissionAttachmentRow[];
+  return rows[0] ? mapSubmissionAttachmentRow(rows[0]) : null;
+}
 
-  const created = await getSubmissionAttachmentById(result.insertId);
-
-  if (!created) {
-    throw new Error("첨부파일 레코드를 생성하지 못했습니다.");
-  }
-
-  return created;
+/** Missing, inaccessible parent and inaccessible snapshot all have the same null result. */
+export async function getSubmissionAttachmentForViewer(
+  id: number,
+  filter: SubmissionVisibilityFilter,
+): Promise<SubmissionAttachment | null> {
+  const visibility = buildSubmissionVisibilityWhere(filter, { submissionAlias: "s", userAlias: "u", revisionAlias: "r" });
+  const rows = (await getDatabasePool().query(
+    `SELECT ${attachmentColumns}
+     FROM submission_attachments sa
+     INNER JOIN submissions s ON s.id = sa.submission_id
+     INNER JOIN users u ON u.id = s.author_id
+     INNER JOIN submission_revisions r ON r.submission_id = sa.submission_id AND r.revision_number = sa.revision_number
+     WHERE sa.id = ? ${visibility.clause} LIMIT 1`,
+    [id, ...visibility.params],
+  )) as SubmissionAttachmentRow[];
+  return rows[0] ? mapSubmissionAttachmentRow(rows[0]) : null;
 }
 
 /**
- * 프로젝트 첨부파일 목록.
- *
- * 첨부 metadata(파일명·저장 경로·크기)는 부모 제출물의 공개 범위를 그대로 따라야 한다.
- * 화면 경로는 뷰어에게 보이는 제출물 id 집합(`{ ids }`)을 넘기고,
- * 프로젝트 파기처럼 저장 파일 전체 정리가 필요한 관리 경로만 `{ unrestricted: true }`를 명시한다.
+ * Parent IDs bound the project but may be stale; each SQL query independently checks
+ * current parent and current snapshot visibility before exposing attachment metadata.
+ * Administrative destruction explicitly supplies unrestricted scope and allRevisions: true.
  */
-export async function listAttachmentsByProject(projectId: number, scope: IdScope): Promise<SubmissionAttachment[]> {
-  if (isEmptyIdScope(scope)) {
-    return [];
+export async function listAttachmentsByProject(
+  projectId: number,
+  scope: IdScope,
+  filter: SubmissionVisibilityFilter,
+  options: SubmissionAttachmentHistoryOptions = {},
+): Promise<SubmissionAttachment[]> {
+  if (options.allRevisions && (!isUnrestrictedScope(scope) || !filter.canSeeAll)) {
+    throw new Error("전체 버전 첨부 조회에는 명시적인 관리 범위가 필요합니다.");
   }
+  if (isEmptyIdScope(scope)) return [];
 
-  const chunks = splitIdScope(scope);
+  const visibility = options.allRevisions
+    ? { clause: "", params: [] }
+    : buildSubmissionVisibilityWhere(filter, { submissionAlias: "s", userAlias: "u", revisionAlias: "r" });
+  const chunks = splitIdScope(scope, 1 + visibility.params.length);
   if (chunks.length > 1) {
-    const rows = [];
-    for (const chunk of chunks) rows.push(...await listAttachmentsByProject(projectId, chunk));
+    const rows: SubmissionAttachment[] = [];
+    for (const chunk of chunks) rows.push(...await listAttachmentsByProject(projectId, chunk, filter, options));
     return rows.sort((left, right) => left.id - right.id);
   }
-
   const { clause, params } = buildIdScopeClause("sa.submission_id", scope);
   const rows = (await getDatabasePool().query(
-    `SELECT sa.id, sa.submission_id, sa.file_path, sa.file_name, sa.file_mime_type, sa.file_size_bytes, sa.created_at
+    `SELECT ${attachmentColumns}
      FROM submission_attachments sa
      INNER JOIN submissions s ON s.id = sa.submission_id
      INNER JOIN tasks t ON t.id = s.task_id
+     ${options.allRevisions ? "" : `INNER JOIN users u ON u.id = s.author_id
+     INNER JOIN submission_revisions r ON r.submission_id = sa.submission_id AND r.revision_number = sa.revision_number`}
      WHERE t.project_id = ? ${clause}
+       ${options.allRevisions ? "" : "AND sa.revision_number = s.current_revision"}
+       ${visibility.clause}
      ORDER BY sa.id ASC`,
-    [projectId, ...params],
+    [projectId, ...params, ...visibility.params],
   )) as SubmissionAttachmentRow[];
-
   return rows.map(mapSubmissionAttachmentRow);
 }
 
-export async function listAttachmentsBySubmission(submissionId: number): Promise<SubmissionAttachment[]> {
+/**
+ * Default/current and allRevisions modes are unfiltered: authorized internal mutations
+ * and cleanup only. Viewer reads must provide revisionNumber and filter, even for the
+ * current revision, so parent and snapshot visibility are checked in the same query.
+ */
+export async function listAttachmentsBySubmission(
+  submissionId: number,
+  options: SubmissionAttachmentListOptions = {},
+): Promise<SubmissionAttachment[]> {
+  if (options.revisionNumber !== undefined) {
+    validateRevisionNumber(options.revisionNumber);
+    const visibility = buildSubmissionVisibilityWhere(options.filter, { submissionAlias: "s", userAlias: "u", revisionAlias: "r" });
+    const rows = (await getDatabasePool().query(
+      `SELECT ${attachmentColumns}
+       FROM submission_attachments sa
+       INNER JOIN submissions s ON s.id = sa.submission_id
+       INNER JOIN users u ON u.id = s.author_id
+       INNER JOIN submission_revisions r ON r.submission_id = sa.submission_id AND r.revision_number = sa.revision_number
+       WHERE sa.submission_id = ? AND sa.revision_number = ? ${visibility.clause}
+       ORDER BY sa.id ASC`,
+      [submissionId, options.revisionNumber, ...visibility.params],
+    )) as SubmissionAttachmentRow[];
+    return rows.map(mapSubmissionAttachmentRow);
+  }
   const rows = (await getDatabasePool().query(
-    `SELECT id, submission_id, file_path, file_name, file_mime_type, file_size_bytes, created_at
-     FROM submission_attachments WHERE submission_id = ? ORDER BY id ASC`,
-    [submissionId],
-  )) as SubmissionAttachmentRow[];
-
-  return rows.map(mapSubmissionAttachmentRow);
-}
-
-export async function listAttachmentsByTask(taskId: number): Promise<SubmissionAttachment[]> {
-  const rows = (await getDatabasePool().query(
-    `SELECT sa.id, sa.submission_id, sa.file_path, sa.file_name, sa.file_mime_type, sa.file_size_bytes, sa.created_at
+    `SELECT ${attachmentColumns}
      FROM submission_attachments sa
      INNER JOIN submissions s ON s.id = sa.submission_id
-     WHERE s.task_id = ?
+     WHERE sa.submission_id = ? ${options.allRevisions ? "" : "AND sa.revision_number = s.current_revision"}
+     ORDER BY sa.id ASC`,
+    [submissionId],
+  )) as SubmissionAttachmentRow[];
+  return rows.map(mapSubmissionAttachmentRow);
+}
+
+/** Unfiltered parent scope for authorized task mutations; cleanup must request all revisions. */
+export async function listAttachmentsByTask(
+  taskId: number,
+  options: SubmissionAttachmentHistoryOptions = {},
+): Promise<SubmissionAttachment[]> {
+  const rows = (await getDatabasePool().query(
+    `SELECT ${attachmentColumns}
+     FROM submission_attachments sa
+     INNER JOIN submissions s ON s.id = sa.submission_id
+     WHERE s.task_id = ? ${options.allRevisions ? "" : "AND sa.revision_number = s.current_revision"}
      ORDER BY sa.id ASC`,
     [taskId],
   )) as SubmissionAttachmentRow[];
-
   return rows.map(mapSubmissionAttachmentRow);
-}
-
-export async function deleteSubmissionAttachment(id: number): Promise<SubmissionAttachment | null> {
-  const attachment = await getSubmissionAttachmentById(id);
-
-  if (!attachment) {
-    return null;
-  }
-
-  await getDatabasePool().query(`DELETE FROM submission_attachments WHERE id = ?`, [id]);
-
-  return attachment;
 }

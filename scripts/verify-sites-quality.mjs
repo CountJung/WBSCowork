@@ -1,3 +1,4 @@
+import { seedSubmissionRevisionFixtures } from "./seed-submission-revision-fixture.mjs";
 import { randomUUID } from "node:crypto";
 /** QLT-011: isolated synthetic writes/reads; never invokes delete, purge, DROP or TRUNCATE. */
 export async function verifySitesQuality({ request, db, bucket, actorCookies, actionOrigin, check }) {
@@ -12,6 +13,8 @@ export async function verifySitesQuality({ request, db, bucket, actorCookies, ac
   async function submit(route, cookie, actionId, fields, files=[]) {
     if(actionId.endsWith('#updateTaskAction')) { fields={...fields,version:fields.version??(await db.prepare('SELECT version FROM tasks WHERE id=?').bind(Number(fields.taskId)).first())?.version,operationToken:fields.operationToken??randomUUID()}; }
     if(actionId.endsWith('#createTaskAction')) fields={...fields,operationToken:fields.operationToken??randomUUID()};
+    if(actionId.endsWith('#createSubmissionAction')) fields={...fields,operationToken:fields.operationToken??randomUUID()};
+    if(actionId.endsWith('#updateSubmissionAction')||actionId.endsWith('#deleteSubmissionAttachmentAction')) fields={...fields,operationToken:fields.operationToken??randomUUID(),expectedRevision:fields.expectedRevision??(await db.prepare('SELECT current_revision FROM submissions WHERE id=?').bind(Number(fields.submissionId)).first())?.current_revision,changeSummary:fields.changeSummary??'Synthetic revised output'};
     const boundary = 'wbs-quality-fixture'; const parts=[];
     for (const [name,value] of [[actionId,''], ...Object.entries(fields)]) parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`));
     for (const file of files) parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="attachments"; filename="${file.name}"\r\nContent-Type: ${file.mime ?? 'text/plain'}\r\n\r\n`), Buffer.from(file.bytes ?? 'fixture'), Buffer.from('\r\n'));
@@ -76,12 +79,12 @@ export async function verifySitesQuality({ request, db, bucket, actorCookies, ac
   }
   await submit(route,member,createSubmission,{...scope,content:'QUALITY_20_FILES'},Array.from({length:20},(_,i)=>({name:`f${i}.txt`,bytes:'x'})));
   const accepted=await db.prepare("SELECT id FROM submissions WHERE content='QUALITY_20_FILES'").first();
-  check(Boolean(accepted)&&(await db.prepare('SELECT COUNT(*) AS n FROM submission_attachments WHERE submission_id=?').bind(accepted.id).first()).n===20,'quality: 20 small attachments accepted');
+  check(Boolean(accepted)&&(await db.prepare('SELECT COUNT(*) AS n FROM submission_attachments sa JOIN submissions s ON s.id=sa.submission_id WHERE sa.submission_id=? AND sa.revision_number=s.current_revision').bind(accepted.id).first()).n===20,'quality: 20 small attachments accepted');
   await submit(route,member,createSubmission,{...scope,content:'QUALITY_MAX_FILE'},[{name:'max.bin',bytes:Buffer.alloc(20*1024*1024)}]);
   check((await db.prepare("SELECT sa.file_size_bytes AS n FROM submission_attachments sa JOIN submissions s ON sa.submission_id=s.id WHERE s.content='QUALITY_MAX_FILE'").first())?.n===20*1024*1024,'quality: exact 20MiB accepted');
   const updateSubmission=action(await page(route),'updateSubmissionAction');
   await submit(route,member,updateSubmission,{...scope,submissionId:accepted.id,content:'QUALITY_20_FILES_EDITED'},[{name:'edit.txt',bytes:'edited'}]);
-  check((await db.prepare('SELECT content FROM submissions WHERE id=?').bind(accepted.id).first()).content==='QUALITY_20_FILES_EDITED'&&(await db.prepare('SELECT COUNT(*) AS n FROM submission_attachments WHERE submission_id=?').bind(accepted.id).first()).n===21,'quality: valid submission edit adds a file and preserves earlier attachments');
+  check((await db.prepare('SELECT content FROM submissions WHERE id=?').bind(accepted.id).first()).content==='QUALITY_20_FILES_EDITED'&&(await db.prepare('SELECT COUNT(*) AS n FROM submission_attachments sa JOIN submissions s ON s.id=sa.submission_id WHERE sa.submission_id=? AND sa.revision_number=s.current_revision').bind(accepted.id).first()).n===21,'quality: valid submission edit adds a file and preserves earlier attachments');
   const beforeUpdate=await snapshot();
   const rejectedEdit = await submit(route,member,updateSubmission,{...scope,submissionId:accepted.id,content:'REJECTED_UPDATE'},Array.from({length:21},(_,i)=>({name:`f${i}.txt`,bytes:'x'})));
   check((rejectedEdit.headers.get('location') ?? rejectedEdit.headers.get('x-action-redirect') ?? '').includes('status=error'),'quality: oversized submission edit reports validation error');
@@ -93,6 +96,7 @@ export async function verifySitesQuality({ request, db, bucket, actorCookies, ac
     const inserted=await db.prepare("INSERT INTO submissions(task_id,author_id,content,visibility,file_path,file_name,file_mime_type,file_size_bytes) VALUES(?,2,'QUALITY_MIME','private',?,?,?,999)").bind(root.id,key,filename,mime).run();
     const sid=inserted.meta.last_row_id;
     const attachment=await db.prepare('INSERT INTO submission_attachments(submission_id,file_path,file_name,file_mime_type,file_size_bytes) VALUES(?,?,?,?,999)').bind(sid,key,filename,mime).run();
+    await seedSubmissionRevisionFixtures(db);
     for(const endpoint of [`/api/submissions/${sid}/attachment`,`/api/submission-attachments/${attachment.meta.last_row_id}`]) {
       for(const inline of [false,true]) {
         const response=await request(endpoint+(inline?'?inline=1':''),member);

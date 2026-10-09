@@ -3,8 +3,7 @@ import { NextResponse } from "next/server";
 import { getAuthSession } from "@/src/entities/user/index.server";
 import { logUserAction, logUserActionFailure } from "@/src/shared/server/logging/index.server";
 import {
-  getSubmissionAttachmentById,
-  getSubmissionByIdForViewer,
+  getSubmissionAttachmentForViewer,
   readStoredSubmissionAttachment,
 } from "@/src/entities/submission/index.server";
 import { canManageAllSubmissions } from "@/src/entities/user";
@@ -25,23 +24,17 @@ export async function GET(request: Request, context: RouteContext) {
   const params = await context.params;
   const attachmentId = Number(params.attachmentId);
 
-  if (!Number.isInteger(attachmentId) || attachmentId <= 0) {
+  if (!Number.isSafeInteger(attachmentId) || attachmentId <= 0) {
     return NextResponse.json({ message: "올바른 첨부파일 식별자가 아닙니다." }, { status: 400, headers: { "Cache-Control": "private, no-store" } });
   }
 
-  const attachment = await getSubmissionAttachmentById(attachmentId);
-
-  if (!attachment) {
-    return NextResponse.json({ message: "첨부파일이 없습니다." }, { status: 404, headers: { "Cache-Control": "private, no-store" } });
-  }
-
-  // 공개 범위를 질의에 적용해, 볼 수 없는 제출물은 존재하지 않는 것과 같은 404로 응답한다.
-  const submission = await getSubmissionByIdForViewer(attachment.submissionId, {
+  // Parent and immutable snapshot visibility are checked together before opening any bytes.
+  const attachment = await getSubmissionAttachmentForViewer(attachmentId, {
     canSeeAll: canManageAllSubmissions(session.user.role, session.user.isSuperuser),
     viewerEmail: session.user.email,
   });
 
-  if (!submission) {
+  if (!attachment) {
     return NextResponse.json({ message: "첨부파일이 없습니다." }, { status: 404, headers: { "Cache-Control": "private, no-store" } });
   }
 
@@ -58,6 +51,7 @@ export async function GET(request: Request, context: RouteContext) {
       submissionId: attachment.submissionId,
       metadata: {
         fileName: attachment.fileName,
+        revisionNumber: attachment.revisionNumber,
         inline: headers["Content-Disposition"].startsWith("inline;"),
       },
     });

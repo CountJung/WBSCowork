@@ -1,0 +1,1 @@
+ALTER TABLE `file_cleanup_jobs` ADD `staging_expires_at` text;

@@ -40,8 +40,8 @@ async function loadWorkspaceAs(actorName: TestActorName) {
   const scope = { ids: submissions.map((submission) => submission.id) };
 
   const [comments, attachments] = await Promise.all([
-    listCommentsByProject(fixture.projectId, scope),
-    listAttachmentsByProject(fixture.projectId, scope),
+    listCommentsByProject(fixture.projectId, scope, {canSeeAll,viewerUserId:dbUser?.id??null}),
+    listAttachmentsByProject(fixture.projectId, scope, {canSeeAll,viewerUserId:dbUser?.id??null}),
   ]);
 
   return { submissions, comments, attachments };
@@ -466,20 +466,20 @@ describe("5. DB query 가 UI 사후 필터가 아니라 bounded viewer filter �
 
     const comments = await listCommentsByProject(fixture.projectId, {
       ids: visible.map((submission) => submission.id),
-    });
+    }, {canSeeAll:false,viewerUserId:dbUser?.id??null});
 
     assert.ok(!comments.some((comment) => comment.submissionId === fixture.submissionB.id));
   });
 
   test("빈 범위는 전체 조회로 넓어지지 않는다", async () => {
     // 가장 위험한 회귀다. 빈 배열을 '조건 없음'으로 처리하면 프로젝트 전체가 새어 나간다.
-    assert.deepEqual(await listCommentsByProject(fixture.projectId, { ids: [] }), []);
-    assert.deepEqual(await listAttachmentsByProject(fixture.projectId, { ids: [] }), []);
+    assert.deepEqual(await listCommentsByProject(fixture.projectId, { ids: [] }, {canSeeAll:false}), []);
+    assert.deepEqual(await listAttachmentsByProject(fixture.projectId, { ids: [] }, {canSeeAll:false}), []);
   });
 
   test("unrestricted 범위는 관리 경로에서 전체를 돌려준다", async () => {
-    const comments = await listCommentsByProject(fixture.projectId, { unrestricted: true });
-    const attachments = await listAttachmentsByProject(fixture.projectId, { unrestricted: true });
+    const comments = await listCommentsByProject(fixture.projectId, { unrestricted: true }, {canSeeAll:true});
+    const attachments = await listAttachmentsByProject(fixture.projectId, { unrestricted: true }, {canSeeAll:true}, {allRevisions:true});
 
     assert.equal(comments.length, 3, "파기 경로는 비공개 포함 전체를 봐야 한다");
     assert.equal(attachments.length, 6);

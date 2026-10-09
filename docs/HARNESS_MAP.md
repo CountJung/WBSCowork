@@ -401,3 +401,15 @@ exact `38602c8fd8c113f3b9a425c91991121cff11ca5f`에서 saved-cloud MariaDB11.4.1
 state/version과 append-only task_events를 같은 transaction에 쓰고 stable token+payload hash로 반복 요청을 구분한다. 생성과 최초 이력도 원자적이다. 기존 작업은 migration 당시 상태라는 baseline을 명시적으로 남기며 과거 생성/재배정 시각을 꾸미지 않는다. D1 0006/native v3는 새 컬럼·이력 테이블·baseline INSERT만 추가한다. native v1/v2는 불변이다. Gantt는 완료 leaf/전체 leaf, 남은 leaf와 상태별 leaf 수를 표시하고 날짜 경과/parentId를 완료율/선행조건으로 사용하지 않는다.
 
 lint0/0, types, FSD5/경계, unit97, Worker build, workflow263, 기존 quality375 PASS. D1 보존 migration fixture도 원래 guest 배정·산출물·상태 baseline·reviewer SET NULL을 확인했다. 독립 리뷰에서 발견한 client token 재사용, planned 우회, 미래 버전 위조, actor/target role 경합을 수정하고 관련 회귀 검사를 추가했다. metadata form은 id+version으로 재마운트해 성공 후 토큰을 갱신한다. 실제 브라우저 연속 입력은 PRD-044에서 확인한다. native v3 동시 실행/반복 제출 하네스를 추가했으며 실제 MariaDB 결과는 정확한 commit에서 실행 대기다. 운영 계정/권한/자료/비밀값 변경 또는 영구 삭제는 없다.
+
+### PRD-035/036 native v3 결과
+
+exact `72a9b391b857aeedf97bf0366727110210017fab`에서 MariaDB11.4.13 / Node26.11.1 / npm11.20 / 동일 lockfile로 additive harness48·migration unit13·lint/types/FSD PASS. v1/v2 checksum, v3 중단/재개·baseline 중복 방지, 생성 replay, 다른 토큰 경합8쌍(승자1/정상 stale1), 같은 토큰8쌍(16성공/중복 이력0), 재배정 후 이전 담당 거부/현재 담당 완료를 확인했다. 내부 deadlock6건은 기존 bounded whole-transaction retry가 처리했고 호출자 SQL 오류는 없었다. 기존 DB24개 그대로, 새 DB15개 보존, 재시작 snapshot 동일, 최종 listener 없음.
+
+## PRD-037 산출물 버전 checkpoint (2026-10-09)
+
+immutable submission_revisions/events, 현재 버전 projection, 안전한 자료 링크, 변경 요약, 버전별 첨부/댓글/이력 화면을 구현했다. 기존 자료 snapshot은 원래 본문·private·작성자·생성 시각·파일 bytes를 보존하며, 당시 편집자를 꾸미지 않는다. D1 0007/native v4는 새 컬럼·두 테이블·보존 snapshot을 추가한다. D1 0008은 cleanup retry 시각과 upload staging 만료를 분리하는 nullable 컬럼 하나이다. 기존 migration/checksum은 불변이다.
+
+lint/types/FSD, unit106, Worker build와 workflow316 PASS. private v1→public v2에서도 v1은 비공개, 현재 private 전환 시 이전 공개 버전도 숨김, 실제 파일 bytes, 반복 업로드/변경 payload 거부/동시 stale/새 버전 파일 제외/관리자 실제 편집자/이력 쓰기 실패 rollback/부적절 링크·길이 거부를 확인했다. 프로젝트 첨부 조회는 전달받은 ID가 오래되어도 매 SQL chunk가 현재+당시 visibility를 재검사한다. 기존 quality375는 staging 분리 전 source에서 PASS이며 최종 전체 gate에서 다시 확인한다. native v4 실제 DB 결과와 브라우저 전체 흐름은 대기다.
+
+저장소 독립 검토가 찾아낸 cleanup backoff에 의한 만료 upload 재허용은 별도 staging_expires_at과 정리 전 irrevocable 회수로 수정했다. metadata transaction이 먼저 완료되면 live reference가 정리를 막고, 회수가 먼저 완료되면 새 metadata의 lease guard가 거부한다. 실제 action은 canonical revision batch만 사용하며 이전 standalone 첨부 mutation helper는 제거했다. 기존 순차 업로드/실패 rollback 검사는 통과했지만, 별도 두 cleanup runner를 의도적으로 정지/재개하는 경합 재현은 플랫폼 검토에 의해 차단되어 미실행이다. 다른 경로로 재시도하지 않았으며 이 검사를 통과한 것으로 계산하지 않는다. 이 경합의 동적 검증과 전체 저장소 독립 검토 완료를 주장하지 않는다. 배포 전 정적 불변식 검토/통합 gate에서 남은 위험을 다시 평가한다.

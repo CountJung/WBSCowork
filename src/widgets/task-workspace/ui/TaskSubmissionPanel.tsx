@@ -10,6 +10,7 @@ type ContentAction = (formData: FormData) => Promise<void>;
 
 type TaskSubmissionPanelProps = {
   canWrite: boolean;
+  currentUserId:number|null;
   canSeeAllSubmissions: boolean;
   commentsBySubmissionId: Record<number, Comment[]>;
   attachmentsBySubmissionId: Record<number, SubmissionAttachment[]>;
@@ -25,6 +26,11 @@ type TaskSubmissionPanelProps = {
   updateCommentAction: ContentAction;
   updateSubmissionAction: ContentAction;
 };
+
+function SubmissionOperationFields({revision}:{revision?:number}) {
+  const [token]=useState(()=>crypto.randomUUID());
+  return <><input type="hidden" name="operationToken" value={token}/>{revision?<input type="hidden" name="expectedRevision" value={revision}/>:null}</>;
+}
 
 function formatDateTime(value: Date) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -416,7 +422,7 @@ function VisibilityRadio({ defaultValue = "public" }: { defaultValue?: string })
 }
 
 export default function TaskSubmissionPanel({
-  canWrite,
+  canWrite, currentUserId,
   canSeeAllSubmissions,
   commentsBySubmissionId,
   attachmentsBySubmissionId,
@@ -501,6 +507,7 @@ export default function TaskSubmissionPanel({
             {submissions.map((submission) => {
               const attachments = attachmentsBySubmissionId[submission.id] ?? [];
               const comments = commentsBySubmissionId[submission.id] ?? [];
+              const canEdit=canWrite&&(canSeeAllSubmissions||currentUserId===submission.authorId);
 
               return (
                 <Paper
@@ -536,7 +543,7 @@ export default function TaskSubmissionPanel({
                           size="small"
                           variant="outlined"
                         />
-                        {canWrite && editingSubmissionId !== submission.id ? (
+                        {canEdit && editingSubmissionId !== submission.id ? (
                           <>
                             <Button size="small" variant="outlined" onClick={() => setEditingSubmissionId(submission.id)}>
                               수정
@@ -545,8 +552,9 @@ export default function TaskSubmissionPanel({
                               <input type="hidden" name="projectId" value={String(projectId)} />
                               <input type="hidden" name="taskId" value={String(taskId)} />
                               <input type="hidden" name="submissionId" value={String(submission.id)} />
+                              <FormControlLabel control={<Checkbox name="confirmRevisionDeletion" value="yes" required/>} label="모든 버전 영구 삭제 확인"/>
                               <Button type="submit" color="error" size="small" variant="outlined">
-                                삭제
+                                제출물·버전 삭제
                               </Button>
                             </Stack>
                           </>
@@ -554,6 +562,8 @@ export default function TaskSubmissionPanel({
                       </Stack>
                     </Stack>
 
+                    <Stack direction="row" spacing={1} sx={{flexWrap:"wrap"}}><Chip label={`버전 ${submission.currentRevision}`} size="small"/><Button size="small" href={`/submissions/${submission.id}`}>버전·검토 이력</Button></Stack>
+                    {submission.materialUrl?<Button component="a" href={submission.materialUrl} target="_blank" rel="noopener noreferrer" sx={{justifyContent:"flex-start",overflowWrap:"anywhere"}}>자료 링크: {submission.materialUrl}</Button>:null}
                     <MarkdownContent content={submission.content} />
 
                     <Divider />
@@ -588,14 +598,15 @@ export default function TaskSubmissionPanel({
                           openPreviews={openPreviews}
                           onTogglePreview={togglePreview}
                           deleteForm={
-                            canWrite ? (
+                            canEdit ? (
                               <Stack component="form" action={deleteAttachmentAction}>
                                 <input type="hidden" name="projectId" value={String(projectId)} />
                                 <input type="hidden" name="taskId" value={String(taskId)} />
                                 <input type="hidden" name="submissionId" value={String(submission.id)} />
                                 <input type="hidden" name="attachmentId" value={String(attachment.id)} />
+                                <SubmissionOperationFields key={`${submission.id}:${submission.currentRevision}:${attachment.id}`} revision={submission.currentRevision}/>
                                 <Button type="submit" color="error" size="small" variant="outlined">
-                                  삭제
+                                  현재 버전에서 제외
                                 </Button>
                               </Stack>
                             ) : null
@@ -617,7 +628,7 @@ export default function TaskSubmissionPanel({
                         <Stack spacing={0.5}>
                           <Typography variant="subtitle2">댓글</Typography>
                           <Typography variant="body2" color="text.secondary">
-                            제출물에 대한 보완 요청, 검토 메모, 승인 의견을 남길 수 있습니다.
+                            버전별 의견을 남길 수 있습니다. 댓글 자체는 제출물 승인으로 처리되지 않습니다.
                           </Typography>
                         </Stack>
                         <Chip label={`댓글 ${comments.length}`} size="small" color="secondary" variant="outlined" />
@@ -653,14 +664,14 @@ export default function TaskSubmissionPanel({
                                   <Stack spacing={0.25}>
                                     <Typography variant="subtitle2">{comment.authorName}</Typography>
                                     <Typography variant="caption" color="text.secondary">
-                                      {comment.authorEmail} · {formatDateTime(comment.createdAt)}
+                                      {comment.authorEmail} · {formatDateTime(comment.createdAt)} · {comment.revisionNumber?`버전 ${comment.revisionNumber}`:"이력 도입 이전 댓글"}
                                     </Typography>
                                   </Stack>
                                 </Stack>
 
                                 <MarkdownContent content={comment.content} />
 
-                                {!canWrite ? null : (
+                                {!(canWrite&&(canSeeAllSubmissions||currentUserId===comment.authorId)) ? null : (
                                   <>
                                     <Divider />
                                     {editingCommentId !== comment.id ? (
@@ -707,6 +718,7 @@ export default function TaskSubmissionPanel({
 
                       {!canWrite ? null : (
                         <Stack component="form" action={createCommentAction} spacing={1.5}>
+                          <input type="hidden" name="revisionNumber" value={submission.currentRevision}/>
                           <input type="hidden" name="projectId" value={String(projectId)} />
                           <input type="hidden" name="taskId" value={String(taskId)} />
                           <input type="hidden" name="submissionId" value={String(submission.id)} />
@@ -729,7 +741,7 @@ export default function TaskSubmissionPanel({
                     </Stack>
                     </>)}
 
-                    {canWrite && editingSubmissionId === submission.id && (
+                    {canEdit && editingSubmissionId === submission.id && (
                       <>
                         <Divider />
                         <Stack spacing={1.5}>
@@ -744,9 +756,12 @@ export default function TaskSubmissionPanel({
                             <input type="hidden" name="projectId" value={String(projectId)} />
                             <input type="hidden" name="taskId" value={String(taskId)} />
                             <input type="hidden" name="submissionId" value={String(submission.id)} />
+                            <SubmissionOperationFields key={`${submission.id}:${submission.currentRevision}:edit`} revision={submission.currentRevision}/>
+                            <TextField name="materialUrl" label="자료 링크 (선택)" defaultValue={submission.materialUrl} slotProps={{htmlInput:{maxLength:2048}}}/>
+                            <TextField name="changeSummary" label="이번 버전의 변경 내용" required multiline slotProps={{htmlInput:{maxLength:2000}}}/>
                             <TextField
                               name="content"
-                              label="제출 내용 수정"
+                              label="새 버전의 제출 내용"
                               defaultValue={submission.content}
                               multiline
                               minRows={4}
@@ -754,7 +769,7 @@ export default function TaskSubmissionPanel({
                             <VisibilityRadio defaultValue={submission.visibility} />
                             <AttachmentInput helperText="새 파일 추가 첨부 (여러 파일 동시 선택 가능, 기존 첨부파일에 추가됩니다)" />
                             {submission.filePath ? (
-                              <FormControlLabel control={<Checkbox name="clearAttachment" />} label="레거시 단일 첨부파일 제거" />
+                              <FormControlLabel control={<Checkbox name="clearAttachment" />} label="새 버전에서 기존 단일 첨부 제외 (이전 버전 보존)" />
                             ) : null}
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
                               <Button type="submit" variant="outlined">
@@ -779,6 +794,8 @@ export default function TaskSubmissionPanel({
           <>
             <Divider />
             <Stack component="form" action={createSubmissionAction} spacing={1.5}>
+              <SubmissionOperationFields key={`create:${submissions.map(s=>s.id).join(",")}`}/>
+              <TextField name="materialUrl" label="자료 링크 (선택)" slotProps={{htmlInput:{maxLength:2048}}}/>
               <input type="hidden" name="projectId" value={String(projectId)} />
               <input type="hidden" name="taskId" value={String(taskId)} />
               <TextField

@@ -1,7 +1,8 @@
-import { randomUUID } from "node:crypto";
-import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import type { StoredSubmissionAttachment } from "./submission-files.server";
-import { getDatabasePool, databaseBatch } from "@/src/shared/server/database/index.server";
+import type { SubmissionActor } from "../model/submission-revision";
+import { buildSubmissionVisibilityWhere, commitSubmissionCreation, commitSubmissionRevision } from "./submission-revision.server";
+export { buildSubmissionVisibilityWhere } from "./submission-revision.server";
+import { getDatabasePool } from "@/src/shared/server/database/index.server";
 import { mapSubmissionRow, type Submission, type SubmissionRow, type SubmissionVisibility } from "../model/submission";
 
 /**
@@ -20,6 +21,10 @@ export type SubmissionVisibilityFilter = {
 };
 
 export type CreateSubmissionInput = {
+  actor: SubmissionActor;
+  token: string;
+  materialUrl?: string;
+  changeSummary?: string;
   taskId: number;
   authorId: number;
   content: string;
@@ -31,6 +36,12 @@ export type CreateSubmissionInput = {
 };
 
 export type UpdateSubmissionInput = {
+  actor: SubmissionActor;
+  token: string;
+  expectedRevision: number;
+  materialUrl?: string;
+  changeSummary?: string;
+  removeAttachmentIds?: number[];
   id: number;
   content: string;
   visibility?: SubmissionVisibility;
@@ -41,42 +52,6 @@ export type UpdateSubmissionInput = {
   replaceAttachment?: boolean;
 };
 
-function normalizeContent(content: string) {
-  const normalizedContent = content.trim();
-
-  if (!normalizedContent) {
-    throw new Error("제출 내용은 비워 둘 수 없습니다.");
-  }
-
-  return normalizedContent;
-}
-
-async function ensureTaskExists(taskId: number) {
-  const rows = (await getDatabasePool().query("SELECT id FROM tasks WHERE id = ? LIMIT 1", [taskId])) as Array<{
-    id: number;
-  }>;
-  const task = rows[0];
-
-  if (!task) {
-    throw new Error("대상 작업을 찾을 수 없습니다.");
-  }
-
-  return task;
-}
-
-async function ensureAuthorExists(authorId: number) {
-  const rows = (await getDatabasePool().query("SELECT id FROM users WHERE id = ? LIMIT 1", [authorId])) as Array<{
-    id: number;
-  }>;
-  const author = rows[0];
-
-  if (!author) {
-    throw new Error("제출 작성자 정보를 찾을 수 없습니다.");
-  }
-
-  return author;
-}
-
 const submissionSelectColumns = `
       submissions.id,
       submissions.task_id,
@@ -84,6 +59,9 @@ const submissionSelectColumns = `
       users.name AS author_name,
       users.email AS author_email,
       submissions.content,
+      submissions.current_revision,
+      submissions.version,
+      submissions.material_url,
       COALESCE(submissions.visibility, 'public') AS visibility,
       submissions.file_path,
       submissions.file_name,
@@ -122,12 +100,13 @@ export async function getSubmissionByIdForViewer(
   id: number,
   filter: SubmissionVisibilityFilter,
 ): Promise<Submission | null> {
-  const { clause, params } = buildVisibilityWhere(filter);
+  const { clause, params } = buildSubmissionVisibilityWhere(filter, { revisionAlias: "visible_revision" });
   const rows = (await getDatabasePool().query(
     `SELECT
       ${submissionSelectColumns}
     FROM submissions
     INNER JOIN users ON users.id = submissions.author_id
+    INNER JOIN submission_revisions visible_revision ON visible_revision.submission_id = submissions.id AND visible_revision.revision_number = submissions.current_revision
     WHERE submissions.id = ? ${clause}
     LIMIT 1`,
     [id, ...params],
@@ -138,47 +117,18 @@ export async function getSubmissionByIdForViewer(
   return row ? mapSubmissionRow(row) : null;
 }
 
-function buildVisibilityWhere(filter: SubmissionVisibilityFilter): { clause: string; params: unknown[] } {
-  if (filter.canSeeAll) {
-    return { clause: "", params: [] };
-  }
-
-  const ownerConditions: string[] = [];
-  const params: unknown[] = [];
-
-  if (filter.viewerUserId) {
-    ownerConditions.push("submissions.author_id = ?");
-    params.push(filter.viewerUserId);
-  }
-
-  const viewerEmail = filter.viewerEmail?.trim().toLowerCase();
-
-  if (viewerEmail) {
-    ownerConditions.push("LOWER(users.email) = ?");
-    params.push(viewerEmail);
-  }
-
-  if (ownerConditions.length === 0) {
-    return { clause: "AND submissions.visibility = 'public'", params: [] };
-  }
-
-  return {
-    clause: `AND (submissions.visibility = 'public' OR ${ownerConditions.join(" OR ")})`,
-    params,
-  };
-}
-
 export async function listSubmissionsByProject(
   projectId: number,
   filter: SubmissionVisibilityFilter,
 ): Promise<Submission[]> {
-  const { clause, params } = buildVisibilityWhere(filter);
+  const { clause, params } = buildSubmissionVisibilityWhere(filter, { revisionAlias: "visible_revision" });
   const rows = (await getDatabasePool().query(
     `SELECT
       ${submissionSelectColumns}
     FROM submissions
     INNER JOIN tasks ON tasks.id = submissions.task_id
     INNER JOIN users ON users.id = submissions.author_id
+    INNER JOIN submission_revisions visible_revision ON visible_revision.submission_id = submissions.id AND visible_revision.revision_number = submissions.current_revision
     WHERE tasks.project_id = ? ${clause}
     ORDER BY submissions.created_at DESC, submissions.id DESC`,
     [projectId, ...params],
@@ -191,12 +141,13 @@ export async function listSubmissionsByTask(
   taskId: number,
   filter: SubmissionVisibilityFilter,
 ): Promise<Submission[]> {
-  const { clause, params } = buildVisibilityWhere(filter);
+  const { clause, params } = buildSubmissionVisibilityWhere(filter, { revisionAlias: "visible_revision" });
   const rows = (await getDatabasePool().query(
     `SELECT
       ${submissionSelectColumns}
     FROM submissions
     INNER JOIN users ON users.id = submissions.author_id
+    INNER JOIN submission_revisions visible_revision ON visible_revision.submission_id = submissions.id AND visible_revision.revision_number = submissions.current_revision
     WHERE submissions.task_id = ? ${clause}
     ORDER BY submissions.created_at DESC, submissions.id DESC`,
     [taskId, ...params],
@@ -206,70 +157,17 @@ export async function listSubmissionsByTask(
 }
 
 export async function createSubmission(input: CreateSubmissionInput): Promise<Submission> {
-  await Promise.all([ensureTaskExists(input.taskId), ensureAuthorExists(input.authorId)]);
-
-  const result = (await getDatabasePool().query(
-    `INSERT INTO submissions (
-      task_id,
-      author_id,
-      content,
-      visibility,
-      file_path,
-      file_name,
-      file_mime_type,
-      file_size_bytes
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      input.taskId,
-      input.authorId,
-      normalizeContent(input.content),
-      input.visibility ?? "public",
-      input.filePath ?? null,
-      input.fileName ?? null,
-      input.fileMimeType ?? null,
-      input.fileSizeBytes ?? null,
-    ],
-  )) as {
-    insertId: number;
-  };
-
-  const submission = await getSubmissionById(Number(result.insertId));
-
-  if (!submission) {
-    throw new Error("제출물을 생성했지만 결과를 다시 불러오지 못했습니다.");
-  }
-
+  const result = await commitSubmissionCreation(input, []);
+  const submission = await getSubmissionById(result.submissionId);
+  if (!submission) throw new Error("제출물을 생성했지만 결과를 다시 불러오지 못했습니다.");
   return submission;
 }
 
 export async function updateSubmission(input: UpdateSubmissionInput): Promise<Submission> {
-  const existingSubmission = await getSubmissionById(input.id);
-
-  if (!existingSubmission) {
-    throw new Error("수정할 제출물을 찾을 수 없습니다.");
-  }
-
-  const nextFilePath = input.replaceAttachment ? input.filePath ?? null : existingSubmission.filePath;
-  const nextFileName = input.replaceAttachment ? input.fileName ?? null : existingSubmission.fileName;
-  const nextFileMimeType = input.replaceAttachment ? input.fileMimeType ?? null : existingSubmission.fileMimeType;
-  const nextFileSizeBytes = input.replaceAttachment ? input.fileSizeBytes ?? null : existingSubmission.fileSizeBytes;
-
-  const nextVisibility: SubmissionVisibility = input.visibility ?? existingSubmission.visibility ?? "public";
-
-  await getDatabasePool().query(
-    `UPDATE submissions
-     SET content = ?, visibility = ?, file_path = ?, file_name = ?, file_mime_type = ?, file_size_bytes = ?
-     WHERE id = ?`,
-    [normalizeContent(input.content), nextVisibility, nextFilePath, nextFileName, nextFileMimeType, nextFileSizeBytes, input.id],
-  );
-
-  const updatedSubmission = await getSubmissionById(input.id);
-
-  if (!updatedSubmission) {
-    throw new Error("제출물을 수정했지만 결과를 다시 불러오지 못했습니다.");
-  }
-
-  return updatedSubmission;
+  const result = await commitSubmissionRevision(input, []);
+  const submission = await getSubmissionById(result.submissionId);
+  if (!submission) throw new Error("제출물을 수정했지만 결과를 다시 불러오지 못했습니다.");
+  return submission;
 }
 
 export async function deleteSubmission(submissionId: number): Promise<Submission> {
@@ -285,36 +183,11 @@ export async function deleteSubmission(submissionId: number): Promise<Submission
 }
 
 
-function attachmentInsert(submissionId: number, attachment: StoredSubmissionAttachment) {
-  return { sql: "INSERT INTO submission_attachments (submission_id,file_path,file_name,file_mime_type,file_size_bytes) VALUES (?,?,?,?,?)",
-    params: [submissionId, attachment.filePath, attachment.fileName, attachment.fileMimeType, attachment.fileSizeBytes] };
-}
-/** Uploaded bytes are staged first; all D1 parent/attachment metadata commits together. */
+/** Bytes are staged first; parent, revision, attachments, and event commit atomically in both runtimes. */
 export async function createSubmissionWithAttachments(input: CreateSubmissionInput, attachments: StoredSubmissionAttachment[]): Promise<number> {
-  await Promise.all([ensureTaskExists(input.taskId), ensureAuthorExists(input.authorId)]);
-  const content = normalizeContent(input.content);
-  if (isHostedRuntime()) {
-    const token = randomUUID();
-    const result = await databaseBatch([
-      { sql: "INSERT INTO submissions (task_id,author_id,content,visibility,creation_token) VALUES (?,?,?,?,?)", params: [input.taskId,input.authorId,content,input.visibility ?? "public",token] },
-      ...attachments.map((file) => ({ sql: "INSERT INTO submission_attachments (submission_id,file_path,file_name,file_mime_type,file_size_bytes) SELECT id,?,?,?,? FROM submissions WHERE creation_token=?", params: [file.filePath,file.fileName,file.fileMimeType,file.fileSizeBytes,token] })),
-    ]);
-    return (result[0] as {meta:{last_row_id:number}}).meta.last_row_id;
-  }
-  const submission = await createSubmission(input);
-  try { await databaseBatch(attachments.map((file) => attachmentInsert(submission.id, file))); }
-  catch (error) { await deleteSubmission(submission.id); throw error; }
-  return submission.id;
+  return (await commitSubmissionCreation(input, attachments)).submissionId;
 }
+
 export async function updateSubmissionWithAttachments(input: UpdateSubmissionInput, attachments: StoredSubmissionAttachment[]): Promise<void> {
-  const existing = await getSubmissionById(input.id);
-  if (!existing) throw new Error("수정할 제출물을 찾을 수 없습니다.");
-  await databaseBatch([
-    { sql: "UPDATE submissions SET content=?,visibility=?,file_path=?,file_name=?,file_mime_type=?,file_size_bytes=? WHERE id=?", params: [normalizeContent(input.content), input.visibility ?? existing.visibility,
-      input.replaceAttachment ? input.filePath ?? null : existing.filePath,
-      input.replaceAttachment ? input.fileName ?? null : existing.fileName,
-      input.replaceAttachment ? input.fileMimeType ?? null : existing.fileMimeType,
-      input.replaceAttachment ? input.fileSizeBytes ?? null : existing.fileSizeBytes, input.id] },
-    ...attachments.map((file) => attachmentInsert(input.id, file)),
-  ]);
+  await commitSubmissionRevision(input, attachments);
 }

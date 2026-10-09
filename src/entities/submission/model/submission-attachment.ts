@@ -1,6 +1,7 @@
 export type SubmissionAttachmentRow = {
   id: number;
   submission_id: number;
+  revision_number: number;
   file_path: string;
   file_name: string;
   file_mime_type: string;
@@ -11,6 +12,7 @@ export type SubmissionAttachmentRow = {
 export type SubmissionAttachment = {
   id: number;
   submissionId: number;
+  revisionNumber: number;
   filePath: string;
   fileName: string;
   fileMimeType: string;
@@ -22,6 +24,7 @@ export function mapSubmissionAttachmentRow(row: SubmissionAttachmentRow): Submis
   return {
     id: row.id,
     submissionId: row.submission_id,
+    revisionNumber: Number(row.revision_number),
     filePath: row.file_path,
     fileName: row.file_name,
     fileMimeType: row.file_mime_type,

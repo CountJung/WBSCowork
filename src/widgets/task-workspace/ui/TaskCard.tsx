@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Chip, Divider, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Button, Checkbox, FormControlLabel, Chip, Divider, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import MarkdownContent from "@/src/shared/ui/markdown-content";
 import TaskSubmissionPanel from "./TaskSubmissionPanel";
 import { formatDate } from "@/src/shared/lib/date";
@@ -126,6 +126,7 @@ export default function TaskCard({
               <Stack component="form" action={deleteTaskAction}>
                 <input type="hidden" name="projectId" value={String(projectId)} />
                 <input type="hidden" name="taskId" value={String(task.id)} />
+                <FormControlLabel control={<Checkbox name="confirmRevisionDeletion" value="yes" required/>} label="작업·모든 제출 버전 삭제 확인"/>
                 <Button type="submit" color="error" size="small" variant="outlined">
                   작업 삭제
                 </Button>
@@ -216,6 +217,7 @@ export default function TaskCard({
         ) : null}
 
         <TaskSubmissionPanel
+          currentUserId={currentUserId}
           canWrite={canWrite}
           canSeeAllSubmissions={canSeeAllSubmissions}
           commentsBySubmissionId={commentsBySubmissionId}

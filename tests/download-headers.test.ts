@@ -7,8 +7,9 @@ import { sessionFor, testActors } from "./helpers/session";
 
 // Header behavior only. Authorization/SQL/R2 bytes are exercised by the actual Worker suite.
 mockModuleExports("@/src/entities/submission/index.server", {
-  getSubmissionByIdForViewer: async () => ({ id: 1, taskId: 1, filePath: "synthetic/file", fileName: "file.txt", fileMimeType: "text/plain", fileSizeBytes: 999 }),
-  getSubmissionAttachmentById: async () => ({ id: 1, submissionId: 1, filePath: "synthetic/file", fileName: "file.txt", fileMimeType: "text/plain", fileSizeBytes: 999 }),
+  getSubmissionByIdForViewer: async () => ({ id: 1, taskId: 1, currentRevision:1, filePath: "synthetic/file", fileName: "file.txt", fileMimeType: "text/plain", fileSizeBytes: 999 }),
+  getSubmissionAttachmentForViewer: async () => ({ id: 1, submissionId: 1, filePath: "synthetic/file", fileName: "file.txt", fileMimeType: "text/plain", fileSizeBytes: 999 }),
+  getSubmissionRevisionForViewer: async () => ({id:1,submissionId:1,revisionNumber:1,taskId:1,filePath:"synthetic/file",fileName:"file.txt",fileMimeType:"text/plain",fileSizeBytes:999}),
   readStoredSubmissionAttachment: async () => ({ buffer: Buffer.from("abc"), fileSizeBytes: 3 }),
 });
 const legacy = await import("@/app/api/submissions/[submissionId]/attachment/route");

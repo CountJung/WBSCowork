@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
 import { logUserAction, logUserActionFailure } from "@/src/shared/server/logging/index.server";
 import { createProject, deleteProject, updateProject } from "@/src/entities/project/index.server";
-import { listAttachmentsByProject, listSubmissionsByProject } from "@/src/entities/submission/index.server";
+import { listAttachmentsByProject, listRevisionFilePathsByProject, listSubmissionsByProject } from "@/src/entities/submission/index.server";
 import { listTasksByProject } from "@/src/entities/task/index.server";
 import {
   deleteProjectUploadDirectories,
@@ -155,15 +155,17 @@ export async function deleteProjectAdminAction(formData: FormData) {
       throw new Error("프로젝트 종료 및 개인정보 파기에 동의해야 합니다.");
     }
 
-    const [submissionsToClean, attachmentsToClean, tasksToClean] = await Promise.all([
+    const [submissionsToClean, attachmentsToClean, tasksToClean, revisionFilesToClean] = await Promise.all([
       // 파기는 저장 파일 전체를 지워야 하므로 뷰어 범위를 적용하지 않는다.
       listSubmissionsByProject(projectId, { canSeeAll: true }),
-      listAttachmentsByProject(projectId, { unrestricted: true }),
+      listAttachmentsByProject(projectId, { unrestricted: true }, {canSeeAll:true}, {allRevisions:true}),
       listTasksByProject(projectId),
+      listRevisionFilePathsByProject(projectId),
     ]);
     const project = await deleteProject(projectId);
 
     const storedFilePaths = new Set([
+      ...revisionFilesToClean,
       ...submissionsToClean
         .map((submission) => submission.filePath)
         .filter((filePath): filePath is string => Boolean(filePath)),

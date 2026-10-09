@@ -1,11 +1,13 @@
 import { getHostedAttachments, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { queueObjectCleanup, deleteUnreferencedObject, retryObjectCleanup, validateObjectKey } from "@/src/shared/server/object-cleanup/index.server";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { getDatabasePool } from "@/src/shared/server/database/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 
 export type StoredSubmissionAttachment = {
+  contentHash: string;
   absolutePath: string;
   fileMimeType: string;
   fileName: string;
@@ -77,6 +79,10 @@ export async function saveUploadedSubmissionAttachment(
   if (!Number.isSafeInteger(input.taskId) || input.taskId <= 0 || !Number.isSafeInteger(input.authorId) || input.authorId <= 0) throw new Error("Invalid attachment owner or task.");
 
   if (isHostedRuntime()) {
+    // Read bounded chunks for a stable replay digest; no second whole-file allocation.
+    const hash=createHash("sha256"), reader=file.stream().getReader();
+    for(;;){const chunk=await reader.read();if(chunk.done)break;hash.update(chunk.value);}
+    const contentHash=hash.digest("hex");
     const filePath = `submissions/${input.taskId}/${input.authorId}/${randomUUID()}-${sanitizeFileName(file.name)}`;
     await queueObjectCleanup(filePath, 60 * 60 * 1000);
     try {
@@ -89,7 +95,7 @@ export async function saveUploadedSubmissionAttachment(
       await deleteUnreferencedObject(filePath).catch(() => undefined);
       throw error;
     }
-    return { absolutePath: filePath, filePath, fileMimeType: file.type || "application/octet-stream", fileName: sanitizeDisplayFileName(file.name), fileSizeBytes: file.size };
+    return { contentHash, absolutePath: filePath, filePath, fileMimeType: file.type || "application/octet-stream", fileName: sanitizeDisplayFileName(file.name), fileSizeBytes: file.size };
   }
   const uploadRoot = getAbsoluteUploadDirectory();
   const relativeDirectory = path.join("submissions", String(input.taskId), String(input.authorId));
@@ -104,6 +110,7 @@ export async function saveUploadedSubmissionAttachment(
 
   return {
     absolutePath,
+    contentHash:createHash("sha256").update(fileBuffer).digest("hex"),
     fileMimeType: file.type || "application/octet-stream",
     // 화면 표시·다운로드용 파일명은 한글·유니코드를 그대로 보존한다
     fileName: sanitizeDisplayFileName(file.name || "attachment"),
@@ -122,6 +129,8 @@ export async function deleteStoredSubmissionAttachment(filePath: string | null |
     return;
   }
 
+  const referenced=await getDatabasePool().query("SELECT EXISTS(SELECT 1 FROM submission_attachments WHERE file_path=? UNION ALL SELECT 1 FROM submissions WHERE file_path=? UNION ALL SELECT 1 FROM submission_revisions WHERE file_path=?) AS live",[filePath,filePath,filePath]) as {live:number}[];
+  if(!referenced[0]||Number(referenced[0].live))throw new Error("Attachment reference cannot be cleared; native cleanup refused.");
   await rm(resolveStoredSubmissionAttachmentPath(filePath), { force: true });
 }
 
@@ -212,8 +221,20 @@ export async function deleteProjectUploadDirectories(taskIds: number[]) {
   const uploadRoot = getAbsoluteUploadDirectory();
 
   for (const taskId of taskIds) {
+    if(!Number.isSafeInteger(taskId)||taskId<=0)throw new Error("Invalid cleanup task.");
     const taskDirectory = assertPathWithinRoot(uploadRoot, path.join(uploadRoot, "submissions", String(taskId)));
-    await rm(taskDirectory, { recursive: true, force: true });
+    const visit=async(directory:string):Promise<void>=>{
+      let entries;
+      try{entries=await readdir(directory,{withFileTypes:true});}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return;throw error;}
+      for(const entry of entries){
+        const target=assertPathWithinRoot(uploadRoot,path.join(directory,entry.name));
+        if(entry.isSymbolicLink())throw new Error("Symbolic upload paths cannot be cleaned automatically.");
+        if(entry.isDirectory())await visit(target);
+        else await deleteStoredSubmissionAttachment(path.relative(uploadRoot,target).split(path.sep).join('/'));
+      }
+      await removeEmptyDirectory(directory,uploadRoot);
+    };
+    await visit(taskDirectory);
   }
 }
 

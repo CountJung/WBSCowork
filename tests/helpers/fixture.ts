@@ -51,7 +51,7 @@ async function truncateAll() {
   try {
     await connection.query("SET FOREIGN_KEY_CHECKS = 0");
 
-    for (const table of ["bug_report_purge_receipts", "bug_report_events", "bug_reports", "comments", "submission_attachments", "submissions", "tasks", "projects", "users"]) {
+    for (const table of ["submission_events", "submission_revisions", "task_events", "bug_report_purge_receipts", "bug_report_events", "bug_reports", "comments", "submission_attachments", "submissions", "tasks", "projects", "users"]) {
       await connection.query(`TRUNCATE TABLE ${table}`);
     }
 
@@ -125,6 +125,7 @@ async function insertSubmission(options: {
     ],
   )) as { insertId: number };
   const submissionId = Number(submissionResult.insertId);
+  await pool.query("INSERT INTO submission_revisions(submission_id,revision_number,editor_id,content,visibility,material_url,change_summary,file_path,file_name,file_mime_type,file_size_bytes,source) SELECT id,current_revision,NULL,content,visibility,material_url,'Synthetic baseline',file_path,file_name,file_mime_type,file_size_bytes,'legacy' FROM submissions WHERE id=?",[submissionId]);
 
   const attachmentIds: number[] = [];
 

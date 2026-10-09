@@ -2,7 +2,7 @@ import { attachmentResponseHeaders } from "@/src/shared/lib/attachment-response"
 import { NextResponse } from "next/server";
 import { getAuthSession } from "@/src/entities/user/index.server";
 import { logUserAction, logUserActionFailure } from "@/src/shared/server/logging/index.server";
-import { getSubmissionByIdForViewer, readStoredSubmissionAttachment } from "@/src/entities/submission/index.server";
+import { getSubmissionByIdForViewer, getSubmissionRevisionForViewer, readStoredSubmissionAttachment } from "@/src/entities/submission/index.server";
 import { canManageAllSubmissions } from "@/src/entities/user";
 
 type RouteContext = {
@@ -21,24 +21,31 @@ export async function GET(request: Request, context: RouteContext) {
   const params = await context.params;
   const submissionId = Number(params.submissionId);
 
-  if (!Number.isInteger(submissionId) || submissionId <= 0) {
+  if (!Number.isSafeInteger(submissionId) || submissionId <= 0) {
     return NextResponse.json({ message: "올바른 제출물 식별자가 아닙니다." }, { status: 400, headers: { "Cache-Control": "private, no-store" } });
   }
 
-  // 공개 범위를 질의에 적용해, 볼 수 없는 제출물은 존재하지 않는 것과 같은 404로 응답한다.
-  const submission = await getSubmissionByIdForViewer(submissionId, {
+  const url = new URL(request.url);
+  const requestedRevision = url.searchParams.get("revision");
+  if (requestedRevision !== null && (!/^[1-9]\d*$/.test(requestedRevision) || !Number.isSafeInteger(Number(requestedRevision)))) {
+    return NextResponse.json({ message: "올바른 제출물 버전이 아닙니다." }, { status: 400, headers: { "Cache-Control": "private, no-store" } });
+  }
+  const filter = {
     canSeeAll: canManageAllSubmissions(session.user.role, session.user.isSuperuser),
     viewerEmail: session.user.email,
-  });
+  };
+  const submission = await getSubmissionByIdForViewer(submissionId, filter);
+  const revision = submission
+    ? await getSubmissionRevisionForViewer(submissionId, requestedRevision === null ? submission.currentRevision : Number(requestedRevision), filter)
+    : null;
 
-  if (!submission?.filePath || !submission.fileName) {
+  if (!submission || !revision?.filePath || !revision.fileName) {
     return NextResponse.json({ message: "첨부파일이 없습니다." }, { status: 404, headers: { "Cache-Control": "private, no-store" } });
   }
 
   try {
-    const attachment = await readStoredSubmissionAttachment(submission.filePath);
-    const url = new URL(request.url);
-    const headers = attachmentResponseHeaders({ fileName: submission.fileName, mimeType: submission.fileMimeType, size: attachment.fileSizeBytes, inlineRequested: url.searchParams.get("inline") === "1" });
+    const attachment = await readStoredSubmissionAttachment(revision.filePath);
+    const headers = attachmentResponseHeaders({ fileName: revision.fileName, mimeType: revision.fileMimeType, size: attachment.fileSizeBytes, inlineRequested: url.searchParams.get("inline") === "1" });
 
     await logUserAction("submissions.attachment", {
       actorEmail: session.user.email ?? null,
@@ -48,7 +55,8 @@ export async function GET(request: Request, context: RouteContext) {
       submissionId: submission.id,
       taskId: submission.taskId,
       metadata: {
-        fileName: submission.fileName,
+        fileName: revision.fileName,
+        revisionNumber: revision.revisionNumber,
       },
     });
 
