@@ -26,4 +26,12 @@ export async function verifyP1Http(ctx){
  const other=await db.prepare('SELECT id FROM tasks WHERE project_id<>? LIMIT 1').bind(projectId).first();
  await form(route,member,dependency,{...fields,version:(await read()).version,graphVersion:(await graph()).v,predecessorId:other.id,operationToken:randomUUID()});
  check((await db.prepare('SELECT predecessor_id id FROM task_dependencies WHERE task_id=?').bind(b.id).first()).id===a.id,'P1 HTTP cross-project reference leaves graph unchanged');
+ const templateAction=renderedAction(await(await request(route,member)).text(),'applyTaskTemplateAction');
+ const node={key:'scope',parentKey:null,title:'P1_HTTP_TEMPLATE',description:'plain template description',deliverable:'file',definitionOfDone:'checked',assigneeId:2,startDate:'2026-01-01',endDate:'2026-01-02'};
+ const templateFields={projectId,templateKey:'delivery',templateVersion:1,nodes:JSON.stringify([node]),operationToken:randomUUID()};
+ await form(route,member,templateAction,templateFields);await form(route,member,templateAction,templateFields);
+ check((await db.prepare("SELECT COUNT(*) n FROM tasks WHERE title='P1_HTTP_TEMPLATE'").first()).n===1,'P1 HTTP template replay creates one chosen card');
+ const templateCard=await db.prepare("SELECT * FROM tasks WHERE title='P1_HTTP_TEMPLATE'").first();
+ check(templateCard.assignee_id===2&&templateCard.status==='planned'&&templateCard.review_required===0,'P1 HTTP preview fields persist without role/review grants');
+
 }

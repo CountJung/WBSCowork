@@ -167,3 +167,8 @@ export const taskDependencies = sqliteTable("task_dependencies", {
   taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
   predecessorId: integer("predecessor_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
 }, t => [uniqueIndex("task_dependency_unique").on(t.taskId, t.predecessorId), index("task_dependency_project_idx").on(t.projectId), check("task_dependency_self_check", sql`${t.taskId} <> ${t.predecessorId}`)]);
+
+export const taskTemplateRuns=sqliteTable('task_template_runs',{
+ id:id(),projectId:integer('project_id').notNull().references(()=>projects.id,{onDelete:'cascade'}),actorId:integer('actor_id').references(()=>users.id,{onDelete:'set null'}),
+ templateKey:text('template_key').notNull(),templateVersion:integer('template_version').notNull(),operationToken:text('operation_token').notNull().unique(),requestFingerprint:text('request_fingerprint').notNull(),taskCount:integer('task_count').notNull(),createdAt:createdAt(),completedAt:text('completed_at'),
+});

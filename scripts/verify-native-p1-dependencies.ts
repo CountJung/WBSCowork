@@ -22,4 +22,15 @@ export async function verifyNativeP1Dependencies(check:(value:unknown,label:stri
  check(pair.filter(r=>r.status==='fulfilled').length===1,'native graph CAS rejects concurrent reverse-edge loser');
  const invariant=await db.query('SELECT t.id,t.version,COUNT(e.id) n FROM tasks t LEFT JOIN task_events e ON e.task_id=t.id WHERE t.id IN (?,?,?,?) GROUP BY t.id,t.version',[a.id,b.id,c.id,d.id]) as {version:number;n:number}[];
  check(invariant.every(row=>Number(row.version)===Number(row.n)),'native dependency state and history agree');
+ const {applyTaskTemplate}=await import('../src/entities/task/index.server');
+ const {taskTemplates,templatePreview}=await import('../src/entities/task');
+ const template=taskTemplates[1],nodes=templatePreview(template,'2026-01-01');nodes[1].assigneeId=3;
+ const templateInput={projectId:1,templateKey:template.key,templateVersion:template.version,nodes,actor,token:randomUUID()};
+ const created=await Promise.all([applyTaskTemplate(templateInput),applyTaskTemplate(templateInput)]);
+ check(created[0].taskIds.join(',')===created[1].taskIds.join(',')&&created[0].taskIds.length===3,'native template replay creates one hierarchy');
+ const child=await getTaskById(created[0].taskIds[2]);check(child?.parentId===created[0].taskIds[1]&&child.depth===1,'native template hierarchy copied parent-first');
+ check((await getTaskById(created[0].taskIds[1]))?.assigneeId===3,'native template selected assignee persisted');
+ await assert.rejects(applyTaskTemplate({...templateInput,nodes:[{...nodes[0],title:'different'}]}));check(true,'native template changed payload rejects replay');
+ await assert.rejects(applyTaskTemplate({...templateInput,token:randomUUID(),nodes:[{...nodes[0],assigneeId:1}]}));check(true,'native template ineligible target creates no batch');
+
 }

@@ -472,3 +472,9 @@ source `82d7d516ef34ed8718dbfe09d6189b7f81cacfe8` / tree `4144cbda144bc79311f82d
 - 독립 정적 검토에서 endpoint 소멸 CAS, 삭제 거부 시 depth 쓰기, 제출 삭제 lock 순서, readiness 누락을 수정했다. 영구 삭제 경합은 실데이터/합성 DB 삭제로 재현하지 않았다. QLT-015 차단 범위는 재시도하지 않았다.
 - D1 `0010`은 새 관계 표와 project graph column2개만 추가한다. Native v6는 v1–v5 checksum을 유지하며 중단/재개·역할·동시 graph CAS의 additive harness를 추가했다. 실제 MariaDB 실행/게시/브라우저 인수는 다음 게이트다.
 - 첫 설치는 기본 npm cache `/home/agent/.npm`의 ENOENT로 실패했다. workspace cache를 지정한 공식 installer 재실행은689패키지 설치 성공. package-lock 변경 없음. npm http-proxy 경고, 기존 esbuild-kit2개 deprecated 안내, Node mock ExperimentalWarning, Vite proxy 안내와 Vinext route 분류 한계는 기존 도구 경고이며 숨기지 않았다.
+
+### P1 / PRD-041 템플릿 체크포인트
+
+- 버전1 예시 템플릿2개, 담당자 기본 미배정, relative date 미리보기와 편집/제외, parent-first 원자적 생성, stable token/fingerprint receipt를 추가했다. 저장 중 취소/편집을 막고 오류 시 미리보기를 보존한다. 배포된 catalog version은 삭제/변경하지 않고 새 version을 추가하여 이전 요청 검증을 유지한다.
+- 단위116 PASS (native DB suite 미실행), D1 P1 계약32 PASS, 실제 Worker workflow HTTP434 PASS, lint/types/FSD5/build/decoder 통과. 독립 정적 검토와 함께 동일 token 동시 생성, 변경 payload 거부, 부적격 사용자, 늦은 event 실패 시 첫 카드/후속 카드/이력/receipt 전체 rollback을 검사했다. 실제 운영 템플릿 생성이나 Google 두 계정 브라우저 사용은 미실행이다.
+- 새 D1 `0011`, native v7은 template application receipt 표만 추가한다. 기존 표/파일/role을 복제하거나 삭제하지 않는다. Native functional harness에는 템플릿5개 조건을 추가했고 실제 실행 결과는 후속 검증에서 기록한다.

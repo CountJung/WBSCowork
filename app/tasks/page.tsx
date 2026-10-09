@@ -22,6 +22,8 @@ import { getOrderedTasks, getSelectedTask, parsePersonalWorkReturnTo } from "@/s
 import { getSelectedProject } from "@/src/entities/project";
 import { formatDate } from "@/src/shared/lib/date";
 import SubmitButton from "@/src/shared/ui/submit-button";
+import TaskTemplatePreview from "@/src/widgets/task-templates";
+import {applyTaskTemplateAction} from "@/src/features/task-templates/index.server";
 import {setTaskPredecessorsAction} from "@/src/features/task-dependencies/index.server";
 import {TaskDependencyPanel,ProjectWorkSummary} from "@/src/widgets/task-dependencies";
 import ProjectGanttChart from "@/src/widgets/project-gantt";
@@ -277,7 +279,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const usersTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "users" && table.exists && table.missingColumns.length === 0);
 
   const taskEventsReady=databaseStatus.tables.some(table=>table.name==="task_events"&&table.exists&&table.missingColumns.length===0);
-  const revisionsReady=["submission_revisions","submission_events","submission_attachments","task_dependencies"].every(name=>databaseStatus.tables.some(table=>table.name===name&&table.exists&&table.missingColumns.length===0));
+  const revisionsReady=["submission_revisions","submission_events","submission_attachments","task_dependencies","task_template_runs"].every(name=>databaseStatus.tables.some(table=>table.name===name&&table.exists&&table.missingColumns.length===0));
   if (!revisionsReady || !taskEventsReady || !projectsTableReady || !tasksTableReady || !submissionsTableReady || !commentsTableReady || !usersTableReady) {
     return (
       <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
@@ -414,6 +416,8 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             </Stack>
           </Paper>
         ) : null}
+
+        {canWrite&&selectedProject?<TaskTemplatePreview key={selectedProject.id} projectId={selectedProject.id} startDate={formatDate(selectedProject.startDate)} users={users.filter(user=>eligibleUserIds.includes(user.id)).map(({id,name})=>({id,name}))} action={applyTaskTemplateAction}/>:null}
 
         {canWrite && selectedProject ? <TaskCreateForm returnTo={returnTo} eligibleUserIds={eligibleUserIds} orderedTasks={orderedTasks} project={selectedProject} users={users} /> : null}
 
