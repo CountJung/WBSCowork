@@ -74,8 +74,8 @@
 완료: [QLT-011 테스트 경계 확장](COMPLETED_LOG.md#qlt-011--날짜계층첨부역할-회귀-확장-2026-10-09), [QLT-010 프로젝트 CRUD 중복 정리](COMPLETED_LOG.md#qlt-010--프로젝트-crud-단일화-2026-10-09), [QLT-014 타입 생성물 정리](COMPLETED_LOG.md#qlt-014--필요한-next-타입-유지와-잔재-제외-2026-10-09).
 
 
-- [~] **[QLT-012](#qlt-012--versioned-migration-부재)** native versioned migration — 코드 구현, 실제 MariaDB additive 검증 대기
-- [~] **[QLT-013](#qlt-013--db-credential-최소권한-분리)** runtime pool과 schema admin의 credential 분리 — 코드 지원 완료, 실제 계정·권한 적용/검증 대기
+- [!] **[QLT-012](#qlt-012--versioned-migration-부재)** native versioned migration — 코드 구현, loopback 테스트 DB 미기동으로 실제 검증 차단; 격리 DB/계정 구성 승인 대기
+- [!] **[QLT-013](#qlt-013--db-credential-최소권한-분리)** runtime pool과 schema admin의 credential 분리 — 코드 지원 완료, 실제 계정·권한 적용/검증 승인 대기
 
 ### 9단계 — digest/report export
 
@@ -234,7 +234,7 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 - [전체 시나리오](TEAM_WORKFLOW_PLAN.md#팀-업무-인수-시나리오): 주제 1개 → 카드 3개 → 구성원 2명 분담 → 내 업무 → 파일+링크 v1 → 보완 요청 → v2 재제출/승인 → 남은 업무 요약을 합성 자료로 재현한다.
 - guest/member/admin/SU, 다른 사용자 private 자료, 역할 갱신·세션 만료, 직접 링크·위조 action, 반복/중단 업로드·동시 검토를 검사한다. 격리 테스트와 실제 다중 계정 검증의 수행 여부를 별도로 기록한다.
 - 날짜만 경과한 카드가 완료되지 않고 승인한 버전과 최종 자료가 일치한다. 한 화면의 성공 메시지뿐 아니라 DB 상태·이력·다운로드 원본과 권한을 확인한다.
-- 각 구현 작업의 필수 lint/types/FSD/build 및 영향 회귀를 통과시키고, 완료된 T 번호는 기존 규약대로 COMPLETED_LOG로 이동한다. 실환경 검증은 승인된 합성 대상과 계정 범위를 기록하고 운영 자료에 영향을 주지 않는다.
+- 각 구현 작업의 필수 lint/types/FSD/build 및 영향 회귀를 통과시키고, 완료된 전체 ID는 기존 규약대로 COMPLETED_LOG로 이동한다. 실환경 검증은 승인된 합성 대상과 계정 범위를 기록하고 운영 자료에 영향을 주지 않는다.
 
 ---
 
@@ -245,7 +245,7 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 
 **분류** 운영
 
-Sites D1은 기존 versioned migration을 사용한다. Native MariaDB에 불변 명세·checksum ledger·연결 lock·additive 재개·postcondition·forward-fix 복구 계약을 구현했다. 실제 DB 검증 결과 전까지 완료로 표시하지 않는다. [운영/복구 계약](NATIVE_DATABASE_MIGRATIONS.md).
+Sites D1은 기존 versioned migration을 사용한다. Native MariaDB에 불변 명세·checksum ledger·연결 lock·additive 재개·postcondition·forward-fix 복구 계약을 구현했다. `cecce92e`의 saved-cloud 실 DB 검증은 127.0.0.1:3307 ECONNREFUSED로 SQL 실행 전에 중단됐다. 재기동에 필요한 격리 DB/테스트 계정 구성 승인을 기다리며 완료로 표시하지 않는다. [운영/복구 계약](NATIVE_DATABASE_MIGRATIONS.md).
 
 RPT-018(D3)이 이것을 전제로 하므로 9단계 진입 전에 해결하는 편이 낫다.
 
@@ -266,7 +266,7 @@ RPT-018(D3)이 이것을 전제로 하므로 9단계 진입 전에 해결하는 
 
 **분류** 보안
 
-runtime pool과 schema admin이 같은 `DB_*` credential을 쓴다. 평상시 애플리케이션 질의가 DDL 권한을 들고 다닌다는 뜻이다. 계정을 분리하고 runtime 쪽에서 DDL 권한을 뺀다.
+코드는 runtime `DB_*`와 명시적 schema `DB_SCHEMA_*` 연결을 분리했고 누락 시 fallback하지 않는다. 남은 것은 운영자가 별도 identity를 안전하게 구성하고 runtime 계정의 불필요한 DDL/ledger 변경 권한을 제거·검증하는 단계다. 현재 운영 계정이 실제로 제한됐다고 주장하지 않는다.
 
 RPT-018(D3)의 "최소권한" 요구와 같은 작업이다.
 

@@ -42,4 +42,6 @@ MariaDB의 CREATE/ALTER는 [암묵적으로 commit](https://mariadb.com/docs/ser
 
 `npm run test:native:migrations`는 `.env`를 읽지 않고 `TEST_DB_*`/`TEST_DB_SCHEMA_*`만 사용하며 loopback:3307을 강제한다. 무작위 새 `wbs_mig_*_test` DB만 생성하고 모든 DB/행을 보존한다. 빈 설치, 기존 core/pre-lifecycle upgrade, 재실행·원문/role/private 보존, 겹치는 fresh runner, DDL 후 ledger 전 중단/재개, autocommit0 durable ledger, 대문자/공백 role·prefix unique index·latin1 drift·checksum 오류 거부를 검사한다. 실제 계정/권한 변경, DELETE/DROP/TRUNCATE/purge가 없다.
 
-로컬 dot 검증: lint/types/FSD, unit85, Worker build/quality375 PASS. 이 환경에는 native MariaDB가 없으므로 위 전용 하네스의 실제 DB 결과는 별도 saved-cloud exact-commit 검증 전까지 미실행이다. 운영 최소권한 적용이나 운영 migration 완료를 뜻하지 않는다.
+로컬 dot 검증: lint/types/FSD, unit85, Worker build/quality375/auth18 및 RSC decoder fingerprint PASS. schema identity 단위 계약은 이후 driver 오류정보 비노출 검사를 포함해 5건이다. 운영 최소권한 적용이나 운영 migration 완료를 뜻하지 않는다.
+
+2026-10-09 saved-cloud exact `cecce92e06c0b042441352445f4ce9856c6bc87e` / tree `0128b071bf33f2ebe77d4340a78831d52c1c4c62`: Node26.11.1, lockfile의 React19.2.8을 포함한 685 packages에 맞췄다. lint/types/FSD와 native migration 단위11건은 통과했다. 실제 `npm run test:native:migrations`는 **127.0.0.1:3307 ECONNREFUSED, exit1**로 SQL/DB 생성 전에 중단됐다. 기존 tmpfs DB 재기동은 초기화/테스트 계정 구성과 정지 시 데이터 소멸을 수반하므로 실행하지 않았다. 기존 보존 DB 파일600개의 hash는 그대로다. 격리된 영속 테스트 DB/계정 구성 승인 후 전용 하네스 결과를 다시 기록해야 하며 QLT-012는 아직 완료가 아니다.

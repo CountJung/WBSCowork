@@ -19,7 +19,7 @@
 | `npm run build` | `vinext build` | Sites Worker build | exit 0, dist/server/index.js 생성 |
 | `npm run build:next` | `node --import tsx scripts/run-next.ts build` | 기존 Node/Next 빌드 | exit 0, route 생성 |
 | `npm run test:sites:auth` | `node scripts/test-sites-auth.mjs` | 빌드한 Worker의 NextAuth 계약 | 18건 통과; 실제 Google 로그인과 구분 |
-| `npm run start` | `node --import tsx scripts/run-next.ts start` | production server | 선행 build 후 APP_PORT listen |
+| `npm run start` | `node --import tsx scripts/run-next.ts start` | native Node production server | 선행 build:next 후 APP_PORT listen |
 | `npm run lint` | `eslint` | 정적 검사 | error/warning 0 |
 | `npm run typecheck` | `tsc --noEmit` | 타입 검사 | 출력 없이 exit 0 |
 | `npm run check:fsd` | `node --import tsx scripts/check-fsd-boundaries.ts` | FSD import 경계 | fixture self-test 5건 PASS + 저장소 위반 0 |
@@ -31,8 +31,13 @@
 | `npm run test:db:up` | `node --import tsx scripts/test-database.ts up` | 테스트 전용 MariaDB 기동 | `127.0.0.1:3307/wbs_app_test` 준비 |
 | `npm run test:db:down` | 동일 스크립트 `down` | 종료 및 데이터 폐기 | 컨테이너/프로세스와 datadir 제거 |
 | `npm run test:db:status` | 동일 스크립트 `status` | 기동 여부 확인 | up이면 버전 출력, down이면 exit 1 |
+| `npm run test:sites:quality` | `node scripts/test-sites-http.mjs --quality` | Worker 날짜·계층·첨부·역할 회귀 | 로컬 D1/R2 합성 fixture 375건, 삭제/purge 제외 |
+| `npm run test:sites:decoder` | `node scripts/check-rsc-decoder.mjs` | 실제 빌드 RSC 패치 fingerprint | 활성 decoder 1개가 수정 계약과 일치 |
+| `npm run db:migrate -- --status` | `node --import tsx scripts/migrate-database.ts --status` | native ledger 읽기 전용 | 상태/대기/검증 오류 구분, DDL 없음 |
+| `npm run db:migrate -- --apply` | 같은 script의 명시 --apply | 승인된 native 스키마 적용 | 별도 schema identity, lock/checksum/postcondition/ledger |
+| `npm run test:native:migrations` | `scripts/test-native-migrations.ts` | 비파괴 native migration 계약 | loopback:3307 새 *_test DB만 생성·보존 |
 
-현재 `db:migrate` script는 없다. 없는 명령을 문서에 기재하지 않는다.
+DB fixture의 삭제·TRUNCATE·purge가 포함된 기존 전체 suite는 실행 전에 승인 범위를 확인한다. 위 additive 전용 하네스는 이 경로를 호출하지 않는다.
 
 ### `check:fsd` 세부
 
@@ -80,17 +85,17 @@ npm run db:check
 
 ### C. managed schema
 
-슈퍼관리자로 `/admin/database`에서 상태를 확인하고 초기화를 실행한다. 현재 별도 CLI migration은 없고 `src/shared/server/database-admin`이 database/table 생성과 일부 column 보정을 수행한다.
+Native는 `/admin/database` 또는 `db:migrate -- --status`에서 조회하고, 명시적인 SU action/CLI --apply만 별도 schema identity로 불변 migration을 적용한다. Sites D1은 기존 게시 migration을 사용하며 런타임 초기화 버튼이 없다. 상세 절차와 복구 제한은 [Native 운영](NATIVE_DATABASE_MIGRATIONS.md)을 따른다.
 
 DB 변경 시 최소 확인 목록:
 
-- 빈 DB에서 6개 managed table 생성
+- 빈 native DB에서 9개 domain table과 schema_migrations ledger 생성
 - 기존 DB에서 누락 컬럼 보정의 재실행 가능성
 - `users.email` unique, role enum
 - task self-FK와 project/assignee FK
 - submission visibility default와 author/task FK
 - attachment/comment cascade
-- runtime 계정에 불필요한 DDL 권한이 없는지(현재 credential 분리는 미구현)
+- runtime/schema identity 코드 분리와 누락 시 fail-closed; 실제 제한 계정의 DML 허용·DDL/ledger 변경 거부는 별도 운영 검증
 
 ## 5. route smoke matrix
 
@@ -102,7 +107,7 @@ DB 변경 시 최소 확인 목록:
 | `/admin/database`, `/admin/logs`, `/admin/settings` | sign-in | deny | deny | deny | allow |
 | attachment GET | 401 | public만, private 404 | public + 본인 private | allow | allow |
 
-attachment handler는 부모 제출물의 가시성을 검사하고 unauthorized/missing을 모두 404로 응답한다. 자동화된 private IDOR 회귀 테스트는 테스트 인프라 도입 시 추가한다.
+attachment handler는 부모 제출물의 가시성을 검사하고 unauthorized/missing을 모두 404로 응답한다. private IDOR는 기존 native visibility suite와 Worker quality fixture에서 검사한다. 실행 결과와 미실행 범위는 아래 날짜별 기록을 따른다.
 
 ## 6. 가시성 focused test (구현 완료, 2026-09-06)
 
@@ -347,3 +352,11 @@ QLT-013 코드 지원 후 Worker build 및 네트워크 metadata 조회 없는 q
 `npm run db:migrate -- --status`: runtime identity로 ledger 상태 조회만 한다. `--apply`는 별도 schema identity로 명시적 적용이며 운영에서는 백업/점검 창/적용 대상 승인이 선행한다. `npm run test:native:migrations`는 새 loopback3307 `wbs_mig_*_test` DB를 보존하는 additive 전용 검증이다. 기존 destructive fixture suite와 섞지 않는다.
 
 lint0/0·types·FSD5/경계·unit85·Worker build·quality375 PASS. 새 단위 검사는 checksum/version/name drift·lock 실패·DDL interruption·미설정 schema/오류정보 비노출을 포함한다. native 실 DB 결과는 exact-commit 검증 대기다. 인덱스 전체 길이/charset·case-sensitive role·autocommit0 durability·fresh 동시 runner는 그 하네스에서 확인한다. 타입 target ES2017에서 지원하지 않는 dotAll regex는 호환 패턴으로 고친 뒤 재검증했다.
+
+
+### QLT-010~014 최종 검증 구분 (2026-10-09)
+
+- 최종 코드 `cecce92e06c0b042441352445f4ce9856c6bc87e`에서 dot Worker build, auth18, quality375, 패치된 RSC decoder fingerprint PASS. 앞선 lint0/0·types·FSD5/경계·unit85도 통과했다. D1 `drizzle/`, DB binding, 공개 audience/Google 설정 변경은 없다.
+- saved-cloud의 같은 코드/정확한 lockfile에서 lint/types/FSD, migration unit11 PASS. 실제 native migration 하네스는 loopback3307 ECONNREFUSED로 SQL 전에 exit1이다. 임의 tmpfs 재초기화/계정 구성을 하지 않았고 기존 보존 파일600개 hash는 유지했다. 영속 격리 DB 구성 승인 및 실제 native 검증이 남아 있다.
+- 따라서 QLT-010/011/014는 완료이고, QLT-012 실제 MariaDB 계약 및 QLT-013 운영 identity/권한 적용은 보류다. 전체 native CRUD/purge suite를 다시 실행하거나 통과로 계산하지 않았다.
+- Worker 계약은 합성 JWT/로컬 D1/R2를 사용한다. 실제 Google 재로그인이나 live 다중 계정 검증과 구분한다. 현재 Site에는 검증된 D1 실행 경로의 수정만 기존 공개 게시 절차로 반영한다.

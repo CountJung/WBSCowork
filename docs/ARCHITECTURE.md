@@ -114,12 +114,12 @@ DB cascade는 파일 삭제를 하지 않는다. 삭제 action은 DB 삭제 전 
 
 ### 스키마 운영 제약
 
-- fresh install: `CREATE DATABASE IF NOT EXISTS`, 6개 table 생성.
-- existing DB: users/submissions의 일부 컬럼만 INFORMATION_SCHEMA로 확인해 `ALTER ADD`; users role enum 보정.
-- versioned migration/rollback 이력은 없다.
-- admin schema 작업과 정상 runtime pool이 같은 `DB_*` credential을 사용한다.
+- Native fresh install은 불변 v1 명세로 9개 domain table과 `schema_migrations` ledger를 만든다. Sites D1은 기존 `drizzle/` migration을 유지한다.
+- Native는 DB별 연결 lock 아래 version/name/checksum과 schema postcondition을 확인하며 문서화된 누락 필드/FK만 추가한다. 기존 role/private/원문/이력은 보존한다.
+- runtime/readiness는 `DB_*`, 명시적 native schema 변경은 `DB_SCHEMA_USER/DB_SCHEMA_PASSWORD`를 사용한다. 누락 시 runtime으로 대체하지 않는다. 실제 최소권한 계정 적용 여부는 별도 검증 대상이다.
+- DDL은 암묵 commit되므로 transaction rollback/자동 down을 제공하지 않는다. 중단 시 현재 상태를 확인하고 재개/forward fix하며 성공 검증 후 ledger를 기록한다.
 
-스키마 변경은 idempotent upgrade, 기존 데이터 backfill, FK/index, 최소권한 계정 분리를 설계해야 한다.
+불변 명세·운영 적용·백업·실패 복구 계약은 [Native 운영](NATIVE_DATABASE_MIGRATIONS.md)을 따른다. 코드 구현이 실제 운영 migration/권한 적용 승인을 대신하지 않는다.
 
 ## 6. 파일·로그
 
