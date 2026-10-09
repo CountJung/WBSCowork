@@ -1,5 +1,6 @@
 /** Additive-only isolated MariaDB validation. Retains every new DB/row; never deletes or purges. */
 import "../tests/helpers/bootstrap";
+import { verifyNativeTaskWorkflow } from "./verify-native-task-workflow";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { createConnection } from "mariadb";
@@ -54,6 +55,7 @@ try {
     await version1.connection.query("UPDATE projects SET goal='보존 목표',success_criteria='보존 기준' WHERE id=9401");
     await version1.connection.query("UPDATE tasks SET deliverable='보존 결과',definition_of_done='보존 완료',review_required=1 WHERE id=9401");
     await runNativeMigrations(version1.connection,version1.name);
+    check((await version1.connection.query("SELECT kind,note FROM task_events WHERE task_id=9401"))[0].kind==='baseline','legacy task history records an explicitly labeled current-state baseline');
     check((await version1.connection.query('SELECT goal FROM projects WHERE id=9401'))[0].goal==='보존 목표'&&(await version1.connection.query('SELECT definition_of_done FROM tasks WHERE id=9401'))[0].definition_of_done==='보존 완료','repeat retains configured work goals');
   } finally {await version1.connection.end();}
 
@@ -81,6 +83,30 @@ try {
       }
     } finally {await fixture.connection.end();}
   }
+
+  const resumeV3=await fresh('resume_v3');
+  try {
+    let interrupted=false;
+    const proxy:MigrationConnection={query:async(sql,params)=>{
+      const result=await resumeV3.connection.query(sql,params);
+      if(!interrupted&&sql.includes('ADD COLUMN creation_token ')){interrupted=true;throw new Error('synthetic interrupted v3');}
+      return result;
+    }};
+    await assert.rejects(runNativeMigrations(proxy,resumeV3.name),/interrupted v3/);checks++;
+    check(Number((await resumeV3.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===2,'interrupted v3 retains successful v1/v2 ledger only');
+    await resumeV3.connection.query("INSERT INTO projects(id,name,start_date,end_date) VALUES(1,'Resume','2026-01-01','2026-12-31')");
+    await resumeV3.connection.query("INSERT INTO tasks(id,project_id,title,start_date,end_date) VALUES(1,1,'Retain interrupted card','2026-01-01','2026-12-31')");
+    await runNativeMigrations(resumeV3.connection,resumeV3.name);
+    check((await resumeV3.connection.query('SELECT title FROM tasks WHERE id=1'))[0].title==='Retain interrupted card'&&(await resumeV3.connection.query('SELECT kind FROM task_events WHERE task_id=1'))[0].kind==='baseline','v3 resumes and snapshots current legacy task exactly once');
+    await runNativeMigrations(resumeV3.connection,resumeV3.name);
+    check(Number((await resumeV3.connection.query('SELECT COUNT(*) AS n FROM task_events WHERE task_id=1'))[0].n)===1,'v3 replay preserves one baseline');
+  }finally{await resumeV3.connection.end();}
+
+  const execution=await fresh('execution');
+  try {
+    await runNativeMigrations(execution.connection,execution.name);
+    await verifyNativeTaskWorkflow(execution.name,check);
+  }finally{await execution.connection.end();}
 
   const concurrent=await fresh('concurrent');
   const concurrentOther=await connect(concurrent.name);

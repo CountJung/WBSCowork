@@ -60,3 +60,9 @@ MariaDB의 CREATE/ALTER는 [암묵적으로 commit](https://mariadb.com/docs/ser
 새 명세 `native-migration-v2.ts`의 checksum은 `c010a7e166ece374ab7b8046086fa67011225cebca5f5435928f5289e8ca8549`다. v1 명세·checksum은 그대로다. projects의 goal/success_criteria와 tasks의 deliverable/definition_of_done/review_required를 additive ALTER로 추가한다. 기존 행은 빈 문구/검토 안 함으로 보존되고 원래 값과 ID를 재작성하지 않는다. v2 도중 중단되면 누락 필드만 재개하며 잘못된 기존 타입은 거부한다.
 
 전용 native 하네스는 populated-v1 ledger/행 보존, 부분 v2 재개, 잘못된 v2 필드 거부를 추가했다. 실제 MariaDB v2 검증은 exact-commit 실행 대기다. D1은 별도 `drizzle/0005_work_goals.sql`을 사용한다. 새 코드 배포 전 schema 적용이 필요하며 readiness는 필수 새 컬럼이 없을 때 안내한다.
+
+v2 실제 검증: exact38602c8에서 migration35, 추가 보존9, migration unit12, lint/types/FSD PASS. MariaDB11.4.13/Node26.11.1의 승인된 영속 fixture에서 새 DB14개를 보존하고 기존 DB와 정지/재시작 데이터·파일을 확인했다.
+
+## 업무 실행 v3 (PRD-035/036)
+
+`native-migration-v3.ts` checksum `c175311bceb4f66d8f0808e7eff68e85f15344acd27c250197af01a6ad81c080`. tasks에 요청·상태·버전·검토자 metadata를 추가하고 task_events에 생성/재배정/상태 이력을 남긴다. 기존 작업은 현재 상태를 `baseline`으로 기록하며 이전 시각을 추측하지 않는다. 기존 행·role·private scope를 수정하지 않는다. v1/v2 불변, 중단 후 누락 구조만 재개한다. 실제 v3 검증은 pending이며 하네스는 새 합성 DB에 concurrent creation/status·same-token replay·former-owner 거부·no-review 완료를 추가했다. 모든 합성 DB/행은 보존한다.

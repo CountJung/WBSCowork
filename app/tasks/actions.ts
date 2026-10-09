@@ -1,6 +1,7 @@
 "use server";
 
 import {
+  changeTaskStatusAction as changeTaskStatusActionImpl,
   createCommentAction as createCommentActionImpl,
   createSubmissionAction as createSubmissionActionImpl,
   createTaskAction as createTaskActionImpl,
@@ -52,3 +53,5 @@ export async function updateCommentAction(formData: FormData) {
 export async function deleteCommentAction(formData: FormData) {
   return deleteCommentActionImpl(formData);
 }
+
+export async function changeTaskStatusAction(formData: FormData) { return changeTaskStatusActionImpl(formData); }

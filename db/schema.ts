@@ -15,6 +15,10 @@ export const tasks = sqliteTable("tasks", {
   id: id(), projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   parentId: integer("parent_id").references((): AnySQLiteColumn => tasks.id, { onDelete: "set null" }),
   title: text("title").notNull(), description: text("description"), deliverable: text("deliverable").notNull().default(""), definitionOfDone: text("definition_of_done").notNull().default(""), reviewRequired: integer("review_required").notNull().default(0), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(),
+  creationToken: text("creation_token").unique(),
+  status: text("status").notNull().default("planned"), version: integer("version").notNull().default(1),
+  workflowNote: text("workflow_note").notNull().default(""), lastOperationToken: text("last_operation_token"),
+  reviewerId: integer("reviewer_id").references(() => users.id, { onDelete: "set null" }),
   depth: integer("depth").notNull().default(0), orderIndex: integer("order_index").notNull().default(0),
   assigneeId: integer("assignee_id").references(() => users.id, { onDelete: "set null" }), createdAt: createdAt(),
 }, (t) => [index("tasks_project_idx").on(t.projectId), index("tasks_parent_idx").on(t.parentId), index("tasks_assignee_idx").on(t.assigneeId)]);
@@ -132,3 +136,13 @@ export const bugReportPurgeReceipts = sqliteTable("bug_report_purge_receipts", {
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const taskEvents = sqliteTable("task_events", {
+  id: id(), taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  actorId: integer("actor_id").references(() => users.id, { onDelete: "set null" }),
+  operationToken: text("operation_token").notNull().unique(), requestFingerprint: text("request_fingerprint").notNull(),
+  kind: text("kind").notNull(), status: text("status").notNull(),
+  assigneeId: integer("assignee_id").references(() => users.id, { onDelete: "set null" }),
+  reviewerId: integer("reviewer_id").references(() => users.id, { onDelete: "set null" }),
+  note: text("note").notNull().default(""), taskVersion: integer("task_version").notNull(), createdAt: createdAt(),
+}, t => [index("task_events_task_idx").on(t.taskId,t.id), uniqueIndex("task_events_version_unique").on(t.taskId,t.taskVersion)]);

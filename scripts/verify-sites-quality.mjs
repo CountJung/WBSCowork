@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 /** QLT-011: isolated synthetic writes/reads; never invokes delete, purge, DROP or TRUNCATE. */
 export async function verifySitesQuality({ request, db, bucket, actorCookies, actionOrigin, check }) {
   const admin = actorCookies.admin, member = actorCookies.member1;
@@ -9,6 +10,8 @@ export async function verifySitesQuality({ request, db, bucket, actorCookies, ac
     check(Boolean(id), `quality: rendered ${name}`); return id;
   };
   async function submit(route, cookie, actionId, fields, files=[]) {
+    if(actionId.endsWith('#updateTaskAction')) { fields={...fields,version:fields.version??(await db.prepare('SELECT version FROM tasks WHERE id=?').bind(Number(fields.taskId)).first())?.version,operationToken:fields.operationToken??randomUUID()}; }
+    if(actionId.endsWith('#createTaskAction')) fields={...fields,operationToken:fields.operationToken??randomUUID()};
     const boundary = 'wbs-quality-fixture'; const parts=[];
     for (const [name,value] of [[actionId,''], ...Object.entries(fields)]) parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`));
     for (const file of files) parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="attachments"; filename="${file.name}"\r\nContent-Type: ${file.mime ?? 'text/plain'}\r\n\r\n`), Buffer.from(file.bytes ?? 'fixture'), Buffer.from('\r\n'));

@@ -1,3 +1,4 @@
+import type { TaskStatus } from "./workflow";
 export type TaskRow = {
   id: number;
   project_id: number;
@@ -7,6 +8,12 @@ export type TaskRow = {
   deliverable: string;
   definition_of_done: string;
   review_required: number;
+  status: TaskStatus;
+  version: number;
+  workflow_note: string;
+  reviewer_id: number | null;
+  reviewer_name: string | null;
+  assignee_eligible: number;
   start_date: Date | string;
   end_date: Date | string;
   depth: number;
@@ -25,6 +32,12 @@ export type Task = {
   deliverable: string;
   definitionOfDone: string;
   reviewRequired: boolean;
+  status: TaskStatus;
+  version: number;
+  workflowNote: string;
+  reviewerId: number | null;
+  reviewerName: string | null;
+  assigneeEligible: boolean;
   startDate: Date;
   endDate: Date;
   depth: number;
@@ -44,6 +57,12 @@ export function mapTaskRow(row: TaskRow): Task {
     deliverable: row.deliverable ?? "",
     definitionOfDone: row.definition_of_done ?? "",
     reviewRequired: Number(row.review_required ?? 0) === 1,
+    status: row.status ?? "planned",
+    version: Number(row.version ?? 1),
+    workflowNote: row.workflow_note ?? "",
+    reviewerId: row.reviewer_id ?? null,
+    reviewerName: row.reviewer_name ?? null,
+    assigneeEligible: Number(row.assignee_eligible) === 1,
     startDate: row.start_date instanceof Date ? row.start_date : new Date(row.start_date),
     endDate: row.end_date instanceof Date ? row.end_date : new Date(row.end_date),
     depth: row.depth,

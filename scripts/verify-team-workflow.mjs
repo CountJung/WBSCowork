@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 /** Product P0 contracts on local synthetic D1/R2. Never invokes permanent deletion. */
 export async function verifyTeamWorkflow(argumentsContext) {
   const {request,db,actorCookies,check}=argumentsContext;
@@ -29,6 +30,8 @@ export async function verifyTeamWorkflow(argumentsContext) {
     check(Boolean(id),`workflow: rendered ${name}`);return id;
   };
   async function form(route,cookie,id,fields) {
+    if(id.endsWith('#updateTaskAction')) { fields={...fields,version:fields.version??(await db.prepare('SELECT version FROM tasks WHERE id=?').bind(Number(fields.taskId)).first())?.version,operationToken:fields.operationToken??randomUUID()}; }
+    if(id.endsWith('#createTaskAction')) fields={...fields,operationToken:fields.operationToken??randomUUID()};
     const boundary='wbs-workflow-form';let body='';
     for(const [key,value]of[[id,''],...Object.entries(fields)])body+=`--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`;
     body+=`--${boundary}--\r\n`;
@@ -63,5 +66,60 @@ export async function verifyTeamWorkflow(argumentsContext) {
   await form(route,member,update,{projectId:goals.id,taskId:card.id,title:'TOO_LONG',deliverable:'x'.repeat(2001),...dates});
   check((await db.prepare('SELECT title,deliverable FROM tasks WHERE id=?').bind(card.id).first()).title==='GOAL_CARD','workflow: oversized goal leaves previous card intact');
   check((await db.prepare('SELECT goal,success_criteria FROM projects WHERE id=1').first()).goal===''&&(await db.prepare('SELECT deliverable,definition_of_done FROM tasks WHERE id=1').first()).definition_of_done==='','workflow: preexisting blank drafts remain unchanged');
+
+  // Current membership, stable form tokens, optimistic versions and state/history atomicity.
+  const readCard=()=>db.prepare('SELECT * FROM tasks WHERE id=?').bind(card.id).first();
+  const history=()=>db.prepare('SELECT * FROM task_events WHERE task_id=? ORDER BY id').bind(card.id).all();
+  const updateFields={projectId:goals.id,taskId:card.id,title:'GOAL_CARD',deliverable:'파일',definitionOfDone:'내용 확인',reviewRequired:'0',...dates};
+  for(const assigneeId of [1,999999]) {
+    const before=JSON.stringify(await readCard());await form(route,member,update,{...updateFields,assigneeId});
+    check(JSON.stringify(await readCard())===before,'workflow: forged guest/missing assignment cannot change card');
+  }
+  await form(route,member,update,{...updateFields,assigneeId:2,reviewerId:3});
+  check((await readCard()).assignee_id===2&&(await readCard()).reviewer_id===3,'workflow: eligible assignment and separate reviewer persist');
+  check((await history()).results.some(e=>e.kind==='created')&&(await history()).results.at(-1).assignee_id===2,'workflow: initial and reassignment history retained');
+  const selfBefore=JSON.stringify(await readCard());await form(route,member,update,{...updateFields,assigneeId:2,reviewerId:2});
+  check(JSON.stringify(await readCard())===selfBefore,'workflow: self reviewer assignment rejected');
+  const statusAction=renderedAction(await(await request(route,member)).text(),'changeTaskStatusAction');
+  async function state(cookie,taskStatus,note='',overrides={}) {
+    const row=await readCard();return form(route,cookie,statusAction,{projectId:goals.id,taskId:card.id,version:row.version,operationToken:randomUUID(),taskStatus,note,...overrides});
+  }
+  for(const cookie of [undefined,actorCookies.guest,actorCookies.member2]) {
+    const before=JSON.stringify(await readCard());await state(cookie,'in_progress');check(JSON.stringify(await readCard())===before,'workflow: anonymous/guest/other owner cannot execute assigned task');
+  }
+  await state(member,'in_progress');check((await readCard()).status==='in_progress','workflow: assignee starts actual work');
+  const beforeBlock=JSON.stringify(await readCard());await state(member,'blocked');check(JSON.stringify(await readCard())===beforeBlock,'workflow: blocking requires a reason');
+  await state(admin,'blocked','외부 자료 대기');check((await readCard()).workflow_note==='외부 자료 대기','workflow: administrator can record a blocker');
+  const concurrentVersion=(await readCard()).version;
+  await Promise.all([state(member,'in_progress','재개',{version:concurrentVersion}),state(admin,'planned','재계획',{version:concurrentVersion})]);
+  check((await readCard()).version===concurrentVersion+1,'workflow: concurrent different requests have one winner');
+  const replayToken=randomUUID(),replayVersion=(await readCard()).version;
+  await Promise.all([state(member,'in_progress','동일 요청',{version:replayVersion,operationToken:replayToken}),state(member,'in_progress','동일 요청',{version:replayVersion,operationToken:replayToken})]);
+  check((await readCard()).version===replayVersion+1&&(await history()).results.filter(e=>e.operation_token.endsWith(replayToken)).length===1,'workflow: double submit preserves one state/history mutation');
+  await state(member,'blocked','변경된 요청',{version:replayVersion,operationToken:replayToken});
+  check((await readCard()).status==='in_progress','workflow: same token with changed payload is rejected');
+  await form(route,member,update,{...updateFields,assigneeId:3,reviewerId:2});
+  const reassigned=JSON.stringify(await readCard());await state(member,'blocked','old owner');check(JSON.stringify(await readCard())===reassigned,'workflow: former owner cannot execute after reassignment');
+  await db.prepare("UPDATE users SET role='guest' WHERE id=3").run();
+  await state(actorCookies.member2,'in_progress');check(JSON.stringify(await readCard())===reassigned,'workflow: role downgrade takes effect on same cookie');
+  await db.prepare("UPDATE users SET role='member' WHERE id=3").run();
+  const completionBefore=JSON.stringify(await readCard());await state(actorCookies.member2,'done','완료');check(JSON.stringify(await readCard())===completionBefore,'workflow: completion needs assignee submission evidence');
+  await db.prepare("INSERT INTO submissions(task_id,author_id,content,visibility) VALUES(?,3,'WORKFLOW_EVIDENCE','private')").bind(card.id).run();
+  await state(actorCookies.member2,'done','완료 기준 확인');check((await readCard()).status==='done','workflow: no-review assignee completes with deliverable, criteria and evidence');
+  const done=JSON.stringify(await readCard());await state(actorCookies.member2,'in_progress');check(JSON.stringify(await readCard())===done,'workflow: reopening completed work requires reason');
+  await state(actorCookies.member2,'in_progress','추가 확인');check((await readCard()).status==='in_progress','workflow: reasoned reopen retains completion history');
+  await state(actorCookies.member2,'review_pending');check((await readCard()).status==='in_progress','workflow: review states cannot be forged through execution action');
+  const futureSnapshot=JSON.stringify(await readCard());await state(actorCookies.member2,'blocked','future forged',{version:(await readCard()).version+1});check(JSON.stringify(await readCard())===futureSnapshot,'workflow: future task version is rejected before transition');
+  await state(actorCookies.member2,'planned','계획 조정');
+  await form(route,member,update,{...updateFields,assigneeId:3,reviewerId:2,reviewRequired:'1'});
+  check((await readCard()).review_required===0,'workflow: returning to planned cannot rewrite started review policy');
+  const rows=(await history()).results;check(rows.every((e,i)=>i===0||e.task_version>rows[i-1].task_version)&&rows.at(-1).task_version===(await readCard()).version,'workflow: state/version/history remain consistent');
+  const privateView=await(await request(route,member)).text();check(!privateView.includes('WORKFLOW_EVIDENCE'),'workflow: assignment does not grant other-member private access');
+  const creationToken=randomUUID(),creation={projectId:goals.id,title:'WORKFLOW_ONCE',assigneeId:2,operationToken:creationToken,...dates};
+  await Promise.all([form(route,member,createTask,creation),form(route,member,createTask,creation)]);
+  check((await db.prepare("SELECT COUNT(*) AS n FROM tasks WHERE title='WORKFLOW_ONCE'").first()).n===1,'workflow: repeated task creation is idempotent');
+  await db.prepare("CREATE TRIGGER reject_synthetic_history BEFORE INSERT ON task_events WHEN NEW.task_id IN (SELECT id FROM tasks WHERE title='WORKFLOW_ROLLBACK') BEGIN SELECT RAISE(ABORT,'synthetic history fault'); END").run();
+  await form(route,member,createTask,{projectId:goals.id,title:'WORKFLOW_ROLLBACK',...dates});
+  check(!(await db.prepare("SELECT id FROM tasks WHERE title='WORKFLOW_ROLLBACK'").first()),'workflow: history failure rolls back task creation atomically');
 
 }

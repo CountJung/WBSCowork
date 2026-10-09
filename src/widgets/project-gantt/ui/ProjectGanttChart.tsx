@@ -1,12 +1,13 @@
 "use client";
 
-import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
+import { startTransition, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Alert, Chip, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import Gantt from "frappe-gantt";
 import type { Project } from "@/src/entities/project";
-import type { Task } from "@/src/entities/task";
+import { taskStatusLabels, type Task } from "@/src/entities/task";
 import type { GanttOptions, GanttTask } from "frappe-gantt";
+import { summarizeTaskCompletion, type TaskCompletion } from "../model/task-completion";
 
 type ProjectGanttChartProps = {
   project: Project;
@@ -18,23 +19,12 @@ type ViewMode = "Day" | "Week" | "Month";
 type WbsGanttTask = GanttTask & {
   description: string;
   assigneeName: string;
+  status: Task["status"];
+  completion: TaskCompletion;
 };
 
 function formatDate(value: Date) {
   return value.toISOString().slice(0, 10);
-}
-
-function calculateProgress(startDate: Date, endDate: Date) {
-  const startTime = startDate.getTime();
-  const endTime = endDate.getTime();
-
-  if (endTime <= startTime) {
-    return 100;
-  }
-
-  const progress = ((Date.now() - startTime) / (endTime - startTime)) * 100;
-
-  return Math.max(0, Math.min(100, Math.round(progress)));
 }
 
 function calculateProjectSpanDays(startDate: Date, endDate: Date) {
@@ -52,7 +42,7 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
-function createChartOptions(viewMode: ViewMode, taskCount: number): GanttOptions {
+function createChartOptions(viewMode: ViewMode, taskCount: number, openTask: (taskId: string) => void): GanttOptions {
   return {
     view_mode: viewMode,
     view_mode_select: false,
@@ -61,18 +51,23 @@ function createChartOptions(viewMode: ViewMode, taskCount: number): GanttOptions
     readonly_progress: true,
     scroll_to: "today",
     container_height: Math.max(560, taskCount * 54),
-    popup: ({ task, set_title, set_subtitle, set_details }) => {
+    popup: ({ task, set_title, set_subtitle, set_details, add_action }) => {
       const ganttTask = task as WbsGanttTask;
 
       set_title(escapeHtml(ganttTask.name));
       set_subtitle(escapeHtml(ganttTask.description || "세부 설명이 아직 없습니다."));
       set_details(
         [
-          `<strong>기간</strong> ${escapeHtml(ganttTask.start)} ~ ${escapeHtml(ganttTask.end)}`,
-          `<strong>진행률</strong> ${ganttTask.progress ?? 0}%`,
+          `<strong>예정 기간</strong> ${escapeHtml(ganttTask.start)} ~ ${escapeHtml(ganttTask.end)}`,
+          `<strong>업무 상태</strong> ${escapeHtml(taskStatusLabels[ganttTask.status])}`,
+          `<strong>${ganttTask.completion.isContainer ? "하위 말단 업무 완료" : "업무 완료"}</strong> ${ganttTask.progress ?? 0}% (${ganttTask.completion.completedLeafCount}/${ganttTask.completion.leafCount}개)`,
           `<strong>담당자</strong> ${escapeHtml(ganttTask.assigneeName || "미지정")}`,
+          `<strong>이동</strong> 아래 버튼으로 해당 업무 카드와 제출물 영역으로 바로 이동할 수 있습니다.`,
         ].join("<br />"),
       );
+      add_action("업무 열기", (popupTask) => {
+        openTask(String(popupTask.id));
+      });
     },
   };
 }
@@ -88,8 +83,9 @@ export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartP
   const [renderError, setRenderError] = useState<string | null>(null);
   const rootTaskCount = tasks.filter((task) => task.parentId === null).length;
   const assignedTaskCount = tasks.filter((task) => task.assigneeId !== null).length;
-  const linkedTaskCount = tasks.filter((task) => task.parentId !== null).length;
+  const childTaskCount = tasks.filter((task) => task.parentId !== null).length;
   const projectSpanDays = calculateProjectSpanDays(project.startDate, project.endDate);
+  const completion = useMemo(() => summarizeTaskCompletion(tasks), [tasks]);
 
   const openTaskRoute = useEffectEvent((taskId: string) => {
     const taskElement = document.getElementById(`task-${taskId}`);
@@ -126,11 +122,14 @@ export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartP
       name: task.title,
       start: formatDate(task.startDate),
       end: formatDate(task.endDate),
-      progress: calculateProgress(task.startDate, task.endDate),
-      dependencies: task.parentId ? String(task.parentId) : "",
+      progress: completion.byTaskId.get(task.id)!.percent,
+      dependencies: "",
       description: task.description,
       assigneeName: task.assigneeName ?? "미지정",
+      status: task.status,
+      completion: completion.byTaskId.get(task.id)!,
     }));
+    const chartOptions = createChartOptions(viewMode, chartTasks.length, (taskId) => openTaskRoute(taskId));
 
     let frameId = 0;
 
@@ -138,48 +137,10 @@ export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartP
       try {
         if (!ganttRef.current) {
           container.innerHTML = "";
-          ganttRef.current = new Gantt(container, chartTasks, {
-            ...createChartOptions(viewMode, chartTasks.length),
-            popup: ({ add_action, set_details, set_subtitle, set_title, task }) => {
-              const ganttTask = task as WbsGanttTask;
-
-              set_title(escapeHtml(ganttTask.name));
-              set_subtitle(escapeHtml(ganttTask.description || "세부 설명이 아직 없습니다."));
-              set_details(
-                [
-                  `<strong>기간</strong> ${escapeHtml(ganttTask.start)} ~ ${escapeHtml(ganttTask.end)}`,
-                  `<strong>진행률</strong> ${ganttTask.progress ?? 0}%`,
-                  `<strong>담당자</strong> ${escapeHtml(ganttTask.assigneeName || "미지정")}`,
-                  `<strong>이동</strong> 아래 버튼으로 해당 업무 카드와 제출물 영역으로 바로 이동할 수 있습니다.`,
-                ].join("<br />"),
-              );
-              add_action("업무 열기", (popupTask) => {
-                openTaskRoute(String(popupTask.id));
-              });
-            },
-          });
+          ganttRef.current = new Gantt(container, chartTasks, chartOptions);
         } else {
           ganttRef.current.refresh(chartTasks);
-          ganttRef.current.update_options({
-            ...createChartOptions(viewMode, chartTasks.length),
-            popup: ({ add_action, set_details, set_subtitle, set_title, task }) => {
-              const ganttTask = task as WbsGanttTask;
-
-              set_title(escapeHtml(ganttTask.name));
-              set_subtitle(escapeHtml(ganttTask.description || "세부 설명이 아직 없습니다."));
-              set_details(
-                [
-                  `<strong>기간</strong> ${escapeHtml(ganttTask.start)} ~ ${escapeHtml(ganttTask.end)}`,
-                  `<strong>진행률</strong> ${ganttTask.progress ?? 0}%`,
-                  `<strong>담당자</strong> ${escapeHtml(ganttTask.assigneeName || "미지정")}`,
-                  `<strong>이동</strong> 아래 버튼으로 해당 업무 카드와 제출물 영역으로 바로 이동할 수 있습니다.`,
-                ].join("<br />"),
-              );
-              add_action("업무 열기", (popupTask) => {
-                openTaskRoute(String(popupTask.id));
-              });
-            },
-          });
+          ganttRef.current.update_options(chartOptions);
           ganttRef.current.change_view_mode(viewMode, true);
         }
 
@@ -238,7 +199,7 @@ export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartP
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
     };
-  }, [tasks, viewMode]);
+  }, [tasks, viewMode, completion]);
 
   if (tasks.length === 0) {
     return (
@@ -278,15 +239,25 @@ export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartP
             <Stack spacing={0.5}>
               <Typography variant="h4">{project.name} 간트 차트</Typography>
               <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 820 }}>
-                이 프로젝트의 핵심 화면입니다. 전체 일정 길이, 상하위 작업 연결, 담당자 배치 상태를 한 번에 읽고 바로 세부 작업 카드로 이어서 확인할 수 있습니다.
+                막대의 날짜는 예정 일정입니다. 완료율은 말단 업무 중 완료 상태인 업무의 비율이며, 상하위 구조는 업무 카드에서 확인할 수 있습니다.
               </Typography>
             </Stack>
             <Stack direction={{ xs: "column", md: "row" }} spacing={1.25} sx={{ flexWrap: "wrap" }}>
               <Chip label={`전체 기간 ${projectSpanDays}일`} color="primary" />
               <Chip label={`전체 작업 ${tasks.length}`} variant="outlined" />
+              <Chip label={`말단 업무 완료 ${completion.completedLeafCount}/${completion.leafCount} (${completion.percent}%)`} color="success" variant="outlined" />
+              <Chip label={`남은 말단 업무 ${completion.remainingLeafCount}`} variant="outlined" />
               <Chip label={`루트 작업 ${rootTaskCount}`} variant="outlined" />
-              <Chip label={`연결 작업 ${linkedTaskCount}`} variant="outlined" />
+              <Chip label={`하위 작업 ${childTaskCount}`} variant="outlined" />
               <Chip label={`담당 배정 ${assignedTaskCount}`} variant="outlined" />
+            </Stack>
+            <Stack spacing={0.75}>
+              <Typography variant="body2" color="text.secondary">말단 업무 상태</Typography>
+              <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.75 }}>
+                {Object.entries(taskStatusLabels).map(([status, label]) => (
+                  <Chip key={status} size="small" label={`${label} ${completion.statusCounts.get(status) ?? 0}`} variant="outlined" />
+                ))}
+              </Stack>
             </Stack>
           </Stack>
 

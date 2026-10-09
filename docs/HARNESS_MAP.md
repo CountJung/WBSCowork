@@ -389,3 +389,15 @@ lint0/0, typecheck, FSD5/경계, Worker build, `npm run test:sites:workflow` **1
 프로젝트 목표·성공 기준, 카드 기대 산출물·완료 기준·선택 검토 여부를 기존 MUI 생성/수정/읽기 화면에 추가했다. 각 본문은 2,000자로 제한하고 plain text로 escape한다. 기존 빈 draft는 유지하고 update에서 새 필드를 생략하면 기존 값을 보존한다. 완료 전 필수 기준은 다음 상태 전이 단계에서 검사한다.
 
 lint0/0, typecheck, FSD5/경계, unit88, Worker build 및 workflow206 PASS. 실제 workerd에서 생성/수정/생략 보존/guest 읽기/HTML escape/길이 초과 무변경을 확인했다. 독립 리뷰에서 찾은 missing-column readiness를 root·관리 개요·프로젝트 관리·workspace에 반영했다. D1은 추가 컬럼5개만 생성하는 0005이며 기존 migration은 수정하지 않았다. Native v1 명세는 불변이고 새 v2가 누락 컬럼만 추가한다. populated-v1 upgrade·v2 중단/재개·wrong-type drift 하네스를 추가했지만 실제 MariaDB v2 검증은 별도 exact-commit 실행 대기다. 아직 운영 migration·게시·실제 브라우저 입력은 실행하지 않았다.
+
+### PRD-034 native v2 결과
+
+exact `38602c8fd8c113f3b9a425c91991121cff11ca5f`에서 saved-cloud MariaDB11.4.13 / Node26.11.1 / npm11.20, lockfile 일치 상태로 전용 migration35·추가 원문/파일 보존9·migration unit12·lint/types/FSD PASS. populated v1→v2, 부분 적용 재개, 잘못된 새 타입 거부, 원래 role/private/파일을 확인했다. 기존 DB10개는 그대로이고 새 합성 DB14개를 보존했다. 정지/재기동 snapshot·파일이 일치하며 최종 listener는 없다. v3 업무 상태 검증과 구분한다.
+
+## PRD-035/036 담당·실행 checkpoint (2026-10-09)
+
+담당자/검토자 후보는 현재 쓰기 가능한 member/admin/SU이고 신규 guest 배정은 서버에서도 거부한다. 기존 역할과 public/private 조회 범위는 유지한다. task 내용 편집은 기존 member 권한을 유지하고 실행 상태는 현재 담당자/admin/SU가 변경한다. 검토 필요 여부는 최초 실행 이후 고정하며 planned로 돌아가도 해제할 수 없다. 차단·완료·재개 근거를 기록하고 no-review 완료에는 산출물/완료 기준/담당자 제출이 필요하다. 검토 대기/보완 요청은 일반 상태 action으로 위조할 수 없고 다음 PRD-038 검토 절차에 연결한다.
+
+state/version과 append-only task_events를 같은 transaction에 쓰고 stable token+payload hash로 반복 요청을 구분한다. 생성과 최초 이력도 원자적이다. 기존 작업은 migration 당시 상태라는 baseline을 명시적으로 남기며 과거 생성/재배정 시각을 꾸미지 않는다. D1 0006/native v3는 새 컬럼·이력 테이블·baseline INSERT만 추가한다. native v1/v2는 불변이다. Gantt는 완료 leaf/전체 leaf, 남은 leaf와 상태별 leaf 수를 표시하고 날짜 경과/parentId를 완료율/선행조건으로 사용하지 않는다.
+
+lint0/0, types, FSD5/경계, unit97, Worker build, workflow263, 기존 quality375 PASS. D1 보존 migration fixture도 원래 guest 배정·산출물·상태 baseline·reviewer SET NULL을 확인했다. 독립 리뷰에서 발견한 client token 재사용, planned 우회, 미래 버전 위조, actor/target role 경합을 수정하고 관련 회귀 검사를 추가했다. metadata form은 id+version으로 재마운트해 성공 후 토큰을 갱신한다. 실제 브라우저 연속 입력은 PRD-044에서 확인한다. native v3 동시 실행/반복 제출 하네스를 추가했으며 실제 MariaDB 결과는 정확한 commit에서 실행 대기다. 운영 계정/권한/자료/비밀값 변경 또는 영구 삭제는 없다.

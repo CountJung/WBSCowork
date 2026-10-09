@@ -23,9 +23,10 @@ import {
   type StoredSubmissionAttachment,
 } from "@/src/entities/submission/index.server";
 import { createComment, deleteComment, getCommentById, updateComment } from "@/src/entities/comment/index.server";
-import { createTask, deleteTask, getTaskById, updateTask } from "@/src/entities/task/index.server";
+import { createTask, deleteTask, getTaskById, updateTask, changeTaskStatus } from "@/src/entities/task/index.server";
 import { canManageAllSubmissions, canWriteTaskContent } from "@/src/entities/user";
 import type { Submission, SubmissionVisibility } from "@/src/entities/submission";
+import { taskVersion, workOperationToken, type TaskStatus } from "@/src/entities/task";
 import type { User } from "@/src/entities/user";
 
 function validateUploadBatch(files: File[]) {
@@ -234,7 +235,10 @@ export async function createTaskAction(formData: FormData) {
 
     validateDateRange(startDate, endDate);
 
+    const creator = await resolvePersistedUser(session);
     const task = await createTask({
+      actor:{userId:creator.id,isAdmin:canManageAllSubmissions(creator.role,session.user.isSuperuser),isSuperuser:!!session.user.isSuperuser},
+      token:workOperationToken(formData.get("operationToken")),
       projectId,
       parentId: parseOptionalPositiveInteger(formData.get("parentId"), "상위 작업"),
       title: getSingleValue(formData.get("title")),
@@ -296,7 +300,12 @@ export async function updateTaskAction(formData: FormData) {
 
     validateDateRange(startDate, endDate);
 
+    const actorUser = await resolvePersistedUser(session);
     const task = await updateTask({
+      actor: {userId:actorUser.id,isAdmin:canManageAllSubmissions(actorUser.role,session.user.isSuperuser),isSuperuser:!!session.user.isSuperuser},
+      version:taskVersion(formData.get("version")),
+      token:workOperationToken(formData.get("operationToken")),
+      reviewerId:formData.has("reviewerId")?parseOptionalPositiveInteger(formData.get("reviewerId"),"검토자"):undefined,
       id: taskId,
       parentId: parseOptionalPositiveInteger(formData.get("parentId"), "상위 작업"),
       title: getSingleValue(formData.get("title")),
@@ -306,7 +315,7 @@ export async function updateTaskAction(formData: FormData) {
       reviewRequired: formData.has("reviewRequired") ? parseReviewRequired(formData.get("reviewRequired")) : undefined,
       startDate,
       endDate,
-      assigneeId: parseOptionalPositiveInteger(formData.get("assigneeId"), "담당자"),
+      assigneeId: formData.has("assigneeId")?parseOptionalPositiveInteger(formData.get("assigneeId"), "담당자"):undefined,
     });
 
     revalidatePath("/tasks");
@@ -964,4 +973,20 @@ export async function deleteCommentAction(formData: FormData) {
   }
 
   redirect(redirectPath);
+}
+
+export async function changeTaskStatusAction(formData:FormData) {
+  const projectId=parseRequiredPositiveInteger(formData.get("projectId"),"프로젝트");
+  const session=await requireWritableSession(projectId);
+  let path:string;
+  try {
+    const taskId=parseRequiredPositiveInteger(formData.get("taskId"),"작업");
+    await requireProjectTask(projectId,taskId);
+    const user=await resolvePersistedUser(session);
+    await changeTaskStatus({id:taskId,actor:{userId:user.id,isAdmin:canManageAllSubmissions(user.role,session.user.isSuperuser),isSuperuser:!!session.user.isSuperuser},version:taskVersion(formData.get("version")),token:workOperationToken(formData.get("operationToken")),status:getSingleValue(formData.get("taskStatus")) as TaskStatus,note:getSingleValue(formData.get("note"))});
+    revalidatePath("/tasks");revalidatePath("/");revalidatePath("/my-work");
+    await logUserAction("tasks",{actorEmail:session.user.email??null,action:'task.status',entityType:'task',entityId:taskId,projectId,taskId});
+    path=buildTasksPath('success','작업 상태를 저장했습니다.',{projectId,taskId});
+  }catch(error){path=buildTasksPath('error',error instanceof Error?error.message:'작업 상태를 저장하지 못했습니다.',{projectId});}
+  redirect(path);
 }

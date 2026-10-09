@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   Alert,
   Button,
@@ -16,7 +17,7 @@ import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import { listCommentsByProject } from "@/src/entities/comment/index.server";
 import { listAttachmentsByProject, listSubmissionsByProject } from "@/src/entities/submission/index.server";
 import { listAllProjects } from "@/src/entities/project/index.server";
-import { listTasksByProject } from "@/src/entities/task/index.server";
+import { listTasksByProject, listTaskEventsByProject } from "@/src/entities/task/index.server";
 import { getOrderedTasks, getSelectedTask } from "@/src/entities/task";
 import { getSelectedProject } from "@/src/entities/project";
 import { formatDate } from "@/src/shared/lib/date";
@@ -25,9 +26,10 @@ import { TaskCard, TaskFocusController } from "@/src/widgets/task-workspace";
 import type { Comment } from "@/src/entities/comment";
 import type { Project } from "@/src/entities/project";
 import type { SubmissionAttachment, Submission } from "@/src/entities/submission";
-import type { Task } from "@/src/entities/task";
+import type { Task, TaskEvent } from "@/src/entities/task";
 import { canWriteTaskContent, getUserRoleLabel, canManageAllSubmissions, canAccessAdminPanel } from "@/src/entities/user";
 import {
+  changeTaskStatusAction,
   createCommentAction,
   createSubmissionAction,
   createTaskAction,
@@ -105,8 +107,9 @@ function TaskWritePolicy({ canWrite }: { canWrite: boolean }) {
 function TaskCreateForm({
   orderedTasks,
   project,
-  users,
+  users, eligibleUserIds,
 }: {
+  eligibleUserIds:number[];
   orderedTasks: Task[];
   project: Project;
   users: Awaited<ReturnType<typeof listAllUsers>>;
@@ -114,6 +117,7 @@ function TaskCreateForm({
   return (
     <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
       <Stack component="form" action={createTaskAction} spacing={2}>
+        <input type="hidden" name="operationToken" value={randomUUID()} />
         <input type="hidden" name="projectId" value={String(project.id)} />
         <Typography variant="h5">새 작업 추가</Typography>
         <TextField name="title" label="작업 제목" required />
@@ -132,7 +136,7 @@ function TaskCreateForm({
           </TextField>
           <TextField select name="assigneeId" label="담당자" defaultValue="" fullWidth>
             <MenuItem value="">미지정</MenuItem>
-            {users.map((user) => (
+            {users.filter(user=>eligibleUserIds.includes(user.id)).map((user) => (
               <MenuItem key={user.id} value={String(user.id)}>
                 {user.name} · {getUserRoleLabel(user.role)}
               </MenuItem>
@@ -160,8 +164,11 @@ function TaskList({
   project,
   selectedTaskId,
   submissionsByTaskId,
-  users,
+  users, currentUserId, eventsByTaskId, eligibleUserIds,
 }: {
+  eligibleUserIds:number[];
+  currentUserId: number | null;
+  eventsByTaskId: Record<number,TaskEvent[]>;
   canWrite: boolean;
   canSeeAllSubmissions: boolean;
   commentsBySubmissionId: Record<number, Comment[]>;
@@ -189,13 +196,17 @@ function TaskList({
 
         return (
           <TaskCard
-            key={task.id}
+            key={`${task.id}:${task.version}`}
             task={task}
             orderedTasks={orderedTasks}
             projectId={project.id}
             users={users}
+            eligibleUserIds={eligibleUserIds}
             isSelectedTask={isSelectedTask}
             canWrite={canWrite}
+            currentUserId={currentUserId}
+            events={eventsByTaskId[task.id]??[]}
+            changeTaskStatusAction={changeTaskStatusAction}
             canSeeAllSubmissions={canSeeAllSubmissions}
             submissions={submissionsByTaskId.get(task.id) ?? []}
             commentsBySubmissionId={commentsBySubmissionId}
@@ -253,7 +264,8 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const commentsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "comments" && table.exists);
   const usersTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "users" && table.exists && table.missingColumns.length === 0);
 
-  if (!projectsTableReady || !tasksTableReady || !submissionsTableReady || !commentsTableReady || !usersTableReady) {
+  const taskEventsReady=databaseStatus.tables.some(table=>table.name==="task_events"&&table.exists&&table.missingColumns.length===0);
+  if (!taskEventsReady || !projectsTableReady || !tasksTableReady || !submissionsTableReady || !commentsTableReady || !usersTableReady) {
     return (
       <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
@@ -270,6 +282,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   }
 
   const [projects, users] = await Promise.all([listAllProjects(), listAllUsers()]);
+  const eligibleUserIds=users.filter(user=>user.role!=="guest"||user.email.toLowerCase()===runtimeEnv.auth.superuserEmail).map(user=>user.id);
   const selectedProject = getSelectedProject(projects, projectIdParam);
 
   // 사용자 DB ID 조회 (visibility 필터링에 필요)
@@ -298,6 +311,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         ),
       ])
     : [[] as Comment[], [] as SubmissionAttachment[]];
+  const taskEvents=selectedProject?await listTaskEventsByProject(selectedProject.id):[];
+  const eventsByTaskId:Record<number,TaskEvent[]>={};
+  for(const event of taskEvents) { const group=eventsByTaskId[event.task_id]??=[]; if(group.length<10)group.push(event); }
   const orderedTasks = getOrderedTasks(tasks);
   const selectedTask = getSelectedTask(orderedTasks, taskIdParam);
   const submissionsByTaskId = groupSubmissionsByTaskId(submissions);
@@ -385,12 +401,15 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           </Paper>
         ) : null}
 
-        {canWrite && selectedProject ? <TaskCreateForm orderedTasks={orderedTasks} project={selectedProject} users={users} /> : null}
+        {canWrite && selectedProject ? <TaskCreateForm eligibleUserIds={eligibleUserIds} orderedTasks={orderedTasks} project={selectedProject} users={users} /> : null}
 
         {selectedProject ? <ProjectGanttChart project={selectedProject} tasks={orderedTasks} /> : null}
 
         {selectedProject ? (
           <TaskList
+            eligibleUserIds={eligibleUserIds}
+            currentUserId={currentDbUserId}
+            eventsByTaskId={eventsByTaskId}
             canWrite={canWrite}
             canSeeAllSubmissions={canSeeAllSubmissions}
             commentsBySubmissionId={commentsBySubmissionId}
