@@ -67,13 +67,14 @@
 
 <a id="t-010--프로젝트-crud-경로-이중화-정리"></a>
 <a id="qlt-010--프로젝트-crud-경로-이중화-정리"></a>
-완료: [QLT-010 프로젝트 CRUD 중복 정리](COMPLETED_LOG.md#qlt-010--프로젝트-crud-단일화-2026-10-09).
+<a id="t-014--next-envdts와-tsconfig-include-정리"></a>
+<a id="qlt-014--next-envdts와-tsconfig-include-정리"></a>
+완료: [QLT-010 프로젝트 CRUD 중복 정리](COMPLETED_LOG.md#qlt-010--프로젝트-crud-단일화-2026-10-09), [QLT-014 타입 생성물 정리](COMPLETED_LOG.md#qlt-014--필요한-next-타입-유지와-잔재-제외-2026-10-09).
 
 
 - [~] **[QLT-011](#qlt-011--테스트-커버리지-확장)** 테스트 커버리지 확장
 - [~] **[QLT-012](#qlt-012--versioned-migration-부재)** versioned migration 부재
 - [~] **[QLT-013](#qlt-013--db-credential-최소권한-분리)** runtime pool과 schema admin의 credential 분리
-- [~] **[QLT-014](#qlt-014--next-envdts와-tsconfig-include-정리)** `next-env.d.ts`와 tsconfig `include` 정리
 
 ### 9단계 — digest/report export
 
@@ -289,24 +290,6 @@ RPT-018(D3)의 "최소권한" 요구와 같은 작업이다.
 - [ ] runtime 계정에서 DDL 권한 제거
 - [ ] `src/shared/server/database-admin`이 schema 계정을 쓰도록 변경
 - [ ] `env.example`과 `docs/HARNESS_MAP.md` 7절 env 표 갱신
-
----
-
-<a id="t-014--next-envdts와-tsconfig-include-정리"></a>
-
-### QLT-014 — `next-env.d.ts`와 tsconfig `include` 정리
-
-**분류** 정리
-
-`next-env.d.ts`가 `.gitignore` 대상인데 `tsconfig.json`의 `include`에는 남아 있다. 외장 볼륨에서 생기는 AppleDouble(`._next-env.d.ts`)과 함께 정리 대상인지 판단한다.
-
-**보류 사유.** 현재 동작에 문제가 없어 급하지 않고, Next가 이 파일을 재생성하는 방식과 얽혀 있어 건드릴 때 얻는 것이 무엇인지 먼저 정해야 한다.
-
-착수 체크리스트:
-
-- [ ] 정리해서 얻는 것이 무엇인지 확정(없으면 이 항목을 닫는다)
-- [ ] `tsconfig.json` `include` 조정 후 `npm run typecheck`·`build` 재확인
-- [ ] AppleDouble(`._next-env.d.ts`) 처리 방침 결정
 
 ---
 

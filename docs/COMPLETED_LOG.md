@@ -289,3 +289,10 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 회귀: canonical route에서 anonymous/guest/member의 3가지 action 거부 9건, admin/SU의 파기 확인 누락 거부 2건을 DB 없는 테스트로 추가했다. 기존 native 가시성 suite의 프로젝트 거부 검사를 canonical adapter로 옮겼다. 독립 참조/인가 검토에서 결함 없음.
 
 검증: lint 0/0, typecheck, FSD self-test 5 및 경계, unit 41, Worker build 통과. native MariaDB suite는 이 dot 환경의 127.0.0.1:3307 ECONNREFUSED로 미실행이며 통과로 계산하지 않는다. Worker 인증/decoder 검사 결과는 HARNESS_MAP 최신 항목에 기록한다. 운영 데이터 파기나 역할 변경은 수행하지 않았다.
+
+
+## QLT-014 — 필요한 Next 타입 유지와 잔재 제외 (2026-10-09)
+
+`next-env.d.ts`는 Next가 생성하고 Git에서는 제외하는 정상 타입 진입점이다. 설치된 Next16 공식 문서(`01-app/03-api-reference/05-config/02-typescript.md`)도 gitignore와 tsconfig include를 동시에 요구한다. 따라서 파일·include를 삭제하지 않았다. 사용자 요청의 “불필요하면 정리”에 따라 AppleDouble `**/._*`만 tsconfig exclude에 추가해 기존 Git/lint/FSD 제외와 맞췄다. 실제 사용자 파일을 삭제하지 않았다.
+
+함께 확인된 `types/next-auth.d.ts`의 제거된 `@/models/user` 참조는 현재 public API `@/src/entities/user`로 교정했다. typecheck, lint 0/0, Sites Worker build 통과. Node/Next native build는 이번 체크포인트에서 미실행이며 필요 타입을 유지하는 결정을 빌드 삭제 실험으로 대체하지 않는다.

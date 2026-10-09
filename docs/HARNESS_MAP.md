@@ -313,3 +313,8 @@ saved-cloud가 exact `f31f9dc18ca9848e648035ed602cba5b9731d9f1`을 외부 preloa
 환경 경고: npm의 주입된 http-proxy 옵션 경고, Node module-mocking ExperimentalWarning, Vinext proxy/route-classification 안내는 기존 환경/도구 한계다. 첫 깨끗한 Worker 빌드는 Google font plugin에서 1분 이상 소요되어 plugin timing 안내가 있었으며 오류는 없었다. 종전 미사용 import lint 경고 1건은 제거 후 0/0으로 재검증했다.
 
 `npm run test:sites:auth` 18 PASS (실제 workerd·합성 설정, Google 로그인 아님), `npm run test:sites:decoder` 빌드된 React 19.2.8 decoder 지문 PASS.
+
+
+## 2026-10-09 QLT-014 타입 파일 정리
+
+`next-env.d.ts` include와 gitignore를 유지한다. Next의 생성 타입은 필요한 파일이며 AppleDouble(`**/._*`)만 TypeScript 검사 대상에서 제외한다. `types/next-auth.d.ts`의 obsolete `@/models/user` 참조는 현 entity API로 정정했다. typecheck/lint0·Worker build PASS. native Next build 미실행; 파일 삭제나 기존 첨부 데이터 변경 없음.
