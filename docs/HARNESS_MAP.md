@@ -447,3 +447,13 @@ version8은 source `d18cef86d4b7ed9063d92d41f8b4563ec58e4602`에서 2026-10-09 1
 인증된 기존 사용자로 합성 project2, task3/4/5를 생성하고 내 담당 목록→카드→제출3 v1/v2→이전 버전 링크/첨부 원문 보존, 버전2 댓글을 실제 UI에서 확인했다. v1(44bytes)/v2(71bytes) 다운로드와 v2 이후 v1 다운로드의 SHA256이 각각 원본과 같다. 취소한 수정 초안은 저장되지 않았다. 전체 판정·모바일·완료 상태의 최종 결과는 아래 후속 기록에서 확정한다. 계정 역할 변경이나 영구 삭제는 하지 않았다.
 
 일부 버튼의 첫 클릭 직후에는 화면 피드백이 없었으나 같은 요청의 재시도 후 task가1개만 저장됐다. 요청 미전달 원인을 확정하거나 데이터 손실로 단정하지 않는다. 이 UX를 개선해 task 생성/수정/상태, 제출 생성/새 버전, 댓글 생성/수정7곳에 부모 form의 pending 상태를 표시하고 재클릭을 막는 공통 버튼을 추가했다. action/token/권한/삭제 확인은 그대로이며 독립 정적 리뷰에서 변경 누락을 찾지 않았다. lint/types/FSD/build/decoder 검사 통과. UI 변경 후 Worker workflow 첫 실행은 기존 동시 검토 요청 한 건의 HTTP503으로 중단됐고, 같은 명령의 별도 재실행은412 PASS했다. 최초503의 원인을 확인한 것으로 주장하지 않으며 결과를 구분해 보존한다.
+
+### PRD-044 최종 HTTPS 결과 / version9
+
+source `82d7d516ef34ed8718dbfe09d6189b7f81cacfe8` / tree `4144cbda144bc79311f82d30f187c598ab70dbea`가 version9, deployment `appgdep_6ac8dcf66db88191af561d72d4b122b8`로 12:24:42 UTC terminal succeeded했다. archive SHA256 `5fc14d78294a6e05ff2767e30f2c91436df3894598fc11bec611522893f24fd3`, 322files/4,884,480bytes. 공개 URL과 env revision11은 유지했고 추가 migration은 없다.
+
+실제 기존 로그인으로 492px의 내 업무→카드→완료 근거 저장을 수행하고 `상태 저장 중…`·aria-busy=true·disabled를 확인했다. 완료 후 task3 done/version3, 이력3개, leaf1/3(33%)·잔여2, 미완료 큐0건/완료 필터1건, 필터·선택 복귀가 일치했다. light/dark 모바일 메뉴와 업무·버전 이력의 가로 넘침 없음, 두 프로젝트 전환 시 이전 카드 제거/브라우저 Back 복귀를 확인했다. 테스트 후 System theme과 데스크톱 창 크기를 복구했다.
+
+최종 read-only D1 확인: projects2개, tasks3개, task_events5개, submission1개/revisions2개/submission_events2개, 댓글1개, 첨부3행/실제 file2개, cleanup0. 사용자1명과 기존 purge receipt의 전체 row가 게시 전과 같다. 정확한 합성 ID와 파일 hash는 [P0 인수 결과](P0_ACCEPTANCE_2026-10-09.md)에 기록했다. 테스트 자료는 영구 삭제하지 않았다.
+
+별도 정적 storage 리뷰는 현재+과거 visibility, 원본 보존, transaction lease guard, cleanup 회수→참조 검사, canonical production write를 확인했고 검사한 범위에서 actionable defect가 없었다. 보충 adapter/admin 검색 일부는 리뷰 실행기 transport 중단으로 끝내지 못했으므로 exhaustive review로 표시하지 않는다. 차단된 동적 cleanup 경합은 QLT-015, 첫 fixture503 원인은 QLT-016으로 남긴다. 실제 다중 Google 계정 검증·별도 native 강등 interleaving·영구 파기 검사는 미실행이다.

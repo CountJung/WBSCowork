@@ -140,3 +140,5 @@ Serena는 역할·권한, DB schema, repository 계약 또는 여러 Route Handl
 Native MariaDB schema 변경은 DB_SCHEMA_USER/DB_SCHEMA_PASSWORD 전용 연결과 불변 version/checksum ledger를 사용한다. 일반 DB_* runtime/readiness와 분리하며 fallback하지 않는다. DDL은 transaction rollback 대상이 아니므로 자동 down/DROP이나 ledger 강제 수정은 없다. 실제 운영 적용/계정 권한 변경은 별도 승인 범위다. [Native 운영](docs/NATIVE_DATABASE_MIGRATIONS.md).
 
 산출물 버전: 쓰기는 canonical submission revision batch만 사용한다. 현재 projection·불변 snapshot·버전 첨부·event를 같은 transaction에 저장하고 expected revision/stable token/bytes fingerprint를 검사한다. 이전 파일 제외는 새 버전일 뿐 물리 삭제가 아니다. current/historical visibility를 함께 검사하며 담당자/검토자 지정으로 private 접근이 늘지 않는다. `/submissions/[id]`의 이력 보존 정책은 TEAM_WORKFLOW_PLAN.md와 privacy 화면을 따른다.
+
+팀 업무: `/my-work`는 count/list/link에 동일 viewer/current-role SQL 조건을 사용한다. `/submissions/[id]`의 검토 action은 현재 담당자의 특정 현재 버전만 선택하고 reviewer 권한·visibility·self-approval 배제·token/version을 transaction 안에서 재검사한다. 상세 검토 사유를 공개 task event에 복사하지 않는다. form pending UI는 shared SubmitButton을 사용하며 서버의 중복 방지·권한 검사를 대신하지 않는다. [사용 안내](docs/TEAM_WORKFLOW_GUIDE.md), [P0 인수 범위](docs/P0_ACCEPTANCE_2026-10-09.md).
