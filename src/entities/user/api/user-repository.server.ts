@@ -236,3 +236,8 @@ export async function syncAuthenticatedUserIfPossible(
     };
   }
 }
+
+/** Public workspace selector labels only; never serialize authentication metadata. */
+export async function listUserNames():Promise<{id:number;name:string}[]> {
+ return await getDatabasePool().query('SELECT id,name FROM users ORDER BY name,id') as {id:number;name:string}[];
+}

@@ -33,4 +33,13 @@ export async function verifyNativeP1Dependencies(check:(value:unknown,label:stri
  await assert.rejects(applyTaskTemplate({...templateInput,nodes:[{...nodes[0],title:'different'}]}));check(true,'native template changed payload rejects replay');
  await assert.rejects(applyTaskTemplate({...templateInput,token:randomUUID(),nodes:[{...nodes[0],assigneeId:1}]}));check(true,'native template ineligible target creates no batch');
 
+ const {searchWork}=await import('../src/entities/task/index.server');const {parseWorkSearchFilters}=await import('../src/entities/task');
+ const {createSubmission}=await import('../src/entities/submission/index.server');
+ await createSubmission({actor,token:randomUUID(),taskId:a.id,authorId:2,content:'P1_NATIVE_SEARCH_PRIVATE',visibility:'private'});
+ await createSubmission({actor,token:randomUUID(),taskId:a.id,authorId:2,content:'P1_NATIVE_SEARCH_PUBLIC 50%_!',visibility:'public'});
+ const search=(id:number,q:string)=>searchWork({viewerUserId:id,isSuperuser:false},parseWorkSearchFilters({q,kind:'submission',versions:'all'}));
+ check((await search(3,'P1_NATIVE_SEARCH')).total===1&&(await search(2,'P1_NATIVE_SEARCH')).total===2,'native search count enforces private visibility');
+ check((await search(3,'50%_!')).total===1,'native search treats wildcards literally');
+ check((await search(1,'P1_NATIVE_SEARCH_PRIVATE')).items.length===0,'native guest search has no private snippet');
+
 }

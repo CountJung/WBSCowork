@@ -34,4 +34,15 @@ export async function verifyP1Http(ctx){
  const templateCard=await db.prepare("SELECT * FROM tasks WHERE title='P1_HTTP_TEMPLATE'").first();
  check(templateCard.assignee_id===2&&templateCard.status==='planned'&&templateCard.review_required===0,'P1 HTTP preview fields persist without role/review grants');
 
+ const createSubmission=renderedAction(await(await request(route,member)).text(),'createSubmissionAction');
+ for(const [cookie,visibility,content]of[[member,'public','P1_SSR_PUBLIC'],[member,'private','P1_SSR_PRIVATE_ONE'],[actorCookies.member2,'private','P1_SSR_PRIVATE_TWO']])await form(route,cookie,createSubmission,{projectId,taskId:b.id,visibility,content});
+ for(const role of ['guest','member1','member2','admin','superuser']){
+  const response=await request('/search?q=P1_SSR&kind=submission',actorCookies[role]);const content=await response.text();
+  check(response.status===200&&content.includes('P1_SSR_PUBLIC'),'P1 search '+role+' public result');
+  check(content.includes('P1_SSR_PRIVATE_ONE')===['member1','admin','superuser'].includes(role),'P1 search '+role+' private owner1 SSR boundary');
+  check(content.includes('P1_SSR_PRIVATE_TWO')===['member2','admin','superuser'].includes(role),'P1 search '+role+' private owner2 SSR boundary');
+ }
+ const anonymous=await request('/search?q=P1_SSR');check(anonymous.status>=300&&anonymous.status<400,'P1 anonymous search redirects before data');
+ const malformed=await(await request('/search?page=1001',member)).text();check(malformed.includes('검색 페이지 범위')&&!malformed.includes('P1_SSR_PRIVATE_ONE'),'P1 invalid search does not execute data query');
+
 }

@@ -5,3 +5,4 @@ export * from "./model/personal-work";
 
 export * from "./model/dependencies";
 export * from "./model/task-templates";
+export * from "./model/work-search";

@@ -44,7 +44,9 @@ export async function verifyTeamWorkflow(argumentsContext) {
     for(const file of files)parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="attachments"; filename="${file.name}"\r\nContent-Type: ${file.mime??'text/plain'}\r\n\r\n`),Buffer.from(file.bytes),Buffer.from('\r\n'));
     parts.push(Buffer.from(`--${boundary}--\r\n`));
     const response=await request(route,cookie,{method:'POST',headers:{Origin:argumentsContext.actionOrigin,'Content-Type':`multipart/form-data; boundary=${boundary}`},body:Buffer.concat(parts)});
-    await response.text();check(response.status===303,`workflow: form response ${response.status}`);return response;
+    const responseBody=await response.text();
+    if(response.status!==303)console.error('Synthetic Worker form failure',JSON.stringify({action:id.split('#').at(-1),path:new URL(route,'https://fixture.invalid').pathname,status:response.status,contentType:response.headers.get('content-type'),body:responseBody.slice(0,1200)}));
+    check(response.status===303,`workflow: form response ${response.status}`);return response;
   }
   const adminHtml=await(await request('/admin/projects',admin)).text();
   const createProject=renderedAction(adminHtml,'createProjectAdminAction');

@@ -162,3 +162,5 @@ users       1 ── N comments
 P1 의존성: `src/entities/task/api/task-dependencies.server.ts`의 graph CAS와 `src/shared/server/task-dependencies`의 실행 guard, `src/features/task-dependencies` action, `src/widgets/task-dependencies` UI가 WBS와 별도 선후행을 담당한다. 상세 범위는 [P1 계획](P1_IMPLEMENTATION_PLAN.md).
 
 P1 템플릿: `src/entities/task/model/task-templates.ts`의 versioned catalog와 `api/task-template.server.ts`의 원자적 application, `src/features/task-templates`, `src/widgets/task-templates`의 편집 미리보기를 사용한다.
+
+P1 검색: `/search` → `src/widgets/work-search` → `src/entities/task/api/work-search.server.ts`. 버전 가시성·필터·건수·snippet은 같은 SQL relation에서 계산한다.

@@ -478,3 +478,10 @@ source `82d7d516ef34ed8718dbfe09d6189b7f81cacfe8` / tree `4144cbda144bc79311f82d
 - 버전1 예시 템플릿2개, 담당자 기본 미배정, relative date 미리보기와 편집/제외, parent-first 원자적 생성, stable token/fingerprint receipt를 추가했다. 저장 중 취소/편집을 막고 오류 시 미리보기를 보존한다. 배포된 catalog version은 삭제/변경하지 않고 새 version을 추가하여 이전 요청 검증을 유지한다.
 - 단위116 PASS (native DB suite 미실행), D1 P1 계약32 PASS, 실제 Worker workflow HTTP434 PASS, lint/types/FSD5/build/decoder 통과. 독립 정적 검토와 함께 동일 token 동시 생성, 변경 payload 거부, 부적격 사용자, 늦은 event 실패 시 첫 카드/후속 카드/이력/receipt 전체 rollback을 검사했다. 실제 운영 템플릿 생성이나 Google 두 계정 브라우저 사용은 미실행이다.
 - 새 D1 `0011`, native v7은 template application receipt 표만 추가한다. 기존 표/파일/role을 복제하거나 삭제하지 않는다. Native functional harness에는 템플릿5개 조건을 추가했고 실제 실행 결과는 후속 검증에서 기록한다.
+
+### P1 / PRD-042 검색 체크포인트
+
+- `/search`는 업무 제목/설명과 제출 본문/작성자/해당 버전 파일명을 조회한다. 같은 scoped SQL UNION을 count/list에 사용하며 current role + 현재/당시 visibility, 정확한 current 승인 대상을 적용한다. snippet과 일치 파일명만 표시하고 저장 경로나 외부 링크를 가져오지 않는다. 최신/현재 승인/이전 포함, project/assignee/status/date/overdue와20개 pagination을 제공한다. 별도 schema 변경은 없다.
+- 단위118, D1 P1계약45, lint/types/FSD5/build/decoder 통과. 독립 SQL·렌더링 검토에서 권한 누출은 발견되지 않았고 파일명 일치 표시 및 이름/id만 조회하는 selector를 보완했다.
+- 첫 전체 Worker workflow는 기존 동일 token 동시 승인 POST에서 HTTP503으로 중단되어 실패로 기록한다(QLT-016 재발). 합성 응답의 action/path/status/content-type/짧은 오류 body 진단을 추가한 별도 재실행은455 PASS였다. 정상 요청을 자동 재시도하거나 assertion을 완화하지 않았다. 503 원인은 아직 확정되지 않았으며 이 재실행을 원인 해결로 표시하지 않는다.
+- Native harness에 검색 가시성/문자 wildcard/guest3조건을 추가했다. 실제 MariaDB 결과 및 게시 후 UI는 다음 게이트다.
