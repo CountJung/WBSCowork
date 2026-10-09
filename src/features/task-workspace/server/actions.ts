@@ -1,5 +1,7 @@
 "use server";
 
+import { validateDateRange } from "@/src/shared/lib/date";
+
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -98,11 +100,6 @@ function parseRequiredDate(value: FormDataEntryValue | null, label: string) {
   return normalizedValue;
 }
 
-function assertValidDateRange(startDate: string, endDate: string) {
-  if (startDate > endDate) {
-    throw new Error("시작일은 종료일보다 늦을 수 없습니다.");
-  }
-}
 
 function parseVisibility(value: FormDataEntryValue | null): SubmissionVisibility {
   return getSingleValue(value) === "private" ? "private" : "public";
@@ -230,7 +227,7 @@ export async function createTaskAction(formData: FormData) {
     const startDate = parseRequiredDate(formData.get("startDate"), "작업 시작일");
     const endDate = parseRequiredDate(formData.get("endDate"), "작업 종료일");
 
-    assertValidDateRange(startDate, endDate);
+    validateDateRange(startDate, endDate);
 
     const task = await createTask({
       projectId,
@@ -284,13 +281,15 @@ export async function updateTaskAction(formData: FormData) {
   let redirectPath: string;
 
   try {
+    const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
+    await requireProjectTask(projectId, taskId);
     const startDate = parseRequiredDate(formData.get("startDate"), "작업 시작일");
     const endDate = parseRequiredDate(formData.get("endDate"), "작업 종료일");
 
-    assertValidDateRange(startDate, endDate);
+    validateDateRange(startDate, endDate);
 
     const task = await updateTask({
-      id: parseRequiredPositiveInteger(formData.get("taskId"), "작업"),
+      id: taskId,
       parentId: parseOptionalPositiveInteger(formData.get("parentId"), "상위 작업"),
       title: getSingleValue(formData.get("title")),
       description: getSingleValue(formData.get("description")),

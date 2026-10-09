@@ -6,6 +6,7 @@ import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Miniflare, Log, LogLevel } from "miniflare";
 import { encode } from "next-auth/jwt";
+import { verifySitesQuality } from "./verify-sites-quality.mjs";
 import { verifyBugHttp } from "./verify-bug-http.mjs";
 import { verifySitesCrud } from "./verify-sites-crud.mjs";
 
@@ -24,6 +25,9 @@ async function moduleFiles(directory) {
 const entry=path.resolve("dist/server/index.js");
 const modules=[entry,...(await moduleFiles(path.resolve("dist/server"))).filter(file=>file!==entry)].map(file=>({type:"ESModule",path:file}));
 const mf = new Miniflare({
+  // Local authorization/storage fixtures do not need Cloudflare request.cf geolocation.
+  // Official cf:false uses the built-in fixture and prevents cf.json network requests.
+  cf: false,
   name: "wbscowork-test", modules, modulesRoot: path.resolve("dist/server"),
   compatibilityDate: "2026-05-15", compatibilityFlags: ["nodejs_compat"],
   d1Databases: {DB:"wbs-http-test"}, r2Buckets: {ATTACHMENTS:"wbs-http-files"},
@@ -91,6 +95,10 @@ try {
     check(result===0,"cloud Chromium desktop/mobile QA");
   }
   const actionOrigin=new URL(await mf.ready).origin;
+  if (process.argv.includes("--quality")) {
+    await verifySitesQuality({request,db,bucket,actorCookies,actionOrigin,check});
+    console.log(`Actual Worker quality checks passed: ${checks}. Ephemeral synthetic fixtures; no delete/purge scenarios or real Google login.`);
+  } else {
   const createAction=memberHtml.match(/name="(\$ACTION_ID_[^"]*#createSubmissionAction)"/)?.[1];
   check(Boolean(createAction),"real rendered form exposes existing create-submission action");
   function smallForm(content){const boundary="wbs-small-boundary";let body="";for(const [name,value]of[[createAction,""],["projectId","1"],["taskId","1"],["content",content],["visibility","private"]])body+=`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`;return body+`--${boundary}--\r\n`;}
@@ -130,4 +138,5 @@ try {
   await writeFile(".test-artifacts/worker-member.html",memberHtml);
   check((await request("/submissions/1/2/fixture-2.txt",memberCookie)).status===404,"private R2 key is not a public object route");
   console.log(`Actual Worker HTTP role checks passed: ${checks}. Locally signed synthetic sessions; actual Google sign-in is not tested.`);
+  }
 } finally {await mf.dispose();}

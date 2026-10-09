@@ -1,3 +1,4 @@
+import { validateDateRange } from "@/src/shared/lib/date";
 import { getDatabasePool } from "@/src/shared/server/database/index.server";
 import { mapProjectRow, type Project, type ProjectRow } from "../model/project";
 
@@ -7,13 +8,6 @@ export type CreateProjectInput = {
   endDate: Date | string;
 };
 
-function toSqlDate(value: Date | string) {
-  if (typeof value === "string") {
-    return value;
-  }
-
-  return value.toISOString().slice(0, 10);
-}
 
 export async function getProjectById(id: number): Promise<Project | null> {
   const rows = (await getDatabasePool().query(
@@ -52,9 +46,10 @@ export async function getProjectCount(): Promise<number> {
 }
 
 export async function createProject(input: CreateProjectInput): Promise<Project> {
+  const { startDate, endDate } = validateDateRange(input.startDate, input.endDate);
   const result = (await getDatabasePool().query(
     "INSERT INTO projects (name, start_date, end_date) VALUES (?, ?, ?)",
-    [input.name.trim(), toSqlDate(input.startDate), toSqlDate(input.endDate)],
+    [input.name.trim(), startDate, endDate],
   )) as {
     insertId: number;
   };
@@ -88,6 +83,7 @@ export type UpdateProjectInput = {
 };
 
 export async function updateProject(input: UpdateProjectInput): Promise<Project> {
+  const { startDate, endDate } = validateDateRange(input.startDate, input.endDate);
   const existingProject = await getProjectById(input.id);
 
   if (!existingProject) {
@@ -96,7 +92,7 @@ export async function updateProject(input: UpdateProjectInput): Promise<Project>
 
   await getDatabasePool().query(
     "UPDATE projects SET name = ?, start_date = ?, end_date = ? WHERE id = ?",
-    [input.name.trim(), toSqlDate(input.startDate), toSqlDate(input.endDate), input.id],
+    [input.name.trim(), startDate, endDate, input.id],
   );
 
   const updated = await getProjectById(input.id);

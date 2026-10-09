@@ -69,10 +69,11 @@
 <a id="qlt-010--프로젝트-crud-경로-이중화-정리"></a>
 <a id="t-014--next-envdts와-tsconfig-include-정리"></a>
 <a id="qlt-014--next-envdts와-tsconfig-include-정리"></a>
-완료: [QLT-010 프로젝트 CRUD 중복 정리](COMPLETED_LOG.md#qlt-010--프로젝트-crud-단일화-2026-10-09), [QLT-014 타입 생성물 정리](COMPLETED_LOG.md#qlt-014--필요한-next-타입-유지와-잔재-제외-2026-10-09).
+<a id="t-011--테스트-커버리지-확장"></a>
+<a id="qlt-011--테스트-커버리지-확장"></a>
+완료: [QLT-011 테스트 경계 확장](COMPLETED_LOG.md#qlt-011--날짜계층첨부역할-회귀-확장-2026-10-09), [QLT-010 프로젝트 CRUD 중복 정리](COMPLETED_LOG.md#qlt-010--프로젝트-crud-단일화-2026-10-09), [QLT-014 타입 생성물 정리](COMPLETED_LOG.md#qlt-014--필요한-next-타입-유지와-잔재-제외-2026-10-09).
 
 
-- [~] **[QLT-011](#qlt-011--테스트-커버리지-확장)** 테스트 커버리지 확장
 - [~] **[QLT-012](#qlt-012--versioned-migration-부재)** versioned migration 부재
 - [~] **[QLT-013](#qlt-013--db-credential-최소권한-분리)** runtime pool과 schema admin의 credential 분리
 
@@ -237,22 +238,6 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 
 ---
 
-
-<a id="t-011--테스트-커버리지-확장"></a>
-
-### QLT-011 — 테스트 커버리지 확장
-
-**분류** 품질
-
-현재 하네스(QLT-009)는 가시성·권한 경계에 집중되어 있다. 우선순위 순으로:
-
-- [ ] 파일 업로드 경로 경계 — traversal, 크기 제한, MIME/disposition
-- [ ] task/project CRUD의 날짜·계층 규칙 — 시작일/종료일 역전, depth·order 일관성
-- [ ] admin 화면 action — 역할 부여 경계(`guest`·`member`만 부여 가능)
-
-HTTP 계층(미들웨어·OAuth 로그인)과 캐시 무효화는 현재 하네스 구조상 범위 밖이다. 이것까지 검증하려면 별도 도구가 필요하므로 이 항목에 섞지 않는다.
-
----
 
 <a id="t-012--versioned-migration-부재"></a>
 

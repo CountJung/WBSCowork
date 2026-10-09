@@ -296,3 +296,15 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 `next-env.d.ts`는 Next가 생성하고 Git에서는 제외하는 정상 타입 진입점이다. 설치된 Next16 공식 문서(`01-app/03-api-reference/05-config/02-typescript.md`)도 gitignore와 tsconfig include를 동시에 요구한다. 따라서 파일·include를 삭제하지 않았다. 사용자 요청의 “불필요하면 정리”에 따라 AppleDouble `**/._*`만 tsconfig exclude에 추가해 기존 Git/lint/FSD 제외와 맞췄다. 실제 사용자 파일을 삭제하지 않았다.
 
 함께 확인된 `types/next-auth.d.ts`의 제거된 `@/models/user` 참조는 현재 public API `@/src/entities/user`로 교정했다. typecheck, lint 0/0, Sites Worker build 통과. Node/Next native build는 이번 체크포인트에서 미실행이며 필요 타입을 유지하는 결정을 빌드 삭제 실험으로 대체하지 않는다.
+
+
+## QLT-011 — 날짜·계층·첨부·역할 회귀 확장 (2026-10-09)
+
+- 날짜: action과 repository에서 실제 YYYY-MM-DD·윤년·1000~9999년·동일일·역전 범위를 검증한다. D1 TEXT에 잘못된 날짜가 저장되는 문제를 수정했다.
+- 계층: task 수정의 projectId/taskId 관계 검사를 추가했다. 실제 Worker에서 3단계 생성, self/descendant/cross-project 부모 거부, subtree 이동·분리와 depth/order 보존을 확인했다. order_index는 고유 ID가 아닌 정렬 키이며 기존 created_at/id tie-breaker를 유지한다. 동시 구조 재편의 직렬화나 새 배정 정책은 이번 범위가 아니다.
+- 첨부: native 경로도 빈/절대/역슬래시/점 세그먼트/제어문자 key를 거부한다. 한글·위험 파일명 정리, 빈/초과 크기, 20개/21개 및 개별·합계20MiB 경계, 잘못된 edit의 원본 보존을 검사했다. 두 다운로드 route의 MIME inline allowlist·RFC5987 파일명·private/no-store·nosniff·sandbox를 통일하고, legacy route의 오래된 DB 크기 사용을 실제 저장 크기로 수정했다.
+- 역할: 실제 Worker의 anonymous/guest/member 거부, admin의 guest/member 허용 및 admin/위조값 거부, SU의 허용 역할, 없는 사용자·보호 SU 대상 거부를 로컬 합성 계정으로 검사했다. 운영 계정/권한은 변경하지 않았다.
+
+검증: unit69, 실제 Worker quality375, lint0/0, typecheck, FSD5/경계, Worker build PASS. 독립 리뷰의 정상 edit 대조군 누락 2개를 보강한 뒤 재검증했다. HTTP375는 로컬 서명 JWT와 ephemeral D1/R2로 실행했으며 Google OAuth 또는 live 다중 계정 검증을 뜻하지 않는다. Worker가 streaming Content-Length를 제거할 수 있어 HTTP는 실제 bytes/헤더를, 직접 route 테스트는 오래된 metadata999와 실제3byte 구분을 검사한다.
+
+`npm run test:sites:quality`는 delete/purge/기존 destructive fixture를 실행하지 않는다. 공식 Miniflare `cf:false`로 외부 cf.json 메타데이터 조회도 제거했다. native MariaDB DB 회귀는 QLT-012의 전용 additive 하네스 결과와 별도로 구분한다.

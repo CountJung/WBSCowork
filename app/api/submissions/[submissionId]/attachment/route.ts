@@ -1,3 +1,4 @@
+import { attachmentResponseHeaders } from "@/src/shared/lib/attachment-response";
 import { NextResponse } from "next/server";
 import { getAuthSession } from "@/src/entities/user/index.server";
 import { logUserAction, logUserActionFailure } from "@/src/shared/server/logging/index.server";
@@ -37,10 +38,7 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     const attachment = await readStoredSubmissionAttachment(submission.filePath);
     const url = new URL(request.url);
-    const inline = url.searchParams.get("inline") === "1" && /^(image\/(png|jpeg|gif|webp|avif)|application\/pdf|text\/plain)$/.test(submission.fileMimeType ?? "");
-    const disposition = inline
-      ? `inline; filename*=UTF-8''${encodeURIComponent(submission.fileName)}`
-      : `attachment; filename*=UTF-8''${encodeURIComponent(submission.fileName)}`;
+    const headers = attachmentResponseHeaders({ fileName: submission.fileName, mimeType: submission.fileMimeType, size: attachment.fileSizeBytes, inlineRequested: url.searchParams.get("inline") === "1" });
 
     await logUserAction("submissions.attachment", {
       actorEmail: session.user.email ?? null,
@@ -55,14 +53,7 @@ export async function GET(request: Request, context: RouteContext) {
     });
 
     return new NextResponse(attachment.buffer, {
-      headers: {
-        "Cache-Control": "private, no-store",
-        "X-Content-Type-Options": "nosniff",
-        "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'",
-        "Content-Disposition": disposition,
-        "Content-Length": String(submission.fileSizeBytes ?? attachment.fileSizeBytes),
-        "Content-Type": submission.fileMimeType ?? "application/octet-stream",
-      },
+      headers,
     });
   } catch (error) {
     await logUserActionFailure(

@@ -1,3 +1,4 @@
+import { validateDateRange } from "@/src/shared/lib/date";
 import { getDatabasePool, databaseBatch, type QueryStatement } from "@/src/shared/server/database/index.server";
 import { mapTaskRow, type Task, type TaskRow } from "../model/task";
 
@@ -21,13 +22,6 @@ export type UpdateTaskInput = {
   assigneeId?: number | null;
 };
 
-function toSqlDate(value: Date | string) {
-  if (typeof value === "string") {
-    return value;
-  }
-
-  return value.toISOString().slice(0, 10);
-}
 
 function normalizeTitle(title: string) {
   const normalizedTitle = title.trim();
@@ -228,6 +222,7 @@ export async function listTasksByProject(projectId: number): Promise<Task[]> {
 }
 
 export async function createTask(input: CreateTaskInput): Promise<Task> {
+  const { startDate, endDate } = validateDateRange(input.startDate, input.endDate);
   await ensureProjectExists(input.projectId);
 
   const [parentTask, assigneeId, orderIndex] = await Promise.all([
@@ -253,8 +248,8 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
       parentTask?.id ?? null,
       normalizeTitle(input.title),
       normalizeDescription(input.description),
-      toSqlDate(input.startDate),
-      toSqlDate(input.endDate),
+      startDate,
+      endDate,
       parentTask ? parentTask.depth + 1 : 0,
       orderIndex,
       assigneeId,
@@ -275,6 +270,7 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
 }
 
 export async function updateTask(input: UpdateTaskInput): Promise<Task> {
+  const { startDate, endDate } = validateDateRange(input.startDate, input.endDate);
   const existingTask = await getTaskById(input.id);
 
   if (!existingTask) {
@@ -305,8 +301,8 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
       parentTask?.id ?? null,
       normalizeTitle(input.title),
       normalizeDescription(input.description),
-      toSqlDate(input.startDate),
-      toSqlDate(input.endDate),
+      startDate,
+      endDate,
       assigneeId,
       existingTask.id,
     ] }, ...buildTaskDepthUpdates(tasks.map((task) => task.id === existingTask.id ? { ...task, parentId: parentTask?.id ?? null } : task))]);

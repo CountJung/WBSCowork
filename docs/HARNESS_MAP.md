@@ -318,3 +318,12 @@ saved-cloud가 exact `f31f9dc18ca9848e648035ed602cba5b9731d9f1`을 외부 preloa
 ## 2026-10-09 QLT-014 타입 파일 정리
 
 `next-env.d.ts` include와 gitignore를 유지한다. Next의 생성 타입은 필요한 파일이며 AppleDouble(`**/._*`)만 TypeScript 검사 대상에서 제외한다. `types/next-auth.d.ts`의 obsolete `@/models/user` 참조는 현 entity API로 정정했다. typecheck/lint0·Worker build PASS. native Next build 미실행; 파일 삭제나 기존 첨부 데이터 변경 없음.
+
+
+## 2026-10-09 QLT-011 경계 회귀
+
+`npm run test:sites:quality`: **375 PASS**, 실제 production bundle/workerd + 로컬 D1/R2·합성 JWT. 공개/비공개 SSR·첨부·역할 갱신 기본 확인과 날짜/계층/업로드/역할 action 경계를 포함한다. 기존 `test:sites:http` 전체(삭제·bug purge 포함)와 별도 command다. 새 quality lane은 실제 서비스나 실제 사용자 계정을 쓰지 않고 delete/purge를 호출하지 않는다.
+
+`npm test` unit67 PASS 및 MariaDB localhost3307 연결 거부로 DB suite skip; 이후 hostile upload filename/direct size 검사를 보강한 `npm run test:unit` **69 PASS**. lint0/0, types, FSD self5/경계, Worker build PASS. 실제 native DB 검증은 별도 체크포인트 결과를 따른다.
+
+첫 HTTP 검사에서 streaming Content-Length가 없어 잘못 가정한 assertion이 실패했다. 실제 Worker는 길이 헤더를 제거할 수 있으므로 전송 bytes와 MIME를 검사하며, 직접 route 테스트로 metadata 대신 실제 파일 크기를 사용하는 것을 검증했다. 별도 네트워크 metadata 포함 실행은 결과 미확정으로 통과 계산에서 제외했다. 최종375는 공식 `cf:false`를 명시하여 Miniflare의 `workers.cloudflare.com/cf.json` GET 없이 내장 request.cf fixture를 사용한 실행이다. 두 정상 edit 대조군 및 음성 validation redirect도 검증한다.

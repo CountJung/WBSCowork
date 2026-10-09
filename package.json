@@ -25,7 +25,8 @@
     "test:sites:http": "node scripts/test-sites-http.mjs",
     "test:sites:browser": "node scripts/test-sites-http.mjs --browser",
     "test:sites:bugs": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-bug-reports.ts",
-    "test:sites:decoder": "node scripts/check-rsc-decoder.mjs"
+    "test:sites:decoder": "node scripts/check-rsc-decoder.mjs",
+    "test:sites:quality": "node scripts/test-sites-http.mjs --quality"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

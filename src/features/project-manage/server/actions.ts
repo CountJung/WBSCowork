@@ -1,5 +1,7 @@
 "use server";
 
+import { validateDateRange } from "@/src/shared/lib/date";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
@@ -38,11 +40,6 @@ function parseRequiredDate(value: FormDataEntryValue | null, label: string) {
   return normalizedValue;
 }
 
-function assertValidDateRange(startDate: string, endDate: string) {
-  if (startDate > endDate) {
-    throw new Error("시작일은 종료일보다 늦을 수 없습니다.");
-  }
-}
 
 async function requireAdminSession() {
   const session = await getAuthSession();
@@ -68,7 +65,7 @@ export async function createProjectAdminAction(formData: FormData) {
       throw new Error("프로젝트 이름은 비워 둘 수 없습니다.");
     }
 
-    assertValidDateRange(startDate, endDate);
+    validateDateRange(startDate, endDate);
 
     const project = await createProject({ name, startDate, endDate });
 
@@ -115,7 +112,7 @@ export async function updateProjectAdminAction(formData: FormData) {
       throw new Error("프로젝트 이름은 비워 둘 수 없습니다.");
     }
 
-    assertValidDateRange(startDate, endDate);
+    validateDateRange(startDate, endDate);
 
     const project = await updateProject({ id: projectId, name, startDate, endDate });
 

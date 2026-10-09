@@ -74,8 +74,9 @@ export async function saveUploadedSubmissionAttachment(
     throw new Error(`첨부파일은 ${runtimeEnv.uploadMaxFileSizeMb}MB 이하만 업로드할 수 있습니다.`);
   }
 
+  if (!Number.isSafeInteger(input.taskId) || input.taskId <= 0 || !Number.isSafeInteger(input.authorId) || input.authorId <= 0) throw new Error("Invalid attachment owner or task.");
+
   if (isHostedRuntime()) {
-    if (!Number.isSafeInteger(input.taskId) || input.taskId <= 0 || !Number.isSafeInteger(input.authorId) || input.authorId <= 0) throw new Error("Invalid attachment owner or task.");
     const filePath = `submissions/${input.taskId}/${input.authorId}/${randomUUID()}-${sanitizeFileName(file.name)}`;
     await queueObjectCleanup(filePath, 60 * 60 * 1000);
     try {
@@ -127,6 +128,7 @@ export async function deleteStoredSubmissionAttachment(filePath: string | null |
 export function resolveStoredSubmissionAttachmentPath(filePath: string) {
   const uploadRoot = getAbsoluteUploadDirectory();
 
+  validateObjectKey(filePath);
   return assertPathWithinRoot(uploadRoot, path.join(uploadRoot, filePath));
 }
 
