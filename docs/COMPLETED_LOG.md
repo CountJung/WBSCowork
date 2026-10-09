@@ -24,6 +24,7 @@
 - [x] **[QLT-009](#qlt-009--가시성권한-회귀-테스트-하네스-도입)** 가시성·권한 회귀 테스트 하네스 도입 · 2026-09-06
 - [x] **[QLT-010](#qlt-010--프로젝트-crud-단일화-2026-10-09)** 프로젝트 CRUD 단일화 · 2026-10-09
 - [x] **[QLT-011](#qlt-011--날짜계층첨부역할-회귀-확장-2026-10-09)** 날짜·계층·첨부·역할 회귀 확장 · 2026-10-09
+- [x] **[QLT-012](#qlt-012--native-versioned-migration-2026-10-09)** native versioned migration · 2026-10-09
 - [x] **[QLT-014](#qlt-014--필요한-next-타입-유지와-잔재-제외-2026-10-09)** 필요한 Next 타입 유지와 잔재 제외 · 2026-10-09
 
 ---
@@ -311,3 +312,14 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 검증: unit69, 실제 Worker quality375, lint0/0, typecheck, FSD5/경계, Worker build PASS. 독립 리뷰의 정상 edit 대조군 누락 2개를 보강한 뒤 재검증했다. HTTP375는 로컬 서명 JWT와 ephemeral D1/R2로 실행했으며 Google OAuth 또는 live 다중 계정 검증을 뜻하지 않는다. Worker가 streaming Content-Length를 제거할 수 있어 HTTP는 실제 bytes/헤더를, 직접 route 테스트는 오래된 metadata999와 실제3byte 구분을 검사한다.
 
 `npm run test:sites:quality`는 delete/purge/기존 destructive fixture를 실행하지 않는다. 공식 Miniflare `cf:false`로 외부 cf.json 메타데이터 조회도 제거했다. native MariaDB DB 회귀는 QLT-012의 전용 additive 하네스 결과와 별도로 구분한다.
+
+
+## QLT-012 — native versioned migration (2026-10-09)
+
+기존 mutable 초기화 경로를 불변 v1 명세, version/name/checksum/applied_at ledger, DB별 연결 lock과 postcondition 검증으로 전환했다. 명시적인 schema 연결만 DDL을 수행하고 일반 runtime/readiness는 별도다. D1 게시 migration은 변경하지 않았다.
+
+실제 MariaDB11.4.13 / Node26.11.1 / npm11.20, lockfile와 React19.2.8이 일치하는 `cecce92e06c0b042441352445f4ce9856c6bc87e`에서 전용 additive 하네스 **27 PASS**. fresh 설치, legacy core/pre-lifecycle upgrade, 원문·private·admin/member role·이력 보존, fresh 동시 runner, DDL 후 ledger 전 중단/재개, autocommit0 ledger 내구성, 대문자/공백 role·prefix index·charset·checksum 오류 거부를 확인했다. 독립 리뷰에서 지적된 schema 오류정보 비노출과 보존 조건도 반영했다.
+
+첫 실행은 DB 미기동으로 SQL 전에 실패했으나, 사용자 승인 후 새 격리 영속 DB/테스트 계정으로 재실행했다. 생성한 합성 DB10개/테이블100개는 모두 보존했고 정지·재기동 전후 schema/data snapshot이 일치했다. 기존 DB 파일719개와 artifact21개는 그대로이며 마지막에는 DB를 정지해 loopback3307 listener가 없다. 기존 destructive fixture·purge나 운영 DB를 사용하지 않았다.
+
+복구 계약은 [Native 운영](NATIVE_DATABASE_MIGRATIONS.md)에 있다. MariaDB DDL의 implicit commit 때문에 자동 down/transaction rollback을 제공하지 않는다. 현재 상태 확인 후 idempotent 재개/forward fix, 필요 시 승인된 백업 복원을 사용하며 ledger를 강제로 수정하지 않는다. 실제 운영 schema 적용과 runtime 최소권한 변경은 이번 완료에 포함되지 않고 QLT-013에서 별도로 추적한다.

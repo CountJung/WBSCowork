@@ -69,12 +69,13 @@
 <a id="qlt-010--프로젝트-crud-경로-이중화-정리"></a>
 <a id="t-014--next-envdts와-tsconfig-include-정리"></a>
 <a id="qlt-014--next-envdts와-tsconfig-include-정리"></a>
+<a id="t-012--versioned-migration-부재"></a>
+<a id="qlt-012--versioned-migration-부재"></a>
 <a id="t-011--테스트-커버리지-확장"></a>
 <a id="qlt-011--테스트-커버리지-확장"></a>
-완료: [QLT-011 테스트 경계 확장](COMPLETED_LOG.md#qlt-011--날짜계층첨부역할-회귀-확장-2026-10-09), [QLT-010 프로젝트 CRUD 중복 정리](COMPLETED_LOG.md#qlt-010--프로젝트-crud-단일화-2026-10-09), [QLT-014 타입 생성물 정리](COMPLETED_LOG.md#qlt-014--필요한-next-타입-유지와-잔재-제외-2026-10-09).
+완료: [QLT-012 native versioned migration](COMPLETED_LOG.md#qlt-012--native-versioned-migration-2026-10-09), [QLT-011 테스트 경계 확장](COMPLETED_LOG.md#qlt-011--날짜계층첨부역할-회귀-확장-2026-10-09), [QLT-010 프로젝트 CRUD 중복 정리](COMPLETED_LOG.md#qlt-010--프로젝트-crud-단일화-2026-10-09), [QLT-014 타입 생성물 정리](COMPLETED_LOG.md#qlt-014--필요한-next-타입-유지와-잔재-제외-2026-10-09).
 
 
-- [!] **[QLT-012](#qlt-012--versioned-migration-부재)** native versioned migration — 코드 구현, loopback 테스트 DB 미기동으로 실제 검증 차단; 격리 DB/계정 구성 승인 대기
 - [!] **[QLT-013](#qlt-013--db-credential-최소권한-분리)** runtime pool과 schema admin의 credential 분리 — 코드 지원 완료, 실제 계정·권한 적용/검증 승인 대기
 
 ### 9단계 — digest/report export
@@ -235,28 +236,6 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 - guest/member/admin/SU, 다른 사용자 private 자료, 역할 갱신·세션 만료, 직접 링크·위조 action, 반복/중단 업로드·동시 검토를 검사한다. 격리 테스트와 실제 다중 계정 검증의 수행 여부를 별도로 기록한다.
 - 날짜만 경과한 카드가 완료되지 않고 승인한 버전과 최종 자료가 일치한다. 한 화면의 성공 메시지뿐 아니라 DB 상태·이력·다운로드 원본과 권한을 확인한다.
 - 각 구현 작업의 필수 lint/types/FSD/build 및 영향 회귀를 통과시키고, 완료된 전체 ID는 기존 규약대로 COMPLETED_LOG로 이동한다. 실환경 검증은 승인된 합성 대상과 계정 범위를 기록하고 운영 자료에 영향을 주지 않는다.
-
----
-
-
-<a id="t-012--versioned-migration-부재"></a>
-
-### QLT-012 — versioned migration 부재
-
-**분류** 운영
-
-Sites D1은 기존 versioned migration을 사용한다. Native MariaDB에 불변 명세·checksum ledger·연결 lock·additive 재개·postcondition·forward-fix 복구 계약을 구현했다. `cecce92e`의 saved-cloud 실 DB 검증은 127.0.0.1:3307 ECONNREFUSED로 SQL 실행 전에 중단됐다. 재기동에 필요한 격리 DB/테스트 계정 구성 승인을 기다리며 완료로 표시하지 않는다. [운영/복구 계약](NATIVE_DATABASE_MIGRATIONS.md).
-
-RPT-018(D3)이 이것을 전제로 하므로 9단계 진입 전에 해결하는 편이 낫다.
-
-착수 체크리스트:
-
-- [x] migration ledger 테이블과 버전 규약 정의
-- [x] 기존 `CREATE TABLE`·`ALTER ADD` 경로를 versioned migration으로 이관
-- [x] idempotent additive upgrade·기존 기본값·FK/index 설계 및 mock 경계 검사
-- [ ] 실제 DB에서 원문/role/private/이력·ledger 보존 확인
-- [x] rollback 절차 정의
-- [ ] 테스트 DB(3307)에서 fresh install과 기존 DB upgrade 양쪽 검증
 
 ---
 

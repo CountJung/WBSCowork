@@ -360,3 +360,19 @@ lint0/0·types·FSD5/경계·unit85·Worker build·quality375 PASS. 새 단위 �
 - saved-cloud의 같은 코드/정확한 lockfile에서 lint/types/FSD, migration unit11 PASS. 실제 native migration 하네스는 loopback3307 ECONNREFUSED로 SQL 전에 exit1이다. 임의 tmpfs 재초기화/계정 구성을 하지 않았고 기존 보존 파일600개 hash는 유지했다. 영속 격리 DB 구성 승인 및 실제 native 검증이 남아 있다.
 - 따라서 QLT-010/011/014는 완료이고, QLT-012 실제 MariaDB 계약 및 QLT-013 운영 identity/권한 적용은 보류다. 전체 native CRUD/purge suite를 다시 실행하거나 통과로 계산하지 않았다.
 - Worker 계약은 합성 JWT/로컬 D1/R2를 사용한다. 실제 Google 재로그인이나 live 다중 계정 검증과 구분한다. 현재 Site에는 검증된 D1 실행 경로의 수정만 기존 공개 게시 절차로 반영한다.
+
+
+### 기존 공개 Site 반영 (2026-10-09 10:05 UTC)
+
+- GitHub와 Site source는 `6f415593f790bdfde18d0f06f2d0eed181213942` / tree `86f04dc9a0be72b181cca0a336fe3bca6eee228f`로 일치했다. 코드는 검증된 cecce92e와 같고 이후 변경은 문서다. 공식 workflow에서 이 source를 다시 빌드·패키징했다.
+- version6 / deployment `appgdep_6ac8bc4ba93c8191886084aa2921a96b`는 10:05:22 UTC terminal succeeded. 기존 공개 URL은 https://wbscowork.cometgnome.chatgpt.site 이며 환경 revision11과 D1 migration은 유지됐다. 첫 배포 요청은 승인 범위 확인으로 거부됐고 기존 명시 게시 승인 원문을 확인한 동일 요청 1회 재시도에서 성공했다.
+- 실제 URL의 anonymous session200/빈 객체, tasks·admin database307/로그인 이동, attachment401을 확인했다. dot 브라우저의 기존 로그인 세션에서 SU 표시, /tasks, /admin/projects, D1 관리9/9·정리 대기0·native 초기화 버튼 없음도 읽기 확인했다. 새 Google 로그인이나 live CRUD/역할 변경은 수행하지 않았다.
+- main은 `2f6b74d7b77106d38ad914eee14e1e073c61b039` 그대로이며 취소된 docs commit262c4b8은 현재 이력에 포함하지 않았다.
+- native 재실행은 아래의 별도 승인된 격리 영속 테스트 DB 결과를 따른다. 게시 성공과 native 검증을 구분한다.
+
+
+### QLT-012 native 실제 DB 최종 결과 (2026-10-09)
+
+사용자 승인 후 새 영속 격리 DB/테스트 계정으로 exact `cecce92e06c0b042441352445f4ce9856c6bc87e`의 `npm run test:native:migrations`를 실행해 **27 PASS**했다. MariaDB11.4.13, Node26.11.1, npm11.20, 정확한 lockfile/React19.2.8이다. fresh/legacy/pre-lifecycle, 데이터·권한 값·private·이력 보존, 동시 실행, 중단/재개, ledger 내구성, 잘못된 schema/checksum 거부를 실제 DB에서 검사했다.
+
+합성 DB10개/테이블100개는 보존됐고 정지/재기동 schema+data snapshot이 일치했다. 기존 보존 DB 파일719개/artifact21개도 변경되지 않았다. 실행 중 loopback3307만 사용하고 마지막에 정상 정지했다. 이 검증에는 DELETE/DROP/TRUNCATE/purge나 운영 최소권한 변경이 없다. 앞선 ECONNREFUSED는 최초 환경 차단 기록이며, QLT-012 실제 DB 게이트는 이 재실행으로 충족했다. QLT-013 운영 권한 검증은 계속 보류다.

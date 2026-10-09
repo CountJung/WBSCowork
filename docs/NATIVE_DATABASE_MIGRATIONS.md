@@ -44,4 +44,13 @@ MariaDB의 CREATE/ALTER는 [암묵적으로 commit](https://mariadb.com/docs/ser
 
 로컬 dot 검증: lint/types/FSD, unit85, Worker build/quality375/auth18 및 RSC decoder fingerprint PASS. schema identity 단위 계약은 이후 driver 오류정보 비노출 검사를 포함해 5건이다. 운영 최소권한 적용이나 운영 migration 완료를 뜻하지 않는다.
 
-2026-10-09 saved-cloud exact `cecce92e06c0b042441352445f4ce9856c6bc87e` / tree `0128b071bf33f2ebe77d4340a78831d52c1c4c62`: Node26.11.1, lockfile의 React19.2.8을 포함한 685 packages에 맞췄다. lint/types/FSD와 native migration 단위11건은 통과했다. 실제 `npm run test:native:migrations`는 **127.0.0.1:3307 ECONNREFUSED, exit1**로 SQL/DB 생성 전에 중단됐다. 기존 tmpfs DB 재기동은 초기화/테스트 계정 구성과 정지 시 데이터 소멸을 수반하므로 실행하지 않았다. 기존 보존 DB 파일600개의 hash는 그대로다. 격리된 영속 테스트 DB/계정 구성 승인 후 전용 하네스 결과를 다시 기록해야 하며 QLT-012는 아직 완료가 아니다.
+2026-10-09 saved-cloud exact `cecce92e06c0b042441352445f4ce9856c6bc87e` / tree `0128b071bf33f2ebe77d4340a78831d52c1c4c62`: Node26.11.1, lockfile의 React19.2.8을 포함한 685 packages에 맞췄다. lint/types/FSD와 native migration 단위11건은 통과했다. 실제 `npm run test:native:migrations`는 **127.0.0.1:3307 ECONNREFUSED, exit1**로 SQL/DB 생성 전에 중단됐다. 기존 tmpfs DB 재기동은 초기화/테스트 계정 구성과 정지 시 데이터 소멸을 수반하므로 실행하지 않았다. 기존 보존 DB 파일600개의 hash는 그대로다. 이 최초 실행을 통과로 계산하지 않았으며, 이후 승인된 재실행 결과는 아래와 같다.
+
+이후 사용자가 격리 영속 테스트 DB/계정 구성과 전용 하네스 실행을 승인했다. 이 승인은 운영 QLT-013 권한 변경이나 기존 native purge 테스트를 포함하지 않는다.
+
+
+### 승인된 영속 fixture 재검증 결과
+
+같은 `cecce92e`에서 MariaDB11.4.13 / Node26.11.1 / npm11.20과 정확한 lockfile로 **27 PASS**. 빈 설치·기존 core/pre-lifecycle upgrade, 재실행·내용/private/역할/이력 보존, 겹치는 fresh runner, 중단/재개, autocommit0 durable ledger, 잘못된 schema/role/checksum 거부를 확인했다. 합성 DB10개/테이블100개를 보존했고 DB 정지·재기동 후 schema/data snapshot이 모두 일치했다. 기존 보존 DB 파일719개와 artifact21개는 변경되지 않았다. 마지막에는 DB를 정상 정지했고 listener도 없다.
+
+테스트 listener는 실행 중 127.0.0.1:3307로 한정됐다. 실제 운영 계정의 DDL/ledger 거부, 운영 credential 구성, 실제 운영 migration 및 과거 native purge fixture는 수행하지 않았다. QLT-012의 migration 구현/검증은 완료이며 QLT-013의 실제 최소권한 운영 단계는 별도다.
