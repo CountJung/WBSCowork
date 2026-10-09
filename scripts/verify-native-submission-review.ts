@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
 export async function verifyNativeSubmissionReview(check: (value: unknown, label: string) => void) {
-  const { createTask, updateTask, getTaskById } = await import('../src/entities/task/index.server');
+  const { createTask, updateTask, getTaskById, listPersonalWorkPage } = await import('../src/entities/task/index.server');
   const { createSubmissionWithAttachments, updateSubmissionWithAttachments, getSubmissionById, requestSubmissionReview, decideSubmissionReview, cancelOrReopenSubmissionReview, getSubmissionReviewContext } = await import('../src/entities/submission/index.server');
   const { getDatabasePool } = await import('../src/shared/server/database/index.server');
   const owner = { userId: 2, isAdmin: false, isSuperuser: false }, reviewer = { ...owner, userId: 3 }, admin = { userId: 4, isAdmin: true, isSuperuser: false };
@@ -48,4 +48,11 @@ export async function verifyNativeSubmissionReview(check: (value: unknown, label
   check(Number(count.n) === state.version && Number(count.versions) === state.version && state.review_submission_id === null && state.review_revision_number === null, 'native exact-version state/history and cleared selection remain consistent');
   const original = (await db.query('SELECT content FROM submission_revisions WHERE submission_id=? AND revision_number=1', [submissionId]) as { content: string }[])[0];
   check(original.content === 'Native review v1', 'native review and resubmission preserve original text');
+  for(const viewerUserId of [2,3,4]) for(const scope of ['mine','contributed','review'] as const) {
+    const page=await listPersonalWorkPage({viewerUserId,isSuperuser:false},{scope,status:'all',overdue:false,page:1},'2026-10-09');
+    assert.equal(new Set(page.items.map(item=>item.taskId)).size,page.items.length);
+    assert.ok(page.items.length<=20&&page.total>=page.items.length);
+    if(scope==='review')assert.equal(page.total,0);
+  }
+  check(true,'native personal queues execute all role/scope combinations with consistent bounded results');
 }

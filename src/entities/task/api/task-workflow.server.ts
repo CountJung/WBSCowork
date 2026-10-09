@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { databaseBatch, getDatabasePool, type QueryStatement } from "@/src/shared/server/database/index.server";
+import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { normalizeWorkGoal } from "@/src/shared/lib/work-goals";
 import { canExecuteTask, taskVersion, workOperationToken, type TaskActor, type TaskEvent, type TaskStatus } from "../model/workflow";
@@ -87,7 +88,7 @@ export async function changeTaskStatus(input:{id:number;actor:TaskActor;token:st
   const invalidatesReview = task.reviewRequired && (task.status === 'done' || task.status === 'changes_requested');
   await commitTaskMutation({...input,actor,kind:'status',note,payload,setSql:'status=?,workflow_note=?',setParams:[input.status,invalidatesReview?'작업 변경으로 검토를 다시 진행해야 합니다.':note],
     invalidateReview:invalidatesReview?{reason:note || '작업 상태가 변경되었습니다.'}:undefined,
-    guardSql:`status<>'review_pending' AND (?=1 OR assignee_id=? OR EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND actor.role='admin'))${input.status==='done'?" AND review_required=0 AND EXISTS(SELECT 1 FROM submissions s WHERE s.task_id=tasks.id AND s.author_id=tasks.assignee_id)":''}`,guardParams:[actor.isSuperuser?1:0,actor.userId,actor.userId]});
+    guardSql:`status<>'review_pending' AND (?=1 OR assignee_id=? OR EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND actor.role='admin'))${input.status==='done'?" AND review_required=0 AND EXISTS(SELECT 1 FROM users assignee WHERE assignee.id=tasks.assignee_id AND (assignee.role IN ('member','admin') OR LOWER(assignee.email)=?)) AND EXISTS(SELECT 1 FROM submissions s WHERE s.task_id=tasks.id AND s.author_id=tasks.assignee_id)":''}`,guardParams:[actor.isSuperuser?1:0,actor.userId,actor.userId,...(input.status==='done'?[getRuntimeEnv().auth.superuserEmail??'']:[])]});
 }
 
 export async function listTaskEventsByProject(projectId:number):Promise<TaskEvent[]> {

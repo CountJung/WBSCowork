@@ -429,3 +429,7 @@ exact `b0353724f3277479813352efdd5b47cd2939939d`에서 MariaDB11.4.13 / Node26.1
 ### PRD-044 로컬 브라우저 제약
 
 합성 fixture는 명시된 loopback URL에서 대기했지만 managed cloud browser에서 두 서버 세션 모두 connection refused였다. 공식 network-escalated readiness 명령은 sandbox mount 오류로 실행되지 않았다. 오류 화면의 브라우저 내부 protocol 접근도 정책상 거부되어 재시도하지 않았다. 포트 공개/네트워크 설정 변경/다른 브라우저 제어로 우회하지 않았고 두 fixture 세션은 종료했다. 따라서 local interactive browser 검증은 아직 통과로 계산하지 않으며 게시 후 정상 HTTPS 페이지에서 지원되는 브라우저 검증으로 확인할 예정이다.
+
+### 최종 P0 completion guard 보강
+
+검토 없는 완료의 담당자 자격도 transaction 안에서 현재 DB role/SU 이메일로 다시 검사하도록 보강했다. 사전 검증과 실제 쓰기의 조건이 같아지며 기존 역할을 확대하지 않는다. native 검토 하네스에 mine/contributed/review SQL 실행·중복 없는 bounded 결과의 읽기 전용 검사를 추가했다. 배포에는 이 최종 source를 사용하며 이전 saved version7은 게시하지 않는다.
