@@ -214,7 +214,7 @@ async function commitReview(input: SubmissionReviewInput, kind: ReviewAction, re
     { sql: 'UPDATE submissions SET id=id WHERE id=? AND task_id=?', params: [input.submissionId, input.taskId] },
     {
       sql: `UPDATE tasks SET status=?,review_submission_id=?,review_revision_number=?,workflow_note=?,version=version+1,last_operation_token=?
-        WHERE id=? AND version=? AND ${commonGuard} AND ${transitionGuard} ${['review_requested','approved'].includes(kind)?`AND ${taskPredecessorsCompleteSql}`:''}
+        WHERE id=? AND version=? AND ${commonGuard} AND ${transitionGuard} ${['review_requested','approved','changes_requested'].includes(kind)?`AND ${taskPredecessorsCompleteSql}`:''}
         AND NOT EXISTS(SELECT 1 FROM submission_events applied WHERE applied.operation_token=?)`,
       params: [status, cancel ? null : input.submissionId, cancel ? null : revision, publicReviewNote, key,
         input.taskId, version, ...commonParams, ...transitionParams, key],

@@ -485,3 +485,11 @@ source `82d7d516ef34ed8718dbfe09d6189b7f81cacfe8` / tree `4144cbda144bc79311f82d
 - 단위118, D1 P1계약45, lint/types/FSD5/build/decoder 통과. 독립 SQL·렌더링 검토에서 권한 누출은 발견되지 않았고 파일명 일치 표시 및 이름/id만 조회하는 selector를 보완했다.
 - 첫 전체 Worker workflow는 기존 동일 token 동시 승인 POST에서 HTTP503으로 중단되어 실패로 기록한다(QLT-016 재발). 합성 응답의 action/path/status/content-type/짧은 오류 body 진단을 추가한 별도 재실행은455 PASS였다. 정상 요청을 자동 재시도하거나 assertion을 완화하지 않았다. 503 원인은 아직 확정되지 않았으며 이 재실행을 원인 해결로 표시하지 않는다.
 - Native harness에 검색 가시성/문자 wildcard/guest3조건을 추가했다. 실제 MariaDB 결과 및 게시 후 UI는 다음 게이트다.
+
+### P1 / PRD-043 및 최종 통합 코드 체크포인트
+
+- 수신자별 `/notifications`, unread/all20개 pagination, 정확한 카드/제출 version 링크와 idempotent 읽음 receipt를 추가했다. 배정 변경 기간·현재 역할·검토 token/선택 version/상태·현재/과거 visibility를 SQL에서 다시 확인한다. 읽음 action도 동일 relation을 사용하고 source/recipient 위조와 교차 출처 요청을 거부한다. 외부 알림은 없다.
+- 단위119 PASS (이 환경의 native DB suite는3307 미접속으로 미실행), 로컬 D1 P1 계약65 PASS, 최종 실제 Worker workflow472 PASS, credential-free auth18 PASS, lint/types/FSD5/build/패치된 decoder 확인 통과. 별도 독립 정적 인수 검토와 pure unit7 PASS. 실제 Google 토큰 교환을 이 검사로 주장하지 않는다.
+- 최종 검토에서 보완 요청 판정의 transaction-time 선행 업무 조건 한 곳을 추가했다. 일반 blocked-predecessor 거부 회귀는 추가했으며 차단된 삭제/cleanup race나 별도 interleaving은 실행하지 않았다.
+- 신규 HTTP 테스트의 첫2회는 테스트 작성 오류로 중단됐다: Miniflare FormData 전달이 action으로 해석되지 않아200/무변경으로 끝났고, 반환 Location의 절대 URL을 상대 문자열로 비교했다. 기존 수동 multipart fixture와 URL pathname/search 검증으로 수정한 뒤472 PASS, 최종 코드 rebuild 후472 PASS를 확인했다. 앱 권한을 완화하거나 실패 요청을 자동 재시도하지 않았다.
+- 새 D1 0012/native v8은 읽음 receipt 표만 추가한다. 검색/알림 보관 설명을 개인정보 안내에 반영했다. Native 최종 exact-SHA 검증과 같은 Site 게시, live UI 인수는 후속 게이트로 남아 있다.

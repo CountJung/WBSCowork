@@ -45,4 +45,27 @@ export async function verifyP1Http(ctx){
  const anonymous=await request('/search?q=P1_SSR');check(anonymous.status>=300&&anonymous.status<400,'P1 anonymous search redirects before data');
  const malformed=await(await request('/search?page=1001',member)).text();check(malformed.includes('검색 페이지 범위')&&!malformed.includes('P1_SSR_PRIVATE_ONE'),'P1 invalid search does not execute data query');
 
+ const noticeTitle='P1_HTTP_ASSIGNED_TO_TWO';
+ await form(route,member,create,{projectId,title:noticeTitle,assigneeId:3,startDate:'2026-01-01',endDate:'2026-01-02'});
+ const notice=await db.prepare("SELECT e.id FROM task_events e JOIN tasks t ON t.id=e.task_id WHERE t.title=? AND e.kind='created'").bind(noticeTitle).first();
+ const recipient=actorCookies.member2;
+ const noticeHtml=await(await request('/notifications',recipient)).text();
+ check(noticeHtml.includes(noticeTitle)&&noticeHtml.includes('업무가 배정되었습니다.'),'P1 HTTP recipient sees actionable assignment notice');
+ for(const role of ['guest','member1','admin','superuser'])check(!(await(await request('/notifications',actorCookies[role])).text()).includes(noticeTitle),'P1 HTTP '+role+' cannot read another recipient notice');
+ const markRead=renderedAction(noticeHtml,'markNotificationReadAction');
+ const countReads=async()=>Number((await db.prepare("SELECT COUNT(*) n FROM notification_reads WHERE source_kind='task' AND source_id=?").bind(notice.id).first()).n);
+ await form('/notifications',member,markRead,{source:'task',sourceId:notice.id});
+ check(await countReads()===0,'P1 HTTP forged recipient action inserts no receipt');
+ const crossBoundary='wbs-notification-cross';let crossBody='';for(const [key,value]of[[markRead,''],['source','task'],['sourceId',notice.id]])crossBody+=`--${crossBoundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`;crossBody+=`--${crossBoundary}--\r\n`;
+ const cross=await request('/notifications',recipient,{method:'POST',headers:{Origin:'https://untrusted.invalid','Content-Type':`multipart/form-data; boundary=${crossBoundary}`},body:crossBody});await cross.text();
+ const crossReadCount=await countReads();check(cross.status>=400&&crossReadCount===0,'P1 HTTP cross-origin mark-read rejected without mutation');
+ const readFields={source:'task',sourceId:notice.id,scope:'all',page:1};
+ const readResponse=await form('/notifications?scope=all',recipient,markRead,readFields);await form('/notifications?scope=all',recipient,markRead,readFields);
+ check(await countReads()===1,'P1 HTTP repeated read stores one recipient receipt');
+ const returnedLocation=new URL(readResponse.headers.get('location'),'https://fixture.invalid');
+ check(returnedLocation.pathname==='/notifications'&&returnedLocation.search==='?scope=all&page=1','P1 HTTP mark-read preserves validated inbox context');
+ check(!(await(await request('/notifications',recipient)).text()).includes(noticeTitle)&&(await(await request('/notifications?scope=all',recipient)).text()).includes(noticeTitle),'P1 HTTP read notice leaves unread and remains in all');
+ const anonymousNotice=await request('/notifications');check(anonymousNotice.status>=300&&anonymousNotice.status<400,'P1 HTTP anonymous inbox redirects before data');
+ check((await(await request('/notifications?page=1001',recipient)).text()).includes('알림 조건을 확인'),'P1 HTTP inbox pagination rejects invalid bound');
+
 }

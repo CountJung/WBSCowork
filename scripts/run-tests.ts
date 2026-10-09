@@ -13,7 +13,7 @@ import { spawn } from "node:child_process";
 import { createConnection } from "mariadb";
 import { applyTestEnv, testDatabaseEnv } from "../tests/helpers/test-env";
 
-const UNIT_TESTS = ["tests/work-search.test.ts","tests/task-templates.test.ts","tests/task-dependencies.test.ts","tests/personal-work.test.ts", "tests/submission-revisions.test.ts", "tests/project-gantt-completion.test.ts", "tests/work-goals.test.ts", "tests/policy.test.ts", "tests/query-scope.test.ts", "tests/log-redaction.test.ts", "tests/admin-runtime.test.ts", "tests/project-actions.test.ts", "tests/quality-boundaries.test.ts", "tests/download-headers.test.ts", "tests/schema-credentials.test.ts", "tests/native-migrations.test.ts", "tests/transaction-retry.test.ts", "tests/test-preload.test.ts"];
+const UNIT_TESTS = ["tests/notifications.test.ts","tests/work-search.test.ts","tests/task-templates.test.ts","tests/task-dependencies.test.ts","tests/personal-work.test.ts", "tests/submission-revisions.test.ts", "tests/project-gantt-completion.test.ts", "tests/work-goals.test.ts", "tests/policy.test.ts", "tests/query-scope.test.ts", "tests/log-redaction.test.ts", "tests/admin-runtime.test.ts", "tests/project-actions.test.ts", "tests/quality-boundaries.test.ts", "tests/download-headers.test.ts", "tests/schema-credentials.test.ts", "tests/native-migrations.test.ts", "tests/transaction-retry.test.ts", "tests/test-preload.test.ts"];
 const DATABASE_TESTS = ["tests/visibility.e2e.test.ts"];
 
 applyTestEnv();

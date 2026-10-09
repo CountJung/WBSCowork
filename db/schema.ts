@@ -172,3 +172,7 @@ export const taskTemplateRuns=sqliteTable('task_template_runs',{
  id:id(),projectId:integer('project_id').notNull().references(()=>projects.id,{onDelete:'cascade'}),actorId:integer('actor_id').references(()=>users.id,{onDelete:'set null'}),
  templateKey:text('template_key').notNull(),templateVersion:integer('template_version').notNull(),operationToken:text('operation_token').notNull().unique(),requestFingerprint:text('request_fingerprint').notNull(),taskCount:integer('task_count').notNull(),createdAt:createdAt(),completedAt:text('completed_at'),
 });
+
+export const notificationReads=sqliteTable('notification_reads',{
+ id:id(),recipientId:integer('recipient_id').notNull().references(()=>users.id,{onDelete:'cascade'}),projectId:integer('project_id').notNull().references(()=>projects.id,{onDelete:'cascade'}),sourceKind:text('source_kind').notNull(),sourceId:integer('source_id').notNull(),readAt:text('read_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+},t=>[uniqueIndex('notification_read_unique').on(t.recipientId,t.sourceKind,t.sourceId),index('notification_reads_project_idx').on(t.projectId)]);

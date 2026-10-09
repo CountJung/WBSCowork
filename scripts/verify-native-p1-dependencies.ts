@@ -42,4 +42,13 @@ export async function verifyNativeP1Dependencies(check:(value:unknown,label:stri
  check((await search(3,'50%_!')).total===1,'native search treats wildcards literally');
  check((await search(1,'P1_NATIVE_SEARCH_PRIVATE')).items.length===0,'native guest search has no private snippet');
 
+ const {listNotifications,markNotificationRead}=await import('../src/entities/notification/index.server');
+ const assignment=(await listNotifications({userId:3,isSuperuser:false},{scope:'all',page:1})).items.find(item=>item.taskId===created[0].taskIds[1]);
+ check(Boolean(assignment),'native template assignment produces targeted inbox row');
+ if(!assignment)throw new Error('native assignment notice absent');
+ await Promise.all([markNotificationRead({userId:3,isSuperuser:false},assignment.source,assignment.sourceId),markNotificationRead({userId:3,isSuperuser:false},assignment.source,assignment.sourceId)]);
+ check(Number((await db.query('SELECT COUNT(*) n FROM notification_reads WHERE recipient_id=3 AND source_kind=? AND source_id=?',[assignment.source,assignment.sourceId]) as {n:number}[])[0].n)===1,'native repeated notification read creates one receipt');
+ await markNotificationRead({userId:2,isSuperuser:false},assignment.source,assignment.sourceId);
+ check(Number((await db.query('SELECT COUNT(*) n FROM notification_reads WHERE recipient_id=2 AND source_kind=? AND source_id=?',[assignment.source,assignment.sourceId]) as {n:number}[])[0].n)===0,'native guessed notification cannot write another recipient receipt');
+
 }
