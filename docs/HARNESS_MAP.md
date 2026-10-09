@@ -376,3 +376,10 @@ lint0/0·types·FSD5/경계·unit85·Worker build·quality375 PASS. 새 단위 �
 사용자 승인 후 새 영속 격리 DB/테스트 계정으로 exact `cecce92e06c0b042441352445f4ce9856c6bc87e`의 `npm run test:native:migrations`를 실행해 **27 PASS**했다. MariaDB11.4.13, Node26.11.1, npm11.20, 정확한 lockfile/React19.2.8이다. fresh/legacy/pre-lifecycle, 데이터·권한 값·private·이력 보존, 동시 실행, 중단/재개, ledger 내구성, 잘못된 schema/checksum 거부를 실제 DB에서 검사했다.
 
 합성 DB10개/테이블100개는 보존됐고 정지/재기동 schema+data snapshot이 일치했다. 기존 보존 DB 파일719개/artifact21개도 변경되지 않았다. 실행 중 loopback3307만 사용하고 마지막에 정상 정지했다. 이 검증에는 DELETE/DROP/TRUNCATE/purge나 운영 최소권한 변경이 없다. 앞선 ECONNREFUSED는 최초 환경 차단 기록이며, QLT-012 실제 DB 게이트는 이 재실행으로 충족했다. QLT-013 운영 권한 검증은 계속 보류다.
+
+
+## PRD-033 프로젝트 전환 checkpoint (2026-10-09)
+
+프로젝트 선택 UI를 모든 인증 사용자에게 제공하고 관리 버튼만 기존 admin/SU guard 안에 남겼다. 선택 링크는 이전 taskId를 제거하며 현재 프로젝트에 aria-current를 표시한다. 기존 조회 SQL·private 필터·관리 action 권한은 바꾸지 않았다.
+
+lint0/0, typecheck, FSD5/경계, Worker build, `npm run test:sites:workflow` **187 PASS**. 실제 workerd의 두 프로젝트/guest·member2명·admin·SU, 반복 전환·관리 버튼 경계·다른 프로젝트 제출 누출 없음·정상 direct-link 선택과 위조 관계 거부를 검사했다. 독립 읽기 리뷰 후 direct-link 정상 대조군을 보강했다. 브라우저 클릭/Back/Forward·모바일은 아직 실행하지 않았고 PRD-044에서 함께 확인한다. Google 재로그인/운영 데이터 변경은 없다.

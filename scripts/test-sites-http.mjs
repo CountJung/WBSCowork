@@ -6,6 +6,7 @@ import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Miniflare, Log, LogLevel } from "miniflare";
 import { encode } from "next-auth/jwt";
+import { verifyTeamWorkflow } from "./verify-team-workflow.mjs";
 import { verifySitesQuality } from "./verify-sites-quality.mjs";
 import { verifyBugHttp } from "./verify-bug-http.mjs";
 import { verifySitesCrud } from "./verify-sites-crud.mjs";
@@ -95,7 +96,10 @@ try {
     check(result===0,"cloud Chromium desktop/mobile QA");
   }
   const actionOrigin=new URL(await mf.ready).origin;
-  if (process.argv.includes("--quality")) {
+  if (process.argv.includes("--workflow")) {
+    await verifyTeamWorkflow({request,db,bucket,actorCookies,actionOrigin,check});
+    console.log(`Actual Worker team workflow checks passed: ${checks}. Synthetic local fixtures; no permanent deletion or real Google login.`);
+  } else if (process.argv.includes("--quality")) {
     await verifySitesQuality({request,db,bucket,actorCookies,actionOrigin,check});
     console.log(`Actual Worker quality checks passed: ${checks}. Ephemeral synthetic fixtures; no delete/purge scenarios or real Google login.`);
   } else {

@@ -334,39 +334,39 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
         <TaskWritePolicy canWrite={canWrite} />
 
-        {canManageProjects ? (
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
+        <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
             <Stack spacing={2}>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ justifyContent: "space-between", alignItems: { sm: "center" } }}>
                 <Stack spacing={0.5}>
                   <Typography variant="h5">프로젝트 선택</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    다른 프로젝트로 전환하면 해당 작업 트리가 함께 전환됩니다. 프로젝트 생성·수정·삭제는 관리자 메뉴의 프로젝트 관리에서 할 수 있습니다.
+                    프로젝트를 선택하면 해당 프로젝트의 작업을 표시합니다. 프로젝트 생성·수정·삭제는 관리자만 할 수 있습니다.
                   </Typography>
                 </Stack>
-                <Button href="/admin/projects" variant="outlined" size="small" sx={{ flexShrink: 0 }}>
-                  프로젝트 관리
-                </Button>
+                {canManageProjects ? (
+                  <Button href="/admin/projects" variant="outlined" size="small" sx={{ flexShrink: 0 }}>
+                    프로젝트 관리
+                  </Button>
+                ) : null}
               </Stack>
               <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ flexWrap: "wrap" }}>
                 {projects.length > 0 ? (
                   projects.map((project) => {
                     const active = selectedProject?.id === project.id;
                     return (
-                      <Button key={project.id} href={`/tasks?projectId=${project.id}`} variant={active ? "contained" : "outlined"}>
+                      <Button key={project.id} href={`/tasks?projectId=${project.id}`} variant={active ? "contained" : "outlined"} aria-current={active ? "page" : undefined}>
                         {project.name}
                       </Button>
                     );
                   })
                 ) : (
                   <Typography variant="body2" color="text.secondary">
-                    아직 생성된 프로젝트가 없습니다. 관리자 메뉴에서 먼저 프로젝트를 만들어 주세요.
+                    {canManageProjects ? "아직 생성된 프로젝트가 없습니다. 관리자 메뉴에서 먼저 프로젝트를 만들어 주세요." : "아직 조회할 프로젝트가 없습니다. 관리자에게 프로젝트 생성을 요청하세요."}
                   </Typography>
                 )}
               </Stack>
             </Stack>
-          </Paper>
-        ) : null}
+        </Paper>
 
         {selectedProject ? (
           <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
