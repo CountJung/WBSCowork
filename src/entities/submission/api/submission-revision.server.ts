@@ -1,3 +1,4 @@
+import { lockTaskProject } from "@/src/shared/server/task-dependencies/index.server";
 import { createHash } from "node:crypto";
 import { databaseBatch, getDatabasePool, type QueryStatement } from "@/src/shared/server/database/index.server";
 import { getHostedAttachments, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
@@ -266,7 +267,8 @@ export async function commitSubmissionRevision(input: UpdateSubmissionInput, att
   // The literal exclusion list is formed only from validated safe positive integers, avoiding D1's 100-bind limit.
   const exclude = removeIds.length ? ` AND previous.id NOT IN (${removeIds.join(",")})` : "";
   await databaseBatch([
-    // Every review/revision batch takes the task row before the submission row.
+    // Serialize reopening with dependency writes, then lock task before submission.
+    lockTaskProject(existing.task_id),
     { sql: "UPDATE tasks SET id=id WHERE id=?", params: [existing.task_id] },
     {
       sql: `UPDATE submissions SET content=?,visibility=?,material_url=?,file_path=?,file_name=?,file_mime_type=?,file_size_bytes=?,current_revision=current_revision+1,version=version+1,last_operation_token=? WHERE id=? AND current_revision=? AND ${access.sql} AND EXISTS(SELECT 1 FROM submission_revisions previous_revision WHERE previous_revision.submission_id=submissions.id AND previous_revision.revision_number=submissions.current_revision) AND NOT EXISTS(SELECT 1 FROM submission_events applied WHERE applied.operation_token=?)${lease.sql}${legacyGuard.sql}`,

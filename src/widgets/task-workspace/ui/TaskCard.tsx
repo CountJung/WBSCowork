@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Button, Checkbox, FormControlLabel, Chip, Divider, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import MarkdownContent from "@/src/shared/ui/markdown-content";
 import SubmitButton from "@/src/shared/ui/submit-button";
@@ -16,6 +16,7 @@ import type { User } from "@/src/entities/user";
 type ContentAction = (formData: FormData) => Promise<void>;
 
 type TaskCardProps = {
+  dependencyPanel?:ReactNode;
   returnTo?: string;
   task: Task;
   currentUserId:number|null;
@@ -43,7 +44,7 @@ type TaskCardProps = {
 };
 
 export default function TaskCard({
-  task, currentUserId, events, changeTaskStatusAction, returnTo,
+  task, currentUserId, events, changeTaskStatusAction, returnTo, dependencyPanel,
   orderedTasks,
   projectId,
   users, eligibleUserIds,
@@ -137,6 +138,7 @@ export default function TaskCard({
           ) : null}
         </Stack>
 
+        {dependencyPanel}
         {canExecute ? <Stack component="form" action={changeTaskStatusAction} spacing={1.5}>
           <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={projectId}/><input type="hidden" name="taskId" value={task.id}/><input type="hidden" name="version" value={task.version}/><input type="hidden" name="operationToken" value={statusToken}/>
           <Stack direction={{xs:"column",sm:"row"}} spacing={1.5}><TextField select name="taskStatus" label="진행 상태" defaultValue={['planned','in_progress','blocked','done'].includes(task.status)?task.status:'in_progress'} fullWidth><MenuItem value="planned">예정</MenuItem><MenuItem value="in_progress">진행 중</MenuItem><MenuItem value="blocked">차단됨</MenuItem>{!task.reviewRequired?<MenuItem value="done">완료</MenuItem>:null}</TextField><SubmitButton pendingLabel="상태 저장 중…" variant="outlined">상태 저장</SubmitButton></Stack>

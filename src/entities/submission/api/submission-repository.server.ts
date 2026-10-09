@@ -1,3 +1,4 @@
+import { lockTaskProject } from "@/src/shared/server/task-dependencies/index.server";
 import { createHash, randomUUID } from "node:crypto";
 import type { StoredSubmissionAttachment } from "./submission-files.server";
 import type { SubmissionActor } from "../model/submission-revision";
@@ -189,6 +190,7 @@ export async function deleteSubmission(submissionId: number, actor?: SubmissionA
   // The action has already confirmed permanent deletion. This batch only keeps
   // the task projection consistent with that exact, freshly authorized deletion.
   const results = await databaseBatch([
+    lockTaskProject(existingSubmission.taskId),
     { sql: 'UPDATE tasks SET id=id WHERE id=?', params: [existingSubmission.taskId] },
     {
       sql: `UPDATE submissions SET last_operation_token=? WHERE id=? AND task_id=? AND ${access.sql}`,

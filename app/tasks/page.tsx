@@ -17,17 +17,19 @@ import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import { listCommentsByProject } from "@/src/entities/comment/index.server";
 import { listAttachmentsByProject, listSubmissionsByProject } from "@/src/entities/submission/index.server";
 import { listAllProjects } from "@/src/entities/project/index.server";
-import { listTasksByProject, listTaskEventsByProject } from "@/src/entities/task/index.server";
+import { listTasksByProject, listTaskEventsByProject, getDependencySnapshot } from "@/src/entities/task/index.server";
 import { getOrderedTasks, getSelectedTask, parsePersonalWorkReturnTo } from "@/src/entities/task";
 import { getSelectedProject } from "@/src/entities/project";
 import { formatDate } from "@/src/shared/lib/date";
 import SubmitButton from "@/src/shared/ui/submit-button";
+import {setTaskPredecessorsAction} from "@/src/features/task-dependencies/index.server";
+import {TaskDependencyPanel,ProjectWorkSummary} from "@/src/widgets/task-dependencies";
 import ProjectGanttChart from "@/src/widgets/project-gantt";
 import { TaskCard, TaskFocusController } from "@/src/widgets/task-workspace";
 import type { Comment } from "@/src/entities/comment";
 import type { Project } from "@/src/entities/project";
 import type { SubmissionAttachment, Submission } from "@/src/entities/submission";
-import type { Task, TaskEvent } from "@/src/entities/task";
+import type { Task, TaskEvent, DependencySnapshot } from "@/src/entities/task";
 import { canWriteTaskContent, getUserRoleLabel, canManageAllSubmissions, canAccessAdminPanel } from "@/src/entities/user";
 import {
   changeTaskStatusAction,
@@ -168,10 +170,11 @@ function TaskList({
   project,
   selectedTaskId,
   submissionsByTaskId,
-  users, currentUserId, eventsByTaskId, eligibleUserIds, returnTo,
+  users, currentUserId, eventsByTaskId, eligibleUserIds, returnTo, dependencySnapshot,
 }: {
   returnTo?:string;
   eligibleUserIds:number[];
+  dependencySnapshot:DependencySnapshot;
   currentUserId: number | null;
   eventsByTaskId: Record<number,TaskEvent[]>;
   canWrite: boolean;
@@ -203,6 +206,7 @@ function TaskList({
           <TaskCard
             key={`${task.id}:${task.version}`}
             task={task}
+            dependencyPanel={<TaskDependencyPanel setTaskPredecessorsAction={setTaskPredecessorsAction} task={task} tasks={orderedTasks} snapshot={dependencySnapshot} canWrite={canWrite}/>}
             returnTo={returnTo}
             orderedTasks={orderedTasks}
             projectId={project.id}
@@ -273,7 +277,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const usersTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "users" && table.exists && table.missingColumns.length === 0);
 
   const taskEventsReady=databaseStatus.tables.some(table=>table.name==="task_events"&&table.exists&&table.missingColumns.length===0);
-  const revisionsReady=["submission_revisions","submission_events","submission_attachments"].every(name=>databaseStatus.tables.some(table=>table.name===name&&table.exists&&table.missingColumns.length===0));
+  const revisionsReady=["submission_revisions","submission_events","submission_attachments","task_dependencies"].every(name=>databaseStatus.tables.some(table=>table.name===name&&table.exists&&table.missingColumns.length===0));
   if (!revisionsReady || !taskEventsReady || !projectsTableReady || !tasksTableReady || !submissionsTableReady || !commentsTableReady || !usersTableReady) {
     return (
       <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
@@ -319,6 +323,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         listAttachmentsByProject(selectedProject.id, visibleSubmissionScope, visibilityFilter),
       ])
     : [[] as Comment[], [] as SubmissionAttachment[]];
+  const dependencySnapshot=selectedProject?await getDependencySnapshot(selectedProject.id):{version:0,edges:[]};
   const taskEvents=selectedProject?await listTaskEventsByProject(selectedProject.id):[];
   const eventsByTaskId:Record<number,TaskEvent[]>={};
   for(const event of taskEvents) { const group=eventsByTaskId[event.task_id]??=[]; if(group.length<10)group.push(event); }
@@ -412,10 +417,12 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
         {canWrite && selectedProject ? <TaskCreateForm returnTo={returnTo} eligibleUserIds={eligibleUserIds} orderedTasks={orderedTasks} project={selectedProject} users={users} /> : null}
 
-        {selectedProject ? <ProjectGanttChart project={selectedProject} tasks={orderedTasks} /> : null}
+        {selectedProject ? <ProjectGanttChart project={selectedProject} tasks={orderedTasks} dependencies={dependencySnapshot.edges} /> : null}
+        {selectedProject?<ProjectWorkSummary tasks={orderedTasks} edges={dependencySnapshot.edges}/>:null}
 
         {selectedProject ? (
           <TaskList
+            dependencySnapshot={dependencySnapshot}
             returnTo={returnTo}
             eligibleUserIds={eligibleUserIds}
             currentUserId={currentDbUserId}

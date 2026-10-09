@@ -137,6 +137,20 @@ try {
     check(Number((await resumeV4.connection.query('SELECT COUNT(*) AS n FROM submission_revisions WHERE submission_id=1'))[0].n)===1&&(await resumeV4.connection.query('SELECT revision_number FROM comments WHERE id=1'))[0].revision_number===null,'v4 repeat retains one snapshot and unknown legacy comment revision');
   }finally{await resumeV4.connection.end();}
 
+  const resumeV6=await fresh('resume_v6');
+  try {
+    let interrupted=false;
+    const proxy:MigrationConnection={query:async(sql,params)=>{
+      const result=await resumeV6.connection.query(sql,params);
+      if(!interrupted&&sql.includes('ADD COLUMN dependency_token ')){interrupted=true;throw new Error('synthetic interrupted v6');}
+      return result;
+    }};
+    await assert.rejects(runNativeMigrations(proxy,resumeV6.name),/interrupted v6/);checks++;
+    check(Number((await resumeV6.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===5,'interrupted v6 retains previous ledgers');
+    await runNativeMigrations(resumeV6.connection,resumeV6.name);
+    check((await readNativeMigrationStatus(resumeV6.connection,resumeV6.name)).pendingVersions.length===0,'v6 resumes additive dependency graph without table rebuild');
+  }finally{await resumeV6.connection.end();}
+
   const execution=await fresh('execution');
   try {
     await runNativeMigrations(execution.connection,execution.name);

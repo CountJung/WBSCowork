@@ -463,3 +463,12 @@ source `82d7d516ef34ed8718dbfe09d6189b7f81cacfe8` / tree `4144cbda144bc79311f82d
 사용자가 직접 앱에서 제거한 뒤 2026-10-09 13:00 UTC 전후 D1을 읽기 확인했다. 합성 project2/3, task3–5 및 이력1–5, submission3 및 revision/event1–2, comment2, attachment4–6이 모두 없어 해당8개 table은0건이며 file_cleanup_jobs도0건이다. 감사113/114는 각각 project3(12:53:32.244 UTC), project2(12:53:40.715 UTC)의 project.delete completed이고 관련 cleanup 실패 기록은 없다. 파일 참조/정리 대기가 없다는 앱 수준 증거이며 독립 R2 bucket inventory 검증으로 표현하지 않는다.
 
 기존 사용자1명의 ID/email/role은 그대로이고 last_login_at/last_synced_at만 갱신됐다. 기존 bug purge receipt도 동일하며 감사는 보존됐다. 에이전트의 앞선 checkbox 조작은 플랫폼 검토에 의해2회 거부되어 중단했고 purge 버튼을 제출하지 않았다. 이번 확인은 읽기 전용이다. 클라우드 저장소/worktree·별도 MariaDB fixture는 웹 QA 프로젝트와 다르며 정리하지 않았다. 정확한 목록은 [P0 인수 결과](P0_ACCEPTANCE_2026-10-09.md)를 따른다. 앱 코드는 unchanged이므로 version9 게시를 유지한다.
+
+## 2026-10-09 P1 / PRD-040 체크포인트
+
+- GitHub `c366126`을 같은 dot cloud의 새 checkout으로 복원했다. 이전 활성 worktree 경로는 없었지만 기존 취소된 docs commit checkout은 보존했다. 공식 source helper가 기존 public Site version9와 같은 이력을 확인했다.
+- 의존성은 WBS와 별도 관계이며 project graph CAS + task version/token/event를 원자적으로 저장한다. 미완료 선행 업무의 시작/검토 요청/승인을 SQL 안에서 거부한다. 재오픈 시 기존 후행 이력은 유지하고 현재 차단을 표시한다.
+- `npm test`: 단위 114 PASS, native DB suite는 localhost3307 ECONNREFUSED로 미실행. `test:sites:p1`: 로컬 D1 계약21 PASS. `test:sites:workflow`: 실제 Worker HTTP429 PASS (가상 세션, 실제 Google 로그인 아님). 타입·lint·FSD5/경계·Worker build 통과.
+- 독립 정적 검토에서 endpoint 소멸 CAS, 삭제 거부 시 depth 쓰기, 제출 삭제 lock 순서, readiness 누락을 수정했다. 영구 삭제 경합은 실데이터/합성 DB 삭제로 재현하지 않았다. QLT-015 차단 범위는 재시도하지 않았다.
+- D1 `0010`은 새 관계 표와 project graph column2개만 추가한다. Native v6는 v1–v5 checksum을 유지하며 중단/재개·역할·동시 graph CAS의 additive harness를 추가했다. 실제 MariaDB 실행/게시/브라우저 인수는 다음 게이트다.
+- 첫 설치는 기본 npm cache `/home/agent/.npm`의 ENOENT로 실패했다. workspace cache를 지정한 공식 installer 재실행은689패키지 설치 성공. package-lock 변경 없음. npm http-proxy 경고, 기존 esbuild-kit2개 deprecated 안내, Node mock ExperimentalWarning, Vite proxy 안내와 Vinext route 분류 한계는 기존 도구 경고이며 숨기지 않았다.

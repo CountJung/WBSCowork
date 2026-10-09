@@ -1,3 +1,4 @@
+import {verifyP1Http} from "./verify-p1-http.mjs";
 import {verifyPersonalWorkWorkflow} from "./verify-personal-work-http.mjs";
 import {verifySubmissionReviewWorkflow} from "./verify-submission-review-http.mjs";
 import {verifySubmissionRevisionWorkflow} from "./verify-submission-revisions-http.mjs";
@@ -132,5 +133,6 @@ export async function verifyTeamWorkflow(argumentsContext) {
   await verifySubmissionRevisionWorkflow({...argumentsContext,form,renderedAction,route,projectId:goals.id,taskId:card.id});
   await verifySubmissionReviewWorkflow({...argumentsContext,form,renderedAction,route,projectId:goals.id});
   await verifyPersonalWorkWorkflow({...argumentsContext,form,renderedAction,route,projectId:goals.id});
+  await verifyP1Http({...argumentsContext,form,renderedAction,route,projectId:goals.id});
 
 }

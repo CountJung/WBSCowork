@@ -5,14 +5,17 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Alert, Chip, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import Gantt from "frappe-gantt";
 import type { Project } from "@/src/entities/project";
-import { taskStatusLabels, type Task } from "@/src/entities/task";
+import { taskStatusLabels, type TaskDependency, type Task } from "@/src/entities/task";
 import type { GanttOptions, GanttTask } from "frappe-gantt";
 import { summarizeTaskCompletion, type TaskCompletion } from "../model/task-completion";
 
 type ProjectGanttChartProps = {
   project: Project;
   tasks: Task[];
+  dependencies?: TaskDependency[];
 };
+
+const noDependencies:TaskDependency[]=[];
 
 type ViewMode = "Day" | "Week" | "Month";
 
@@ -72,7 +75,7 @@ function createChartOptions(viewMode: ViewMode, taskCount: number, openTask: (ta
   };
 }
 
-export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartProps) {
+export default function ProjectGanttChart({ project, tasks, dependencies = noDependencies }: ProjectGanttChartProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -123,7 +126,7 @@ export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartP
       start: formatDate(task.startDate),
       end: formatDate(task.endDate),
       progress: completion.byTaskId.get(task.id)!.percent,
-      dependencies: "",
+      dependencies: dependencies.filter(edge=>edge.taskId===task.id).map(edge=>String(edge.predecessorId)).join(","),
       description: task.description,
       assigneeName: task.assigneeName ?? "미지정",
       status: task.status,
@@ -199,7 +202,7 @@ export default function ProjectGanttChart({ project, tasks }: ProjectGanttChartP
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
     };
-  }, [tasks, viewMode, completion]);
+  }, [tasks, viewMode, completion, dependencies]);
 
   if (tasks.length === 0) {
     return (

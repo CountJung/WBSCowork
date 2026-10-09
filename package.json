@@ -29,7 +29,8 @@
     "test:sites:quality": "node scripts/test-sites-http.mjs --quality",
     "db:migrate": "node --import tsx scripts/migrate-database.ts",
     "test:native:migrations": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-native-migrations.ts",
-    "test:sites:workflow": "node scripts/test-sites-http.mjs --workflow"
+    "test:sites:workflow": "node scripts/test-sites-http.mjs --workflow",
+    "test:sites:p1": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-p1-contracts.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

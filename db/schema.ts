@@ -9,7 +9,7 @@ export const users = sqliteTable("users", {
   lastLoginAt: text("last_login_at"), lastSyncedAt: text("last_synced_at"), createdAt: createdAt(),
 }, (t) => [uniqueIndex("users_email_unique").on(t.email), check("users_role_check", sql`${t.role} IN ('admin','member','guest')`)]);
 export const projects = sqliteTable("projects", {
-  id: id(), name: text("name").notNull(), goal: text("goal").notNull().default(""), successCriteria: text("success_criteria").notNull().default(""), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(), createdAt: createdAt(),
+  id: id(), name: text("name").notNull(), dependencyVersion: integer("dependency_version").notNull().default(0), dependencyToken: text("dependency_token"), goal: text("goal").notNull().default(""), successCriteria: text("success_criteria").notNull().default(""), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(), createdAt: createdAt(),
 });
 export const tasks = sqliteTable("tasks", {
   id: id(), projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
@@ -161,3 +161,9 @@ export const submissionEvents = sqliteTable("submission_events", {
   id:id(),submissionId:integer("submission_id").notNull().references(()=>submissions.id,{onDelete:"cascade"}),revisionNumber:integer("revision_number").notNull(),actorId:integer("actor_id").references(()=>users.id,{onDelete:"set null"}),
   operationToken:text("operation_token").notNull().unique(),requestFingerprint:text("request_fingerprint").notNull(),kind:text("kind").notNull(),body:text("body").notNull().default(""),createdAt:createdAt(),
 },t=>[index("submission_events_submission_idx").on(t.submissionId,t.id)]);
+
+export const taskDependencies = sqliteTable("task_dependencies", {
+  id: id(), projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  predecessorId: integer("predecessor_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+}, t => [uniqueIndex("task_dependency_unique").on(t.taskId, t.predecessorId), index("task_dependency_project_idx").on(t.projectId), check("task_dependency_self_check", sql`${t.taskId} <> ${t.predecessorId}`)]);

@@ -71,6 +71,13 @@
       "when": 1791545509451,
       "tag": "0009_submission_review_selection",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1791562355014,
+      "tag": "0010_minor_zaladane",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,4 @@
+import { lockTaskProject,taskPredecessorsCompleteSql } from "@/src/shared/server/task-dependencies/index.server";
 import { createHash } from "node:crypto";
 import { databaseBatch, getDatabasePool, type QueryStatement } from "@/src/shared/server/database/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
@@ -52,6 +53,7 @@ export async function commitTaskMutation(input: {
     },
   ] : [];
   await databaseBatch([
+    lockTaskProject(input.id),
     {sql:"UPDATE tasks SET id=id WHERE id=?",params:[input.id]},
     ...(input.invalidateReview ? [{sql:"UPDATE submissions SET id=id WHERE id=(SELECT review_submission_id FROM tasks WHERE id=?)",params:[input.id]}] : []),
     {sql:`UPDATE tasks SET ${input.setSql},version=version+1,last_operation_token=? WHERE id=? AND version=? AND (?=1 OR EXISTS(SELECT 1 FROM users u WHERE u.id=? AND u.role IN ('member','admin'))) AND NOT EXISTS(SELECT 1 FROM task_events e WHERE e.operation_token=?) ${input.guardSql?`AND (${input.guardSql})`:''}`, params:[...input.setParams,key,input.id,version,actor.isSuperuser?1:0,actor.userId,key,...(input.guardParams??[])]},
@@ -77,6 +79,10 @@ export async function changeTaskStatus(input:{id:number;actor:TaskActor;token:st
   if(task.status==='review_pending')throw new Error("진행 중인 검토를 먼저 처리해야 합니다.");
   if(input.status==='blocked'&&!note)throw new Error("차단 사유를 입력해 주세요.");
   if(task.status==='done' && input.status!=='done' && !note)throw new Error("완료한 작업을 다시 여는 이유를 입력해 주세요.");
+  if(['in_progress','done'].includes(input.status)) {
+    const pending=await getDatabasePool().query("SELECT d.id FROM task_dependencies d JOIN tasks predecessor ON predecessor.id=d.predecessor_id WHERE d.task_id=? AND predecessor.status<>'done' LIMIT 1",[task.id]) as {id:number}[];
+    if(pending.length)throw new Error('미완료 선행 업무를 먼저 완료해 주세요.');
+  }
   if(input.status==='done') {
     if(task.reviewRequired)throw new Error("이 작업은 지정 검토자의 제출물 승인이 필요합니다.");
     if(!task.deliverable.trim()||!task.definitionOfDone.trim()||!note)throw new Error("기대 산출물·완료 기준과 완료 근거를 먼저 작성해 주세요.");
@@ -88,7 +94,7 @@ export async function changeTaskStatus(input:{id:number;actor:TaskActor;token:st
   const invalidatesReview = task.reviewRequired && (task.status === 'done' || task.status === 'changes_requested');
   await commitTaskMutation({...input,actor,kind:'status',note,payload,setSql:'status=?,workflow_note=?',setParams:[input.status,invalidatesReview?'작업 변경으로 검토를 다시 진행해야 합니다.':note],
     invalidateReview:invalidatesReview?{reason:note || '작업 상태가 변경되었습니다.'}:undefined,
-    guardSql:`status<>'review_pending' AND (?=1 OR assignee_id=? OR EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND actor.role='admin'))${input.status==='done'?" AND review_required=0 AND EXISTS(SELECT 1 FROM users assignee WHERE assignee.id=tasks.assignee_id AND (assignee.role IN ('member','admin') OR LOWER(assignee.email)=?)) AND EXISTS(SELECT 1 FROM submissions s WHERE s.task_id=tasks.id AND s.author_id=tasks.assignee_id)":''}`,guardParams:[actor.isSuperuser?1:0,actor.userId,actor.userId,...(input.status==='done'?[getRuntimeEnv().auth.superuserEmail??'']:[])]});
+    guardSql:`${['in_progress','done'].includes(input.status)?taskPredecessorsCompleteSql+' AND ':''}status<>'review_pending' AND (?=1 OR assignee_id=? OR EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND actor.role='admin'))${input.status==='done'?" AND review_required=0 AND EXISTS(SELECT 1 FROM users assignee WHERE assignee.id=tasks.assignee_id AND (assignee.role IN ('member','admin') OR LOWER(assignee.email)=?)) AND EXISTS(SELECT 1 FROM submissions s WHERE s.task_id=tasks.id AND s.author_id=tasks.assignee_id)":''}`,guardParams:[actor.isSuperuser?1:0,actor.userId,actor.userId,...(input.status==='done'?[getRuntimeEnv().auth.superuserEmail??'']:[])]});
 }
 
 export async function listTaskEventsByProject(projectId:number):Promise<TaskEvent[]> {

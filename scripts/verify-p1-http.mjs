@@ -1,0 +1,29 @@
+import {randomUUID} from 'node:crypto';
+/** Ordinary local synthetic P1 requests; no purge, external network, or cleanup race. */
+export async function verifyP1Http(ctx){
+ const {request,db,actorCookies,check,form,renderedAction,route,projectId}=ctx;
+ const member=actorCookies.member1;
+ let html=await(await request(route,member)).text();
+ const create=renderedAction(html,'createTaskAction');
+ for(const title of ['P1_PREDECESSOR','P1_SUCCESSOR'])await form(route,member,create,{projectId,title,assigneeId:2,deliverable:'result',definitionOfDone:'verified',startDate:'2026-01-01',endDate:'2026-01-02'});
+ const a=await db.prepare("SELECT * FROM tasks WHERE title='P1_PREDECESSOR'").first(),b=await db.prepare("SELECT * FROM tasks WHERE title='P1_SUCCESSOR'").first();
+ html=await(await request(route,member)).text();
+ const dependency=renderedAction(html,'setTaskPredecessorsAction');
+ const read=()=>db.prepare('SELECT * FROM tasks WHERE id=?').bind(b.id).first();
+ const graph=()=>db.prepare('SELECT dependency_version v FROM projects WHERE id=?').bind(projectId).first();
+ const fields={taskId:b.id,version:b.version,graphVersion:(await graph()).v,predecessorId:a.id,operationToken:randomUUID()};
+ await form(route,actorCookies.guest,dependency,fields);
+ check((await read()).version===b.version,'P1 HTTP guest cannot edit dependency');
+ await form(route,member,dependency,fields);await form(route,member,dependency,fields);
+ check((await db.prepare('SELECT COUNT(*) n FROM task_dependencies WHERE task_id=?').bind(b.id).first()).n===1,'P1 HTTP repeated dependency edit one edge');
+ html=await(await request(route,actorCookies.guest)).text();
+ check(html.includes('미완료 선행 업무')&&html.includes('P1_PREDECESSOR')&&html.includes('다음 행동이 필요한 업무'),'P1 HTTP dependency reason and summary visible');
+ const change=renderedAction(await(await request(route,member)).text(),'changeTaskStatusAction');
+ await form(route,member,change,{projectId,taskId:b.id,version:(await read()).version,operationToken:randomUUID(),taskStatus:'in_progress',note:'start'});
+ check((await read()).status==='planned','P1 HTTP direct start respects dependency guard');
+ await form(route,member,dependency,{...fields,taskId:a.id,version:a.version,graphVersion:(await graph()).v,predecessorId:b.id,operationToken:randomUUID()});
+ check((await db.prepare('SELECT COUNT(*) n FROM task_dependencies WHERE task_id=?').bind(a.id).first()).n===0,'P1 HTTP cycle rejected');
+ const other=await db.prepare('SELECT id FROM tasks WHERE project_id<>? LIMIT 1').bind(projectId).first();
+ await form(route,member,dependency,{...fields,version:(await read()).version,graphVersion:(await graph()).v,predecessorId:other.id,operationToken:randomUUID()});
+ check((await db.prepare('SELECT predecessor_id id FROM task_dependencies WHERE task_id=?').bind(b.id).first()).id===a.id,'P1 HTTP cross-project reference leaves graph unchanged');
+}

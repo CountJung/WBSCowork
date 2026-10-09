@@ -1,3 +1,4 @@
+import { lockTaskProject } from "@/src/shared/server/task-dependencies/index.server";
 import { createHash, randomUUID } from "node:crypto";
 import { assertTaskActor, commitTaskMutation, hasTaskMutation } from "./task-workflow.server";
 import { taskVersion, workOperationToken, type TaskActor } from "../model/workflow";
@@ -357,12 +358,16 @@ export async function deleteTask(taskId: number) {
   }
 
   const tasks = await listTasksByProject(existingTask.projectId);
+  const references = await getDatabasePool().query("SELECT id FROM task_dependencies WHERE task_id=? OR predecessor_id=? LIMIT 1",[taskId,taskId]) as {id:number}[];
+  if(references.length)throw new Error("선행 관계를 먼저 해제한 뒤 작업을 삭제해 주세요.");
   const remaining = tasks.filter((task) => task.id !== existingTask.id).map((task) => task.parentId === existingTask.id ? { ...task, parentId: existingTask.parentId } : task);
   await databaseBatch([
-    { sql: "UPDATE tasks SET parent_id = ? WHERE parent_id = ?", params: [existingTask.parentId, existingTask.id] },
-    { sql: "DELETE FROM tasks WHERE id = ?", params: [existingTask.id] },
-    ...buildTaskDepthUpdates(remaining),
+    lockTaskProject(taskId),
+    { sql: "UPDATE tasks SET parent_id = ? WHERE parent_id = ? AND NOT EXISTS(SELECT 1 FROM task_dependencies WHERE task_id=? OR predecessor_id=?)", params: [existingTask.parentId, existingTask.id,taskId,taskId] },
+    { sql: "DELETE FROM tasks WHERE id = ? AND NOT EXISTS(SELECT 1 FROM task_dependencies WHERE task_id=? OR predecessor_id=?)", params: [existingTask.id,taskId,taskId] },
+    ...buildTaskDepthUpdates(remaining).map(statement=>({sql:statement.sql+" AND NOT EXISTS(SELECT 1 FROM tasks retained WHERE retained.id=?)",params:[...(statement.params??[]),taskId]})),
   ]);
 
+  if(await getTaskById(taskId))throw new Error("선행 관계가 변경되었습니다. 관계를 먼저 해제해 주세요.");
   return existingTask;
 }

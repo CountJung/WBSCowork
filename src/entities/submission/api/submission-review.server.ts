@@ -1,3 +1,4 @@
+import { lockTaskProject,taskPredecessorsCompleteSql } from "@/src/shared/server/task-dependencies/index.server";
 import { createHash } from "node:crypto";
 import { databaseBatch, getDatabasePool, type QueryStatement } from "@/src/shared/server/database/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
@@ -17,7 +18,7 @@ type ReviewRow = {
   assignee_id: number | null; assignee_eligible: number; deliverable: string; definition_of_done: string;
   reviewer_id: number | null; reviewer_name: string | null; reviewer_eligible: number; reviewer_can_view: number;
   author_id: number; editor_id: number | null; current_revision: number; revision_number: number;
-  rejected: number;
+  rejected: number; dependency_blocked:number;
 };
 
 function positiveId(value: number, label: string) {
@@ -55,6 +56,7 @@ async function readReviewRow(submissionId: number, revisionNumber: number, actor
   const access = actorVisibility(actor);
   const rows = await getDatabasePool().query(
     `SELECT t.id AS task_id,t.project_id,t.version AS task_version,t.status,t.review_required,
+      CASE WHEN EXISTS(SELECT 1 FROM task_dependencies d JOIN tasks predecessor ON predecessor.id=d.predecessor_id WHERE d.task_id=t.id AND predecessor.status<>'done') THEN 1 ELSE 0 END AS dependency_blocked,
       t.review_submission_id,t.review_revision_number,t.assignee_id,t.deliverable,t.definition_of_done,
       t.reviewer_id,reviewer.name AS reviewer_name,s.author_id,r.editor_id,s.current_revision,r.revision_number,
       CASE WHEN assignee.role IN ('member','admin') OR LOWER(assignee.email)=? THEN 1 ELSE 0 END AS assignee_eligible,
@@ -90,7 +92,8 @@ function contextFor(row: ReviewRow, submissionId: number, actor: FreshActor): Su
   else if (!row.reviewer_id || !Number(row.reviewer_eligible)) unavailableReason = "업무를 수행할 수 있는 검토자를 지정해 주세요.";
   else if (!Number(row.reviewer_can_view)) unavailableReason = "지정 검토자가 이 제출 버전을 조회할 수 없습니다.";
   else if (selfReview) unavailableReason = "작성자·담당자·해당 버전 편집자는 직접 검토할 수 없습니다.";
-  const ready = unavailableReason === null;
+  const ready = unavailableReason === null && !Number(row.dependency_blocked);
+  if(!unavailableReason&&Number(row.dependency_blocked))unavailableReason="미완료 선행 업무를 먼저 완료해 주세요. 검토 취소·재오픈은 가능합니다.";
   const canRequest = ready && executor && !Number(row.rejected)
     && ['planned', 'in_progress', 'blocked', 'changes_requested'].includes(row.status);
   const canDecide = ready && selected && row.status === 'review_pending' && Number(row.reviewer_id) === actor.userId;
@@ -206,11 +209,12 @@ async function commitReview(input: SubmissionReviewInput, kind: ReviewAction, re
   }
 
   await databaseBatch([
+    lockTaskProject(input.taskId),
     { sql: 'UPDATE tasks SET id=id WHERE id=?', params: [input.taskId] },
     { sql: 'UPDATE submissions SET id=id WHERE id=? AND task_id=?', params: [input.submissionId, input.taskId] },
     {
       sql: `UPDATE tasks SET status=?,review_submission_id=?,review_revision_number=?,workflow_note=?,version=version+1,last_operation_token=?
-        WHERE id=? AND version=? AND ${commonGuard} AND ${transitionGuard}
+        WHERE id=? AND version=? AND ${commonGuard} AND ${transitionGuard} ${['review_requested','approved'].includes(kind)?`AND ${taskPredecessorsCompleteSql}`:''}
         AND NOT EXISTS(SELECT 1 FROM submission_events applied WHERE applied.operation_token=?)`,
       params: [status, cancel ? null : input.submissionId, cancel ? null : revision, publicReviewNote, key,
         input.taskId, version, ...commonParams, ...transitionParams, key],
