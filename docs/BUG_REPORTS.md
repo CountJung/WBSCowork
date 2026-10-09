@@ -21,7 +21,7 @@
 
 ## 스키마와 실행 모드
 
-`drizzle/0003_free_zarek.sql`은 기존 테이블/데이터 변경 없이 두 테이블을 추가한다. Sites 게시가 적용한다. Node/MariaDB는 기존 슈퍼관리자 schema initialization에 additive `CREATE TABLE IF NOT EXISTS`를 통합했으며 실제 native DB 실행 검증은 T-028로 남긴다. 기존 마이그레이션 0000~0002는 수정하지 않았다.
+`drizzle/0003_free_zarek.sql`은 기존 테이블/데이터 변경 없이 두 테이블을 추가한다. Sites 게시가 적용한다. Node/MariaDB는 기존 슈퍼관리자 schema initialization에 additive `CREATE TABLE IF NOT EXISTS`를 통합했으며 실제 native DB 실행 검증은 OPS-028로 남긴다. 기존 마이그레이션 0000~0002는 수정하지 않았다.
 
 ## 검증
 
@@ -29,13 +29,13 @@
 - `npm run test:sites:http`: 실제 build Worker + 합성 JWT로 두 guest/두 member/admin/superuser 접근, SSR 정보 누출, 입력 위조·XSS·CSRF·길이/경로 제한·same-cookie role downgrade 검사.
 - 공개 production의 실제 제보 쓰기 테스트는 사용자 승인 범위와 별도로 기록한다. 합성 local 검사를 실사용자 다중 계정 검사로 표현하지 않는다.
 
-2026-10-08 게시 전 검증: lint/types/FSD/build 통과, unit 17, D1/R2 57, bug D1 26, actual Worker HTTP 185, credential-free auth 18 통과. 독립 리뷰 지적의 replay-race와 native upsert ambiguity를 수정 후 재검증했다. Native MariaDB daemon은 없어 실행 미검증(T-028).
+2026-10-08 게시 전 검증: lint/types/FSD/build 통과, unit 17, D1/R2 57, bug D1 26, actual Worker HTTP 185, credential-free auth 18 통과. 독립 리뷰 지적의 replay-race와 native upsert ambiguity를 수정 후 재검증했다. Native MariaDB daemon은 없어 실행 미검증(OPS-028).
 
-현재 public Site version 3에서 위 화면과 빈 데이터 상태를 실제 소유자 세션으로 확인했다. 원본 QA 프로젝트의 승인된 파기는 완료됐고 사용자/감사 기록은 보존했다. 이 feature 자체의 실제 제보 저장·검토는 T-029의 별도 승인 후 확인한다.
+현재 public Site version 3에서 위 화면과 빈 데이터 상태를 실제 소유자 세션으로 확인했다. 원본 QA 프로젝트의 승인된 파기는 완료됐고 사용자/감사 기록은 보존했다. 이 feature 자체의 실제 제보 저장·검토는 OPS-029의 별도 승인 후 확인한다.
 
-후속 확인: T-028 exact f31f9dc native 검증 통과(React19.2.6 기준), T-030 version4 React19.2.8 Worker 게시, T-029 승인된 실제 report1 작성·추가 설명·검토·해결 및 filter 확인 완료. report1/events1–4는 정리 방식 결정(T-031) 전까지 보존한다.
+후속 확인: OPS-028 exact f31f9dc native 검증 통과(React19.2.6 기준), OPS-030 version4 React19.2.8 Worker 게시, OPS-029 승인된 실제 report1 작성·추가 설명·검토·해결 및 filter 확인 완료. report1/events1–4는 정리 방식 결정(OPS-031) 전까지 보존한다.
 
-## 검증 완료·휴지통·영구 삭제 (T-031)
+## 검증 완료·휴지통·영구 삭제 (OPS-031)
 
 - admin/superuser는 해결 또는 종료 상태의 제보에 검증 방법·결과(최대 4,000자)를 남겨 검증 완료로 표시한다. 새 추가 설명 또는 검토 변경은 검증 완료를 원자적으로 해제한다.
 - 검증된 해결/종료 제보만 휴지통으로 옮긴다. `/admin/bugs/trash`, `/admin/bugs/trash/[id]`에서 admin/superuser가 원문·이력을 확인하고 복원한다. 이동/복원도 이력이며 원문을 덮어쓰지 않는다. 일반 목록/검색/건수/상세/이력에서는 관리자에게도 휴지통 기록이 제외되고 일반 사용자는 휴지통 자체에 접근할 수 없다.

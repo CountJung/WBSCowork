@@ -7,7 +7,7 @@
 - 실제 checkout: `2f6b74d7b77106d38ad914eee14e1e073c61b039`. GitHub main으로 앞서 확인된 SHA와 일치한다. 작업 시작 시 clean이었다.
 - 전달받은 별도 Lenovo 조사도 main/origin main/HEAD가 같은 SHA이며 작업 전후 clean이다. 여기서 Lenovo를 직접 측정한 것은 아니다. Lenovo 논리적 875.62 MiB, node_modules 434.63 MiB, .next 435.89 MiB(대부분 dev)는 별도 참고값으로 클라우드 합계에 포함하지 않는다.
 - `/workspace/WBSCowork/AGENTS.md`, `.github/copilot-instructions.md`, quality-gates/nextjs-stack 지침, TODO/HARNESS_MAP, package/lock, 실행·DB·테스트 하네스를 확인했다. `/workspace/.agents`는 비어 있고 저장소 `.agents/skills`도 없다. 관련 프로젝트 스킬은 `.github/skills`에 있으나 UI/Stage 1/digest/문서 렌더러 구현을 변경하지 않아 해당 구현 스킬은 실행하지 않았다. 설치 후 Next 16.2.4의 동봉 font 문서·loader도 읽었다.
-- 앱·OAuth·역할 정책·tests·기존 scripts·package/lock·Next config·compose 원본은 변경하지 않았다. 저장소 변경은 이 보고서와 `docs/TODO.md` T-022, `docs/HARNESS_MAP.md` 13절뿐이다. 보완 파일은 저장소 밖 `/workspace/wbs-cloud-audit`에 있다.
+- 앱·OAuth·역할 정책·tests·기존 scripts·package/lock·Next config·compose 원본은 변경하지 않았다. 저장소 변경은 이 보고서와 `docs/TODO.md` OPS-022, `docs/HARNESS_MAP.md` 13절뿐이다. 보완 파일은 저장소 밖 `/workspace/wbs-cloud-audit`에 있다.
 - `.env*`는 읽거나 쓰지 않았다. 운영 DB·실제 사용자·첨부 데이터에 접근하지 않았다. 계정 가입/자격증명 사용·생성/커밋/푸시/배포/공개 터널/방화벽·sysctl·TLS 보안 변경을 하지 않았다.
 
 ## 2. 설치 전과 실제 df 증분
@@ -125,7 +125,7 @@ local 파일 URL을 직접 지정했던 실패도 보존했고 성공 보완은 
 
 **npm 설치 훅:** 첫 ci는 esbuild 0.28.2/sharp 0.34.5/unrs-resolver 1.11.1 hook 미승인 경고가 있었다. 설치된 hook을 읽고 별도 `npm-runtime.npmrc`의 고정 버전 allow-scripts와 scoped rebuild로 해결했다. package/lock이나 사용자 전역 설정을 편집하지 않았다. npm 12 업데이트 안내는 받았지만 필요하지 않아 업데이트하지 않았다.
 
-**남겨 둔 경고:** Node module mock ExperimentalWarning, MariaDB io_uring EPERM→libaio fallback, 디스크 DB의 max_open_files 상한(16384, 요청32187). 실패/경고를 숨기거나 커널 보안·한도 설정을 바꾸지 않았고 T-022에 기록했다. Next의 `turbopackFileSystemCacheForDev` 실험 표시도 보존했다.
+**남겨 둔 경고:** Node module mock ExperimentalWarning, MariaDB io_uring EPERM→libaio fallback, 디스크 DB의 max_open_files 상한(16384, 요청32187). 실패/경고를 숨기거나 커널 보안·한도 설정을 바꾸지 않았고 OPS-022에 기록했다. Next의 `turbopackFileSystemCacheForDev` 실험 표시도 보존했다.
 
 ## 7. 실제 HTTP, 게시, 기존 권한 유지의 한계
 

@@ -143,7 +143,7 @@ users       1 ── N comments
 
 - `scripts/verify-sites-crud.mjs`: HTTP suite의 실제 form/RSC action reference로 isolated CRUD lifecycle과 cross-user denied writes를 확인한다. 운영 데이터/계정을 사용하지 않는다.
 
-## 버그 제보·리뷰 (T-027)
+## 버그 제보·리뷰 (OPS-027)
 
 - `app/bugs`, `app/admin/bugs`: thin page adapters.
 - `src/widgets/bug-reports`: MUI own queue/create/detail/history/admin triage; pending submit button.

@@ -235,7 +235,7 @@ Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
 | 환경 전용 폰트 response fixture + 로컬 폰트 HTTP의 build | exit 0, Turbopack production build. 실제 공식 폰트 bytes SHA 일치 |
 | 실제 production HTTP | `/privacy` 200; `/`, tasks/admin/auth/download 경로는 secret 미설정으로 `NO_SECRET` 500 |
 
-미해결 환경 전제/경고는 T-022에 있다. Docker/Compose는 기존 기반 이미지 도구를 사용했고 MariaDB 이미지 하나를 추가했다. 브라우저는 설치·사용하지 않았다.
+미해결 환경 전제/경고는 OPS-022에 있다. Docker/Compose는 기존 기반 이미지 도구를 사용했고 MariaDB 이미지 하나를 추가했다. 브라우저는 설치·사용하지 않았다.
 기존 compose의 공개 포트 매핑 대신 별도 overlay로 host network의 `127.0.0.1:3307`에만 DB를 바인딩했다. 원본 compose는 변경하지 않았다.
 종료 시 DB 컨테이너는 정지 상태로 보존했고 디스크 datadir, 소스, 설치물, 다운로드 캐시를 삭제하지 않았다.
 
@@ -243,7 +243,7 @@ Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
 
 설치 실측 체크포인트는 `feat/sites-deployment`의 `26ed97397aafa43b5e0844a5b6fe44bf2ff229d0`에 push했고 원격 SHA를 확인했다. 원격 main은 `2f6b74d7b77106d38ad914eee14e1e073c61b039` 그대로다.
 
-[SITES_PREFLIGHT_2026-10-08.md](SITES_PREFLIGHT_2026-10-08.md)에 배포 환경 준비, SQLite/Worker 한도와 Google OAuth 검증 항목을 기록했다. 실제 Worker 빌드·HTTP, Google 로그인, D1/R2 전환과 배포는 **미실행**이다. 기존 Node/Next 검사 통과로 대체하지 않는다. T-023에서 남은 작업을 추적한다.
+[SITES_PREFLIGHT_2026-10-08.md](SITES_PREFLIGHT_2026-10-08.md)에 배포 환경 준비, SQLite/Worker 한도와 Google OAuth 검증 항목을 기록했다. 실제 Worker 빌드·HTTP, Google 로그인, D1/R2 전환과 배포는 **미실행**이다. 기존 Node/Next 검사 통과로 대체하지 않는다. OPS-023에서 남은 작업을 추적한다.
 
 `wbscowork` 등록 후 `.openai/hosting.json`에 프로젝트 ID를 보존했다. 예약 origin은 `https://wbscowork.cometgnome.chatgpt.site`이고 현재 비공개·미게시(버전 0)다. 등록은 실제 배포·OAuth 검증과 별개다.
 
@@ -259,14 +259,14 @@ Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
 - `npm run test:sites:storage`: 실제 Miniflare D1/R2 + 합성 데이터/주입 세션, 57건 통과.
 - `npm run test:sites:http`: 배포 Worker 산출물 + 실제 NextAuth/JWT/D1/R2 HTTP, 합성 서명 세션으로 92건 통과. 실제 Google 교환은 별도이다.
 - `npm run test:sites:auth`: credential-free 실제 Worker 계약 18건 통과.
-- `npm run test:sites:browser`: Python Playwright/Chromium가 필요하다. 이 클라우드에서는 Chromium IPC socket의 EPERM 때문에 시작하지 못했다. 기본 실행과 승인된 sandbox 외부 명령 재시도 모두 같은 제한. Chromium 자체 sandbox를 끄거나 보안 설정을 바꾸지 않았다. 시각/하이드레이션 QA를 통과로 기록하지 않는다 (T-023).
+- `npm run test:sites:browser`: Python Playwright/Chromium가 필요하다. 이 클라우드에서는 Chromium IPC socket의 EPERM 때문에 시작하지 못했다. 기본 실행과 승인된 sandbox 외부 명령 재시도 모두 같은 제한. Chromium 자체 sandbox를 끄거나 보안 설정을 바꾸지 않았다. 시각/하이드레이션 QA를 통과로 기록하지 않는다 (OPS-023).
 - [최종 검증 기록](SITES_VALIDATION_2026-10-08.md).
 
 게시 후 지원되는 클라우드 브라우저에서 공개 홈의 1180px 및 500px 레이아웃과 실제 Google 로그인 진입을 확인했다. 사용자 브라우저의 로그인 성공 보고도 별도 기록했다. [게시 결과](SITES_PUBLICATION_2026-10-08.md).
 
 ## 관리자 runtime 표시 회귀 — 2026-10-08 13:24 UTC
 
-새로 복원한 dot cloud checkout(Node 24.19.0)에서 T-025 표시 변경을 확인했다.
+새로 복원한 dot cloud checkout(Node 24.19.0)에서 OPS-025 표시 변경을 확인했다.
 - 단위 17건(기존 14 + hosted/native 표시 3), lint/typecheck/FSD(5 self-test), Worker production build: 모두 exit 0.
 - 실제 로컬 D1/R2 실패 복구 57건, 빌드 산출물의 Worker HTTP 역할·표시 112건, credential-free 인증 계약 18건: 모두 통과.
 - `/admin`의 D1 대상과 effective superuser 표시, ordinary admin 안내, hosted DB binding 표시·DDL 버튼 부재, 보존 기간 기반 로그 안내를 추가 확인한다. Node 모드 안내는 순수 함수 단위 검사로 확인하며 MariaDB 실제 DB suite는 이번 표시 수정에서 실행하지 않았다.
@@ -274,12 +274,12 @@ Node 26.11.1 / npm 11.20.0 / MariaDB 11.4.13의 실제 실행과 용량은
 - 독립 읽기 전용 리뷰에서 인가·저장소 동작 변경 없이 표시 정정만 이루어졌음을 확인했다.
 - 실제 Google 로그인은 합성 테스트와 별도로, 같은 날 13:14 UTC 소유자가 직접 인증한 클라우드 브라우저의 /tasks 및 /admin에서 확인했다. 운영 계정/비밀값은 테스트 fixture나 문서에 복사하지 않았다.
 
-T-026: `scripts/verify-sites-crud.mjs`를 실제 Worker HTTP suite에서 실행한다. 2026-10-08 13:31 UTC 총 149개 통과(112+CRUD 37), 변경된 테스트 JS ESLint 통과. 앱 소스 변경 없이 T-025 빌드 산출물을 재사용했다. 별도 live test 데이터는 소유자가 승인한 QA 프로젝트에 한하며 영구 파기는 별도 확인한다.
+OPS-026: `scripts/verify-sites-crud.mjs`를 실제 Worker HTTP suite에서 실행한다. 2026-10-08 13:31 UTC 총 149개 통과(112+CRUD 37), 변경된 테스트 JS ESLint 통과. 앱 소스 변경 없이 OPS-025 빌드 산출물을 재사용했다. 별도 live test 데이터는 소유자가 승인한 QA 프로젝트에 한하며 영구 파기는 별도 확인한다.
 
 ## 버그 제보·리뷰 게이트 — 2026-10-08 14:18 UTC
 
 - lint/typecheck/FSD(5 checker fixtures), Worker production build: exit 0.
-- `npm test`: unit 17 PASS; native MariaDB suite skipped with ECONNREFUSED 127.0.0.1:3307. Docker/MariaDB executable absent. T-028 tracks native bug schema/query runtime validation; source review is not execution evidence.
+- `npm test`: unit 17 PASS; native MariaDB suite skipped with ECONNREFUSED 127.0.0.1:3307. Docker/MariaDB executable absent. OPS-028 tracks native bug schema/query runtime validation; source review is not execution evidence.
 - `npm run test:sites:storage`: 57 PASS, additive migration 후 domain table 8개 확인.
 - `npm run test:sites:bugs`: 26 actual D1 archive/transaction/input contracts PASS. Failure trigger rollback, same-token/different-version concurrency, stale-review conflict, account/project deletion retention 포함.
 - `npm run test:sites:http`: final rebuilt Worker + synthetic signed sessions 185 checks PASS (기존 CRUD 및 신규 bug HTTP 36 포함). 두 guest·두 member·admin·superuser, counts/search/details/history authorization, forged owner/status, cross-user addendum, escaped XSS, size/URL limits, cross-origin action, alternate-route validation, role refresh 검증.
@@ -293,7 +293,7 @@ T-026: `scripts/verify-sites-crud.mjs`를 실제 Worker HTTP suite에서 실행�
 
 수정: native databaseBatch는 성공한 rollback·awaited release 후 1213만 전체 transaction을 최대3회/10·20ms 지연으로 재시도한다. 연결/commit 결과 불명·1205 timeout·SQL·권한 오류, rollback/release 실패는 재시도하지 않는다. D1 batch 경로는 바꾸지 않는다. tests/helpers/preload.mjs가 tsx 후 bootstrap을 await하고, test runner 및 D1 test scripts는 CLI mock flag와 함께 이 preload를 사용한다. NODE_OPTIONS에 실험 flag를 넣지 않는다.
 
-이 dot cloud(Node24.19.0)에서는 unit30(기존17+transaction12+preload1), lint/typecheck/FSD, bug D1 26, D1/R2 57가 exit0이다. 아직 수정 SHA의 실제 Node26/MariaDB 계약 결과는 기다리는 중이며 T-028을 완료로 표시하지 않는다. Worker build/HTTP는 다음 별도 security patch와 함께 최종 게이트를 실행하기 전이므로 이 native checkpoint만으로 production 재게시를 주장하지 않는다.
+이 dot cloud(Node24.19.0)에서는 unit30(기존17+transaction12+preload1), lint/typecheck/FSD, bug D1 26, D1/R2 57가 exit0이다. 아직 수정 SHA의 실제 Node26/MariaDB 계약 결과는 기다리는 중이며 OPS-028을 완료로 표시하지 않는다. Worker build/HTTP는 다음 별도 security patch와 함께 최종 게이트를 실행하기 전이므로 이 native checkpoint만으로 production 재게시를 주장하지 않는다.
 
 ## RSC 19.2.8 최소 보안 패치 게이트
 

@@ -13,15 +13,15 @@
 
 표기는 [TODO.md](TODO.md)의 「진행 표기 범례」를 따른다. 여기 있는 항목은 모두 완료이므로 전부 `- [x]`다. 되돌아가는 항목이 생기면 TODO.md로 옮기면서 번호를 유지한 채 표기를 `[~]`나 `[!]`로 바꾼다.
 
-- [x] **[T-001](#t-001--eslint-기준선-확보)** ESLint 기준선 확보 · 2026-08-09
-- [x] **[T-002](#t-002--feature-sliced-design-구조-정리-8단계)** Feature-Sliced Design 구조 정리(8단계) · 2026-08-12
-- [x] **[T-003](#t-003--비공개-제출물의-파생-데이터가-client-payload로-노출)** 비공개 제출물의 파생 데이터가 client payload로 노출 · 2026-09-05 · 보안 P0
-- [x] **[T-004](#t-004--제출물댓글-mutation에-작성자-ownership-검사-없음)** 제출물·댓글 mutation에 작성자 ownership 검사 없음 · 2026-09-05 · 보안 P1
-- [x] **[T-005](#t-005--단건-조회-getsubmissionbyid가-unscoped)** 단건 조회 `getSubmissionById`가 unscoped · 2026-09-05 · 보안 P1
-- [x] **[T-006](#t-006--로그-metadata에-저장-파일-경로가-남음)** 로그 metadata에 저장 파일 경로가 남음 · 2026-09-05 · 보안 P2
-- [x] **[T-007](#t-007--tasks-프로젝트-crud-server-action이-쓰기-역할만-확인)** `/tasks` 프로젝트 CRUD server action이 쓰기 역할만 확인 · 2026-09-05 · 보안 P1
-- [x] **[T-008](#t-008--dep0205-moduleregister-deprecation-경고-해소)** `[DEP0205]` deprecation 경고 해소 · 2026-09-05
-- [x] **[T-009](#t-009--가시성권한-회귀-테스트-하네스-도입)** 가시성·권한 회귀 테스트 하네스 도입 · 2026-09-06
+- [x] **[QLT-001](#qlt-001--eslint-기준선-확보)** ESLint 기준선 확보 · 2026-08-09
+- [x] **[QLT-002](#qlt-002--feature-sliced-design-구조-정리-8단계)** Feature-Sliced Design 구조 정리(8단계) · 2026-08-12
+- [x] **[QLT-003](#qlt-003--비공개-제출물의-파생-데이터가-client-payload로-노출)** 비공개 제출물의 파생 데이터가 client payload로 노출 · 2026-09-05 · 보안 P0
+- [x] **[QLT-004](#qlt-004--제출물댓글-mutation에-작성자-ownership-검사-없음)** 제출물·댓글 mutation에 작성자 ownership 검사 없음 · 2026-09-05 · 보안 P1
+- [x] **[QLT-005](#qlt-005--단건-조회-getsubmissionbyid가-unscoped)** 단건 조회 `getSubmissionById`가 unscoped · 2026-09-05 · 보안 P1
+- [x] **[QLT-006](#qlt-006--로그-metadata에-저장-파일-경로가-남음)** 로그 metadata에 저장 파일 경로가 남음 · 2026-09-05 · 보안 P2
+- [x] **[QLT-007](#qlt-007--tasks-프로젝트-crud-server-action이-쓰기-역할만-확인)** `/tasks` 프로젝트 CRUD server action이 쓰기 역할만 확인 · 2026-09-05 · 보안 P1
+- [x] **[QLT-008](#qlt-008--dep0205-moduleregister-deprecation-경고-해소)** `[DEP0205]` deprecation 경고 해소 · 2026-09-05
+- [x] **[QLT-009](#qlt-009--가시성권한-회귀-테스트-하네스-도입)** 가시성·권한 회귀 테스트 하네스 도입 · 2026-09-06
 
 ---
 
@@ -46,7 +46,9 @@
 
 ## 2. 완료 항목
 
-### T-001 — ESLint 기준선 확보
+<a id="t-001--eslint-기준선-확보"></a>
+
+### QLT-001 — ESLint 기준선 확보
 
 **완료** 2026-08-09 · 분류 품질·운영
 
@@ -62,7 +64,9 @@
 
 ---
 
-### T-002 — Feature-Sliced Design 구조 정리 (8단계)
+<a id="t-002--feature-sliced-design-구조-정리-8단계"></a>
+
+### QLT-002 — Feature-Sliced Design 구조 정리 (8단계)
 
 **완료** 2026-08-12 · 분류 구조
 
@@ -74,13 +78,15 @@
 2. **의존 방향과 구축 순서는 반대다.** 허용 방향은 `app → widgets → features → entities → shared`이고, 만들거나 옮기는 순서는 `shared → … → app`이다.
 3. **경계를 문서가 아니라 게이트로 고정했다.** `scripts/check-fsd-boundaries.ts`가 `layer-direction`, `cross-slice`, `deep-import`, `unknown-layer`, `client-server`를 오류로 막는다. 검사기가 조용히 망가진 채 통과하는 것을 막으려고 fixture self-test 5건을 저장소 검사보다 먼저 실행한다.
 
-`cross-slice`가 오류라는 점이 특히 자주 걸린다. 같은 레이어의 다른 슬라이스를 직접 참조할 수 없으므로, 두 entity가 공유해야 하는 것은 `shared`로 내리거나 상위 레이어에서 조립해야 한다. T-003의 `IdScope`가 `src/shared/server/query-scope`에 놓인 이유가 이것이다.
+`cross-slice`가 오류라는 점이 특히 자주 걸린다. 같은 레이어의 다른 슬라이스를 직접 참조할 수 없으므로, 두 entity가 공유해야 하는 것은 `shared`로 내리거나 상위 레이어에서 조립해야 한다. QLT-003의 `IdScope`가 `src/shared/server/query-scope`에 놓인 이유가 이것이다.
 
 검증: `npm run check:fsd`, `typecheck`, `lint`, `build` 통과.
 
 ---
 
-### T-003 — 비공개 제출물의 파생 데이터가 client payload로 노출
+<a id="t-003--비공개-제출물의-파생-데이터가-client-payload로-노출"></a>
+
+### QLT-003 — 비공개 제출물의 파생 데이터가 client payload로 노출
 
 **완료** 2026-09-05 · 분류 보안 · 심각도 P0
 
@@ -99,7 +105,9 @@
 
 ---
 
-### T-004 — 제출물·댓글 mutation에 작성자 ownership 검사 없음
+<a id="t-004--제출물댓글-mutation에-작성자-ownership-검사-없음"></a>
+
+### QLT-004 — 제출물·댓글 mutation에 작성자 ownership 검사 없음
 
 **완료** 2026-09-05 · 분류 보안 · 심각도 P1
 
@@ -123,7 +131,9 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 
 ---
 
-### T-005 — 단건 조회 `getSubmissionById`가 unscoped
+<a id="t-005--단건-조회-getsubmissionbyid가-unscoped"></a>
+
+### QLT-005 — 단건 조회 `getSubmissionById`가 unscoped
 
 **완료** 2026-09-05 · 분류 보안 · 심각도 P1
 
@@ -139,7 +149,9 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 
 ---
 
-### T-006 — 로그 metadata에 저장 파일 경로가 남음
+<a id="t-006--로그-metadata에-저장-파일-경로가-남음"></a>
+
+### QLT-006 — 로그 metadata에 저장 파일 경로가 남음
 
 **완료** 2026-09-05 · 분류 보안 · 심각도 P2
 
@@ -153,7 +165,9 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 
 ---
 
-### T-007 — `/tasks` 프로젝트 CRUD server action이 쓰기 역할만 확인
+<a id="t-007--tasks-프로젝트-crud-server-action이-쓰기-역할만-확인"></a>
+
+### QLT-007 — `/tasks` 프로젝트 CRUD server action이 쓰기 역할만 확인
 
 **완료** 2026-09-05 · 분류 보안 · 심각도 P1
 
@@ -163,13 +177,15 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 
 **조치.** `requireProjectAdminSession`(`canAccessAdminPanel`)으로 막았다. 프로젝트 관리는 `/admin/projects` 전용이라는 기존 문서상 정책과 코드를 일치시킨 것이다.
 
-**남은 부채.** 이 조치는 권한 구멍만 막았고 중복 자체는 남겼다. → T-010
+**남은 부채.** 이 조치는 권한 구멍만 막았고 중복 자체는 남겼다. → QLT-010
 
 **회귀 방지.** `tests/visibility.e2e.test.ts` 3번 블록의 "프로젝트 CRUD server action은 관리자 이상만 호출할 수 있다".
 
 ---
 
-### T-008 — `[DEP0205] module.register()` deprecation 경고 해소
+<a id="t-008--dep0205-moduleregister-deprecation-경고-해소"></a>
+
+### QLT-008 — `[DEP0205] module.register()` deprecation 경고 해소
 
 **완료** 2026-09-05 · 분류 품질·운영
 
@@ -179,7 +195,9 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 
 ---
 
-### T-009 — 가시성·권한 회귀 테스트 하네스 도입
+<a id="t-009--가시성권한-회귀-테스트-하네스-도입"></a>
+
+### QLT-009 — 가시성·권한 회귀 테스트 하네스 도입
 
 **완료** 2026-09-06 · 분류 품질·운영
 
@@ -193,7 +211,7 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 - **fixture는 테스트마다 재시드한다.** 어떤 테스트가 자원을 지워도 다음 테스트의 전제가 흔들리지 않는다.
 - **Server Action 결과는 `NEXT_REDIRECT` digest를 파싱해 판정한다.** action이 성공·실패를 모두 `redirect()`로 끝내기 때문이다.
 
-**하네스 자체를 검증했다.** 통과만으로는 아무것도 보장하지 않으므로, T-003과 T-004의 수정을 일부러 되돌려 테스트가 실제로 깨지는지 확인했다(각각 6건·2건 실패). 이후 복구하고 다시 전부 통과시켰다. 새 테스트를 추가할 때도 같은 방식으로 확인하는 편이 좋다.
+**하네스 자체를 검증했다.** 통과만으로는 아무것도 보장하지 않으므로, QLT-003과 QLT-004의 수정을 일부러 되돌려 테스트가 실제로 깨지는지 확인했다(각각 6건·2건 실패). 이후 복구하고 다시 전부 통과시켰다. 새 테스트를 추가할 때도 같은 방식으로 확인하는 편이 좋다.
 
 **환경 관련 실측.** 이 머신에서는 Docker Hub 이미지 수신이 극히 느리다(3MB 이미지도 150초 내 실패, MariaDB 481MB는 약 40분). 그래서 `scripts/test-database.ts`가 백엔드를 자동 선택한다 — docker 이미지가 있으면 compose, 없으면 Homebrew MariaDB. 접속 계약은 양쪽 모두 `127.0.0.1:3307 / wbs_app_test`로 같고, 개발용(3306)과 포트·DB 이름이 분리되어 있다. `_test`로 끝나지 않는 DB 이름은 하네스가 거부한다. 두 백엔드 모두 실제로 실행해 47건 통과를 확인했다(Homebrew 12.3.3, Docker 11.4.13).
 
@@ -211,40 +229,40 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 - [FSD_MIGRATION_PLAN.md](FSD_MIGRATION_PLAN.md) — 8단계 구조 이동 계약
 
 
-## T-022 — Sites Worker 전환 및 공개 게시 (2026-10-08)
+## OPS-022 — Sites Worker 전환 및 공개 게시 (2026-10-08)
 
-기존 Google/NextAuth·MUI·역할 정책을 보존하여 D1/R2로 전환했다. 공식 save/deploy 결과 version1 terminal succeeded와 공개 URL을 확인했다. Node 단위14, Worker auth18, D1/R2 57, 실제 Worker HTTP92건 통과. 배포 SHA9938b584c08f805f1321061643a1b3fb6339260e. main과 이전 컨테이너 실측은 보존했다. 사용자 브라우저에서 로그인 성공이 보고됐고, 보호 화면 및 지정 계정 실환경 작업은 T-023/T-024로 따로 추적한다. [배포/디스크 기록](SITES_PUBLICATION_2026-10-08.md).
+기존 Google/NextAuth·MUI·역할 정책을 보존하여 D1/R2로 전환했다. 공식 save/deploy 결과 version1 terminal succeeded와 공개 URL을 확인했다. Node 단위14, Worker auth18, D1/R2 57, 실제 Worker HTTP92건 통과. 배포 SHA9938b584c08f805f1321061643a1b3fb6339260e. main과 이전 컨테이너 실측은 보존했다. 사용자 브라우저에서 로그인 성공이 보고됐고, 보호 화면 및 지정 계정 실환경 작업은 OPS-023/OPS-024로 따로 추적한다. [배포/디스크 기록](SITES_PUBLICATION_2026-10-08.md).
 
-## T-025 — hosted 관리자 runtime 표시 정정 (2026-10-08)
+## OPS-025 — hosted 관리자 runtime 표시 정정 (2026-10-08)
 
 - D1 대상 undefined, MariaDB/파일 로그/로컬 설정 안내 잔재를 runtime별로 분리했다. 로그의 날짜·보존 기간·저장 단위 설명과 ordinary admin/superuser 소개를 실제 동작에 맞췄다. 인가·설정·저장소 동작은 바꾸지 않았다.
 - unit 17 / D1-R2 57 / Worker HTTP 112 / auth 18, lint/typecheck/FSD/build 통과. 독립 읽기 전용 리뷰 통과.
 - commit `8fc2cc69cdc8548739ae9ae2ed208ebc6fe47ce7`, tree `684bd70633a73fe21aacdc8b4155e8570db4582a` GitHub push 및 Site source 일치. version 2 / deployment `appgdep_6ac79a4f82888191b8617754bdb85177` 13:27:53 UTC succeeded, 환경 revision 11 유지.
 - 같은 소유자 세션에서 /admin 새로고침 후 D1/R2·슈퍼관리자·Sites 설정·감사 보존 안내를 직접 확인했다.
 
-## T-026 — 격리 Worker 업무 흐름 회귀 검증 (2026-10-08)
+## OPS-026 — 격리 Worker 업무 흐름 회귀 검증 (2026-10-08)
 
 - 실제 빌드 workerd에 합성 JWT와 로컬 D1/R2를 사용하여 프로젝트 생성·수정·파기 확인, 부모/자식 task 생성·수정·삭제 후 재루팅, private 제출 및 동일 파일명 추가업로드·조회·삭제, 댓글 CRUD를 검사했다. 다른 멤버의 private 조회·수정·댓글 금지, guest task 삭제 금지, member project 생성 금지를 직접 HTTP Server Action으로 검증했다.
 - 새 계약 37개를 포함해 `npm run test:sites:http` 149개 통과. 기존 57개 storage 계약은 중단/실패 업로드·보상 실패·삭제 복구/backoff를 포함해 재검증했다.
 - 첫 테스트의 edit action 추출은 Client dialog가 action을 RSC reference로 전달하는 구조 때문에 실패했다. UI에서 제공된 serialized reference도 해석하도록 테스트를 바로잡고 재실행했다. 제품 코드 결함은 발견하지 않았다.
-- 모든 생성/삭제는 격리 Miniflare 합성 데이터다. 실서비스 생성·수정·업로드·삭제 검증으로 계산하지 않는다. 테스트-only 변경이므로 배포된 앱 코드는 T-025 버전을 유지한다.
+- 모든 생성/삭제는 격리 Miniflare 합성 데이터다. 실서비스 생성·수정·업로드·삭제 검증으로 계산하지 않는다. 테스트-only 변경이므로 배포된 앱 코드는 OPS-025 버전을 유지한다.
 
-## T-023 — 인증 후 보호 화면 실환경 브라우저 검증 (2026-10-08)
+## OPS-023 — 인증 후 보호 화면 실환경 브라우저 검증 (2026-10-08)
 
-소유자가 직접 로그인한 클라우드 브라우저로 /tasks, /admin, /admin/database, /admin/settings, /admin/logs를 확인했다. 별도 승인된 합성 프로젝트에서 생성·수정·업로드·다운로드 및 1180px/502px 표시를 검증했다. [상세 근거와 한계](SITES_LIVE_QA_2026-10-08.md). 실환경 다른 사용자 계정/role 변경, 강제 장애 주입, 영구 파기는 수행하지 않았다. 삭제는 T-024에서 별도 확인한다.
+소유자가 직접 로그인한 클라우드 브라우저로 /tasks, /admin, /admin/database, /admin/settings, /admin/logs를 확인했다. 별도 승인된 합성 프로젝트에서 생성·수정·업로드·다운로드 및 1180px/502px 표시를 검증했다. [상세 근거와 한계](SITES_LIVE_QA_2026-10-08.md). 실환경 다른 사용자 계정/role 변경, 강제 장애 주입, 영구 파기는 수행하지 않았다. 삭제는 OPS-024에서 별도 확인한다.
 
-## T-024 — 승인된 실환경 QA 데이터 정리 (2026-10-08)
+## OPS-024 — 승인된 실환경 QA 데이터 정리 (2026-10-08)
 
 실환경 CRUD/다운로드 검증 후 사용자에게 project 1 / tasks 1·2 / submissions 1·2 / comment 1 / attachments 1·2·3의 영구 파기를 확인받았다. 14:04 UTC 정리 직전에 대상 변동이 없음을 재확인하고 정상 관리 UI로 파기했다. 성공 안내 및 5개 데이터 테이블·정리 ledger 0건, 사용자 1명(admin)과 감사 기록 보존을 확인했다. [실환경 QA 기록](SITES_LIVE_QA_2026-10-08.md). 이 승인은 미래의 임의 데이터 삭제에 대한 포괄 승인으로 사용하지 않는다.
 
-## T-027 — 비공개 버그 제보·리뷰 게시 (2026-10-08)
+## OPS-027 — 비공개 버그 제보·리뷰 게시 (2026-10-08)
 
 - guest 포함 인증 사용자의 본인 제보, admin/superuser 검토, 원문 보존과 append-only 처리 기록, SQL 조회 범위와 원자적 version/idempotency 검사, D1/Node additive schema를 구현했다. 외부 전송/알림/첨부/자동 실행/일반 삭제 기능은 추가하지 않았다.
 - 원격 commit `f294edd620bee5cc557989a690e95dddfefb1354`, exact tree `da81b6eadfe58f61dfc6a9a2853840c46eb92e85`. [검증 계약](BUG_REPORTS.md).
 - version 3 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_7648d00bc3448191be2a284d814dc067`, deployment `appgdep_6ac7a743cd608191882d9a80fc0d84dd` 14:23:10 UTC succeeded. public/환경 revision 11 유지.
-- 실제 owner 세션으로 /bugs, /admin/bugs 메뉴·검색·필터·empty state와 1181px/503px form layout을 확인했다. 수평 overflow 없음, desktop 창 복원. D1 두 신규 테이블은 비어 있고 기존 사용자·감사 기록은 유지된다. 현재 실제 제보 쓰기는 T-029 승인 대기이며 local 합성 Worker 검증과 구분한다. Native MariaDB 실행은 T-028에서 별도로 추적한다.
+- 실제 owner 세션으로 /bugs, /admin/bugs 메뉴·검색·필터·empty state와 1181px/503px form layout을 확인했다. 수평 overflow 없음, desktop 창 복원. D1 두 신규 테이블은 비어 있고 기존 사용자·감사 기록은 유지된다. 현재 실제 제보 쓰기는 OPS-029 승인 대기이며 local 합성 Worker 검증과 구분한다. Native MariaDB 실행은 OPS-028에서 별도로 추적한다.
 
-## T-028 — Node/MariaDB 동시 검토 및 테스트 로더 호환성 (2026-10-08)
+## OPS-028 — Node/MariaDB 동시 검토 및 테스트 로더 호환성 (2026-10-08)
 
 - 수정 commit `f31f9dc18ca9848e648035ed602cba5b9731d9f1`의 실제 saved-cloud 재검증 결과: Node26.11.1/npm11.20/MariaDB11.4.13/connector3.5.2. 외부 NODE_OPTIONS 없이 `npm test -- --require-db` unit30+DB33 PASS, skip0; lint/typecheck/FSD5 PASS; native bug17와 retry boundary23 PASS.
 - 별도 동시성160회에서 API 결과·state/history 계약 PASS. 서로 다른 token/같은 version은 40회 모두 승자1+정상 stale1; 같은 token/같은 version은 40회 모두 양쪽 성공+event1. 생성40회 성공80, same-token/different-version40회 성공64/stale16. 노출된 SQL 오류나 외부 요청 재시도 없음.
@@ -252,13 +270,13 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 - synthetic DB451reports/817events에서 version/count/max-version mismatch·duplicate version·orphan 0. fixture DB는 정지 보존했고 원본 측정 환경/기존57개 증거 hash는 바꾸지 않았다는 해당 작업 보고를 받았다.
 - 위 exact commit은 React19.2.6이다. 이후 19.2.8 security patch의 native 전체 실행 결과로 확대 해석하지 않는다. Sites D1 계약은 별도 검증이다.
 
-## T-030 — 실제 Worker RSC decoder 보안 패치 (2026-10-08)
+## OPS-030 — 실제 Worker RSC decoder 보안 패치 (2026-10-08)
 
 - React/react-dom/react-server-dom-webpack만 19.2.8로 고정하여 GHSA-wx67-qw84-cm4g를 수정했다. direct-package alias와 active artifact fingerprint를 독립 검토했다. [범위·근거](SECURITY_PATCH_2026-10-08.md).
 - 원격/게시 commit `9a5367d607ce9a515b794d9a963a673a404a00f9`, tree `7b860f4dc247b4582ee8c2c2cbac1b13994068de`.
 - version4 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_1e4ba05b765c8191b8fa314649acf891`, deployment `appgdep_6ac7b2f65b08819184da0c608035c5f8` 15:13:05 UTC succeeded. public/환경 revision11 유지.
-- unit30, actual WorkerHTTP185/auth18, D1bug26/storage57, lint/types/FSD/build 및 static decoder checker 통과. 기존 소유자 세션과 승인된 실제 report 작성/검토 흐름도 확인했다. 전체 의존성 advisory 해소는 T-032와 구분한다.
+- unit30, actual WorkerHTTP185/auth18, D1bug26/storage57, lint/types/FSD/build 및 static decoder checker 통과. 기존 소유자 세션과 승인된 실제 report 작성/검토 흐름도 확인했다. 전체 의존성 advisory 해소는 OPS-032와 구분한다.
 
-## T-029 — 버그 제보·리뷰 실환경 쓰기 검증 (2026-10-08)
+## OPS-029 — 버그 제보·리뷰 실환경 쓰기 검증 (2026-10-08)
 
-승인된 합성 report1 한 건으로 제보→추가 설명→검토 중→해결, 원문 보존, Git SHA 기록, 검색/상태 필터를 실제 브라우저에서 확인했다. version4와 events1–4를 native read-only DB 도구로 확인했다. [상세](SITES_BUG_QA_2026-10-08.md). 기존 사용자/역할/운영 데이터 변경 없음. 삭제는 실행하지 않았으며 T-031에서 지원 경로와 별도 승인을 결정한다.
+승인된 합성 report1 한 건으로 제보→추가 설명→검토 중→해결, 원문 보존, Git SHA 기록, 검색/상태 필터를 실제 브라우저에서 확인했다. version4와 events1–4를 native read-only DB 도구로 확인했다. [상세](SITES_BUG_QA_2026-10-08.md). 기존 사용자/역할/운영 데이터 변경 없음. 삭제는 실행하지 않았으며 OPS-031에서 지원 경로와 별도 승인을 결정한다.

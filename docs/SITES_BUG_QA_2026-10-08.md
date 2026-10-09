@@ -31,4 +31,4 @@ native read-only D1 조회로 ID/status/version/관계를 확인했다. 과거 Q
 
 이 archive는 원문/처리 이력 보존을 위해 일반 삭제 endpoint를 제공하지 않는다. Sites connector의 DB 도구는 read-only이고 공식 public docs에서 row-delete 경로를 확인하지 못했다. 별도 cloud browser의 Sites 관리 화면은 ChatGPT 로그인이 없어 owner Settings UI의 행 삭제 지원 여부도 확인하지 못했다. 그 계정 로그인을 시작하지 않았고 probe tab은 닫았다.
 
-report1/events1–4는 보존 중이다. schema-only migration에 data 삭제를 넣거나 숨은 endpoint/직접 Cloudflare 자격증명으로 우회하지 않는다. 지원되는 owner 기능 또는 명시적으로 승인된 가시적·감사 가능한 superuser maintenance 기능을 결정하고, 정확한 대상의 영구 삭제를 별도 확인한 뒤 진행한다(T-031).
+report1/events1–4는 보존 중이다. schema-only migration에 data 삭제를 넣거나 숨은 endpoint/직접 Cloudflare 자격증명으로 우회하지 않는다. 지원되는 owner 기능 또는 명시적으로 승인된 가시적·감사 가능한 superuser maintenance 기능을 결정하고, 정확한 대상의 영구 삭제를 별도 확인한 뒤 진행한다(OPS-031).

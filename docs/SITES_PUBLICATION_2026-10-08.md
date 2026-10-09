@@ -65,7 +65,7 @@ shell에서 시작한 별도 Chromium은 IPC EPERM으로 실패했다. 이 제�
 
 소유자가 직접 Google 인증을 완료한 뒤 에이전트가 같은 클라우드 브라우저에서 /tasks의 로그아웃·슈퍼관리자 표시와 /admin의 인증된 계정·관리 개요를 직접 확인했다. DB role은 admin이고 구성된 슈퍼관리자 판정도 적용되었다. 개인 이메일·비밀번호·토큰은 이 기록에 저장하지 않는다. 사용자 1명, 프로젝트 0개였으며 조회만 했고 데이터·권한을 변경하지 않았다. 이 결과는 이전의 사용자 보고 및 Google 식별자 진입 검사보다 강한 실제 앱 인증 근거다.
 
-관리 개요에서 D1 대상이 undefined로 보이고 과거 MariaDB/파일 로그 설명이 남는 표시 결함을 발견했다. T-025에서 수정·재게시하며, 프로젝트 쓰기 실환경 검사는 T-024 승인 후 별도로 다룬다.
+관리 개요에서 D1 대상이 undefined로 보이고 과거 MariaDB/파일 로그 설명이 남는 표시 결함을 발견했다. OPS-025에서 수정·재게시하며, 프로젝트 쓰기 실환경 검사는 OPS-024 승인 후 별도로 다룬다.
 
 ## 관리자 표시 수정 게시 — version 2
 
@@ -80,7 +80,7 @@ shell에서 시작한 별도 Chromium은 IPC EPERM으로 실패했다. 이 제�
 - version `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_7648d00bc3448191be2a284d814dc067`.
 - deployment `appgdep_6ac7a743cd608191882d9a80fc0d84dd`: 14:23:10 UTC succeeded, public/환경 revision 11.
 - 사용자 화면: https://wbscowork.cometgnome.chatgpt.site/bugs . 관리자 리뷰: https://wbscowork.cometgnome.chatgpt.site/admin/bugs . 기존 Google/역할 세션으로 보호한다.
-- 실제 empty-page/nav/form rendering과 1181px/503px 폭 확인, DB schema에 독립 archive 두 테이블 추가, 조회 당시 둘 다 0건. Worker 최근 error event 0. 실제 제보 작성은 T-029, native DB runtime은 T-028에서 별도 추적한다.
+- 실제 empty-page/nav/form rendering과 1181px/503px 폭 확인, DB schema에 독립 archive 두 테이블 추가, 조회 당시 둘 다 0건. Worker 최근 error event 0. 실제 제보 작성은 OPS-029, native DB runtime은 OPS-028에서 별도 추적한다.
 
 ## RSC 보안 패치 게시 — version4
 
