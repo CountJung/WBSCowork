@@ -118,6 +118,9 @@ function TaskCreateForm({
         <Typography variant="h5">새 작업 추가</Typography>
         <TextField name="title" label="작업 제목" required />
         <TextField name="description" label="설명" multiline minRows={3} />
+        <TextField name="deliverable" label="기대 산출물·제출 형식" multiline minRows={2} helperText="예: 조사 자료 링크와 요약 파일. 초안에는 비워 둘 수 있으며 완료 전에 입력합니다." slotProps={{ htmlInput: { maxLength: 2000 } }} />
+        <TextField name="definitionOfDone" label="완료 기준" multiline minRows={2} helperText="확인 가능한 결과를 적어 주세요." slotProps={{ htmlInput: { maxLength: 2000 } }} />
+        <TextField select name="reviewRequired" label="검토 방식" defaultValue="0"><MenuItem value="0">담당자가 근거를 남기고 완료</MenuItem><MenuItem value="1">검토자 승인 후 완료</MenuItem></TextField>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <TextField select name="parentId" label="상위 작업" defaultValue="" fullWidth>
             <MenuItem value="">루트 작업</MenuItem>
@@ -244,8 +247,8 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   }
 
   const databaseStatus = await getDatabaseAdminStatus();
-  const projectsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "projects" && table.exists);
-  const tasksTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "tasks" && table.exists);
+  const projectsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "projects" && table.exists && table.missingColumns.length === 0);
+  const tasksTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "tasks" && table.exists && table.missingColumns.length === 0);
   const submissionsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "submissions" && table.exists && table.missingColumns.length === 0);
   const commentsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "comments" && table.exists);
   const usersTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "users" && table.exists && table.missingColumns.length === 0);
@@ -373,6 +376,8 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             <Stack spacing={1.5}>
               <Typography variant="h5">현재 프로젝트</Typography>
               <Typography variant="h6">{selectedProject.name}</Typography>
+              <Typography sx={{ whiteSpace: "pre-wrap" }}>목표: {selectedProject.goal || "아직 작성하지 않았습니다."}</Typography>
+              <Typography sx={{ whiteSpace: "pre-wrap" }}>성공 기준: {selectedProject.successCriteria || "아직 작성하지 않았습니다."}</Typography>
               <Typography variant="body2" color="text.secondary">
                 기간 {formatDate(selectedProject.startDate)} ~ {formatDate(selectedProject.endDate)}
               </Typography>

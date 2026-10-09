@@ -67,7 +67,7 @@ export async function createProjectAdminAction(formData: FormData) {
 
     validateDateRange(startDate, endDate);
 
-    const project = await createProject({ name, startDate, endDate });
+    const project = await createProject({ name, startDate, endDate, goal: getSingleValue(formData.get("goal")), successCriteria: getSingleValue(formData.get("successCriteria")) });
 
     revalidatePath("/admin/projects");
     revalidatePath("/tasks");
@@ -114,7 +114,7 @@ export async function updateProjectAdminAction(formData: FormData) {
 
     validateDateRange(startDate, endDate);
 
-    const project = await updateProject({ id: projectId, name, startDate, endDate });
+    const project = await updateProject({ id: projectId, name, startDate, endDate, goal: formData.has("goal") ? getSingleValue(formData.get("goal")) : undefined, successCriteria: formData.has("successCriteria") ? getSingleValue(formData.get("successCriteria")) : undefined });
 
     revalidatePath("/admin/projects");
     revalidatePath("/tasks");

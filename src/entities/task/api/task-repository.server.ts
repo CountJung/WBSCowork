@@ -1,3 +1,4 @@
+import { normalizeWorkGoal } from "@/src/shared/lib/work-goals";
 import { validateDateRange } from "@/src/shared/lib/date";
 import { getDatabasePool, databaseBatch, type QueryStatement } from "@/src/shared/server/database/index.server";
 import { mapTaskRow, type Task, type TaskRow } from "../model/task";
@@ -7,6 +8,9 @@ export type CreateTaskInput = {
   parentId?: number | null;
   title: string;
   description?: string;
+  deliverable?: string;
+  definitionOfDone?: string;
+  reviewRequired?: boolean;
   startDate: Date | string;
   endDate: Date | string;
   assigneeId?: number | null;
@@ -17,6 +21,9 @@ export type UpdateTaskInput = {
   parentId?: number | null;
   title: string;
   description?: string;
+  deliverable?: string;
+  definitionOfDone?: string;
+  reviewRequired?: boolean;
   startDate: Date | string;
   endDate: Date | string;
   assigneeId?: number | null;
@@ -177,6 +184,9 @@ export async function getTaskById(id: number): Promise<Task | null> {
       tasks.parent_id,
       tasks.title,
       tasks.description,
+      tasks.deliverable,
+      tasks.definition_of_done,
+      tasks.review_required,
       tasks.start_date,
       tasks.end_date,
       tasks.depth,
@@ -204,6 +214,9 @@ export async function listTasksByProject(projectId: number): Promise<Task[]> {
       tasks.parent_id,
       tasks.title,
       tasks.description,
+      tasks.deliverable,
+      tasks.definition_of_done,
+      tasks.review_required,
       tasks.start_date,
       tasks.end_date,
       tasks.depth,
@@ -241,8 +254,8 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
       end_date,
       depth,
       order_index,
-      assignee_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      assignee_id, deliverable, definition_of_done, review_required
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.projectId,
       parentTask?.id ?? null,
@@ -253,6 +266,9 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
       parentTask ? parentTask.depth + 1 : 0,
       orderIndex,
       assigneeId,
+      normalizeWorkGoal(input.deliverable, "기대 산출물"),
+      normalizeWorkGoal(input.definitionOfDone, "완료 기준"),
+      input.reviewRequired ? 1 : 0,
     ],
   )) as {
     insertId: number;
@@ -296,7 +312,7 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
   ]);
 
   await databaseBatch([{ sql: `UPDATE tasks
-    SET parent_id = ?, title = ?, description = ?, start_date = ?, end_date = ?, assignee_id = ?
+    SET parent_id = ?, title = ?, description = ?, start_date = ?, end_date = ?, assignee_id = ?, deliverable = ?, definition_of_done = ?, review_required = ?
     WHERE id = ?`, params: [
       parentTask?.id ?? null,
       normalizeTitle(input.title),
@@ -304,6 +320,9 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
       startDate,
       endDate,
       assigneeId,
+      normalizeWorkGoal(input.deliverable ?? existingTask.deliverable, "기대 산출물"),
+      normalizeWorkGoal(input.definitionOfDone ?? existingTask.definitionOfDone, "완료 기준"),
+      (input.reviewRequired ?? existingTask.reviewRequired) ? 1 : 0,
       existingTask.id,
     ] }, ...buildTaskDepthUpdates(tasks.map((task) => task.id === existingTask.id ? { ...task, parentId: parentTask?.id ?? null } : task))]);
 

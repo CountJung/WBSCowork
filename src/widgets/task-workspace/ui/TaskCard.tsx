@@ -93,6 +93,9 @@ export default function TaskCard({
                 variant={task.assigneeName ? "filled" : "outlined"}
               />
             </Stack>
+            <Typography sx={{ whiteSpace: "pre-wrap" }}>기대 산출물: {task.deliverable || "완료 전에 작성해 주세요."}</Typography>
+            <Typography sx={{ whiteSpace: "pre-wrap" }}>완료 기준: {task.definitionOfDone || "완료 전에 작성해 주세요."}</Typography>
+            <Chip label={task.reviewRequired ? "검토자 승인 필요" : "담당자 완료"} size="small" variant="outlined" />
             {task.description ? (
               <MarkdownContent content={task.description} />
             ) : (
@@ -135,6 +138,9 @@ export default function TaskCard({
               <input type="hidden" name="taskId" value={String(task.id)} />
               <TextField name="title" label="작업 제목" defaultValue={task.title} required />
               <TextField name="description" label="설명" defaultValue={task.description} multiline minRows={3} />
+              <TextField name="deliverable" label="기대 산출물·제출 형식" defaultValue={task.deliverable} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
+              <TextField name="definitionOfDone" label="완료 기준" defaultValue={task.definitionOfDone} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
+              <TextField select name="reviewRequired" label="검토 방식" defaultValue={task.reviewRequired ? "1" : "0"}><MenuItem value="0">담당자가 근거를 남기고 완료</MenuItem><MenuItem value="1">검토자 승인 후 완료</MenuItem></TextField>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                 <TextField select name="parentId" label="상위 작업" defaultValue={String(task.parentId ?? "")} fullWidth>
                   <MenuItem value="">루트 작업</MenuItem>

@@ -1,4 +1,4 @@
-import { NativeMigrationError, readNativeMigrationStatus, runNativeMigrations } from "./native-migrations.server";
+import { nativeMigrationManifest, NativeMigrationError, readNativeMigrationStatus, runNativeMigrations } from "./native-migrations.server";
 import { bugLifecycleColumns } from "./bug-schema.server";
 import { pendingObjectCleanupCount } from "@/src/shared/server/object-cleanup/index.server";
 import { getHostedDatabase, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
@@ -51,6 +51,8 @@ const requiredColumnsByTable: Partial<Record<ManagedTableName, string[]>> = {
   bug_report_purge_receipts: ["actor_id","operation_token","fingerprint","report_version","event_count","last_event_id","purged_at"],
   bug_reports: [...bugLifecycleColumns.map(c=>c.name),"reporter_id","creation_token","last_operation_token","title","reproduction","expected","actual","page_path","status","priority","resolution","fix_commit","version","created_at","updated_at"],
   bug_report_events: ["lifecycle_action","report_id","actor_id","operation_token","kind","body","status","priority","resolution","fix_commit","report_version","created_at"],
+  projects: ["goal", "success_criteria"],
+  tasks: ["deliverable", "definition_of_done", "review_required"],
   submissions: requiredSubmissionColumns.map((column) => column.name),
   users: requiredUsersColumns.map((column) => column.name),
 };
@@ -117,7 +119,7 @@ export async function getDatabaseAdminStatus(): Promise<DatabaseAdminStatus> {
       databaseName: databaseEnv.database,
       databaseExists: false,
       schemaConfigured: isDatabaseSchemaConfigured(),
-      nativeMigrations: { ledgerExists: false, appliedVersions: [], pendingVersions: [1] },
+      nativeMigrations: { ledgerExists: false, appliedVersions: [], pendingVersions: nativeMigrationManifest.map(migration => migration.version) },
       tables: managedTableNames.map((name) => ({ name, exists: false, missingColumns: requiredColumnsByTable[name] ?? [] })),
       existingTableCount: 0,
       managedTableCount: managedTableNames.length,

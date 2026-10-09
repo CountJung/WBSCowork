@@ -383,3 +383,9 @@ lint0/0·types·FSD5/경계·unit85·Worker build·quality375 PASS. 새 단위 �
 프로젝트 선택 UI를 모든 인증 사용자에게 제공하고 관리 버튼만 기존 admin/SU guard 안에 남겼다. 선택 링크는 이전 taskId를 제거하며 현재 프로젝트에 aria-current를 표시한다. 기존 조회 SQL·private 필터·관리 action 권한은 바꾸지 않았다.
 
 lint0/0, typecheck, FSD5/경계, Worker build, `npm run test:sites:workflow` **187 PASS**. 실제 workerd의 두 프로젝트/guest·member2명·admin·SU, 반복 전환·관리 버튼 경계·다른 프로젝트 제출 누출 없음·정상 direct-link 선택과 위조 관계 거부를 검사했다. 독립 읽기 리뷰 후 direct-link 정상 대조군을 보강했다. 브라우저 클릭/Back/Forward·모바일은 아직 실행하지 않았고 PRD-044에서 함께 확인한다. Google 재로그인/운영 데이터 변경은 없다.
+
+## PRD-034 업무 목표 checkpoint (2026-10-09)
+
+프로젝트 목표·성공 기준, 카드 기대 산출물·완료 기준·선택 검토 여부를 기존 MUI 생성/수정/읽기 화면에 추가했다. 각 본문은 2,000자로 제한하고 plain text로 escape한다. 기존 빈 draft는 유지하고 update에서 새 필드를 생략하면 기존 값을 보존한다. 완료 전 필수 기준은 다음 상태 전이 단계에서 검사한다.
+
+lint0/0, typecheck, FSD5/경계, unit88, Worker build 및 workflow206 PASS. 실제 workerd에서 생성/수정/생략 보존/guest 읽기/HTML escape/길이 초과 무변경을 확인했다. 독립 리뷰에서 찾은 missing-column readiness를 root·관리 개요·프로젝트 관리·workspace에 반영했다. D1은 추가 컬럼5개만 생성하는 0005이며 기존 migration은 수정하지 않았다. Native v1 명세는 불변이고 새 v2가 누락 컬럼만 추가한다. populated-v1 upgrade·v2 중단/재개·wrong-type drift 하네스를 추가했지만 실제 MariaDB v2 검증은 별도 exact-commit 실행 대기다. 아직 운영 migration·게시·실제 브라우저 입력은 실행하지 않았다.

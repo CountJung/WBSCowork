@@ -53,6 +53,8 @@ function ProjectCreateForm({
           프로젝트를 생성하면 /tasks 작업 공간에서 해당 프로젝트의 WBS 작업을 관리할 수 있습니다.
         </Typography>
         <TextField name="name" label="프로젝트 이름" required />
+        <TextField name="goal" label="주제의 목표" multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
+        <TextField name="successCriteria" label="프로젝트 성공 기준" multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <TextField
             name="startDate"
@@ -112,6 +114,8 @@ function ProjectEditCard({ project }: { project: Project }) {
         <Stack component="form" action={updateProjectAdminAction} spacing={2}>
           <input type="hidden" name="projectId" value={String(project.id)} />
           <TextField name="name" label="프로젝트 이름" defaultValue={project.name} required />
+          <TextField name="goal" label="주제의 목표" defaultValue={project.goal} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
+          <TextField name="successCriteria" label="프로젝트 성공 기준" defaultValue={project.successCriteria} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             <TextField
               name="startDate"
@@ -179,7 +183,7 @@ export default async function AdminProjectsPage({ searchParams }: AdminProjectsP
   const databaseStatus = await getDatabaseAdminStatus();
   const projectsTableReady =
     databaseStatus.databaseExists &&
-    databaseStatus.tables.some((t) => t.name === "projects" && t.exists);
+    databaseStatus.tables.some((t) => t.name === "projects" && t.exists && t.missingColumns.length === 0);
 
   if (!projectsTableReady) {
     return (

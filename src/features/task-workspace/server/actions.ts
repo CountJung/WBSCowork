@@ -217,6 +217,11 @@ async function requireOwnedComment(
   return { comment, submission, user, canManageAll };
 }
 
+function parseReviewRequired(value: FormDataEntryValue | null) {
+  if (value !== "0" && value !== "1") throw new Error("검토 방식 값이 올바르지 않습니다.");
+  return value === "1";
+}
+
 export async function createTaskAction(formData: FormData) {
   const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
   const session = await requireWritableSession(projectId);
@@ -234,6 +239,9 @@ export async function createTaskAction(formData: FormData) {
       parentId: parseOptionalPositiveInteger(formData.get("parentId"), "상위 작업"),
       title: getSingleValue(formData.get("title")),
       description: getSingleValue(formData.get("description")),
+      deliverable: formData.has("deliverable") ? getSingleValue(formData.get("deliverable")) : undefined,
+      definitionOfDone: formData.has("definitionOfDone") ? getSingleValue(formData.get("definitionOfDone")) : undefined,
+      reviewRequired: formData.has("reviewRequired") ? parseReviewRequired(formData.get("reviewRequired")) : undefined,
       startDate,
       endDate,
       assigneeId: parseOptionalPositiveInteger(formData.get("assigneeId"), "담당자"),
@@ -293,6 +301,9 @@ export async function updateTaskAction(formData: FormData) {
       parentId: parseOptionalPositiveInteger(formData.get("parentId"), "상위 작업"),
       title: getSingleValue(formData.get("title")),
       description: getSingleValue(formData.get("description")),
+      deliverable: formData.has("deliverable") ? getSingleValue(formData.get("deliverable")) : undefined,
+      definitionOfDone: formData.has("definitionOfDone") ? getSingleValue(formData.get("definitionOfDone")) : undefined,
+      reviewRequired: formData.has("reviewRequired") ? parseReviewRequired(formData.get("reviewRequired")) : undefined,
       startDate,
       endDate,
       assigneeId: parseOptionalPositiveInteger(formData.get("assigneeId"), "담당자"),

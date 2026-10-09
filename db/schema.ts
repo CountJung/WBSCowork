@@ -9,12 +9,12 @@ export const users = sqliteTable("users", {
   lastLoginAt: text("last_login_at"), lastSyncedAt: text("last_synced_at"), createdAt: createdAt(),
 }, (t) => [uniqueIndex("users_email_unique").on(t.email), check("users_role_check", sql`${t.role} IN ('admin','member','guest')`)]);
 export const projects = sqliteTable("projects", {
-  id: id(), name: text("name").notNull(), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(), createdAt: createdAt(),
+  id: id(), name: text("name").notNull(), goal: text("goal").notNull().default(""), successCriteria: text("success_criteria").notNull().default(""), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(), createdAt: createdAt(),
 });
 export const tasks = sqliteTable("tasks", {
   id: id(), projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   parentId: integer("parent_id").references((): AnySQLiteColumn => tasks.id, { onDelete: "set null" }),
-  title: text("title").notNull(), description: text("description"), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(),
+  title: text("title").notNull(), description: text("description"), deliverable: text("deliverable").notNull().default(""), definitionOfDone: text("definition_of_done").notNull().default(""), reviewRequired: integer("review_required").notNull().default(0), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(),
   depth: integer("depth").notNull().default(0), orderIndex: integer("order_index").notNull().default(0),
   assigneeId: integer("assignee_id").references(() => users.id, { onDelete: "set null" }), createdAt: createdAt(),
 }, (t) => [index("tasks_project_idx").on(t.projectId), index("tasks_parent_idx").on(t.parentId), index("tasks_assignee_idx").on(t.assigneeId)]);

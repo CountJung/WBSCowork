@@ -68,8 +68,8 @@ export default async function Home({ searchParams }: HomePageProps) {
   }
 
   const databaseStatus = await getDatabaseAdminStatus();
-  const projectsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "projects" && table.exists);
-  const tasksTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "tasks" && table.exists);
+  const projectsTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "projects" && table.exists && table.missingColumns.length === 0);
+  const tasksTableReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "tasks" && table.exists && table.missingColumns.length === 0);
 
   if (!projectsTableReady || !tasksTableReady) {
     return (

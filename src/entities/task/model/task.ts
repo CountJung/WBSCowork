@@ -4,6 +4,9 @@ export type TaskRow = {
   parent_id: number | null;
   title: string;
   description: string | null;
+  deliverable: string;
+  definition_of_done: string;
+  review_required: number;
   start_date: Date | string;
   end_date: Date | string;
   depth: number;
@@ -19,6 +22,9 @@ export type Task = {
   parentId: number | null;
   title: string;
   description: string;
+  deliverable: string;
+  definitionOfDone: string;
+  reviewRequired: boolean;
   startDate: Date;
   endDate: Date;
   depth: number;
@@ -35,6 +41,9 @@ export function mapTaskRow(row: TaskRow): Task {
     parentId: row.parent_id,
     title: row.title,
     description: row.description ?? "",
+    deliverable: row.deliverable ?? "",
+    definitionOfDone: row.definition_of_done ?? "",
+    reviewRequired: Number(row.review_required ?? 0) === 1,
     startDate: row.start_date instanceof Date ? row.start_date : new Date(row.start_date),
     endDate: row.end_date instanceof Date ? row.end_date : new Date(row.end_date),
     depth: row.depth,

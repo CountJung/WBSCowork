@@ -54,3 +54,9 @@ MariaDB의 CREATE/ALTER는 [암묵적으로 commit](https://mariadb.com/docs/ser
 같은 `cecce92e`에서 MariaDB11.4.13 / Node26.11.1 / npm11.20과 정확한 lockfile로 **27 PASS**. 빈 설치·기존 core/pre-lifecycle upgrade, 재실행·내용/private/역할/이력 보존, 겹치는 fresh runner, 중단/재개, autocommit0 durable ledger, 잘못된 schema/role/checksum 거부를 확인했다. 합성 DB10개/테이블100개를 보존했고 DB 정지·재기동 후 schema/data snapshot이 모두 일치했다. 기존 보존 DB 파일719개와 artifact21개는 변경되지 않았다. 마지막에는 DB를 정상 정지했고 listener도 없다.
 
 테스트 listener는 실행 중 127.0.0.1:3307로 한정됐다. 실제 운영 계정의 DDL/ledger 거부, 운영 credential 구성, 실제 운영 migration 및 과거 native purge fixture는 수행하지 않았다. QLT-012의 migration 구현/검증은 완료이며 QLT-013의 실제 최소권한 운영 단계는 별도다.
+
+## 업무 목표 v2 (PRD-034)
+
+새 명세 `native-migration-v2.ts`의 checksum은 `c010a7e166ece374ab7b8046086fa67011225cebca5f5435928f5289e8ca8549`다. v1 명세·checksum은 그대로다. projects의 goal/success_criteria와 tasks의 deliverable/definition_of_done/review_required를 additive ALTER로 추가한다. 기존 행은 빈 문구/검토 안 함으로 보존되고 원래 값과 ID를 재작성하지 않는다. v2 도중 중단되면 누락 필드만 재개하며 잘못된 기존 타입은 거부한다.
+
+전용 native 하네스는 populated-v1 ledger/행 보존, 부분 v2 재개, 잘못된 v2 필드 거부를 추가했다. 실제 MariaDB v2 검증은 exact-commit 실행 대기다. D1은 별도 `drizzle/0005_work_goals.sql`을 사용한다. 새 코드 배포 전 schema 적용이 필요하며 readiness는 필수 새 컬럼이 없을 때 안내한다.

@@ -4,10 +4,13 @@ import assert from "node:assert/strict";
 import { nativeMigrationManifest, migrationChecksum, validateMigrationLedger, splitSchemaEntries, runNativeMigrations, readNativeMigrationStatus } from "@/src/shared/server/database-admin/native-migrations.server";
 const v1 = nativeMigrationManifest[0];
 const ledger = [{ version: v1.version, name: v1.name, checksum: migrationChecksum(v1) }];
+test("immutable work-goals specification is pinned", () => {
+  assert.equal(migrationChecksum(nativeMigrationManifest[1]), "c010a7e166ece374ab7b8046086fa67011225cebca5f5435928f5289e8ca8549");
+});
 test("immutable native baseline ledger is repeatable", () => {
   assert.equal(migrationChecksum(v1), "8dea300dc59fc6a4d7c0fcb0a54b4a4fdec2db9d2681b303be9c1208d7007092", "released version1 specification must not change");
-  assert.deepEqual(validateMigrationLedger([]), [v1]);
-  assert.deepEqual(validateMigrationLedger(ledger), []);
+  assert.deepEqual(validateMigrationLedger([]), [...nativeMigrationManifest]);
+  assert.deepEqual(validateMigrationLedger(ledger), [...nativeMigrationManifest.slice(1)]);
   assert.throws(() => validateMigrationLedger([...ledger, ...ledger]), /ledger/);
 });
 for (const patch of [{ version: 0 }, { version: 2 }, { name: "edited" }, { checksum: "f".repeat(64) }]) {
@@ -48,7 +51,7 @@ test("DDL interruption never writes success ledger and always releases the lock"
 test("missing ledger status is read-only and pending", async () => {
   const calls: string[] = [];
   const status = await readNativeMigrationStatus({ query: async sql => { calls.push(sql); return []; } }, "wbs_status_test");
-  assert.equal(status.ledgerExists, false); assert.deepEqual(status.pendingVersions, [1]);
+  assert.equal(status.ledgerExists, false); assert.deepEqual(status.pendingVersions, nativeMigrationManifest.map(migration => migration.version));
   assert.ok(calls.every(sql => sql.startsWith("SELECT")));
 });
 test("invalid schema identifier fails before connection queries", async () => {

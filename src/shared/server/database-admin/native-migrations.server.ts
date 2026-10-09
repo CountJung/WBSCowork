@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 import { nativeMigrationV1 } from "./native-migration-v1";
+import { nativeMigrationV2 } from "./native-migration-v2";
 
 export class NativeMigrationError extends Error {}
 
 export type MigrationConnection = { query(sql: string, values?: unknown[]): Promise<unknown> };
 export type MigrationLedgerRow = { version: number; name: string; checksum: string; appliedAt?: string };
-export const nativeMigrationManifest = [nativeMigrationV1] as const;
+export const nativeMigrationManifest = [nativeMigrationV1, nativeMigrationV2] as const;
 export const migrationChecksum = (specification: unknown) => createHash("sha256").update(JSON.stringify(specification)).digest("hex");
 export function quoteSchemaIdentifier(identifier: string) {
   if (!/^[A-Za-z0-9_]{1,64}$/.test(identifier)) throw new NativeMigrationError("Schema identifier must contain 1–64 letters, numbers or underscores.");
@@ -55,8 +56,8 @@ async function columns(connection: MigrationConnection, database: string, table:
   return rows<ColumnRow>(connection, "SELECT COLUMN_NAME AS name, COLUMN_TYPE AS type, IS_NULLABLE AS nullable, COLUMN_DEFAULT AS defaultValue, EXTRA AS extra, COLLATION_NAME AS collation FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=?", [database, table]);
 }
 
-export async function verifyNativeSchema(connection: MigrationConnection, database: string) {
-  for (const statement of nativeMigrationV1.statements) {
+export async function verifyNativeSchema(connection: MigrationConnection, database: string, specifications: readonly string[] = nativeMigrationManifest.flatMap(migration => [...migration.statements])) {
+  for (const statement of specifications) {
     const table = statement.match(/CREATE TABLE IF NOT EXISTS (\w+)/)![1];
     const body = statement.slice(statement.indexOf("(") + 1, statement.lastIndexOf(") ENGINE"));
     const found = new Map((await columns(connection, database, table)).map(row => [row.name, row]));
@@ -115,7 +116,16 @@ async function applyNativeV1(connection: MigrationConnection, database: string) 
     const present = await rows(connection, "SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND TABLE_NAME='bug_reports' AND COLUMN_NAME=? AND REFERENCED_TABLE_NAME IS NOT NULL", [database, column]);
     if (!present.length) await connection.query(`ALTER TABLE bug_reports ADD CONSTRAINT bug_reports_${column}_fk FOREIGN KEY (${column}) REFERENCES users(id) ON DELETE SET NULL`);
   }
-  await verifyNativeSchema(connection, database);
+  await verifyNativeSchema(connection, database, nativeMigrationV1.statements);
+}
+
+async function applyNativeV2(connection: MigrationConnection, database: string) {
+  for (const addition of nativeMigrationV2.additions) {
+    if (!(await columns(connection, database, addition.table)).some(column => column.name === addition.name)) {
+      await connection.query(`ALTER TABLE ${quoteSchemaIdentifier(addition.table)} ADD COLUMN ${addition.definition}`);
+    }
+  }
+  await verifyNativeSchema(connection, database, [...nativeMigrationV1.statements, ...nativeMigrationV2.statements]);
 }
 
 /** One caller-owned, schema-only connection. DDL implicitly commits; never wrap in deadlock retries. */
@@ -131,8 +141,9 @@ export async function runNativeMigrations(connection: MigrationConnection, datab
     const ledger = await rows<MigrationLedgerRow>(connection, "SELECT version,name,checksum,applied_at AS appliedAt FROM schema_migrations ORDER BY version");
     const pending = validateMigrationLedger(ledger);
     for (const migration of pending) {
-      if (migration.version !== 1) throw new NativeMigrationError("This migration version has no implementation.");
-      await applyNativeV1(connection, database);
+      if (migration.version === 1) await applyNativeV1(connection, database);
+      else if (migration.version === 2) await applyNativeV2(connection, database);
+      else throw new NativeMigrationError("This migration version has no implementation.");
       await connection.query("INSERT INTO schema_migrations(version,name,checksum) VALUES(?,?,?)", [migration.version, migration.name, migrationChecksum(migration)]);
       // Explicit durability even if this dedicated connection inherits autocommit=0.
       await connection.query("COMMIT");

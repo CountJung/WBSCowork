@@ -5,7 +5,7 @@ import { randomBytes } from "node:crypto";
 import { createConnection } from "mariadb";
 import { testDatabaseEnv, assertTestDatabaseName } from "../tests/helpers/test-env";
 import { nativeSchemaV1 } from "../src/shared/server/database-admin/native-migration-v1";
-import { runNativeMigrations, verifyNativeSchema, type MigrationConnection } from "../src/shared/server/database-admin/native-migrations.server";
+import { migrationChecksum, nativeMigrationManifest, runNativeMigrations, verifyNativeSchema, type MigrationConnection } from "../src/shared/server/database-admin/native-migrations.server";
 
 const options = { host: testDatabaseEnv.host, port: Number(testDatabaseEnv.port), user: process.env.TEST_DB_SCHEMA_USER ?? testDatabaseEnv.user, password: process.env.TEST_DB_SCHEMA_PASSWORD ?? testDatabaseEnv.password, connectTimeout: 5000 };
 // Hard guard: this harness is for the explicitly isolated test listener only.
@@ -26,7 +26,7 @@ try {
   const install=await fresh('fresh');
   try {
     const result=await runNativeMigrations(install.connection,install.name);
-    check(result.appliedVersions.join(',')==='1'&&result.pendingVersions.length===0,'fresh installation has verified migration1');
+    check(result.appliedVersions.join(',')===nativeMigrationManifest.map(m=>m.version).join(',')&&result.pendingVersions.length===0,'fresh installation has all verified migrations');
     await install.connection.query("INSERT INTO users(id,email,name,role) VALUES(9001,'fixture@example.test','합성 사용자','member')");
     await install.connection.query("INSERT INTO projects(id,name,start_date,end_date) VALUES(9001,'합성 프로젝트','2026-01-01','2026-12-31')");
     await install.connection.query("INSERT INTO tasks(id,project_id,title,start_date,end_date) VALUES(9001,9001,'보존 작업','2026-01-01','2026-12-31')");
@@ -39,6 +39,48 @@ try {
     check((await install.connection.query("SELECT role FROM users WHERE id=9001"))[0].role==='member'&&(await install.connection.query("SELECT content,visibility FROM submissions WHERE id=9001"))[0].visibility==='private'&&(await install.connection.query("SELECT content FROM submissions WHERE id=9001"))[0].content==='보존 비공개','repeat preserves roles and private content');
     check(Number((await install.connection.query('SELECT COUNT(*) AS n FROM bug_report_events WHERE report_id=9001'))[0].n)===1,'repeat preserves original report history');
   } finally { await install.connection.end(); }
+
+  const version1=await fresh('version1');
+  try {
+    for(const sql of nativeSchemaV1)await version1.connection.query(sql);
+    await version1.connection.query("CREATE TABLE schema_migrations (version INT NOT NULL PRIMARY KEY, name VARCHAR(128) NOT NULL, checksum CHAR(64) NOT NULL, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    await version1.connection.query("INSERT INTO schema_migrations(version,name,checksum,applied_at) VALUES(1,?,?,'2026-01-01 00:00:00')",[nativeMigrationManifest[0].name,migrationChecksum(nativeMigrationManifest[0])]);
+    await version1.connection.query("INSERT INTO projects(id,name,start_date,end_date) VALUES(9401,'기존 v1 주제','2026-01-01','2026-12-31')");
+    await version1.connection.query("INSERT INTO tasks(id,project_id,title,start_date,end_date) VALUES(9401,9401,'기존 v1 카드','2026-01-01','2026-12-31')");
+    const originalLedger=JSON.stringify(await version1.connection.query('SELECT * FROM schema_migrations WHERE version=1'));
+    await runNativeMigrations(version1.connection,version1.name);
+    check(JSON.stringify(await version1.connection.query('SELECT * FROM schema_migrations WHERE version=1'))===originalLedger,'new versions preserve released v1 ledger and timestamp');
+    check((await version1.connection.query('SELECT goal,success_criteria FROM projects WHERE id=9401'))[0].goal===''&&(await version1.connection.query('SELECT deliverable,definition_of_done,review_required FROM tasks WHERE id=9401'))[0].review_required===0,'existing v1 rows remain blank drafts without fabricated goals or review');
+    await version1.connection.query("UPDATE projects SET goal='보존 목표',success_criteria='보존 기준' WHERE id=9401");
+    await version1.connection.query("UPDATE tasks SET deliverable='보존 결과',definition_of_done='보존 완료',review_required=1 WHERE id=9401");
+    await runNativeMigrations(version1.connection,version1.name);
+    check((await version1.connection.query('SELECT goal FROM projects WHERE id=9401'))[0].goal==='보존 목표'&&(await version1.connection.query('SELECT definition_of_done FROM tasks WHERE id=9401'))[0].definition_of_done==='보존 완료','repeat retains configured work goals');
+  } finally {await version1.connection.end();}
+
+  for(const scenario of ['resume_v2','drift_v2']) {
+    const fixture=await fresh(scenario);
+    try {
+      for(const sql of nativeSchemaV1)await fixture.connection.query(sql);
+      await fixture.connection.query("CREATE TABLE schema_migrations (version INT NOT NULL PRIMARY KEY, name VARCHAR(128) NOT NULL, checksum CHAR(64) NOT NULL, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+      await fixture.connection.query("INSERT INTO schema_migrations(version,name,checksum) VALUES(1,?,?)",[nativeMigrationManifest[0].name,migrationChecksum(nativeMigrationManifest[0])]);
+      if(scenario==='resume_v2') {
+        let interrupted=false;
+        const proxy:MigrationConnection={query:async(sql,values)=>{
+          const result=await fixture.connection.query(sql,values);
+          if(!interrupted&&sql.includes('ADD COLUMN goal ')){interrupted=true;throw new Error('synthetic interrupted v2');}
+          return result;
+        }};
+        await assert.rejects(runNativeMigrations(proxy,fixture.name),/interrupted v2/);checks++;
+        check(Number((await fixture.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===1,'interrupted v2 leaves only the released v1 ledger');
+        await runNativeMigrations(fixture.connection,fixture.name);
+        check(Number((await fixture.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===nativeMigrationManifest.length,'partial v2 resumes without duplicate columns');
+      } else {
+        await fixture.connection.query("ALTER TABLE projects ADD COLUMN goal VARCHAR(20) NOT NULL DEFAULT ''");
+        await assert.rejects(runNativeMigrations(fixture.connection,fixture.name),/projects.goal/);checks++;
+        check(Number((await fixture.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===1,'incompatible v2 goal never gets a successful ledger');
+      }
+    } finally {await fixture.connection.end();}
+  }
 
   const concurrent=await fresh('concurrent');
   const concurrentOther=await connect(concurrent.name);
@@ -53,7 +95,7 @@ try {
     const first=runNativeMigrations(firstConnection,concurrent.name);
     await Promise.race([firstEnteredDDL, first.then(() => { throw new Error("Fresh concurrent test did not enter DDL."); })]);
     await Promise.all([first,runNativeMigrations(concurrentOther,concurrent.name)]);
-    check(Number((await concurrent.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===1,'overlapping fresh migration runners serialize to one ledger row');
+    check(Number((await concurrent.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===nativeMigrationManifest.length,'overlapping fresh migration runners serialize to one row per version');
   } finally { await concurrent.connection.end(); await concurrentOther.end(); }
 
   const legacy=await fresh('legacy');
@@ -95,14 +137,14 @@ try {
     await assert.rejects(runNativeMigrations(proxy,interrupted.name),/synthetic failure/);checks++;
     check(Number((await interrupted.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===0,'DDL interruption does not claim success');
     await runNativeMigrations(interrupted.connection,interrupted.name);
-    check(Number((await interrupted.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===1,'interrupted DDL resumes safely');
+    check(Number((await interrupted.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===nativeMigrationManifest.length,'interrupted DDL resumes safely');
   } finally { await interrupted.connection.end(); }
 
   const manualCommit=await fresh('commit');
   try {await manualCommit.connection.query('SET autocommit=0');await runNativeMigrations(manualCommit.connection,manualCommit.name);}
   finally {await manualCommit.connection.end();}
   const persisted=await connect(manualCommit.name);
-  try {check(Number((await persisted.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===1,'ledger is durable with inherited autocommit0');}
+  try {check(Number((await persisted.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===nativeMigrationManifest.length,'ledger is durable with inherited autocommit0');}
   finally {await persisted.end();}
 
   for(const [label,change,role]of[

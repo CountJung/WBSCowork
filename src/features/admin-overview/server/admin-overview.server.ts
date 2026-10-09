@@ -19,7 +19,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     const databaseStatus = await getDatabaseAdminStatus();
     const presentation = getAdminRuntimePresentation({ hosted: Boolean(databaseStatus.managedMigrations), databaseConfigured: databaseStatus.databaseExists, databaseName: databaseStatus.databaseName });
     const usersReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "users" && table.exists);
-    const projectsReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "projects" && table.exists);
+    const projectsReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "projects" && table.exists && table.missingColumns.length === 0);
 
     if (!databaseStatus.databaseExists) {
       return {
