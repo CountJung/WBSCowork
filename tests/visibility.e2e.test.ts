@@ -17,11 +17,11 @@ import { getUserByEmail } from "@/src/entities/user/index.server";
 import { canManageAllSubmissions } from "@/src/entities/user";
 import {
   deleteCommentAction,
-  deleteProjectAction,
   deleteSubmissionAction,
   updateCommentAction,
   updateSubmissionAction,
 } from "@/src/features/task-workspace/index.server";
+import { deleteProjectAdminAction } from "@/app/admin/projects/actions";
 import { GET as getAttachmentByAttachmentId } from "@/app/api/submission-attachments/[attachmentId]/route";
 import { GET as getAttachmentBySubmissionId } from "@/app/api/submissions/[submissionId]/attachment/route";
 
@@ -385,7 +385,7 @@ describe("3. 수정·삭제는 author 또는 명시된 관리자만 가능하다
     setSession(sessionFor(testActors.member1));
 
     const outcome = await runAction(() =>
-      deleteProjectAction(formDataFrom({ projectId: fixture.otherProjectId })),
+      deleteProjectAdminAction(formDataFrom({ projectId: fixture.otherProjectId, confirmDestruction: "yes" })),
     );
 
     assert.equal(outcome.status, "error");

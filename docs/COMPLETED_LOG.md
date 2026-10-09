@@ -280,3 +280,12 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 ## OPS-029 — 버그 제보·리뷰 실환경 쓰기 검증 (2026-10-08)
 
 승인된 합성 report1 한 건으로 제보→추가 설명→검토 중→해결, 원문 보존, Git SHA 기록, 검색/상태 필터를 실제 브라우저에서 확인했다. version4와 events1–4를 native read-only DB 도구로 확인했다. [상세](SITES_BUG_QA_2026-10-08.md). 기존 사용자/역할/운영 데이터 변경 없음. 삭제는 실행하지 않았으며 OPS-031에서 지원 경로와 별도 승인을 결정한다.
+
+
+## QLT-010 — 프로젝트 CRUD 단일화 (2026-10-09)
+
+사용자 요청에 따라 미사용 `task-workspace` 프로젝트 생성·수정·삭제 action 3개와 `/tasks` adapter 3개를 제거했다. 호출처 조사에서 실제 UI는 `/admin/projects`의 `project-manage` action만 사용했다. task/submission/comment 기능, 관리자 확인·로그·파일 정리와 `/tasks`, `/admin/projects` URL은 그대로다. 이전 QLT-007에서 막은 중복 권한 경로까지 정리했다.
+
+회귀: canonical route에서 anonymous/guest/member의 3가지 action 거부 9건, admin/SU의 파기 확인 누락 거부 2건을 DB 없는 테스트로 추가했다. 기존 native 가시성 suite의 프로젝트 거부 검사를 canonical adapter로 옮겼다. 독립 참조/인가 검토에서 결함 없음.
+
+검증: lint 0/0, typecheck, FSD self-test 5 및 경계, unit 41, Worker build 통과. native MariaDB suite는 이 dot 환경의 127.0.0.1:3307 ECONNREFUSED로 미실행이며 통과로 계산하지 않는다. Worker 인증/decoder 검사 결과는 HARNESS_MAP 최신 항목에 기록한다. 운영 데이터 파기나 역할 변경은 수행하지 않았다.

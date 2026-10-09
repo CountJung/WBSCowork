@@ -10,23 +10,19 @@ import {
   getSubmissionAttachmentById,
   listAttachmentsBySubmission,
   listAttachmentsByTask,
-  listAttachmentsByProject,
   createSubmissionWithAttachments,
   deleteSubmission,
   getSubmissionByIdForViewer,
   updateSubmissionWithAttachments,
-  listSubmissionsByProject,
   listSubmissionsByTask,
   deleteStoredSubmissionAttachment,
   saveUploadedSubmissionAttachment,
   cleanupTaskUploadDirectory,
-  cleanupProjectUploadDirectories,
   type StoredSubmissionAttachment,
 } from "@/src/entities/submission/index.server";
 import { createComment, deleteComment, getCommentById, updateComment } from "@/src/entities/comment/index.server";
-import { createProject, deleteProject, updateProject } from "@/src/entities/project/index.server";
-import { createTask, deleteTask, getTaskById, listTasksByProject, updateTask } from "@/src/entities/task/index.server";
-import { canAccessAdminPanel, canManageAllSubmissions, canWriteTaskContent } from "@/src/entities/user";
+import { createTask, deleteTask, getTaskById, updateTask } from "@/src/entities/task/index.server";
+import { canManageAllSubmissions, canWriteTaskContent } from "@/src/entities/user";
 import type { Submission, SubmissionVisibility } from "@/src/entities/submission";
 import type { User } from "@/src/entities/user";
 
@@ -146,22 +142,6 @@ async function resolvePersistedUser(session: WritableSession): Promise<User> {
   return user;
 }
 
-/**
- * 프로젝트 CRUD는 관리자 이상 전용이다(AGENTS.md 역할 표, `/admin/projects`).
- *
- * `"use server"` 모듈에서 export된 action은 화면에 폼이 없어도 호출 가능한 엔드포인트이므로,
- * 쓰기 역할(`canWriteTaskContent`)만으로는 member가 프로젝트를 cascade 삭제할 수 있다.
- */
-async function requireProjectAdminSession(projectId?: number) {
-  const session = await requireWritableSession(projectId);
-
-  if (!canAccessAdminPanel(session.user.role, session.user.isSuperuser)) {
-    redirect(buildTasksPath("error", "프로젝트 생성·수정·삭제는 관리자 이상만 할 수 있습니다.", { projectId }));
-  }
-
-  return session;
-}
-
 async function requirePersistedUser(projectId?: number) {
   const session = await requireWritableSession(projectId);
 
@@ -238,115 +218,6 @@ async function requireOwnedComment(
   }
 
   return { comment, submission, user, canManageAll };
-}
-
-export async function createProjectAction(formData: FormData) {
-  const session = await requireProjectAdminSession();
-
-  let redirectPath: string;
-
-  try {
-    const name = getSingleValue(formData.get("name")).trim();
-    const startDate = parseRequiredDate(formData.get("startDate"), "프로젝트 시작일");
-    const endDate = parseRequiredDate(formData.get("endDate"), "프로젝트 종료일");
-
-    if (!name) {
-      throw new Error("프로젝트 이름은 비워 둘 수 없습니다.");
-    }
-
-    assertValidDateRange(startDate, endDate);
-
-    const project = await createProject({
-      name,
-      startDate,
-      endDate,
-    });
-
-    revalidatePath("/admin");
-    revalidatePath("/tasks");
-
-    await logUserAction("tasks", {
-      actorEmail: session.user.email ?? null,
-      action: "project.create",
-      entityType: "project",
-      entityId: project.id,
-      entityLabel: project.name,
-      projectId: project.id,
-    });
-
-    redirectPath = buildTasksPath("success", `${project.name} 프로젝트를 생성했습니다.`, { projectId: project.id });
-  } catch (error) {
-    await logUserActionFailure(
-      "tasks",
-      {
-        actorEmail: session.user.email ?? null,
-        action: "project.create",
-        entityType: "project",
-      },
-      error,
-    );
-
-    redirectPath = buildTasksPath(
-      "error",
-      error instanceof Error ? error.message : "프로젝트 생성 중 알 수 없는 오류가 발생했습니다.",
-    );
-  }
-
-  redirect(redirectPath);
-}
-
-export async function updateProjectAction(formData: FormData) {
-  const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
-  const session = await requireProjectAdminSession(projectId);
-
-  let redirectPath: string;
-
-  try {
-    const name = getSingleValue(formData.get("name")).trim();
-    const startDate = parseRequiredDate(formData.get("startDate"), "프로젝트 시작일");
-    const endDate = parseRequiredDate(formData.get("endDate"), "프로젝트 종료일");
-
-    if (!name) {
-      throw new Error("프로젝트 이름은 비워 둘 수 없습니다.");
-    }
-
-    assertValidDateRange(startDate, endDate);
-
-    const project = await updateProject({ id: projectId, name, startDate, endDate });
-
-    revalidatePath("/admin");
-    revalidatePath("/tasks");
-
-    await logUserAction("tasks", {
-      actorEmail: session.user.email ?? null,
-      action: "project.update",
-      entityType: "project",
-      entityId: project.id,
-      entityLabel: project.name,
-      projectId: project.id,
-    });
-
-    redirectPath = buildTasksPath("success", `${project.name} 프로젝트를 수정했습니다.`, { projectId: project.id });
-  } catch (error) {
-    await logUserActionFailure(
-      "tasks",
-      {
-        actorEmail: session.user.email ?? null,
-        action: "project.update",
-        entityType: "project",
-        projectId,
-      },
-      error,
-    );
-
-    redirectPath = buildTasksPath(
-      "error",
-      error instanceof Error ? error.message : "프로젝트 수정 중 알 수 없는 오류가 발생했습니다.",
-      { projectId },
-    );
-  }
-
-  redirect(redirectPath);
 }
 
 export async function createTaskAction(formData: FormData) {
@@ -557,105 +428,6 @@ export async function deleteTaskAction(formData: FormData) {
     redirectPath = buildTasksPath(
       "error",
       error instanceof Error ? error.message : "작업 삭제 중 알 수 없는 오류가 발생했습니다.",
-      { projectId },
-    );
-  }
-
-  redirect(redirectPath);
-}
-
-export async function deleteProjectAction(formData: FormData) {
-  const projectId = parseRequiredPositiveInteger(formData.get("projectId"), "프로젝트");
-  const session = await requireProjectAdminSession(projectId);
-
-  let cleanupFailed = false;
-  let redirectPath = "/tasks";
-
-  try {
-    // 삭제 전에 프로젝트 전체 제출물, 첨부파일, 태스크 목록 조회 (DB CASCADE 이전)
-    const [submissionsToClean, attachmentsToClean, tasksToClean] = await Promise.all([
-      // 프로젝트 삭제는 저장 파일 전체를 정리해야 하므로 뷰어 범위를 적용하지 않는다.
-      listSubmissionsByProject(projectId, { canSeeAll: true }),
-      listAttachmentsByProject(projectId, { unrestricted: true }),
-      listTasksByProject(projectId),
-    ]);
-
-    const project = await deleteProject(projectId);
-
-    // 레거시 단일 파일 정리
-    for (const sub of submissionsToClean) {
-      if (sub.filePath) {
-        await deleteStoredSubmissionAttachment(sub.filePath).catch(async (cleanupError) => {
-        cleanupFailed = true;
-          await logUserActionFailure(
-            "tasks",
-            {
-              actorEmail: session.user.email ?? null,
-              action: "project.delete.file.cleanup",
-              entityType: "project",
-              entityId: projectId,
-              projectId,
-              metadata: { filePath: sub.filePath },
-            },
-            cleanupError,
-          );
-        });
-      }
-    }
-
-    // submission_attachments 파일 정리 (DB 레코드는 CASCADE로 이미 삭제됨)
-    for (const attachment of attachmentsToClean) {
-      await deleteStoredSubmissionAttachment(attachment.filePath).catch(async (cleanupError) => {
-        cleanupFailed = true;
-        await logUserActionFailure(
-          "tasks",
-          {
-            actorEmail: session.user.email ?? null,
-            action: "project.delete.file.cleanup",
-            entityType: "project",
-            entityId: projectId,
-            projectId,
-            metadata: { filePath: attachment.filePath },
-          },
-          cleanupError,
-        );
-      });
-    }
-
-    // 빈 폴더 정리
-    const taskIds = tasksToClean.map((t) => t.id);
-    await cleanupProjectUploadDirectories(taskIds).catch(() => undefined);
-
-    revalidatePath("/");
-    revalidatePath("/admin");
-    revalidatePath("/tasks");
-
-    await logUserAction("tasks", {
-      actorEmail: session.user.email ?? null,
-      action: "project.delete",
-      entityType: "project",
-      entityId: project.id,
-      entityLabel: project.name,
-      projectId: project.id,
-    });
-
-    redirectPath = buildTasksPath(cleanupFailed ? "error" : "success", cleanupFailed ? `${project.name} 프로젝트 DB는 삭제됐고 파일 정리는 재시도 대기 중입니다.` : `${project.name} 프로젝트를 삭제했습니다.`);
-  } catch (error) {
-    await logUserActionFailure(
-      "tasks",
-      {
-        actorEmail: session.user.email ?? null,
-        action: "project.delete",
-        entityType: "project",
-        entityId: projectId,
-        projectId,
-      },
-      error,
-    );
-
-    redirectPath = buildTasksPath(
-      "error",
-      error instanceof Error ? error.message : "프로젝트 삭제 중 알 수 없는 오류가 발생했습니다.",
       { projectId },
     );
   }

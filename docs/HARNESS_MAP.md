@@ -304,3 +304,12 @@ React/react-dom/RSC 19.2.8 trio에서 lint/types/FSD/build, unit30, D1/R2 57, bu
 saved-cloud가 exact `f31f9dc18ca9848e648035ed602cba5b9731d9f1`을 외부 preload 없이 다시 검사해 unit30+real MariaDB33(skip0), native bug17, retry boundary23, 별도 concurrency160회의 기대 API/state/history 계약을 모두 통과했다고 보고했다. 내부 deadlock268건은 bounded retry로 처리됐고 DB 재시도 경계 mock tests와 실제 SQL 경쟁 검사는 구분한다. 이 SHA의 React는19.2.6이며 이후 security patch의 native 전체 실행을 증명하지 않는다.
 
 `9a5367d` React19.2.8 build는 이 dot cloud에서 WorkerHTTP185/auth18/D1bug26/storage57/unit30/lint/types/FSD/build/static decoder PASS. 게시 version4 owner 세션에서 승인된 bug record1의 작성·추가 설명·검토·해결과 검색 필터가 실제로 성공했다. native와 D1, 합성 세션과 실제 owner session 근거를 혼합하지 않는다.
+
+
+## 2026-10-09 QLT-010 프로젝트 action 단일화
+
+`npm run lint`, `npm run typecheck`, `npm run check:fsd`, `npm test`, `npm run build`: lint 0/0, types, FSD 5 self-tests, unit 41 PASS 및 Worker build 성공. 새 canonical project guard 11건은 실제 action/redirect를 사용하고 DB mutation에 도달하지 않는 계약을 검사한다. MariaDB e2e는 localhost3307 연결 거부로 미실행이다.
+
+환경 경고: npm의 주입된 http-proxy 옵션 경고, Node module-mocking ExperimentalWarning, Vinext proxy/route-classification 안내는 기존 환경/도구 한계다. 첫 깨끗한 Worker 빌드는 Google font plugin에서 1분 이상 소요되어 plugin timing 안내가 있었으며 오류는 없었다. 종전 미사용 import lint 경고 1건은 제거 후 0/0으로 재검증했다.
+
+`npm run test:sites:auth` 18 PASS (실제 workerd·합성 설정, Google 로그인 아님), `npm run test:sites:decoder` 빌드된 React 19.2.8 decoder 지문 PASS.

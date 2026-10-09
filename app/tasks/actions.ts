@@ -2,31 +2,16 @@
 
 import {
   createCommentAction as createCommentActionImpl,
-  createProjectAction as createProjectActionImpl,
   createSubmissionAction as createSubmissionActionImpl,
   createTaskAction as createTaskActionImpl,
   deleteCommentAction as deleteCommentActionImpl,
-  deleteProjectAction as deleteProjectActionImpl,
   deleteSubmissionAction as deleteSubmissionActionImpl,
   deleteSubmissionAttachmentAction as deleteSubmissionAttachmentActionImpl,
   deleteTaskAction as deleteTaskActionImpl,
   updateCommentAction as updateCommentActionImpl,
-  updateProjectAction as updateProjectActionImpl,
   updateSubmissionAction as updateSubmissionActionImpl,
   updateTaskAction as updateTaskActionImpl,
 } from "@/src/features/task-workspace/index.server";
-
-export async function createProjectAction(formData: FormData) {
-  return createProjectActionImpl(formData);
-}
-
-export async function updateProjectAction(formData: FormData) {
-  return updateProjectActionImpl(formData);
-}
-
-export async function deleteProjectAction(formData: FormData) {
-  return deleteProjectActionImpl(formData);
-}
 
 export async function createTaskAction(formData: FormData) {
   return createTaskActionImpl(formData);

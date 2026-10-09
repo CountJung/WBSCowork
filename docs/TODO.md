@@ -65,7 +65,11 @@
 
 ### 정리·품질·운영
 
-- [~] **[QLT-010](#qlt-010--프로젝트-crud-경로-이중화-정리)** 프로젝트 CRUD 경로 이중화 정리
+<a id="t-010--프로젝트-crud-경로-이중화-정리"></a>
+<a id="qlt-010--프로젝트-crud-경로-이중화-정리"></a>
+완료: [QLT-010 프로젝트 CRUD 중복 정리](COMPLETED_LOG.md#qlt-010--프로젝트-crud-단일화-2026-10-09).
+
+
 - [~] **[QLT-011](#qlt-011--테스트-커버리지-확장)** 테스트 커버리지 확장
 - [~] **[QLT-012](#qlt-012--versioned-migration-부재)** versioned migration 부재
 - [~] **[QLT-013](#qlt-013--db-credential-최소권한-분리)** runtime pool과 schema admin의 credential 분리
@@ -232,33 +236,6 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 
 ---
 
-
-<a id="t-010--프로젝트-crud-경로-이중화-정리"></a>
-
-### QLT-010 — 프로젝트 CRUD 경로 이중화 정리
-
-**분류** 정리
-
-`src/features/task-workspace`와 `src/features/project-manage`가 같은 프로젝트 CRUD 기능을 갖는다.
-
-| 경로 | 화면 | 권한 | 비고 |
-| --- | --- | --- | --- |
-| `task-workspace`의 3개 action | 없음 | 관리자 이상 (QLT-007에서 보강) | `app/tasks/actions.ts`가 어댑터로 export |
-| `project-manage`의 `*ProjectAdminAction` | `/admin/projects` | 관리자 이상 | 파기 확인 절차 포함 |
-
-QLT-007이 권한 구멍은 막았지만 중복 자체는 남아 있다. `/tasks`에 프로젝트 폼을 되살릴 계획이 없다면 task-workspace 쪽 3개 action과 `app/tasks/actions.ts` 어댑터를 지워 공격 표면을 하나로 줄인다.
-
-**보류 사유.** 삭제는 되돌리기 쉽지만 "앞으로 `/tasks`에 프로젝트 폼을 둘 것인가"는 제품 판단이다. 결정되면 바로 착수할 수 있다.
-
-착수 체크리스트:
-
-- [ ] `/tasks`에 프로젝트 폼을 두지 않기로 확정
-- [ ] `src/features/task-workspace`의 project CRUD action 3개 제거
-- [ ] `app/tasks/actions.ts`의 어댑터 3개 제거
-- [ ] `npm test`의 "프로젝트 CRUD server action은 관리자 이상만" 테스트를 `/admin/projects` 대상으로 이관
-- [ ] `docs/PROJECT_MAP.md`의 경로 표 갱신
-
----
 
 <a id="t-011--테스트-커버리지-확장"></a>
 

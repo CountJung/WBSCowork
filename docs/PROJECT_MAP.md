@@ -54,7 +54,7 @@
 
 `form → app/**/actions.ts adapter → src/features/* use-case → entity repository/file/log/revalidate → redirect`
 
-`app/tasks/actions.ts`는 `"use server"` adapter이고 실제 task/submission/comment mutation은 `src/features/task-workspace`에 있다.
+`app/tasks/actions.ts`는 `"use server"` adapter이고 실제 task/submission/comment mutation은 `src/features/task-workspace`에 있다. 프로젝트 생성·수정·파기는 `app/admin/projects/actions.ts` → `src/features/project-manage` 한 경로만 사용한다(QLT-010). 사용하지 않던 task-workspace 프로젝트 action 3개를 제거했으며 `/tasks`, `/admin/projects`의 사용자 URL은 유지한다. 프로젝트 파기는 관리자 확인 값과 기존 인가·파일 정리를 거친다.
 
 ### 프로젝트 종료·파기
 
