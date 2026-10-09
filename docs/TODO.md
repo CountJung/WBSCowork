@@ -75,7 +75,7 @@
 
 
 - [~] **[QLT-012](#qlt-012--versioned-migration-부재)** versioned migration 부재
-- [~] **[QLT-013](#qlt-013--db-credential-최소권한-분리)** runtime pool과 schema admin의 credential 분리
+- [~] **[QLT-013](#qlt-013--db-credential-최소권한-분리)** runtime pool과 schema admin의 credential 분리 — 코드 지원 완료, 실제 계정·권한 적용/검증 대기
 
 ### 9단계 — digest/report export
 
@@ -271,10 +271,13 @@ RPT-018(D3)의 "최소권한" 요구와 같은 작업이다.
 
 착수 체크리스트:
 
-- [ ] schema 전용 계정과 runtime 계정 분리, env 키 추가
+- [x] schema 전용 env 키와 별도 연결 경로 구현 (운영 계정 생성/구성은 대기)
 - [ ] runtime 계정에서 DDL 권한 제거
-- [ ] `src/shared/server/database-admin`이 schema 계정을 쓰도록 변경
-- [ ] `env.example`과 `docs/HARNESS_MAP.md` 7절 env 표 갱신
+- [x] `src/shared/server/database-admin`의 명시적 DDL만 schema 계정 사용; readiness는 runtime 유지
+- [x] `env.example`과 `docs/HARNESS_MAP.md` env 계약 갱신
+- [ ] 실제 제한 계정으로 DML 허용·DDL/ledger 변경 거부를 검증 (계정/권한 변경 승인 필요)
+
+코드/운영 경계와 남은 검증: [Native DB 운영](NATIVE_DATABASE_MIGRATIONS.md). 단위 검증을 실제 최소권한 적용으로 표시하지 않는다.
 
 ---
 

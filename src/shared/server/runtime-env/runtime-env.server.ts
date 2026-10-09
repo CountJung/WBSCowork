@@ -154,3 +154,18 @@ export function requireDatabaseEnv(): DatabaseEnv {
     connectTimeoutMs: runtimeEnv.database.connectTimeoutMs,
   };
 }
+
+
+/** Privileged native schema identity is read only for an explicit migration, never serialized. */
+export function requireDatabaseSchemaEnv(): DatabaseEnv {
+  if (isHostedRuntime()) throw new Error("Sites schema is managed by deployment migrations.");
+  const target = requireDatabaseEnv();
+  const user = readOptionalEnv("DB_SCHEMA_USER");
+  const password = readOptionalEnv("DB_SCHEMA_PASSWORD", { allowEmpty: true, trim: false });
+  if (!user || password === undefined) throw new Error("DB_SCHEMA_USER and DB_SCHEMA_PASSWORD are required for native schema changes; runtime credentials are not a fallback.");
+  return { ...target, user, password, connectionLimit: 1 };
+}
+
+export function isDatabaseSchemaConfigured() {
+  return !isHostedRuntime() && Boolean(readOptionalEnv("DB_SCHEMA_USER")) && readOptionalEnv("DB_SCHEMA_PASSWORD", { allowEmpty: true, trim: false }) !== undefined;
+}

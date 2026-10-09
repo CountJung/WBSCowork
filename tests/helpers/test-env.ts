@@ -45,6 +45,9 @@ export function applyTestEnv() {
   process.env.DB_USER = testDatabaseEnv.user;
   process.env.DB_PASSWORD = testDatabaseEnv.password;
   process.env.DB_NAME = testDatabaseEnv.database;
+  // Explicit isolated test identities only; never inherit a real schema secret.
+  process.env.DB_SCHEMA_USER = process.env.TEST_DB_SCHEMA_USER ?? testDatabaseEnv.user;
+  process.env.DB_SCHEMA_PASSWORD = process.env.TEST_DB_SCHEMA_PASSWORD ?? testDatabaseEnv.password;
   process.env.DB_CONNECTION_LIMIT = "5";
   process.env.DB_CONNECT_TIMEOUT_MS = "5000";
 

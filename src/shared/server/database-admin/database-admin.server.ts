@@ -2,7 +2,7 @@ import { bugSchemaStatements, bugLifecycleColumns, bugEventLifecycleColumns } fr
 import { pendingObjectCleanupCount } from "@/src/shared/server/object-cleanup/index.server";
 import { getHostedDatabase, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { createConnection } from "mariadb";
-import { requireDatabaseEnv } from "@/src/shared/server/runtime-env/index.server";
+import { requireDatabaseEnv, requireDatabaseSchemaEnv, isDatabaseSchemaConfigured, type DatabaseEnv } from "@/src/shared/server/runtime-env/index.server";
 
 type ColumnDefinition = {
   name: string;
@@ -15,6 +15,7 @@ export type ManagedTableName = (typeof managedTableNames)[number];
 
 export type DatabaseAdminStatus = {
   managedMigrations?: boolean;
+  schemaConfigured?: boolean;
   pendingCleanupCount?: number;
   host: string;
   port: number;
@@ -170,8 +171,7 @@ async function ensureTableColumns(
   }
 }
 
-async function withServerConnection<T>(callback: (connection: Awaited<ReturnType<typeof createConnection>>) => Promise<T>) {
-  const databaseEnv = requireDatabaseEnv();
+async function withServerConnection<T>(callback: (connection: Awaited<ReturnType<typeof createConnection>>) => Promise<T>, databaseEnv: DatabaseEnv = requireDatabaseEnv()) {
   const connection = await createConnection({
     host: databaseEnv.host,
     port: databaseEnv.port,
@@ -187,8 +187,7 @@ async function withServerConnection<T>(callback: (connection: Awaited<ReturnType
   }
 }
 
-async function withDatabaseConnection<T>(callback: (connection: Awaited<ReturnType<typeof createConnection>>) => Promise<T>) {
-  const databaseEnv = requireDatabaseEnv();
+async function withDatabaseConnection<T>(callback: (connection: Awaited<ReturnType<typeof createConnection>>) => Promise<T>, databaseEnv: DatabaseEnv = requireDatabaseEnv()) {
   const connection = await createConnection({
     host: databaseEnv.host,
     port: databaseEnv.port,
@@ -233,6 +232,7 @@ export async function getDatabaseAdminStatus(): Promise<DatabaseAdminStatus> {
       user: databaseEnv.user,
       databaseName: databaseEnv.database,
       databaseExists: false,
+      schemaConfigured: isDatabaseSchemaConfigured(),
       tables: managedTableNames.map((name) => ({ name, exists: false, missingColumns: requiredColumnsByTable[name] ?? [] })),
       existingTableCount: 0,
       managedTableCount: managedTableNames.length,
@@ -279,6 +279,7 @@ export async function getDatabaseAdminStatus(): Promise<DatabaseAdminStatus> {
     user: databaseEnv.user,
     databaseName: databaseEnv.database,
     databaseExists: true,
+    schemaConfigured: isDatabaseSchemaConfigured(),
     tables,
     existingTableCount: tables.filter((table) => table.exists).length,
     managedTableCount: tables.length,
@@ -287,14 +288,14 @@ export async function getDatabaseAdminStatus(): Promise<DatabaseAdminStatus> {
 
 export async function initializeDatabaseSchema() {
   if (isHostedRuntime()) throw new Error("Sites manages schema migrations during deployment. Runtime DDL is disabled.");
-  const databaseEnv = requireDatabaseEnv();
+  const databaseEnv = requireDatabaseSchemaEnv();
   const quotedDatabaseName = quoteIdentifier(databaseEnv.database);
 
   await withServerConnection(async (connection) => {
     await connection.query(
       `CREATE DATABASE IF NOT EXISTS ${quotedDatabaseName} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
     );
-  });
+  }, databaseEnv);
 
   await withDatabaseConnection(async (connection) => {
     for (const statement of createSchemaStatements) {
@@ -313,7 +314,7 @@ export async function initializeDatabaseSchema() {
     await connection.query(
       "ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'member', 'guest') NOT NULL DEFAULT 'guest'",
     );
-  });
+  }, databaseEnv);
 
   return getDatabaseAdminStatus();
 }

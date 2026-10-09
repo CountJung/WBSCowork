@@ -13,11 +13,11 @@ type DatabaseAdminPanelProps = {
   refreshDatabaseStatusAction: (previousState: DatabaseAdminActionState) => Promise<DatabaseAdminActionState>;
 };
 
-function DatabaseActionButton({ children }: { children: React.ReactNode }) {
+function DatabaseActionButton({ children, disabled = false }: { children: React.ReactNode; disabled?: boolean }) {
   const { pending } = useFormStatus();
 
   return (
-    <Button type="submit" variant="contained" disabled={pending}>
+    <Button type="submit" variant="contained" disabled={pending || disabled}>
       {pending ? "처리 중..." : children}
     </Button>
   );
@@ -94,8 +94,9 @@ export default function DatabaseAdminPanel({
           {status.managedMigrations ? <Typography>저장 파일 정리 대기: {status.pendingCleanupCount ?? 0}개 (진행 중인 업로드 포함)</Typography> : null}
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             {status.managedMigrations ? <form action={formAction}><input type="hidden" name="intent" value="cleanup" /><DatabaseActionButton>실패한 파일 정리 재시도</DatabaseActionButton></form> : null}
+            {!status.managedMigrations && !status.schemaConfigured ? <Alert severity="info">스키마 변경에는 별도 DB_SCHEMA_USER / DB_SCHEMA_PASSWORD 설정이 필요합니다. 일반 조회는 runtime DB 계정을 사용합니다.</Alert> : null}
             {!status.managedMigrations && <form action={formAction}><input type="hidden" name="intent" value="initialize" />
-              <DatabaseActionButton>DB 및 기본 테이블 생성</DatabaseActionButton>
+              <DatabaseActionButton disabled={!status.schemaConfigured}>DB 및 기본 테이블 생성</DatabaseActionButton>
             </form>}
             <form action={formAction}><input type="hidden" name="intent" value="refresh" />
               <DatabaseActionButton>상태 새로고침</DatabaseActionButton>

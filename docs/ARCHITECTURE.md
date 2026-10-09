@@ -166,3 +166,8 @@ src/shared/   도메인 비의존 UI/config/server utility
 ## 비공개 버그 제보 기록
 
 bug_reports / bug_report_events는 프로젝트·작업·제출물과 독립적이며 프로젝트 파기나 audit_logs 보존 정리에 연동되지 않는다. reporter_id/actor_id는 계정 삭제 시 SET NULL이며 이후 동일 이메일 신규 계정에 기록 권한이 상속되지 않는다. SQL scope가 author id 또는 admin/superuser 판정을 적용하고 count/search/events도 같은 범위를 사용한다. 원문 UPDATE/일반 DELETE endpoint는 없다. 버전 검사와 operation-token NOT EXISTS 조건을 포함한 state UPDATE, event INSERT를 D1 batch/Node transaction으로 함께 수행한다. 변경 기록은 제보자에게도 표시된다.
+
+
+### Native schema credential 경계 (QLT-013)
+
+일반 readiness와 질의는 DB_* runtime identity를 유지한다. 명시적 schema 작업만 lazy DB_SCHEMA_USER/DB_SCHEMA_PASSWORD 연결을 쓰며 누락 시 runtime으로 대체하지 않는다. 값은 status/편집 UI로 보내지 않는다. Sites D1 runtime DDL 비활성은 유지한다. 실제 권한 적용 상태는 [native 운영 문서](NATIVE_DATABASE_MIGRATIONS.md)를 따른다.
