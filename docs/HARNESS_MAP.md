@@ -457,3 +457,9 @@ source `82d7d516ef34ed8718dbfe09d6189b7f81cacfe8` / tree `4144cbda144bc79311f82d
 최종 read-only D1 확인: projects2개, tasks3개, task_events5개, submission1개/revisions2개/submission_events2개, 댓글1개, 첨부3행/실제 file2개, cleanup0. 사용자1명과 기존 purge receipt의 전체 row가 게시 전과 같다. 정확한 합성 ID와 파일 hash는 [P0 인수 결과](P0_ACCEPTANCE_2026-10-09.md)에 기록했다. 테스트 자료는 영구 삭제하지 않았다.
 
 별도 정적 storage 리뷰는 현재+과거 visibility, 원본 보존, transaction lease guard, cleanup 회수→참조 검사, canonical production write를 확인했고 검사한 범위에서 actionable defect가 없었다. 보충 adapter/admin 검색 일부는 리뷰 실행기 transport 중단으로 끝내지 못했으므로 exhaustive review로 표시하지 않는다. 차단된 동적 cleanup 경합은 QLT-015, 첫 fixture503 원인은 QLT-016으로 남긴다. 실제 다중 Google 계정 검증·별도 native 강등 interleaving·영구 파기 검사는 미실행이다.
+
+### P0 실환경 QA 정리 — 사용자 실행 후 읽기 확인
+
+사용자가 직접 앱에서 제거한 뒤 2026-10-09 13:00 UTC 전후 D1을 읽기 확인했다. 합성 project2/3, task3–5 및 이력1–5, submission3 및 revision/event1–2, comment2, attachment4–6이 모두 없어 해당8개 table은0건이며 file_cleanup_jobs도0건이다. 감사113/114는 각각 project3(12:53:32.244 UTC), project2(12:53:40.715 UTC)의 project.delete completed이고 관련 cleanup 실패 기록은 없다. 파일 참조/정리 대기가 없다는 앱 수준 증거이며 독립 R2 bucket inventory 검증으로 표현하지 않는다.
+
+기존 사용자1명의 ID/email/role은 그대로이고 last_login_at/last_synced_at만 갱신됐다. 기존 bug purge receipt도 동일하며 감사는 보존됐다. 에이전트의 앞선 checkbox 조작은 플랫폼 검토에 의해2회 거부되어 중단했고 purge 버튼을 제출하지 않았다. 이번 확인은 읽기 전용이다. 클라우드 저장소/worktree·별도 MariaDB fixture는 웹 QA 프로젝트와 다르며 정리하지 않았다. 정확한 목록은 [P0 인수 결과](P0_ACCEPTANCE_2026-10-09.md)를 따른다. 앱 코드는 unchanged이므로 version9 게시를 유지한다.
