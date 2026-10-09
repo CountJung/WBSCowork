@@ -90,7 +90,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
   const { mode, setMode, systemMode } = useColorScheme();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [adminMenuAnchorEl, setAdminMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const navItems = [...defaultNavItems, taskNavItem, {href:"/bugs",label:"버그 제보"}];
+  const navItems = [...defaultNavItems, taskNavItem, { href: "/my-work", label: "내 업무" }, {href:"/bugs",label:"버그 제보"}];
   const adminMenuOpen = Boolean(adminMenuAnchorEl);
   const isSuperuser = Boolean(session?.user?.isSuperuser);
   const isAdminRole = session?.user?.role === "admin";

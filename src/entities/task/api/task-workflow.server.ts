@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { databaseBatch, getDatabasePool } from "@/src/shared/server/database/index.server";
+import { databaseBatch, getDatabasePool, type QueryStatement } from "@/src/shared/server/database/index.server";
 import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { normalizeWorkGoal } from "@/src/shared/lib/work-goals";
 import { canExecuteTask, taskVersion, workOperationToken, type TaskActor, type TaskEvent, type TaskStatus } from "../model/workflow";
@@ -22,6 +22,7 @@ export async function hasTaskMutation(input:{id:number;actor:TaskActor;token:str
 export async function commitTaskMutation(input: {
   id:number; actor:TaskActor; token:string; version:number; kind:string; note:string;
   payload:unknown; setSql:string; setParams:unknown[]; guardSql?:string; guardParams?:unknown[];
+  invalidateReview?: { reason: string };
 }) {
   const actor=await assertTaskActor(input.actor);
   const token=workOperationToken(input.token), version=taskVersion(input.version);
@@ -31,9 +32,30 @@ export async function commitTaskMutation(input: {
   const prior=await find();
   if(prior) { if(prior.request_fingerprint!==fingerprint)throw new Error("같은 요청 식별자를 다른 내용에 사용할 수 없습니다."); return; }
   const duplicate=isHostedRuntime()?" ON CONFLICT DO NOTHING":" ON DUPLICATE KEY UPDATE id=task_events.id";
+  const reviewInvalidation: QueryStatement[] = input.invalidateReview ? [
+    {
+      sql: `INSERT INTO submission_events(submission_id,revision_number,actor_id,operation_token,request_fingerprint,kind,body)
+        SELECT review_submission_id,review_revision_number,?,?,?,'review_invalidated',?
+        FROM tasks WHERE id=? AND last_operation_token=? AND review_submission_id IS NOT NULL AND review_revision_number IS NOT NULL
+        AND NOT EXISTS(SELECT 1 FROM task_events applied WHERE applied.operation_token=?)
+        AND NOT EXISTS(SELECT 1 FROM submission_events applied WHERE applied.operation_token=?)`,
+      params: [actor.userId, `${key}:review-invalidate`, fingerprint, input.invalidateReview.reason, input.id, key, key, `${key}:review-invalidate`],
+    },
+    {
+      sql: `UPDATE tasks SET review_submission_id=NULL,review_revision_number=NULL,
+        workflow_note='작업 변경으로 검토를 다시 진행해야 합니다.'
+        WHERE id=? AND last_operation_token=?
+        AND EXISTS(SELECT 1 FROM submission_events applied WHERE applied.operation_token=?)
+        AND NOT EXISTS(SELECT 1 FROM task_events applied WHERE applied.operation_token=?)`,
+      params: [input.id, key, `${key}:review-invalidate`, key],
+    },
+  ] : [];
   await databaseBatch([
+    {sql:"UPDATE tasks SET id=id WHERE id=?",params:[input.id]},
+    ...(input.invalidateReview ? [{sql:"UPDATE submissions SET id=id WHERE id=(SELECT review_submission_id FROM tasks WHERE id=?)",params:[input.id]}] : []),
     {sql:`UPDATE tasks SET ${input.setSql},version=version+1,last_operation_token=? WHERE id=? AND version=? AND (?=1 OR EXISTS(SELECT 1 FROM users u WHERE u.id=? AND u.role IN ('member','admin'))) AND NOT EXISTS(SELECT 1 FROM task_events e WHERE e.operation_token=?) ${input.guardSql?`AND (${input.guardSql})`:''}`, params:[...input.setParams,key,input.id,version,actor.isSuperuser?1:0,actor.userId,key,...(input.guardParams??[])]},
-    {sql:`INSERT INTO task_events(task_id,actor_id,operation_token,request_fingerprint,kind,status,assignee_id,reviewer_id,note,task_version) SELECT id,?,?,?,?,status,assignee_id,reviewer_id,?,version FROM tasks WHERE id=? AND last_operation_token=? AND NOT EXISTS(SELECT 1 FROM task_events e WHERE e.operation_token=?)${duplicate}`,params:[actor.userId,key,fingerprint,input.kind,input.note,input.id,key,key]},
+    ...reviewInvalidation,
+    {sql:`INSERT INTO task_events(task_id,actor_id,operation_token,request_fingerprint,kind,status,assignee_id,reviewer_id,note,task_version) SELECT id,?,?,?,?,status,assignee_id,reviewer_id,?,version FROM tasks WHERE id=? AND last_operation_token=? AND NOT EXISTS(SELECT 1 FROM task_events e WHERE e.operation_token=?)${duplicate}`,params:[actor.userId,key,fingerprint,input.kind,input.invalidateReview?'작업 변경으로 검토를 다시 진행해야 합니다.':input.note,input.id,key,key]},
   ]);
   const saved=await find();
   if(!saved || saved.request_fingerprint!==fingerprint)throw new Error("다른 변경이 먼저 저장되었거나 권한이 변경되었습니다. 새로고침 후 다시 확인해 주세요.");
@@ -62,7 +84,10 @@ export async function changeTaskStatus(input:{id:number;actor:TaskActor;token:st
     const evidence=await getDatabasePool().query('SELECT id FROM submissions WHERE task_id=? AND author_id=? LIMIT 1',[task.id,task.assigneeId]) as {id:number}[];
     if(!evidence.length)throw new Error("담당자의 제출물을 먼저 등록해 주세요.");
   }
-  await commitTaskMutation({...input,actor,kind:'status',note,payload,setSql:'status=?,workflow_note=?',setParams:[input.status,note],guardSql:`(?=1 OR assignee_id=? OR EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND actor.role='admin'))${input.status==='done'?" AND review_required=0 AND EXISTS(SELECT 1 FROM submissions s WHERE s.task_id=tasks.id AND s.author_id=tasks.assignee_id)":''}`,guardParams:[actor.isSuperuser?1:0,actor.userId,actor.userId]});
+  const invalidatesReview = task.reviewRequired && (task.status === 'done' || task.status === 'changes_requested');
+  await commitTaskMutation({...input,actor,kind:'status',note,payload,setSql:'status=?,workflow_note=?',setParams:[input.status,invalidatesReview?'작업 변경으로 검토를 다시 진행해야 합니다.':note],
+    invalidateReview:invalidatesReview?{reason:note || '작업 상태가 변경되었습니다.'}:undefined,
+    guardSql:`status<>'review_pending' AND (?=1 OR assignee_id=? OR EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND actor.role='admin'))${input.status==='done'?" AND review_required=0 AND EXISTS(SELECT 1 FROM submissions s WHERE s.task_id=tasks.id AND s.author_id=tasks.assignee_id)":''}`,guardParams:[actor.isSuperuser?1:0,actor.userId,actor.userId]});
 }
 
 export async function listTaskEventsByProject(projectId:number):Promise<TaskEvent[]> {

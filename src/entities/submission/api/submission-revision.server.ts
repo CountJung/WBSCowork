@@ -13,6 +13,7 @@ import {
 import type { SubmissionVisibility } from "../model/submission";
 import type { StoredSubmissionAttachment } from "./submission-files.server";
 import type { CreateSubmissionInput, SubmissionVisibilityFilter, UpdateSubmissionInput } from "./submission-repository.server";
+import { submissionReviewInvalidationStatements } from "./submission-review.server";
 
 type MutationResult = { submissionId: number; revisionNumber: number };
 type Operation = MutationResult & { request_fingerprint: string };
@@ -265,6 +266,8 @@ export async function commitSubmissionRevision(input: UpdateSubmissionInput, att
   // The literal exclusion list is formed only from validated safe positive integers, avoiding D1's 100-bind limit.
   const exclude = removeIds.length ? ` AND previous.id NOT IN (${removeIds.join(",")})` : "";
   await databaseBatch([
+    // Every review/revision batch takes the task row before the submission row.
+    { sql: "UPDATE tasks SET id=id WHERE id=?", params: [existing.task_id] },
     {
       sql: `UPDATE submissions SET content=?,visibility=?,material_url=?,file_path=?,file_name=?,file_mime_type=?,file_size_bytes=?,current_revision=current_revision+1,version=version+1,last_operation_token=? WHERE id=? AND current_revision=? AND ${access.sql} AND EXISTS(SELECT 1 FROM submission_revisions previous_revision WHERE previous_revision.submission_id=submissions.id AND previous_revision.revision_number=submissions.current_revision) AND NOT EXISTS(SELECT 1 FROM submission_events applied WHERE applied.operation_token=?)${lease.sql}${legacyGuard.sql}`,
       params: [content, visibility ?? existing.visibility, materialUrl ?? existing.material_url, legacy.filePath, legacy.fileName, legacy.fileMimeType, legacy.fileSizeBytes, key, id, expectedRevision, ...access.params, key, ...lease.params,...legacyGuard.params],
@@ -275,6 +278,10 @@ export async function commitSubmissionRevision(input: UpdateSubmissionInput, att
       params: [expectedRevision, id, ...pending.params],
     },
     ...attachmentInserts(key, attachments),
+    ...submissionReviewInvalidationStatements({
+      taskId: Number(existing.task_id), submissionId: id, previousRevision: expectedRevision,
+      actorId: actor.userId, sourceOperationKey: key, requestFingerprint,
+    }),
     eventInsert(key, actor, requestFingerprint, "revised", changeSummary),
   ]);
   return confirmOperation(key, actor, requestFingerprint);

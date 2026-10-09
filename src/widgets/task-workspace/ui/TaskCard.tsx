@@ -15,6 +15,7 @@ import type { User } from "@/src/entities/user";
 type ContentAction = (formData: FormData) => Promise<void>;
 
 type TaskCardProps = {
+  returnTo?: string;
   task: Task;
   currentUserId:number|null;
   events:TaskEvent[];
@@ -41,7 +42,7 @@ type TaskCardProps = {
 };
 
 export default function TaskCard({
-  task, currentUserId, events, changeTaskStatusAction,
+  task, currentUserId, events, changeTaskStatusAction, returnTo,
   orderedTasks,
   projectId,
   users, eligibleUserIds,
@@ -124,7 +125,7 @@ export default function TaskCard({
                 수정
               </Button>
               <Stack component="form" action={deleteTaskAction}>
-                <input type="hidden" name="projectId" value={String(projectId)} />
+                <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
                 <input type="hidden" name="taskId" value={String(task.id)} />
                 <FormControlLabel control={<Checkbox name="confirmRevisionDeletion" value="yes" required/>} label="작업·모든 제출 버전 삭제 확인"/>
                 <Button type="submit" color="error" size="small" variant="outlined">
@@ -136,7 +137,7 @@ export default function TaskCard({
         </Stack>
 
         {canExecute ? <Stack component="form" action={changeTaskStatusAction} spacing={1.5}>
-          <input type="hidden" name="projectId" value={projectId}/><input type="hidden" name="taskId" value={task.id}/><input type="hidden" name="version" value={task.version}/><input type="hidden" name="operationToken" value={statusToken}/>
+          <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={projectId}/><input type="hidden" name="taskId" value={task.id}/><input type="hidden" name="version" value={task.version}/><input type="hidden" name="operationToken" value={statusToken}/>
           <Stack direction={{xs:"column",sm:"row"}} spacing={1.5}><TextField select name="taskStatus" label="진행 상태" defaultValue={['planned','in_progress','blocked','done'].includes(task.status)?task.status:'in_progress'} fullWidth><MenuItem value="planned">예정</MenuItem><MenuItem value="in_progress">진행 중</MenuItem><MenuItem value="blocked">차단됨</MenuItem>{!task.reviewRequired?<MenuItem value="done">완료</MenuItem>:null}</TextField><Button type="submit" variant="outlined">상태 저장</Button></Stack>
           <TextField name="note" label="상태 변경 근거 · 차단/완료/재개 시 필요" helperText="모든 인증 사용자에게 보이는 업무 기록입니다. 비공개 제출물 내용은 적지 마세요." multiline slotProps={{htmlInput:{maxLength:2000}}}/>
         </Stack>:null}
@@ -154,7 +155,7 @@ export default function TaskCard({
               }}
               spacing={2}
             >
-              <input type="hidden" name="projectId" value={String(projectId)} />
+              <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
               <input type="hidden" name="taskId" value={String(task.id)} />
               <input type="hidden" name="version" value={task.version} />
               <input type="hidden" name="operationToken" value={operationToken} />
@@ -217,6 +218,7 @@ export default function TaskCard({
         ) : null}
 
         <TaskSubmissionPanel
+          returnTo={returnTo}
           currentUserId={currentUserId}
           canWrite={canWrite}
           canSeeAllSubmissions={canSeeAllSubmissions}

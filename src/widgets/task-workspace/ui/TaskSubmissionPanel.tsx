@@ -9,6 +9,7 @@ import type { SubmissionAttachment, Submission } from "@/src/entities/submission
 type ContentAction = (formData: FormData) => Promise<void>;
 
 type TaskSubmissionPanelProps = {
+  returnTo?: string;
   canWrite: boolean;
   currentUserId:number|null;
   canSeeAllSubmissions: boolean;
@@ -434,7 +435,7 @@ export default function TaskSubmissionPanel({
   projectId,
   submissions,
   taskId,
-  taskTitle,
+  taskTitle, returnTo,
   updateCommentAction,
   updateSubmissionAction,
 }: TaskSubmissionPanelProps) {
@@ -549,7 +550,7 @@ export default function TaskSubmissionPanel({
                               수정
                             </Button>
                             <Stack component="form" action={deleteSubmissionAction}>
-                              <input type="hidden" name="projectId" value={String(projectId)} />
+                              <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
                               <input type="hidden" name="taskId" value={String(taskId)} />
                               <input type="hidden" name="submissionId" value={String(submission.id)} />
                               <FormControlLabel control={<Checkbox name="confirmRevisionDeletion" value="yes" required/>} label="모든 버전 영구 삭제 확인"/>
@@ -562,7 +563,7 @@ export default function TaskSubmissionPanel({
                       </Stack>
                     </Stack>
 
-                    <Stack direction="row" spacing={1} sx={{flexWrap:"wrap"}}><Chip label={`버전 ${submission.currentRevision}`} size="small"/><Button size="small" href={`/submissions/${submission.id}`}>버전·검토 이력</Button></Stack>
+                    <Stack direction="row" spacing={1} sx={{flexWrap:"wrap"}}><Chip label={`버전 ${submission.currentRevision}`} size="small"/><Button size="small" href={`/submissions/${submission.id}${returnTo?`?returnTo=${encodeURIComponent(returnTo)}`:""}`}>버전·검토 이력</Button></Stack>
                     {submission.materialUrl?<Button component="a" href={submission.materialUrl} target="_blank" rel="noopener noreferrer" sx={{justifyContent:"flex-start",overflowWrap:"anywhere"}}>자료 링크: {submission.materialUrl}</Button>:null}
                     <MarkdownContent content={submission.content} />
 
@@ -600,7 +601,7 @@ export default function TaskSubmissionPanel({
                           deleteForm={
                             canEdit ? (
                               <Stack component="form" action={deleteAttachmentAction}>
-                                <input type="hidden" name="projectId" value={String(projectId)} />
+                                <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
                                 <input type="hidden" name="taskId" value={String(taskId)} />
                                 <input type="hidden" name="submissionId" value={String(submission.id)} />
                                 <input type="hidden" name="attachmentId" value={String(attachment.id)} />
@@ -680,7 +681,7 @@ export default function TaskSubmissionPanel({
                                           수정
                                         </Button>
                                         <Stack component="form" action={deleteCommentAction}>
-                                          <input type="hidden" name="projectId" value={String(projectId)} />
+                                          <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
                                           <input type="hidden" name="taskId" value={String(taskId)} />
                                           <input type="hidden" name="submissionId" value={String(submission.id)} />
                                           <input type="hidden" name="commentId" value={String(comment.id)} />
@@ -692,7 +693,7 @@ export default function TaskSubmissionPanel({
                                     ) : (
                                       <Stack spacing={1.25}>
                                         <Stack component="form" action={async (formData: FormData) => { await updateCommentAction(formData); setEditingCommentId(null); }} spacing={1.25}>
-                                          <input type="hidden" name="projectId" value={String(projectId)} />
+                                          <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
                                           <input type="hidden" name="taskId" value={String(taskId)} />
                                           <input type="hidden" name="submissionId" value={String(submission.id)} />
                                           <input type="hidden" name="commentId" value={String(comment.id)} />
@@ -719,7 +720,7 @@ export default function TaskSubmissionPanel({
                       {!canWrite ? null : (
                         <Stack component="form" action={createCommentAction} spacing={1.5}>
                           <input type="hidden" name="revisionNumber" value={submission.currentRevision}/>
-                          <input type="hidden" name="projectId" value={String(projectId)} />
+                          <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
                           <input type="hidden" name="taskId" value={String(taskId)} />
                           <input type="hidden" name="submissionId" value={String(submission.id)} />
                           <TextField
@@ -753,7 +754,7 @@ export default function TaskSubmissionPanel({
                             }}
                             spacing={1.5}
                           >
-                            <input type="hidden" name="projectId" value={String(projectId)} />
+                            <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
                             <input type="hidden" name="taskId" value={String(taskId)} />
                             <input type="hidden" name="submissionId" value={String(submission.id)} />
                             <SubmissionOperationFields key={`${submission.id}:${submission.currentRevision}:edit`} revision={submission.currentRevision}/>
@@ -796,7 +797,7 @@ export default function TaskSubmissionPanel({
             <Stack component="form" action={createSubmissionAction} spacing={1.5}>
               <SubmissionOperationFields key={`create:${submissions.map(s=>s.id).join(",")}`}/>
               <TextField name="materialUrl" label="자료 링크 (선택)" slotProps={{htmlInput:{maxLength:2048}}}/>
-              <input type="hidden" name="projectId" value={String(projectId)} />
+              <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
               <input type="hidden" name="taskId" value={String(taskId)} />
               <TextField
                 name="content"

@@ -1,0 +1,94 @@
+import { randomUUID } from 'node:crypto';
+
+/** Ordinary synthetic review requests, retained versions and reversible state changes. */
+export async function verifySubmissionReviewWorkflow({ request, db, actorCookies, form, renderedAction, check, route, projectId }) {
+  const owner = actorCookies.member1, reviewer = actorCookies.member2;
+  const html = async (path, cookie) => (await request(path, cookie)).text();
+  const createTask = renderedAction(await html(route, owner), 'createTaskAction');
+  const dates = { startDate: '2026-01-01', endDate: '2026-12-31' };
+  await form(route, owner, createTask, { projectId, title: 'REVIEW_TEAM_CARD', deliverable: '문서 파일과 자료 링크', definitionOfDone: '정확한 결과와 출처를 동료가 확인', reviewRequired: '1', assigneeId: 2, ...dates });
+  const task = await db.prepare("SELECT * FROM tasks WHERE title='REVIEW_TEAM_CARD'").first();
+  const taskId = task.id, readTask = () => db.prepare('SELECT * FROM tasks WHERE id=?').bind(taskId).first();
+  const updateTask = renderedAction(await html(route, owner), 'updateTaskAction');
+  const taskFields = { projectId, taskId, title: task.title, deliverable: task.deliverable, definitionOfDone: task.definition_of_done, reviewRequired: '1', assigneeId: 2, reviewerId: 3, ...dates };
+  await form(route, owner, updateTask, taskFields);
+  const createSubmission = renderedAction(await html(route, owner), 'createSubmissionAction');
+  await form(route, owner, createSubmission, { projectId, taskId, content: 'TEAM_REVIEW_V1', visibility: 'public', materialUrl: 'https://example.com/team' }, [{ name: 'team.txt', bytes: 'first output' }]);
+  const submission = await db.prepare("SELECT * FROM submissions WHERE content='TEAM_REVIEW_V1'").first();
+  const submissionId = submission.id, history = `/submissions/${submissionId}`, readSubmission = () => db.prepare('SELECT * FROM submissions WHERE id=?').bind(submissionId).first();
+  const eventCount = () => db.prepare('SELECT COUNT(*) AS n FROM submission_events WHERE submission_id=?').bind(submissionId).first();
+  const requestAction = renderedAction(await html(history, owner), 'requestSubmissionReviewAction');
+  const reviewFields = async (extra = {}) => ({ taskId, submissionId, revisionNumber: (await readSubmission()).current_revision, expectedTaskVersion: (await readTask()).version, operationToken: randomUUID(), ...extra });
+  const stableRequest = await reviewFields();
+  for (const cookie of [undefined, actorCookies.guest, reviewer]) {
+    const before = JSON.stringify(await readTask());
+    await form(history, cookie, requestAction, stableRequest);
+    check(JSON.stringify(await readTask()) === before, 'review: anonymous/guest/unassigned member cannot request review');
+  }
+  await form(history, owner, requestAction, stableRequest);
+  check((await readTask()).status === 'review_pending' && (await readTask()).review_submission_id === submissionId && (await readTask()).review_revision_number === 1, 'review: request selects exact current submission version');
+  const requestEvents = (await eventCount()).n;
+  await form(history, owner, requestAction, stableRequest);
+  check((await eventCount()).n === requestEvents, 'review: repeated same request is one event');
+  const decide = renderedAction(await html(history, reviewer), 'decideSubmissionReviewAction');
+  const beforeDenied = JSON.stringify(await readTask());
+  for (const cookie of [owner, actorCookies.admin, actorCookies.superuser, actorCookies.guest]) {
+    await form(history, cookie, decide, await reviewFields({ decision: 'approved', reason: 'Not the assigned reviewer' }));
+    check(JSON.stringify(await readTask()) === beforeDenied, 'review: only currently assigned eligible reviewer can decide');
+  }
+  await form(history, reviewer, decide, await reviewFields({ decision: 'changes_requested', reason: '' }));
+  check(JSON.stringify(await readTask()) === beforeDenied, 'review: feedback requires a reason');
+  await form(history, reviewer, decide, await reviewFields({ decision: 'changes_requested', reason: 'REVIEW_PRIVATE_REASON_v1 보완 필요' }));
+  check((await readTask()).status === 'changes_requested', 'review: reviewer requests changes on exact version');
+  const sameVersion = JSON.stringify(await readTask());
+  await form(history, owner, requestAction, await reviewFields());
+  check(JSON.stringify(await readTask()) === sameVersion, 'review: rejected version cannot be submitted again unchanged');
+  const updateSubmission = renderedAction(await html(route, owner), 'updateSubmissionAction');
+  await form(route, owner, updateSubmission, { projectId, taskId, submissionId, content: 'TEAM_REVIEW_V2', visibility: 'public', materialUrl: 'https://example.com/team-v2', changeSummary: '피드백 반영' }, [{ name: 'team-v2.txt', bytes: 'corrected output' }]);
+  check((await readSubmission()).current_revision === 2 && (await readTask()).status === 'in_progress' && (await readTask()).review_submission_id === null, 'review: new version invalidates selected old review atomically');
+  await form(history, owner, requestAction, await reviewFields());
+  const approve = await reviewFields({ decision: 'approved', reason: 'v2 기준 충족' });
+  await Promise.all([form(history, reviewer, decide, approve), form(history, reviewer, decide, approve)]);
+  check((await readTask()).status === 'done' && (await readTask()).review_revision_number === 2, 'review: repeated approval completes exact version once');
+  const approvedCount = await db.prepare("SELECT COUNT(*) AS n FROM submission_events WHERE submission_id=? AND kind='approved'").bind(submissionId).first();
+  check(approvedCount.n === 1, 'review: approval history is immutable and deduplicated');
+  const queueReturn = '/my-work?scope=review&status=open&overdue=0&page=1&taskId=' + taskId + '#work-' + taskId;
+  const cancel = renderedAction(await html(history, owner), 'cancelSubmissionReviewAction');
+  const reopened = await form(history, owner, cancel, await reviewFields({ reason: '완료 후 확인 항목 추가', returnTo: queueReturn }));
+  check((await readTask()).status === 'in_progress' && (await readTask()).review_submission_id === null, 'review: reasoned reopen clears current approval but keeps history');
+  check(new URL(reopened.headers.get('location'), 'https://fixture.invalid').searchParams.get('returnTo') === queueReturn, 'review: return to personal queue survives action redirect');
+  const oldApproval = await db.prepare("SELECT COUNT(*) AS n FROM submission_events WHERE submission_id=? AND kind='approved'").bind(submissionId).first();
+  check(oldApproval.n === 1, 'review: reopening preserves original decision record');
+  await form(route, owner, updateSubmission, { projectId, taskId, submissionId, content: 'TEAM_REVIEW_PRIVATE_V3', visibility: 'private', changeSummary: '비공개 보완' });
+  const privateBefore = JSON.stringify(await readTask());
+  await form(history, owner, requestAction, await reviewFields());
+  check(JSON.stringify(await readTask()) === privateBefore && (await request(history, reviewer)).status === 404, 'review: reviewer assignment does not grant private access');
+  await form(route, owner, updateTask, { ...taskFields, reviewerId: 4 });
+  await form(history, owner, requestAction, await reviewFields());
+  const adminDecide = renderedAction(await html(history, actorCookies.admin), 'decideSubmissionReviewAction');
+  await form(history, actorCookies.admin, adminDecide, await reviewFields({ decision: 'changes_requested', reason: 'SECRET_REVIEW_REASON' }));
+  const publicTaskHtml = await html(route, reviewer);
+  check(!publicTaskHtml.includes('SECRET_REVIEW_REASON') && !publicTaskHtml.includes('TEAM_REVIEW_PRIVATE_V3'), 'review: general task history contains no private reason/body');
+  await form(route, owner, updateSubmission, { projectId, taskId, submissionId, content: 'TEAM_REVIEW_PRIVATE_V4', visibility: 'private', changeSummary: '관리자 의견 반영' });
+  await form(history, owner, requestAction, await reviewFields());
+  const pending = JSON.stringify(await readTask());
+  await db.prepare("UPDATE users SET role='guest' WHERE id=4").run();
+  await form(history, actorCookies.admin, adminDecide, await reviewFields({ decision: 'approved', reason: 'Demoted reviewer' }));
+  check(JSON.stringify(await readTask()) === pending, 'review: role downgrade on same cookie prevents decision');
+  await form(history, owner, cancel, await reviewFields({ reason: '검토 담당자 변경 필요' }));
+  check((await readTask()).status === 'in_progress', 'review: inaccessible reviewer cannot strand assignee in pending state');
+  await db.prepare("UPDATE users SET role='admin' WHERE id=4").run();
+  await form(history, owner, requestAction, await reviewFields());
+  const stableTask = JSON.stringify(await readTask()), stableEvents = (await eventCount()).n;
+  await db.prepare("CREATE TRIGGER synthetic_review_event_fault BEFORE INSERT ON submission_events WHEN NEW.body='REVIEW_EVENT_ROLLBACK' BEGIN SELECT RAISE(ABORT,'synthetic review event failure'); END").run();
+  await form(history, actorCookies.admin, adminDecide, await reviewFields({ decision: 'approved', reason: 'REVIEW_EVENT_ROLLBACK' }));
+  check(JSON.stringify(await readTask()) === stableTask && (await eventCount()).n === stableEvents, 'review: event failure rolls back state and both ledgers');
+  const sharedVersion = (await readTask()).version;
+  await Promise.all([form(history, actorCookies.admin, adminDecide, await reviewFields({ expectedTaskVersion: sharedVersion, decision: 'approved', reason: 'concurrent approval' })), form(history, actorCookies.admin, adminDecide, await reviewFields({ expectedTaskVersion: sharedVersion, decision: 'changes_requested', reason: 'concurrent feedback' }))]);
+  check((await readTask()).version === sharedVersion + 1, 'review: competing ordinary decisions have one task-version winner');
+  await form(route, owner, updateSubmission, { projectId, taskId, submissionId, content: 'TEAM_REVIEW_FINAL_V5', visibility: 'private', changeSummary: '최종 보완' });
+  check((await readTask()).status === 'in_progress', 'review: later revision never inherits earlier approval');
+  const counts = await db.prepare('SELECT (SELECT COUNT(*) FROM task_events WHERE task_id=?) AS events,(SELECT version FROM tasks WHERE id=?) AS version').bind(taskId, taskId).first();
+  check(counts.events === counts.version, 'review: task version and event history remain paired');
+  return { taskId, submissionId };
+}

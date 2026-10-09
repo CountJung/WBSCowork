@@ -413,3 +413,19 @@ immutable submission_revisions/events, 현재 버전 projection, 안전한 자�
 lint/types/FSD, unit106, Worker build와 workflow316 PASS. private v1→public v2에서도 v1은 비공개, 현재 private 전환 시 이전 공개 버전도 숨김, 실제 파일 bytes, 반복 업로드/변경 payload 거부/동시 stale/새 버전 파일 제외/관리자 실제 편집자/이력 쓰기 실패 rollback/부적절 링크·길이 거부를 확인했다. 프로젝트 첨부 조회는 전달받은 ID가 오래되어도 매 SQL chunk가 현재+당시 visibility를 재검사한다. 기존 quality375는 staging 분리 전 source에서 PASS이며 최종 전체 gate에서 다시 확인한다. native v4 실제 DB 결과와 브라우저 전체 흐름은 대기다.
 
 저장소 독립 검토가 찾아낸 cleanup backoff에 의한 만료 upload 재허용은 별도 staging_expires_at과 정리 전 irrevocable 회수로 수정했다. metadata transaction이 먼저 완료되면 live reference가 정리를 막고, 회수가 먼저 완료되면 새 metadata의 lease guard가 거부한다. 실제 action은 canonical revision batch만 사용하며 이전 standalone 첨부 mutation helper는 제거했다. 기존 순차 업로드/실패 rollback 검사는 통과했지만, 별도 두 cleanup runner를 의도적으로 정지/재개하는 경합 재현은 플랫폼 검토에 의해 차단되어 미실행이다. 다른 경로로 재시도하지 않았으며 이 검사를 통과한 것으로 계산하지 않는다. 이 경합의 동적 검증과 전체 저장소 독립 검토 완료를 주장하지 않는다. 배포 전 정적 불변식 검토/통합 gate에서 남은 위험을 다시 평가한다.
+
+## PRD-038/039 검토·개인 업무 checkpoint (2026-10-09)
+
+현재 제출 버전에 대한 request/changes/approve/reopen과 개인 업무 페이지를 연결했다. D1 0009/native v5는 nullable 선택 대상2컬럼만 추가한다. 본문/파일/검토 사유는 공개 task DTO로 보내지 않는다. 정확한 현재 대상·역할·담당자·검토자·자체 승인 배제·공개 범위·token/version은 DB transaction에서 재검사한다.
+
+통합 Worker workflow **412 PASS**, unit **112 PASS**, 기존 quality **375 PASS**, credential-free auth **18 PASS**, patched built decoder·lint/types/FSD/build PASS. 가상 세션을 사용한 실제 workerd 검사이며 실제 Google 재로그인을 뜻하지 않는다. 일반 제출→검토→보완→v2→승인, 원문/판정 보존, 권한 강등, private 검토 거부, 일반 task에서 사유 비노출, 동시 정상 판정 한 승자, 이력 실패 rollback, 개인 목록/건수/페이지·기여 댓글 privacy·안전한 돌아가기 URL을 확인했다.
+
+독립 정적 리뷰의 개인 검토 큐 전제 누락과 상태/첨부 action의 returnTo 누락을 수정하고 재확인했다. native v5 전용 추가/동시 검토 하네스는 기존 고립 DB에서 모든 합성 row/file을 남기며 exact-commit 실행 대기다. 별도 차단된 cleanup runner 경합 재현은 계속 미실행이다. 승인된 browser QA는 loopback-only 합성 fixture를 사용하며 테스트 persona 선택은 script에만 있고 production Worker에는 존재하지 않는다. 브라우저 결과는 아직 대기다.
+
+### PRD-037 native v4 결과
+
+exact `b0353724f3277479813352efdd5b47cd2939939d`에서 MariaDB11.4.13 / Node26.11.1 / 동일 lockfile로 additive harness62·migration unit14·lint/types/FSD PASS. 기존 DB39개를 보존하고 새 DB16개와 실제 합성 첨부를 유지했다. 14개 submission version/event가 일치하고 옛 첨부 metadata/bytes가 재시작 후 동일했다. 최종 DB 정지/listener 없음. 제외된 cleanup 경합 재현은 실행하지 않았다.
+
+### PRD-044 로컬 브라우저 제약
+
+합성 fixture는 명시된 loopback URL에서 대기했지만 managed cloud browser에서 두 서버 세션 모두 connection refused였다. 공식 network-escalated readiness 명령은 sandbox mount 오류로 실행되지 않았다. 오류 화면의 브라우저 내부 protocol 접근도 정책상 거부되어 재시도하지 않았다. 포트 공개/네트워크 설정 변경/다른 브라우저 제어로 우회하지 않았고 두 fixture 세션은 종료했다. 따라서 local interactive browser 검증은 아직 통과로 계산하지 않으며 게시 후 정상 HTTPS 페이지에서 지원되는 브라우저 검증으로 확인할 예정이다.

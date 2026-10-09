@@ -19,6 +19,7 @@ export const tasks = sqliteTable("tasks", {
   status: text("status").notNull().default("planned"), version: integer("version").notNull().default(1),
   workflowNote: text("workflow_note").notNull().default(""), lastOperationToken: text("last_operation_token"),
   reviewerId: integer("reviewer_id").references(() => users.id, { onDelete: "set null" }),
+  reviewSubmissionId: integer("review_submission_id"), reviewRevisionNumber: integer("review_revision_number"),
   depth: integer("depth").notNull().default(0), orderIndex: integer("order_index").notNull().default(0),
   assigneeId: integer("assignee_id").references(() => users.id, { onDelete: "set null" }), createdAt: createdAt(),
 }, (t) => [index("tasks_project_idx").on(t.projectId), index("tasks_parent_idx").on(t.parentId), index("tasks_assignee_idx").on(t.assigneeId)]);

@@ -6,7 +6,7 @@ import { randomBytes } from "node:crypto";
 import { createConnection } from "mariadb";
 import { testDatabaseEnv, assertTestDatabaseName } from "../tests/helpers/test-env";
 import { nativeSchemaV1 } from "../src/shared/server/database-admin/native-migration-v1";
-import { migrationChecksum, nativeMigrationManifest, runNativeMigrations, verifyNativeSchema, type MigrationConnection } from "../src/shared/server/database-admin/native-migrations.server";
+import { migrationChecksum, nativeMigrationManifest, runNativeMigrations, readNativeMigrationStatus, verifyNativeSchema, type MigrationConnection } from "../src/shared/server/database-admin/native-migrations.server";
 
 const options = { host: testDatabaseEnv.host, port: Number(testDatabaseEnv.port), user: process.env.TEST_DB_SCHEMA_USER ?? testDatabaseEnv.user, password: process.env.TEST_DB_SCHEMA_PASSWORD ?? testDatabaseEnv.password, connectTimeout: 5000 };
 // Hard guard: this harness is for the explicitly isolated test listener only.
@@ -102,6 +102,19 @@ try {
     check(Number((await resumeV3.connection.query('SELECT COUNT(*) AS n FROM task_events WHERE task_id=1'))[0].n)===1,'v3 replay preserves one baseline');
   }finally{await resumeV3.connection.end();}
 
+  const resumeV5=await fresh('resume_v5');
+  try {
+    let interrupted=false;
+    const proxy={query:async(sql:string,params?:unknown[])=>{
+      const result=await resumeV5.connection.query(sql,params);
+      if(!interrupted&&sql.includes('ADD COLUMN review_submission_id')){interrupted=true;throw new Error('synthetic interrupted v5');}
+      return result;
+    }};
+    await assert.rejects(runNativeMigrations(proxy,resumeV5.name),/interrupted v5/);checks++;
+    check(Number((await resumeV5.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===4,'interrupted v5 retains all four released ledgers');
+    await runNativeMigrations(resumeV5.connection,resumeV5.name);
+    check((await readNativeMigrationStatus(resumeV5.connection,resumeV5.name)).pendingVersions.length===0,'v5 additive selection columns resume without rebuilding tasks');
+  }finally{await resumeV5.connection.end();}
   const resumeV4=await fresh('resume_v4');
   try {
     let interrupted=false;

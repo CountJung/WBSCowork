@@ -26,7 +26,7 @@ import { createComment, deleteComment, getCommentForViewer, updateComment } from
 import { createTask, deleteTask, getTaskById, updateTask, changeTaskStatus } from "@/src/entities/task/index.server";
 import { canManageAllSubmissions, canWriteTaskContent } from "@/src/entities/user";
 import type { Submission, SubmissionVisibility } from "@/src/entities/submission";
-import { taskVersion, workOperationToken, type TaskStatus } from "@/src/entities/task";
+import { taskVersion, workOperationToken, parsePersonalWorkReturnTo, type TaskStatus } from "@/src/entities/task";
 import type { User } from "@/src/entities/user";
 
 function validateUploadBatch(files: File[]) {
@@ -55,6 +55,15 @@ function buildTasksPath(
   }
 
   return `/tasks?${searchParams.toString()}`;
+}
+
+function preserveQueueContext(path: string, formData: FormData) {
+  const returnTo = parsePersonalWorkReturnTo(formData.get("returnTo"));
+  if (!returnTo) return path;
+  const query = new URL(path, "https://local.invalid");
+  if (query.pathname !== "/tasks") return path;
+  query.searchParams.set("returnTo", returnTo);
+  return query.pathname + query.search;
 }
 
 function getSingleValue(value: FormDataEntryValue | null) {
@@ -252,6 +261,7 @@ export async function createTaskAction(formData: FormData) {
     });
 
     revalidatePath("/tasks");
+    revalidatePath("/my-work");
 
     await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
@@ -283,7 +293,7 @@ export async function createTaskAction(formData: FormData) {
     );
   }
 
-  redirect(redirectPath);
+  redirect(preserveQueueContext(redirectPath, formData));
 }
 
 export async function updateTaskAction(formData: FormData) {
@@ -319,6 +329,7 @@ export async function updateTaskAction(formData: FormData) {
     });
 
     revalidatePath("/tasks");
+    revalidatePath("/my-work");
 
     await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
@@ -350,7 +361,7 @@ export async function updateTaskAction(formData: FormData) {
     );
   }
 
-  redirect(redirectPath);
+  redirect(preserveQueueContext(redirectPath, formData));
 }
 
 export async function deleteTaskAction(formData: FormData) {
@@ -423,6 +434,7 @@ export async function deleteTaskAction(formData: FormData) {
     await deleteProjectUploadDirectories([taskId]).catch(() => undefined);
 
     revalidatePath("/tasks");
+    revalidatePath("/my-work");
 
     await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
@@ -454,7 +466,7 @@ export async function deleteTaskAction(formData: FormData) {
     );
   }
 
-  redirect(redirectPath);
+  redirect(preserveQueueContext(redirectPath, formData));
 }
 
 export async function createSubmissionAction(formData: FormData) {
@@ -484,6 +496,7 @@ export async function createSubmissionAction(formData: FormData) {
 
     revalidatePath("/");
     revalidatePath("/tasks");
+    revalidatePath("/my-work");
 
     await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
@@ -523,7 +536,7 @@ export async function createSubmissionAction(formData: FormData) {
     );
   }
 
-  redirect(redirectPath);
+  redirect(preserveQueueContext(redirectPath, formData));
 }
 
 export async function updateSubmissionAction(formData: FormData) {
@@ -567,6 +580,7 @@ export async function updateSubmissionAction(formData: FormData) {
 
     revalidatePath("/");
     revalidatePath("/tasks");
+    revalidatePath("/my-work");
 
     await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
@@ -606,7 +620,7 @@ export async function updateSubmissionAction(formData: FormData) {
     );
   }
 
-  redirect(redirectPath);
+  redirect(preserveQueueContext(redirectPath, formData));
 }
 
 export async function deleteSubmissionAction(formData: FormData) {
@@ -619,7 +633,7 @@ export async function deleteSubmissionAction(formData: FormData) {
 
   try {
     const submissionId = parseRequiredPositiveInteger(formData.get("submissionId"), "제출물");
-    const { submission: existingSubmission } = await requireOwnedSubmission(session, {
+    const { submission: existingSubmission, user } = await requireOwnedSubmission(session, {
       projectId,
       taskId,
       submissionId,
@@ -630,7 +644,7 @@ export async function deleteSubmissionAction(formData: FormData) {
     const revisionFilesToClean=await listRevisionFilePathsBySubmission(submissionId);
     if(getSingleValue(formData.get("confirmRevisionDeletion"))!=="yes")throw new Error("제출물과 모든 버전 삭제를 확인해야 합니다.");
 
-    const submission = await deleteSubmission(submissionId);
+    const submission = await deleteSubmission(submissionId,{userId:user.id,isAdmin:user.role==="admin",isSuperuser:!!session.user.isSuperuser});
     for(const filePath of new Set(revisionFilesToClean))await deleteStoredSubmissionAttachment(filePath).catch(()=>{cleanupFailed=true;});
 
     // 레거시 단일 파일 정리
@@ -679,6 +693,7 @@ export async function deleteSubmissionAction(formData: FormData) {
 
     revalidatePath("/");
     revalidatePath("/tasks");
+    revalidatePath("/my-work");
 
     await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
@@ -715,7 +730,7 @@ export async function deleteSubmissionAction(formData: FormData) {
     );
   }
 
-  redirect(redirectPath);
+  redirect(preserveQueueContext(redirectPath, formData));
 }
 
 /** Removal creates a new version; old metadata and bytes remain available in history. */
@@ -729,10 +744,11 @@ export async function deleteSubmissionAttachmentAction(formData:FormData) {
     const attachment=await getSubmissionAttachmentById(attachmentId);
     if(!attachment||attachment.submissionId!==submissionId||attachment.revisionNumber!==submission.currentRevision)throw new Error("현재 버전의 첨부파일을 찾을 수 없습니다.");
     await updateSubmissionWithAttachments({id:submissionId,actor:{userId:user.id,isAdmin:canManageAllSubmissions(user.role,session.user.isSuperuser),isSuperuser:!!session.user.isSuperuser},token:workOperationToken(formData.get("operationToken")),expectedRevision:parseRequiredPositiveInteger(formData.get("expectedRevision"),"제출 버전"),content:submission.content,visibility:submission.visibility,materialUrl:submission.materialUrl,changeSummary:`현재 버전에서 첨부 제외: ${attachment.fileName}`,removeAttachmentIds:[attachmentId]},[]);
-    revalidatePath("/tasks");revalidatePath(`/submissions/${submissionId}`);
+    revalidatePath("/tasks");
+    revalidatePath("/my-work");revalidatePath(`/submissions/${submissionId}`);
     path=buildTasksPath('success','새 버전에서 첨부를 제외했습니다. 이전 버전의 파일은 보존됩니다.',{projectId,taskId});
   }catch(error){path=buildTasksPath('error',error instanceof Error?error.message:'첨부 제외 실패',{projectId,taskId});}
-  redirect(path);
+  redirect(preserveQueueContext(path, formData));
 }
 
 export async function createCommentAction(formData: FormData) {
@@ -757,6 +773,7 @@ export async function createCommentAction(formData: FormData) {
 
     revalidatePath("/");
     revalidatePath("/tasks");
+    revalidatePath("/my-work");
 
     await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
@@ -791,7 +808,7 @@ export async function createCommentAction(formData: FormData) {
     );
   }
 
-  redirect(redirectPath);
+  redirect(preserveQueueContext(redirectPath, formData));
 }
 
 export async function updateCommentAction(formData: FormData) {
@@ -814,6 +831,7 @@ export async function updateCommentAction(formData: FormData) {
 
     revalidatePath("/");
     revalidatePath("/tasks");
+    revalidatePath("/my-work");
 
     await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
@@ -848,7 +866,7 @@ export async function updateCommentAction(formData: FormData) {
     );
   }
 
-  redirect(redirectPath);
+  redirect(preserveQueueContext(redirectPath, formData));
 }
 
 export async function deleteCommentAction(formData: FormData) {
@@ -872,6 +890,7 @@ export async function deleteCommentAction(formData: FormData) {
 
     revalidatePath("/");
     revalidatePath("/tasks");
+    revalidatePath("/my-work");
 
     await logUserAction("tasks", {
       actorEmail: session.user.email ?? null,
@@ -907,7 +926,7 @@ export async function deleteCommentAction(formData: FormData) {
     );
   }
 
-  redirect(redirectPath);
+  redirect(preserveQueueContext(redirectPath, formData));
 }
 
 export async function changeTaskStatusAction(formData:FormData) {
@@ -919,9 +938,10 @@ export async function changeTaskStatusAction(formData:FormData) {
     await requireProjectTask(projectId,taskId);
     const user=await resolvePersistedUser(session);
     await changeTaskStatus({id:taskId,actor:{userId:user.id,isAdmin:canManageAllSubmissions(user.role,session.user.isSuperuser),isSuperuser:!!session.user.isSuperuser},version:taskVersion(formData.get("version")),token:workOperationToken(formData.get("operationToken")),status:getSingleValue(formData.get("taskStatus")) as TaskStatus,note:getSingleValue(formData.get("note"))});
-    revalidatePath("/tasks");revalidatePath("/");revalidatePath("/my-work");
+    revalidatePath("/tasks");
+    revalidatePath("/my-work");revalidatePath("/");revalidatePath("/my-work");
     await logUserAction("tasks",{actorEmail:session.user.email??null,action:'task.status',entityType:'task',entityId:taskId,projectId,taskId});
     path=buildTasksPath('success','작업 상태를 저장했습니다.',{projectId,taskId});
   }catch(error){path=buildTasksPath('error',error instanceof Error?error.message:'작업 상태를 저장하지 못했습니다.',{projectId});}
-  redirect(path);
+  redirect(preserveQueueContext(path, formData));
 }

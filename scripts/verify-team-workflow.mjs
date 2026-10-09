@@ -1,3 +1,5 @@
+import {verifyPersonalWorkWorkflow} from "./verify-personal-work-http.mjs";
+import {verifySubmissionReviewWorkflow} from "./verify-submission-review-http.mjs";
 import {verifySubmissionRevisionWorkflow} from "./verify-submission-revisions-http.mjs";
 import { seedSubmissionRevisionFixtures } from "./seed-submission-revision-fixture.mjs";
 import { randomUUID } from "node:crypto";
@@ -128,5 +130,7 @@ export async function verifyTeamWorkflow(argumentsContext) {
   await form(route,member,createTask,{projectId:goals.id,title:'WORKFLOW_ROLLBACK',...dates});
   check(!(await db.prepare("SELECT id FROM tasks WHERE title='WORKFLOW_ROLLBACK'").first()),'workflow: history failure rolls back task creation atomically');
   await verifySubmissionRevisionWorkflow({...argumentsContext,form,renderedAction,route,projectId:goals.id,taskId:card.id});
+  await verifySubmissionReviewWorkflow({...argumentsContext,form,renderedAction,route,projectId:goals.id});
+  await verifyPersonalWorkWorkflow({...argumentsContext,form,renderedAction,route,projectId:goals.id});
 
 }

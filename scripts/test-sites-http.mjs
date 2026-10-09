@@ -1,3 +1,4 @@
+import {serveWorkflowCua} from "./serve-workflow-cua.mjs";
 import { seedSubmissionRevisionFixtures } from "./seed-submission-revision-fixture.mjs";
 /** Exercises the production bundle in workerd with synthetic signed JWTs and local D1/R2. */
 import { spawn } from "node:child_process";
@@ -101,6 +102,7 @@ try {
   if (process.argv.includes("--workflow")) {
     await verifyTeamWorkflow({request,db,bucket,actorCookies,actionOrigin,check});
     console.log(`Actual Worker team workflow checks passed: ${checks}. Synthetic local fixtures; no permanent deletion or real Google login.`);
+    if(process.argv.includes("--cua"))await serveWorkflowCua({mf,actorCookies,origin,actionOrigin});
   } else if (process.argv.includes("--quality")) {
     await verifySitesQuality({request,db,bucket,actorCookies,actionOrigin,check});
     console.log(`Actual Worker quality checks passed: ${checks}. Ephemeral synthetic fixtures; no delete/purge scenarios or real Google login.`);

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { nativeMigrationV1 } from "./native-migration-v1";
+import { nativeMigrationV5 } from "./native-migration-v5";
 import { nativeMigrationV4 } from "./native-migration-v4";
 import { nativeMigrationV3 } from "./native-migration-v3";
 import { nativeMigrationV2 } from "./native-migration-v2";
@@ -8,7 +9,7 @@ export class NativeMigrationError extends Error {}
 
 export type MigrationConnection = { query(sql: string, values?: unknown[]): Promise<unknown> };
 export type MigrationLedgerRow = { version: number; name: string; checksum: string; appliedAt?: string };
-export const nativeMigrationManifest = [nativeMigrationV1, nativeMigrationV2, nativeMigrationV3, nativeMigrationV4] as const;
+export const nativeMigrationManifest = [nativeMigrationV1, nativeMigrationV2, nativeMigrationV3, nativeMigrationV4, nativeMigrationV5] as const;
 export const migrationChecksum = (specification: unknown) => createHash("sha256").update(JSON.stringify(specification)).digest("hex");
 export function quoteSchemaIdentifier(identifier: string) {
   if (!/^[A-Za-z0-9_]{1,64}$/.test(identifier)) throw new NativeMigrationError("Schema identifier must contain 1–64 letters, numbers or underscores.");
@@ -152,6 +153,15 @@ async function applyNativeV4(connection: MigrationConnection, database: string) 
   await verifyNativeSchema(connection,database,[...nativeMigrationV1.statements,...nativeMigrationV2.statements,...nativeMigrationV3.statements,...nativeMigrationV4.statements]);
 }
 
+async function applyNativeV5(connection: MigrationConnection, database: string) {
+  for (const addition of nativeMigrationV5.additions) {
+    if (!(await columns(connection, database, addition.table)).some(column => column.name === addition.name)) {
+      await connection.query(`ALTER TABLE ${quoteSchemaIdentifier(addition.table)} ADD COLUMN ${addition.definition}`);
+    }
+  }
+  await verifyNativeSchema(connection, database, [...nativeMigrationV1.statements, ...nativeMigrationV2.statements, ...nativeMigrationV3.statements, ...nativeMigrationV4.statements, ...nativeMigrationV5.statements]);
+}
+
 /** One caller-owned, schema-only connection. DDL implicitly commits; never wrap in deadlock retries. */
 export async function runNativeMigrations(connection: MigrationConnection, database: string) {
   const quoted = quoteSchemaIdentifier(database);
@@ -169,6 +179,7 @@ export async function runNativeMigrations(connection: MigrationConnection, datab
       else if (migration.version === 2) await applyNativeV2(connection, database);
       else if (migration.version === 3) await applyNativeV3(connection, database);
       else if (migration.version === 4) await applyNativeV4(connection, database);
+      else if (migration.version === 5) await applyNativeV5(connection, database);
       else throw new NativeMigrationError("This migration version has no implementation.");
       await connection.query("INSERT INTO schema_migrations(version,name,checksum) VALUES(?,?,?)", [migration.version, migration.name, migrationChecksum(migration)]);
       // Explicit durability even if this dedicated connection inherits autocommit=0.

@@ -1,8 +1,10 @@
+import { createHash, randomUUID } from "node:crypto";
 import type { StoredSubmissionAttachment } from "./submission-files.server";
 import type { SubmissionActor } from "../model/submission-revision";
 import { buildSubmissionVisibilityWhere, commitSubmissionCreation, commitSubmissionRevision } from "./submission-revision.server";
 export { buildSubmissionVisibilityWhere } from "./submission-revision.server";
-import { getDatabasePool } from "@/src/shared/server/database/index.server";
+import { databaseBatch, getDatabasePool } from "@/src/shared/server/database/index.server";
+import { submissionReviewInvalidationStatements } from "./submission-review.server";
 import { mapSubmissionRow, type Submission, type SubmissionRow, type SubmissionVisibility } from "../model/submission";
 
 /**
@@ -170,14 +172,38 @@ export async function updateSubmission(input: UpdateSubmissionInput): Promise<Su
   return submission;
 }
 
-export async function deleteSubmission(submissionId: number): Promise<Submission> {
+export async function deleteSubmission(submissionId: number, actor?: SubmissionActor): Promise<Submission> {
   const existingSubmission = await getSubmissionById(submissionId);
 
   if (!existingSubmission) {
     throw new Error("삭제할 제출물을 찾을 수 없습니다.");
   }
 
-  await getDatabasePool().query("DELETE FROM submissions WHERE id = ?", [submissionId]);
+  const key = `${actor?.userId ?? 0}:submission.delete:${submissionId}:${randomUUID()}`;
+  const requestFingerprint = createHash('sha256').update(JSON.stringify({ submissionId, taskId: existingSubmission.taskId })).digest('hex');
+  const access = actor ? {
+    sql: `(?=1 OR EXISTS(SELECT 1 FROM users writer WHERE writer.id=? AND writer.role IN ('member','admin')))
+      AND (author_id=? OR ?=1 OR EXISTS(SELECT 1 FROM users administrator WHERE administrator.id=? AND administrator.role='admin'))`,
+    params: [actor.isSuperuser ? 1 : 0, actor.userId, actor.userId, actor.isSuperuser ? 1 : 0, actor.userId],
+  } : { sql: '1=1', params: [] };
+  // The action has already confirmed permanent deletion. This batch only keeps
+  // the task projection consistent with that exact, freshly authorized deletion.
+  const results = await databaseBatch([
+    { sql: 'UPDATE tasks SET id=id WHERE id=?', params: [existingSubmission.taskId] },
+    {
+      sql: `UPDATE submissions SET last_operation_token=? WHERE id=? AND task_id=? AND ${access.sql}`,
+      params: [key, submissionId, existingSubmission.taskId, ...access.params],
+    },
+    ...submissionReviewInvalidationStatements({
+      taskId: existingSubmission.taskId, submissionId, actorId: actor?.userId ?? null,
+      sourceOperationKey: key, requestFingerprint,
+    }),
+    { sql: 'DELETE FROM submissions WHERE id=? AND task_id=? AND last_operation_token=?', params: [submissionId, existingSubmission.taskId, key] },
+  ]);
+  const result = results[results.length - 1] as { affectedRows?: number; meta?: { changes?: number } };
+  if (Number(result.affectedRows ?? result.meta?.changes ?? 0) !== 1) {
+    throw new Error("삭제할 제출물이 없거나 권한이 변경되었습니다.");
+  }
 
   return existingSubmission;
 }

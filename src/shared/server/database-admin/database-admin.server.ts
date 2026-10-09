@@ -52,7 +52,7 @@ const requiredColumnsByTable: Partial<Record<ManagedTableName, string[]>> = {
   bug_reports: [...bugLifecycleColumns.map(c=>c.name),"reporter_id","creation_token","last_operation_token","title","reproduction","expected","actual","page_path","status","priority","resolution","fix_commit","version","created_at","updated_at"],
   bug_report_events: ["lifecycle_action","report_id","actor_id","operation_token","kind","body","status","priority","resolution","fix_commit","report_version","created_at"],
   projects: ["goal", "success_criteria"],
-  tasks: ["deliverable", "definition_of_done", "review_required", "status", "version", "workflow_note", "reviewer_id", "last_operation_token", "creation_token"],
+  tasks: ["review_submission_id", "review_revision_number", "deliverable", "definition_of_done", "review_required", "status", "version", "workflow_note", "reviewer_id", "last_operation_token", "creation_token"],
   task_events: ["task_id", "actor_id", "operation_token", "request_fingerprint", "kind", "status", "assignee_id", "reviewer_id", "note", "task_version"],
   submissions: [...requiredSubmissionColumns.map((column) => column.name),"creation_token","current_revision","version","last_operation_token","material_url"],
   submission_attachments:["revision_number"],

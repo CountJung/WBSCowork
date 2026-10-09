@@ -18,7 +18,7 @@ import { listCommentsByProject } from "@/src/entities/comment/index.server";
 import { listAttachmentsByProject, listSubmissionsByProject } from "@/src/entities/submission/index.server";
 import { listAllProjects } from "@/src/entities/project/index.server";
 import { listTasksByProject, listTaskEventsByProject } from "@/src/entities/task/index.server";
-import { getOrderedTasks, getSelectedTask } from "@/src/entities/task";
+import { getOrderedTasks, getSelectedTask, parsePersonalWorkReturnTo } from "@/src/entities/task";
 import { getSelectedProject } from "@/src/entities/project";
 import { formatDate } from "@/src/shared/lib/date";
 import ProjectGanttChart from "@/src/widgets/project-gantt";
@@ -50,6 +50,7 @@ type TasksPageProps = {
     projectId?: string | string[];
     status?: string | string[];
     taskId?: string | string[];
+    returnTo?: string | string[];
   }>;
 };
 
@@ -107,8 +108,9 @@ function TaskWritePolicy({ canWrite }: { canWrite: boolean }) {
 function TaskCreateForm({
   orderedTasks,
   project,
-  users, eligibleUserIds,
+  users, eligibleUserIds, returnTo,
 }: {
+  returnTo?:string;
   eligibleUserIds:number[];
   orderedTasks: Task[];
   project: Project;
@@ -118,6 +120,7 @@ function TaskCreateForm({
     <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
       <Stack component="form" action={createTaskAction} spacing={2}>
         <input type="hidden" name="operationToken" value={randomUUID()} />
+        <input type="hidden" name="returnTo" value={returnTo??""}/>
         <input type="hidden" name="projectId" value={String(project.id)} />
         <Typography variant="h5">새 작업 추가</Typography>
         <TextField name="title" label="작업 제목" required />
@@ -164,8 +167,9 @@ function TaskList({
   project,
   selectedTaskId,
   submissionsByTaskId,
-  users, currentUserId, eventsByTaskId, eligibleUserIds,
+  users, currentUserId, eventsByTaskId, eligibleUserIds, returnTo,
 }: {
+  returnTo?:string;
   eligibleUserIds:number[];
   currentUserId: number | null;
   eventsByTaskId: Record<number,TaskEvent[]>;
@@ -198,6 +202,7 @@ function TaskList({
           <TaskCard
             key={`${task.id}:${task.version}`}
             task={task}
+            returnTo={returnTo}
             orderedTasks={orderedTasks}
             projectId={project.id}
             users={users}
@@ -243,12 +248,14 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const feedbackMessage = getSingleSearchParam(params.message);
   const projectIdParam = getSingleSearchParam(params.projectId);
   const taskIdParam = getSingleSearchParam(params.taskId);
+  const returnTo = parsePersonalWorkReturnTo(getSingleSearchParam(params.returnTo)) ?? undefined;
 
   if (!runtimeEnv.database.configured) {
     return (
       <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">작업 관리</Typography>
+            {returnTo?<Button href={returnTo} sx={{alignSelf:"flex-start"}}>내 업무로 돌아가기</Button>:null}
           <Alert severity="warning">
             DB env가 완전하지 않아 작업 데이터를 불러올 수 없습니다. 데이터베이스 연결과 배포 migration 상태를 먼저 점검해야 합니다.
           </Alert>
@@ -271,6 +278,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
       <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">작업 관리</Typography>
+            {returnTo?<Button href={returnTo} sx={{alignSelf:"flex-start"}}>내 업무로 돌아가기</Button>:null}
           <Alert severity="warning">
             작업, 제출물, 댓글 관리에 필요한 기본 테이블 또는 확장 컬럼이 아직 준비되지 않았습니다. 먼저 관리자 DB 페이지에서 DB와 기본 테이블을 초기화해야 합니다.
           </Alert>
@@ -325,6 +333,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         <Stack direction={{ xs: "column", lg: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
           <Stack spacing={1}>
             <Typography variant="h3">작업 관리</Typography>
+            {returnTo?<Button href={returnTo} sx={{alignSelf:"flex-start"}}>내 업무로 돌아가기</Button>:null}
             <Typography variant="body1" color="text.secondary">
               프로젝트별 WBS 작업, 제출물, 댓글을 관리하는 화면입니다. guest는 읽기 전용이고, member와 슈퍼유저는 생성·수정·삭제가 가능합니다.
             </Typography>
@@ -400,12 +409,13 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           </Paper>
         ) : null}
 
-        {canWrite && selectedProject ? <TaskCreateForm eligibleUserIds={eligibleUserIds} orderedTasks={orderedTasks} project={selectedProject} users={users} /> : null}
+        {canWrite && selectedProject ? <TaskCreateForm returnTo={returnTo} eligibleUserIds={eligibleUserIds} orderedTasks={orderedTasks} project={selectedProject} users={users} /> : null}
 
         {selectedProject ? <ProjectGanttChart project={selectedProject} tasks={orderedTasks} /> : null}
 
         {selectedProject ? (
           <TaskList
+            returnTo={returnTo}
             eligibleUserIds={eligibleUserIds}
             currentUserId={currentDbUserId}
             eventsByTaskId={eventsByTaskId}
