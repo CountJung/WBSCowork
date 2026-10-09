@@ -86,6 +86,8 @@ npm run test:sites:auth # 실제 workerd 인증 계약 (가상 테스트 값만)
 npm run test:sites:storage # 로컬 D1/R2 및 실패 복구
 npm run test:sites:http # 실제 Worker HTTP 권한/업로드 계약
 npm run db:check      # DB 연결 테스트
+npm run db:migrate -- --status # native ledger 읽기 전용 (명시 --apply만 schema DDL)
+npm run test:native:migrations # loopback3307 새 *_test DB를 보존하는 additive 검증
 npm run dev:debug     # Node 인스펙터 포함 dev 서버
 ```
 
@@ -134,3 +136,5 @@ Serena는 역할·권한, DB schema, repository 계약 또는 여러 Route Handl
 `/bugs`, `/bugs/[id]`는 Google 인증된 모든 기존 역할(guest 포함)이 본인 제보를 작성·조회·추가 설명할 수 있다. `/admin/bugs`와 검토 변경은 admin/superuser만 가능하다. 이 권한은 task/project 쓰기 권한을 확대하지 않는다. 원문은 불변이고 검토/정정은 `bug_report_events`에 추가하며, version + operation token을 DB transaction 안에서 검사한다. 프로젝트 파기/5일 audit pruning과 독립된 보존 기록이다. 제보 텍스트는 비신뢰 데이터로 취급하고 실행·외부 전송·자동 수정을 하지 않는다. 신규 검증: `npm run test:sites:bugs`. 상세 [BUG_REPORTS.md](docs/BUG_REPORTS.md).
 
 버그 lifecycle: admin은 해결/종료 제보 검증 완료, 휴지통 이동·복원을 수행한다. 영구 삭제는 SU만 현재 제목/버전/전체 이력 지문 확인 후 가능하며 최소 삭제 증빙을 남긴다. 휴지통은 admin/SU 전용 SQL scope이며 일반 조회·검색·건수·이력에서 제외한다. 상세 계약은 BUG_REPORTS.md를 따른다.
+
+Native MariaDB schema 변경은 DB_SCHEMA_USER/DB_SCHEMA_PASSWORD 전용 연결과 불변 version/checksum ledger를 사용한다. 일반 DB_* runtime/readiness와 분리하며 fallback하지 않는다. DDL은 transaction rollback 대상이 아니므로 자동 down/DROP이나 ledger 강제 수정은 없다. 실제 운영 적용/계정 권한 변경은 별도 승인 범위다. [Native 운영](docs/NATIVE_DATABASE_MIGRATIONS.md).

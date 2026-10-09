@@ -340,3 +340,10 @@ saved-cloud가 exact `f31f9dc18ca9848e648035ed602cba5b9731d9f1`을 외부 preloa
 schema 값은 일반 RuntimeEnv/status/설정 편집 UI에 넣지 않는다. `npm run test:unit`73 PASS, lint0/0, types, FSD5/경계 PASS. 실제 계정 생성/권한 변경/credential 입력·전송은 수행하지 않았으며 runtime DDL 거부는 미검증이다. [운영 계약](NATIVE_DATABASE_MIGRATIONS.md).
 
 QLT-013 코드 지원 후 Worker build 및 네트워크 metadata 조회 없는 quality375 재검증 PASS. Sites의 계정/DB 권한은 변경하지 않았다.
+
+
+## 2026-10-09 QLT-012 native versioned migration
+
+`npm run db:migrate -- --status`: runtime identity로 ledger 상태 조회만 한다. `--apply`는 별도 schema identity로 명시적 적용이며 운영에서는 백업/점검 창/적용 대상 승인이 선행한다. `npm run test:native:migrations`는 새 loopback3307 `wbs_mig_*_test` DB를 보존하는 additive 전용 검증이다. 기존 destructive fixture suite와 섞지 않는다.
+
+lint0/0·types·FSD5/경계·unit85·Worker build·quality375 PASS. 새 단위 검사는 checksum/version/name drift·lock 실패·DDL interruption·미설정 schema/오류정보 비노출을 포함한다. native 실 DB 결과는 exact-commit 검증 대기다. 인덱스 전체 길이/charset·case-sensitive role·autocommit0 durability·fresh 동시 runner는 그 하네스에서 확인한다. 타입 target ES2017에서 지원하지 않는 dotAll regex는 호환 패턴으로 고친 뒤 재검증했다.

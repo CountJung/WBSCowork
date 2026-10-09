@@ -26,7 +26,9 @@
     "test:sites:browser": "node scripts/test-sites-http.mjs --browser",
     "test:sites:bugs": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-bug-reports.ts",
     "test:sites:decoder": "node scripts/check-rsc-decoder.mjs",
-    "test:sites:quality": "node scripts/test-sites-http.mjs --quality"
+    "test:sites:quality": "node scripts/test-sites-http.mjs --quality",
+    "db:migrate": "node --import tsx scripts/migrate-database.ts",
+    "test:native:migrations": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-native-migrations.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -1,0 +1,134 @@
+/** Additive-only isolated MariaDB validation. Retains every new DB/row; never deletes or purges. */
+import "../tests/helpers/bootstrap";
+import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
+import { createConnection } from "mariadb";
+import { testDatabaseEnv, assertTestDatabaseName } from "../tests/helpers/test-env";
+import { nativeSchemaV1 } from "../src/shared/server/database-admin/native-migration-v1";
+import { runNativeMigrations, verifyNativeSchema, type MigrationConnection } from "../src/shared/server/database-admin/native-migrations.server";
+
+const options = { host: testDatabaseEnv.host, port: Number(testDatabaseEnv.port), user: process.env.TEST_DB_SCHEMA_USER ?? testDatabaseEnv.user, password: process.env.TEST_DB_SCHEMA_PASSWORD ?? testDatabaseEnv.password, connectTimeout: 5000 };
+// Hard guard: this harness is for the explicitly isolated test listener only.
+if (!['127.0.0.1','localhost','::1'].includes(options.host) || options.port !== 3307) throw new Error('Native migration test requires loopback:3307. No operating DB is permitted.');
+const prefix=`wbs_mig_${Date.now().toString(36)}_${randomBytes(3).toString('hex')}`;
+const databases: string[]=[];
+let checks=0;
+function check(value: unknown, label: string) { assert.ok(value,label);checks++;console.log(`PASS ${label}`); }
+async function connect(database?:string) { return createConnection({...options,...(database?{database}:{})}); }
+async function fresh(label:string) {
+  const name=`${prefix}_${label}_test`;assertTestDatabaseName(name);databases.push(name);
+  const connection=await connect();
+  await connection.query(`CREATE DATABASE \`${name}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+  await connection.query(`USE \`${name}\``);
+  return {name,connection};
+}
+try {
+  const install=await fresh('fresh');
+  try {
+    const result=await runNativeMigrations(install.connection,install.name);
+    check(result.appliedVersions.join(',')==='1'&&result.pendingVersions.length===0,'fresh installation has verified migration1');
+    await install.connection.query("INSERT INTO users(id,email,name,role) VALUES(9001,'fixture@example.test','합성 사용자','member')");
+    await install.connection.query("INSERT INTO projects(id,name,start_date,end_date) VALUES(9001,'합성 프로젝트','2026-01-01','2026-12-31')");
+    await install.connection.query("INSERT INTO tasks(id,project_id,title,start_date,end_date) VALUES(9001,9001,'보존 작업','2026-01-01','2026-12-31')");
+    await install.connection.query("INSERT INTO submissions(id,task_id,author_id,content,visibility) VALUES(9001,9001,9001,'보존 비공개','private')");
+    await install.connection.query("INSERT INTO bug_reports(id,reporter_id,creation_token,last_operation_token,title,reproduction,expected,actual) VALUES(9001,9001,'migration-create','migration-create','보존 제보','재현','기대','실제')");
+    await install.connection.query("INSERT INTO bug_report_events(report_id,actor_id,operation_token,kind,status,priority,report_version) VALUES(9001,9001,'migration-create','created','new','normal',1)");
+    const before=JSON.stringify(await install.connection.query("SELECT version,name,checksum,applied_at FROM schema_migrations"));
+    await runNativeMigrations(install.connection,install.name);
+    check(JSON.stringify(await install.connection.query("SELECT version,name,checksum,applied_at FROM schema_migrations"))===before,'repeat does not rewrite ledger/timestamps');
+    check((await install.connection.query("SELECT role FROM users WHERE id=9001"))[0].role==='member'&&(await install.connection.query("SELECT content,visibility FROM submissions WHERE id=9001"))[0].visibility==='private'&&(await install.connection.query("SELECT content FROM submissions WHERE id=9001"))[0].content==='보존 비공개','repeat preserves roles and private content');
+    check(Number((await install.connection.query('SELECT COUNT(*) AS n FROM bug_report_events WHERE report_id=9001'))[0].n)===1,'repeat preserves original report history');
+  } finally { await install.connection.end(); }
+
+  const concurrent=await fresh('concurrent');
+  const concurrentOther=await connect(concurrent.name);
+  try {
+    let began!:()=>void;
+    const firstEnteredDDL=new Promise<void>(resolve=>{began=resolve;});
+    let delayed=false;
+    const firstConnection:MigrationConnection={query:async(sql,values)=>{
+      if(!delayed&&sql.startsWith('CREATE TABLE IF NOT EXISTS users')) { delayed=true; began(); await new Promise(resolve=>setTimeout(resolve,250)); }
+      return concurrent.connection.query(sql,values);
+    }};
+    const first=runNativeMigrations(firstConnection,concurrent.name);
+    await Promise.race([firstEnteredDDL, first.then(() => { throw new Error("Fresh concurrent test did not enter DDL."); })]);
+    await Promise.all([first,runNativeMigrations(concurrentOther,concurrent.name)]);
+    check(Number((await concurrent.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===1,'overlapping fresh migration runners serialize to one ledger row');
+  } finally { await concurrent.connection.end(); await concurrentOther.end(); }
+
+  const legacy=await fresh('legacy');
+  try {
+    // Previous supported core schema: missing only documented additive user/submission fields.
+    for(const sql of nativeSchemaV1.slice(0,6)) {
+      const old=sql.replace(/    (google_id|avatar_url|last_login_at|last_synced_at|visibility|file_name|file_mime_type|file_size_bytes)[^\n]*\n/g,match=>sql.includes('CREATE TABLE IF NOT EXISTS submission_attachments')?match:'').replace("ENUM('admin', 'member', 'guest') NOT NULL DEFAULT 'guest'","ENUM('admin', 'member') NOT NULL DEFAULT 'member'");
+      await legacy.connection.query(old);
+    }
+    await legacy.connection.query("INSERT INTO users(id,email,name,role) VALUES(9101,'legacy@example.test','기존 합성','member'),(9102,'legacy-admin@example.test','기존 관리자','admin')");
+    await legacy.connection.query("INSERT INTO projects(id,name,start_date,end_date) VALUES(9101,'기존 프로젝트','2026-01-01','2026-12-31')");
+    await legacy.connection.query("INSERT INTO tasks(id,project_id,title,start_date,end_date) VALUES(9101,9101,'기존 작업','2026-01-01','2026-12-31')");
+    await legacy.connection.query("INSERT INTO submissions(id,task_id,author_id,content) VALUES(9101,9101,9101,'기존 본문')");
+    await runNativeMigrations(legacy.connection,legacy.name);
+    const row=(await legacy.connection.query('SELECT content,visibility FROM submissions WHERE id=9101'))[0];
+    check(row.content==='기존 본문'&&row.visibility==='public','legacy upgrade keeps body and documented public default');
+    check((await legacy.connection.query('SELECT role FROM users WHERE id=9101'))[0].role==='member'&&(await legacy.connection.query('SELECT role FROM users WHERE id=9102'))[0].role==='admin','legacy enum expansion preserves member and admin roles');
+  } finally { await legacy.connection.end(); }
+
+  const preLifecycle=await fresh('prelife');
+  try {
+    for(const sql of nativeSchemaV1.slice(0,8)) {
+      const old=sql.replace(/    verified_at DATETIME NULL, verified_by BIGINT NULL, verification_note TEXT NOT NULL DEFAULT '',\n/,'').replace(/    trashed_at DATETIME NULL, trashed_by BIGINT NULL,\n/,'').replace(/    CONSTRAINT bug_reports_(verified_by|trashed_by)_fk[^\n]*\n/g,'').replace(/    lifecycle_action VARCHAR\(16\) NOT NULL DEFAULT '',\n/,'');
+      await preLifecycle.connection.query(old);
+    }
+    await preLifecycle.connection.query("INSERT INTO users(id,email,name,role) VALUES(9201,'buglegacy@example.test','합성','guest')");
+    await preLifecycle.connection.query("INSERT INTO bug_reports(id,reporter_id,creation_token,last_operation_token,title,reproduction,expected,actual) VALUES(9201,9201,'legacy-bug','legacy-bug','제보 원문','재현','기대','실제')");
+    await preLifecycle.connection.query("INSERT INTO bug_report_events(report_id,actor_id,operation_token,kind,status,priority,report_version) VALUES(9201,9201,'legacy-bug','created','new','normal',1)");
+    await runNativeMigrations(preLifecycle.connection,preLifecycle.name);
+    const row=(await preLifecycle.connection.query('SELECT title,version,verified_at,trashed_at FROM bug_reports WHERE id=9201'))[0];
+    check(row.title==='제보 원문'&&row.version===1&&row.verified_at===null&&row.trashed_at===null,'pre-lifecycle upgrade retains original/unverified state');
+    check(Number((await preLifecycle.connection.query('SELECT COUNT(*) AS n FROM bug_report_events WHERE report_id=9201'))[0].n)===1,'pre-lifecycle history remains unchanged');
+  } finally { await preLifecycle.connection.end(); }
+
+  const interrupted=await fresh('resume');
+  try {
+    let fail=true;
+    const proxy:MigrationConnection={query:async(sql,values)=>{if(fail&&sql.startsWith('INSERT INTO schema_migrations')){fail=false;throw new Error('synthetic failure after DDL before ledger');}return interrupted.connection.query(sql,values);}};
+    await assert.rejects(runNativeMigrations(proxy,interrupted.name),/synthetic failure/);checks++;
+    check(Number((await interrupted.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===0,'DDL interruption does not claim success');
+    await runNativeMigrations(interrupted.connection,interrupted.name);
+    check(Number((await interrupted.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===1,'interrupted DDL resumes safely');
+  } finally { await interrupted.connection.end(); }
+
+  const manualCommit=await fresh('commit');
+  try {await manualCommit.connection.query('SET autocommit=0');await runNativeMigrations(manualCommit.connection,manualCommit.name);}
+  finally {await manualCommit.connection.end();}
+  const persisted=await connect(manualCommit.name);
+  try {check(Number((await persisted.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===1,'ledger is durable with inherited autocommit0');}
+  finally {await persisted.end();}
+
+  for(const [label,change,role]of[
+    ['upper',(sql:string)=>sql.replace("ENUM('admin', 'member', 'guest')","VARCHAR(32)"),'ADMIN'],
+    ['space',(sql:string)=>sql.replace("ENUM('admin', 'member', 'guest')","VARCHAR(32)"),'admin '],
+    ['prefix',(sql:string)=>sql.replace('users_email_unique (email)','users_email_unique (email(10))'),'member'],
+    ['charset',(sql:string)=>sql.replace('utf8mb4 COLLATE=utf8mb4_unicode_ci','latin1 COLLATE=latin1_swedish_ci'),'member'],
+  ] as const) {
+    const invalid=await fresh(label);
+    try {
+      await invalid.connection.query(change(nativeSchemaV1[0]));
+      await invalid.connection.query('INSERT INTO users(id,email,name,role) VALUES(9301,?,?,?)',[`${label}@example.test`,'fixture',role]);
+      await assert.rejects(runNativeMigrations(invalid.connection,invalid.name));checks++;
+      check((await invalid.connection.query('SELECT role FROM users WHERE id=9301'))[0].role===role,`${label}: incompatible schema never coerces role`);
+      check(Number((await invalid.connection.query('SELECT COUNT(*) AS n FROM schema_migrations'))[0].n)===0,`${label}: incompatible baseline gets no ledger success`);
+    } finally {await invalid.connection.end();}
+  }
+  const drift=await connect(install.name);
+  try {
+    await verifyNativeSchema(drift,install.name);
+    await drift.query("UPDATE schema_migrations SET checksum=? WHERE version=1",['f'.repeat(64)]);
+    await assert.rejects(runNativeMigrations(drift,install.name),/checksum/);checks++;
+    check((await drift.query('SELECT title FROM bug_reports WHERE id=9001'))[0].title==='보존 제보','checksum rejection leaves domain records intact');
+  } finally {await drift.end();}
+  console.log(`Native additive migration checks passed: ${checks}. Retained synthetic databases: ${databases.join(', ')}. No account grants, credential changes, delete, purge, DROP or TRUNCATE performed.`);
+} catch(error) {
+  console.error(`Native additive migration verification failed. Retained databases: ${databases.join(', ')}`);
+  throw error;
+}

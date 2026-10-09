@@ -15,3 +15,31 @@
 ## 검증 기록
 
 2026-10-09 코드 checkpoint: lint0/0, typecheck, FSD5/경계, unit73 PASS. 4개 새 계약은 누락/부분 설정의 fail-closed, runtime-only readiness, schema 값의 비직렬화, 미설정 초기화가 연결 전에 중단되는 것을 검사한다. 실제 운영 credential 구성/GRANT/REVOKE 및 DDL 거부 시험은 미실행이다.
+
+
+## 버전·적용 절차 (QLT-012)
+
+D1은 기존 `drizzle/` 게시 migration을 유지한다. Native MariaDB는 `native-migration-v1.ts`의 불변 baseline+기존 schema additive upgrade를 `schema_migrations(version,name,checksum,applied_at)`로 추적한다. 이미 적용된 명세는 편집하지 않고 새 버전/handler를 추가한다. v1 checksum은 `8dea300dc59fc6a4d7c0fcb0a54b4a4fdec2db9d2681b303be9c1208d7007092`다.
+
+1. 운영자가 앱 쓰기 중지/점검 창과 검증된 백업을 준비한다. 이 문서는 실제 운영 적용 승인을 대신하지 않는다.
+2. `npm run db:migrate -- --status`는 runtime identity로 읽기만 수행한다. ledger 없음/대기/검증 오류를 구분하며 조회가 ledger를 생성하지 않는다.
+3. 명시적으로 승인된 대상에서만 `npm run db:migrate -- --apply` 또는 기존 SU 관리 화면의 Native migration 적용을 실행한다. 별도 schema identity가 필요하다.
+4. 하나의 전용 연결이 DB별 `GET_LOCK(...,10)`을 획득하고 생성/검증/ledger 기록/명시 COMMIT/lock release를 수행한다. schema 연결은 항상 닫으며 일반 deadlock 재시도를 사용하지 않는다.
+5. 알려지지 않은 버전·중복/빈 순서·name/checksum 불일치는 domain DDL 전에 거부한다. 각 버전은 postcondition 검증 후에만 성공을 기록한다. 기존 필드의 타입/nullable/default/identity, 전체 길이 index/unique, FK target/delete rule, CHECK, InnoDB/utf8mb4_unicode_ci를 확인한다.
+6. 문서화된 누락 컬럼/FK만 추가한다. legacy role은 정확한 `admin/member/guest` 값일 때만 ENUM/default를 확장한다. `ADMIN`, 공백/알 수 없는 role 등을 권한 값으로 자동 변환하지 않는다. 원문/이력/private/ID를 재작성하지 않는다.
+7. 이미 적용된 상태에서도 schema drift를 확인한다. schema 접속/driver 오류는 계정명·비밀번호·SQL을 UI/감사 로그에 그대로 전파하지 않고 안전한 코드/운영 안내만 전달한다.
+
+## 실패·복구·rollback
+
+MariaDB의 CREATE/ALTER는 [암묵적으로 commit](https://mariadb.com/docs/server/reference/sql-statements/transactions/sql-statements-that-cause-an-implicit-commit)한다. 일반 transaction rollback으로 DDL을 되돌린다고 주장하지 않는다. [GET_LOCK](https://mariadb.com/docs/server/reference/sql-functions/secondary-functions/miscellaneous-functions/get_lock)은 연결 단위이며 commit을 지나도 유지된다.
+
+- DDL 중단 후 성공 ledger가 없으면 원인을 해결하고 현재 schema를 확인한 뒤 같은 명세를 재실행한다. 존재하는 구조는 검사하고 누락된 부분만 이어 간다.
+- ledger INSERT/COMMIT/접속 결과가 불확실하면 자동 재시도하지 않는다. 새 연결에서 상태를 먼저 확인한다. commit된 ledger를 지우거나 checksum을 강제 재작성하는 복구 스위치는 없다.
+- 기본 복구는 forward fix다. 코드 rollback은 추가된 schema를 허용하는 이전 코드인지 확인해야 하며 추가 컬럼·ledger를 자동 삭제하지 않는다.
+- DB 백업 복원은 이후 쓰기를 잃을 수 있으므로 대상/범위가 확인된 별도 운영 결정이다. 자동 down/DROP이나 기록 삭제 명령은 제공하지 않는다.
+
+## 비파괴 native 검증
+
+`npm run test:native:migrations`는 `.env`를 읽지 않고 `TEST_DB_*`/`TEST_DB_SCHEMA_*`만 사용하며 loopback:3307을 강제한다. 무작위 새 `wbs_mig_*_test` DB만 생성하고 모든 DB/행을 보존한다. 빈 설치, 기존 core/pre-lifecycle upgrade, 재실행·원문/role/private 보존, 겹치는 fresh runner, DDL 후 ledger 전 중단/재개, autocommit0 durable ledger, 대문자/공백 role·prefix unique index·latin1 drift·checksum 오류 거부를 검사한다. 실제 계정/권한 변경, DELETE/DROP/TRUNCATE/purge가 없다.
+
+로컬 dot 검증: lint/types/FSD, unit85, Worker build/quality375 PASS. 이 환경에는 native MariaDB가 없으므로 위 전용 하네스의 실제 DB 결과는 별도 saved-cloud exact-commit 검증 전까지 미실행이다. 운영 최소권한 적용이나 운영 migration 완료를 뜻하지 않는다.

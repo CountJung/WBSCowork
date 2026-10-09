@@ -78,7 +78,7 @@ export default function DatabaseAdminPanel({
           <List disablePadding>
             {status.tables.map((table) => (
               <ListItem key={table.name} disableGutters secondaryAction={<Chip label={table.exists ? "존재" : "없음"} color={table.exists ? "success" : "default"} />}>
-                <ListItemText primary={table.name} secondary={table.exists ? "생성 확인됨" : "아직 생성되지 않음"} />
+                <ListItemText primary={table.name} secondary={table.missingColumns.length ? `누락 컬럼: ${table.missingColumns.join(", ")}` : table.exists ? "생성 확인됨" : "아직 생성되지 않음"} />
               </ListItem>
             ))}
           </List>
@@ -89,14 +89,19 @@ export default function DatabaseAdminPanel({
         <Stack spacing={2}>
           <Typography variant="h5">관리 작업</Typography>
           <Typography variant="body2" color="text.secondary">
-            {status.managedMigrations ? "Sites가 게시 시 versioned migration을 적용합니다. 이 화면에서는 상태만 조회합니다." : "현재 env에 설정된 MariaDB의 DB와 기본 테이블을 관리합니다."}
+            {status.managedMigrations ? "Sites가 게시 시 versioned migration을 적용합니다. 이 화면에서는 상태만 조회합니다." : "별도 schema 계정으로 버전과 checksum을 확인하며 누락된 migration을 적용합니다."}
           </Typography>
+          {status.nativeMigrations ? <Stack spacing={1}>
+            <Typography>Native migration 적용: {status.nativeMigrations.appliedVersions.join(", ") || "없음"} · 대기: {status.nativeMigrations.pendingVersions.join(", ") || "없음"}</Typography>
+            {status.nativeMigrations.error ? <Alert severity="error">{status.nativeMigrations.error}</Alert> : null}
+            <Typography variant="body2">DDL은 자동 되돌리기가 되지 않습니다. 백업과 적용 범위를 확인한 뒤 실행하세요.</Typography>
+          </Stack> : null}
           {status.managedMigrations ? <Typography>저장 파일 정리 대기: {status.pendingCleanupCount ?? 0}개 (진행 중인 업로드 포함)</Typography> : null}
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             {status.managedMigrations ? <form action={formAction}><input type="hidden" name="intent" value="cleanup" /><DatabaseActionButton>실패한 파일 정리 재시도</DatabaseActionButton></form> : null}
             {!status.managedMigrations && !status.schemaConfigured ? <Alert severity="info">스키마 변경에는 별도 DB_SCHEMA_USER / DB_SCHEMA_PASSWORD 설정이 필요합니다. 일반 조회는 runtime DB 계정을 사용합니다.</Alert> : null}
             {!status.managedMigrations && <form action={formAction}><input type="hidden" name="intent" value="initialize" />
-              <DatabaseActionButton disabled={!status.schemaConfigured}>DB 및 기본 테이블 생성</DatabaseActionButton>
+              <DatabaseActionButton disabled={!status.schemaConfigured}>Native migration 적용</DatabaseActionButton>
             </form>}
             <form action={formAction}><input type="hidden" name="intent" value="refresh" />
               <DatabaseActionButton>상태 새로고침</DatabaseActionButton>

@@ -74,7 +74,7 @@
 완료: [QLT-011 테스트 경계 확장](COMPLETED_LOG.md#qlt-011--날짜계층첨부역할-회귀-확장-2026-10-09), [QLT-010 프로젝트 CRUD 중복 정리](COMPLETED_LOG.md#qlt-010--프로젝트-crud-단일화-2026-10-09), [QLT-014 타입 생성물 정리](COMPLETED_LOG.md#qlt-014--필요한-next-타입-유지와-잔재-제외-2026-10-09).
 
 
-- [~] **[QLT-012](#qlt-012--versioned-migration-부재)** versioned migration 부재
+- [~] **[QLT-012](#qlt-012--versioned-migration-부재)** native versioned migration — 코드 구현, 실제 MariaDB additive 검증 대기
 - [~] **[QLT-013](#qlt-013--db-credential-최소권한-분리)** runtime pool과 schema admin의 credential 분리 — 코드 지원 완료, 실제 계정·권한 적용/검증 대기
 
 ### 9단계 — digest/report export
@@ -245,16 +245,17 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 
 **분류** 운영
 
-`src/shared/server/database-admin`이 `CREATE TABLE`과 일부 `ALTER ADD`만 수행하고 migration ledger나 rollback 이력이 없다.
+Sites D1은 기존 versioned migration을 사용한다. Native MariaDB에 불변 명세·checksum ledger·연결 lock·additive 재개·postcondition·forward-fix 복구 계약을 구현했다. 실제 DB 검증 결과 전까지 완료로 표시하지 않는다. [운영/복구 계약](NATIVE_DATABASE_MIGRATIONS.md).
 
 RPT-018(D3)이 이것을 전제로 하므로 9단계 진입 전에 해결하는 편이 낫다.
 
 착수 체크리스트:
 
-- [ ] migration ledger 테이블과 버전 규약 정의
-- [ ] 기존 `CREATE TABLE`·`ALTER ADD` 경로를 versioned migration으로 이관
-- [ ] idempotent upgrade, 기존 데이터 backfill, FK/index 설계 확인
-- [ ] rollback 절차 정의
+- [x] migration ledger 테이블과 버전 규약 정의
+- [x] 기존 `CREATE TABLE`·`ALTER ADD` 경로를 versioned migration으로 이관
+- [x] idempotent additive upgrade·기존 기본값·FK/index 설계 및 mock 경계 검사
+- [ ] 실제 DB에서 원문/role/private/이력·ledger 보존 확인
+- [x] rollback 절차 정의
 - [ ] 테스트 DB(3307)에서 fresh install과 기존 DB upgrade 양쪽 검증
 
 ---

@@ -1,4 +1,5 @@
-import { bugSchemaStatements, bugLifecycleColumns, bugEventLifecycleColumns } from "./bug-schema.server";
+import { NativeMigrationError, readNativeMigrationStatus, runNativeMigrations } from "./native-migrations.server";
+import { bugLifecycleColumns } from "./bug-schema.server";
 import { pendingObjectCleanupCount } from "@/src/shared/server/object-cleanup/index.server";
 import { getHostedDatabase, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { createConnection } from "mariadb";
@@ -16,6 +17,7 @@ export type ManagedTableName = (typeof managedTableNames)[number];
 export type DatabaseAdminStatus = {
   managedMigrations?: boolean;
   schemaConfigured?: boolean;
+  nativeMigrations?: { ledgerExists: boolean; appliedVersions: number[]; pendingVersions: number[]; error?: string };
   pendingCleanupCount?: number;
   host: string;
   port: number;
@@ -30,92 +32,6 @@ export type DatabaseAdminStatus = {
   existingTableCount: number;
   managedTableCount: number;
 };
-
-const createSchemaStatements = [
-  `CREATE TABLE IF NOT EXISTS users (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    email VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'member', 'guest') NOT NULL DEFAULT 'guest',
-    google_id VARCHAR(255) NULL,
-    avatar_url VARCHAR(500) NULL,
-    last_login_at DATETIME NULL,
-    last_synced_at DATETIME NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    UNIQUE KEY users_email_unique (email)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
-  `CREATE TABLE IF NOT EXISTS projects (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
-  `CREATE TABLE IF NOT EXISTS tasks (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    project_id BIGINT NOT NULL,
-    parent_id BIGINT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    depth INT NOT NULL DEFAULT 0,
-    order_index INT NOT NULL DEFAULT 0,
-    assignee_id BIGINT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    KEY tasks_project_idx (project_id),
-    KEY tasks_parent_idx (parent_id),
-    KEY tasks_assignee_idx (assignee_id),
-    CONSTRAINT tasks_project_fk FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
-    CONSTRAINT tasks_parent_fk FOREIGN KEY (parent_id) REFERENCES tasks (id) ON DELETE SET NULL,
-    CONSTRAINT tasks_assignee_fk FOREIGN KEY (assignee_id) REFERENCES users (id) ON DELETE SET NULL
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
-  `CREATE TABLE IF NOT EXISTS submissions (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    task_id BIGINT NOT NULL,
-    author_id BIGINT NOT NULL,
-    content TEXT NOT NULL,
-    visibility ENUM('public', 'private') NOT NULL DEFAULT 'public',
-    file_path VARCHAR(500) NULL,
-    file_name VARCHAR(255) NULL,
-    file_mime_type VARCHAR(255) NULL,
-    file_size_bytes BIGINT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    KEY submissions_task_idx (task_id),
-    KEY submissions_author_idx (author_id),
-    CONSTRAINT submissions_task_fk FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE,
-    CONSTRAINT submissions_author_fk FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE CASCADE
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
-  `CREATE TABLE IF NOT EXISTS submission_attachments (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    submission_id BIGINT NOT NULL,
-    file_path VARCHAR(500) NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
-    file_mime_type VARCHAR(255) NOT NULL DEFAULT 'application/octet-stream',
-    file_size_bytes BIGINT NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    KEY submission_attachments_submission_idx (submission_id),
-    CONSTRAINT submission_attachments_submission_fk FOREIGN KEY (submission_id) REFERENCES submissions (id) ON DELETE CASCADE
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
-  `CREATE TABLE IF NOT EXISTS comments (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    submission_id BIGINT NOT NULL,
-    author_id BIGINT NOT NULL,
-    content TEXT NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    KEY comments_submission_idx (submission_id),
-    KEY comments_author_idx (author_id),
-    CONSTRAINT comments_submission_fk FOREIGN KEY (submission_id) REFERENCES submissions (id) ON DELETE CASCADE,
-    CONSTRAINT comments_author_fk FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE CASCADE
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
-  ...bugSchemaStatements,
-] as const;
 
 const requiredUsersColumns: ColumnDefinition[] = [
   { name: "google_id", definition: "google_id VARCHAR(255) NULL" },
@@ -138,38 +54,6 @@ const requiredColumnsByTable: Partial<Record<ManagedTableName, string[]>> = {
   submissions: requiredSubmissionColumns.map((column) => column.name),
   users: requiredUsersColumns.map((column) => column.name),
 };
-
-function quoteIdentifier(identifier: string) {
-  if (!/^[A-Za-z0-9_]+$/.test(identifier)) {
-    throw new Error("DB_NAME must use only letters, numbers, and underscores for admin creation tasks.");
-  }
-
-  return `\`${identifier}\``;
-}
-
-async function ensureTableColumns(
-  connection: Awaited<ReturnType<typeof createConnection>>,
-  databaseName: string,
-  tableName: string,
-  columns: ColumnDefinition[],
-) {
-  const rows = (await connection.query(
-    `SELECT COLUMN_NAME AS columnName
-     FROM INFORMATION_SCHEMA.COLUMNS
-     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
-    [databaseName, tableName],
-  )) as Array<{ columnName: string }>;
-
-  const existingColumns = new Set(rows.map((row) => row.columnName));
-
-  for (const column of columns) {
-    if (existingColumns.has(column.name)) {
-      continue;
-    }
-
-    await connection.query(`ALTER TABLE ${quoteIdentifier(tableName)} ADD COLUMN ${column.definition}`);
-  }
-}
 
 async function withServerConnection<T>(callback: (connection: Awaited<ReturnType<typeof createConnection>>) => Promise<T>, databaseEnv: DatabaseEnv = requireDatabaseEnv()) {
   const connection = await createConnection({
@@ -233,13 +117,14 @@ export async function getDatabaseAdminStatus(): Promise<DatabaseAdminStatus> {
       databaseName: databaseEnv.database,
       databaseExists: false,
       schemaConfigured: isDatabaseSchemaConfigured(),
+      nativeMigrations: { ledgerExists: false, appliedVersions: [], pendingVersions: [1] },
       tables: managedTableNames.map((name) => ({ name, exists: false, missingColumns: requiredColumnsByTable[name] ?? [] })),
       existingTableCount: 0,
       managedTableCount: managedTableNames.length,
     };
   }
 
-  const { existingColumnsByTable, existingTables } = await withDatabaseConnection(async (connection) => {
+  const { existingColumnsByTable, existingTables, nativeMigrations } = await withDatabaseConnection(async (connection) => {
     const [tableRows, columnRows] = await Promise.all([
       connection.query("SELECT TABLE_NAME AS tableName FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ?", [databaseEnv.database]),
       connection.query(
@@ -259,7 +144,11 @@ export async function getDatabaseAdminStatus(): Promise<DatabaseAdminStatus> {
       existingColumnsByTable.set(tableName, columns);
     }
 
+    let nativeMigrations: DatabaseAdminStatus["nativeMigrations"];
+    try { nativeMigrations = await readNativeMigrationStatus(connection, databaseEnv.database); }
+    catch { nativeMigrations = { ledgerExists: true, appliedVersions: [], pendingVersions: [], error: "Native migration history cannot be verified. Review ledger permissions/checksums with the schema operator." }; }
     return {
+      nativeMigrations,
       existingColumnsByTable,
       existingTables,
     };
@@ -280,6 +169,7 @@ export async function getDatabaseAdminStatus(): Promise<DatabaseAdminStatus> {
     databaseName: databaseEnv.database,
     databaseExists: true,
     schemaConfigured: isDatabaseSchemaConfigured(),
+    nativeMigrations,
     tables,
     existingTableCount: tables.filter((table) => table.exists).length,
     managedTableCount: tables.length,
@@ -289,32 +179,15 @@ export async function getDatabaseAdminStatus(): Promise<DatabaseAdminStatus> {
 export async function initializeDatabaseSchema() {
   if (isHostedRuntime()) throw new Error("Sites manages schema migrations during deployment. Runtime DDL is disabled.");
   const databaseEnv = requireDatabaseSchemaEnv();
-  const quotedDatabaseName = quoteIdentifier(databaseEnv.database);
-
-  await withServerConnection(async (connection) => {
-    await connection.query(
-      `CREATE DATABASE IF NOT EXISTS ${quotedDatabaseName} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
-    );
-  }, databaseEnv);
-
-  await withDatabaseConnection(async (connection) => {
-    for (const statement of createSchemaStatements) {
-      await connection.query(statement);
-    }
-
-    await ensureTableColumns(connection, databaseEnv.database, "users", requiredUsersColumns);
-    await ensureTableColumns(connection, databaseEnv.database, "submissions", requiredSubmissionColumns);
-    await ensureTableColumns(connection, databaseEnv.database, "bug_reports", bugLifecycleColumns);
-    await ensureTableColumns(connection, databaseEnv.database, "bug_report_events", bugEventLifecycleColumns);
-    for (const column of ["verified_by", "trashed_by"]) {
-      const constraints = await connection.query("SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND TABLE_NAME='bug_reports' AND COLUMN_NAME=? AND REFERENCED_TABLE_NAME='users'",[databaseEnv.database,column]);
-      if (!constraints.length) await connection.query(`ALTER TABLE bug_reports ADD CONSTRAINT bug_reports_${column}_fk FOREIGN KEY (${column}) REFERENCES users(id) ON DELETE SET NULL`);
-    }
-
-    await connection.query(
-      "ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'member', 'guest') NOT NULL DEFAULT 'guest'",
-    );
-  }, databaseEnv);
-
+  try {
+    await withServerConnection(connection => runNativeMigrations(connection, databaseEnv.database), databaseEnv);
+  } catch (error) {
+    // Driver errors may contain the privileged username, SQL or connection details.
+    // Only our constant/schema-contract messages may cross the UI/audit boundary.
+    if (error instanceof NativeMigrationError) throw error;
+    const code = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
+    const safeCode = /^[A-Z0-9_]{1,64}$/.test(code) ? ` (${code})` : "";
+    throw new Error(`Native schema operation failed${safeCode}. Check the schema identity and database state with the operator before retrying.`);
+  }
   return getDatabaseAdminStatus();
 }

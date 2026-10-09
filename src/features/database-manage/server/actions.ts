@@ -21,7 +21,7 @@ export async function initializeDatabaseAction(
     return {
       ...previousState,
       success: false,
-      message: "슈퍼유저만 DB 생성 작업을 실행할 수 있습니다.",
+      message: "슈퍼유저만 DB migration을 실행할 수 있습니다.",
     };
   }
 
@@ -51,7 +51,7 @@ export async function initializeDatabaseAction(
 
     return {
       success: true,
-      message: "DB 및 기본 테이블 생성 작업이 완료되었고 현재 슈퍼유저 계정도 users 테이블에 동기화했습니다.",
+      message: "Native migration 검증/적용을 마쳤고 현재 슈퍼유저 계정도 users 테이블에 동기화했습니다.",
       status,
     };
   } catch (error) {

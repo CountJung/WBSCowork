@@ -153,3 +153,8 @@ users       1 ── N comments
 - `scripts/test-bug-reports.ts` / `verify-bug-http.mjs`: D1 archive/concurrency and actual Worker HTTP authorization/validation.
 
 - `scripts/check-rsc-decoder.mjs`: RSC 보안 패치 버전과 실제 Worker decoder fingerprint를 검사한다. 빌드 후 `npm run test:sites:decoder`.
+
+
+### Native migration 진입점 (QLT-012/013)
+
+`npm run db:migrate`(기본 read-only) / SU database action → `database-admin` → 전용 schema connection → `native-migrations.server.ts` lock/ledger/검증 → 불변 `native-migration-v1.ts`. 일반 runtime readiness는 기존 DB identity를 사용한다. D1 `drizzle/`와 분리되며 이번 변경에 새 Sites migration은 없다. [운영 절차](NATIVE_DATABASE_MIGRATIONS.md).
