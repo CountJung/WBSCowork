@@ -1,7 +1,7 @@
 # WBS 태스크 — 완료 기록
 
 > **누적 문서** — 완료된 항목만 담는다. 진행 중인 일은 [TODO.md](TODO.md)에 있다.
-> 최종 갱신: 2026-10-09
+> 최종 갱신: 2026-10-10
 
 여기에는 **나중에 다시 참조할 가치가 있는 것만** 남긴다. 판단 기준은 "이 결정을 모르는 사람이 같은 실수를 반복할 수 있는가"다. 단순 작업(오타, 포맷, 의존성 범프)은 git 이력으로 충분하므로 옮기지 않는다.
 
@@ -264,7 +264,7 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 - guest 포함 인증 사용자의 본인 제보, admin/superuser 검토, 원문 보존과 append-only 처리 기록, SQL 조회 범위와 원자적 version/idempotency 검사, D1/Node additive schema를 구현했다. 외부 전송/알림/첨부/자동 실행/일반 삭제 기능은 추가하지 않았다.
 - 원격 commit `f294edd620bee5cc557989a690e95dddfefb1354`, exact tree `da81b6eadfe58f61dfc6a9a2853840c46eb92e85`. [검증 계약](BUG_REPORTS.md).
 - version 3 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_7648d00bc3448191be2a284d814dc067`, deployment `appgdep_6ac7a743cd608191882d9a80fc0d84dd` 14:23:10 UTC succeeded. public/환경 revision 11 유지.
-- 실제 owner 세션으로 /bugs, /admin/bugs 메뉴·검색·필터·empty state와 1181px/503px form layout을 확인했다. 수평 overflow 없음, desktop 창 복원. D1 두 신규 테이블은 비어 있고 기존 사용자·감사 기록은 유지된다. 현재 실제 제보 쓰기는 OPS-029 승인 대기이며 local 합성 Worker 검증과 구분한다. Native MariaDB 실행은 OPS-028에서 별도로 추적한다.
+- 실제 owner 세션으로 /bugs, /admin/bugs 메뉴·검색·필터·empty state와 1181px/503px form layout을 확인했다. 수평 overflow 없음, desktop 창 복원. D1 두 신규 테이블은 비어 있고 기존 사용자·감사 기록은 유지된다. 이 게시 시점에는 실제 제보 쓰기가 OPS-029 승인 대기였으며, 이후 완료 결과는 [OPS-029](#ops-029--버그-제보리뷰-실환경-쓰기-검증-2026-10-08)와 아래 OPS-031 완료분에 기록했다. local 합성 Worker 검증과 구분한다. Native MariaDB 실행은 OPS-028에서 별도로 추적한다.
 
 ## OPS-028 — Node/MariaDB 동시 검토 및 테스트 로더 호환성 (2026-10-08)
 
@@ -283,7 +283,18 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 
 ## OPS-029 — 버그 제보·리뷰 실환경 쓰기 검증 (2026-10-08)
 
-승인된 합성 report1 한 건으로 제보→추가 설명→검토 중→해결, 원문 보존, Git SHA 기록, 검색/상태 필터를 실제 브라우저에서 확인했다. version4와 events1–4를 native read-only DB 도구로 확인했다. [상세](SITES_BUG_QA_2026-10-08.md). 기존 사용자/역할/운영 데이터 변경 없음. 삭제는 실행하지 않았으며 OPS-031에서 지원 경로와 별도 승인을 결정한다.
+승인된 합성 report1 한 건으로 제보→추가 설명→검토 중→해결, 원문 보존, Git SHA 기록, 검색/상태 필터를 실제 브라우저에서 확인했다. version4와 events1–4를 native read-only DB 도구로 확인했다. [상세](SITES_BUG_QA_2026-10-08.md). 기존 사용자/역할/운영 데이터 변경 없음. 이 OPS-029 단계에서는 삭제하지 않았다. 이후 정식 수명주기 게시와 정확한 대상의 별도 승인 후 정리한 결과는 [OPS-031 완료분](#ops-031--버그-수명주기-게시와-승인된-실환경-정리-완료분)에 있다.
+
+
+## OPS-031 — 버그 수명주기 게시와 승인된 실환경 정리 (완료분)
+
+기능과 실환경 확인의 완료분만 기록한다. 항목 전체의 남은 native 검증 상태는 [TODO의 OPS-031](TODO.md#10단계--배포)을 따른다.
+
+- source `d631e51db980405f2dbf437116fa5d3f91b4b05a`의 정식 검증 완료·휴지통·복원·SU 최종 확인 삭제 기능을 version5로 게시했다. D1 bug58/Worker HTTP217, 기존 storage57/auth18과 독립 검토 결과는 [수명주기 기록](BUG_LIFECYCLE_2026-10-08.md)에 있다. 과거 합성 검증 결과이며 이번 문서 동기화에서 재실행하지 않았다.
+- 기존 소유자 세션으로 report #1 「닷프로 검증용 버그」를 검증 완료→휴지통→복원→휴지통으로 확인했다. 최종 삭제 직전에는 resolved/verified/trashed, version8, events1–8이었다.
+- 사용자가 이 한 건의 복구 불가능한 삭제를 별도로 승인한 뒤 정상 SU의 제목·현재 지문 확인 절차로 영구 삭제했다. 본문과 events1–8 제거, 최소 삭제 증빙 1건 및 기존 사용자·역할·감사 기록 보존을 확인했다. 본문/검토 이력 사본은 증빙에 저장하지 않는다. [실환경 후속 기록](SITES_BUG_QA_2026-10-08.md#후속-수명주기-및-정리-결과).
+- 이후 version10 게시 전후에도 기존 최소 증빙 1건과 사용자 row가 유지됐다([후속 보존 확인](P1_ACCEPTANCE_2026-10-09.md#게시-및-데이터-보존)). 호스팅 백업/진단 기록까지 영구 삭제했다고 주장하지 않는다.
+- native는 exact `d631e51`의 비파괴 생성·검증·휴지통·복원 16조건만 별도 확인했다. 이 실행은 설치된 React19.2.6을 사용했으므로 lockfile19.2.8 빌드 검증도 아니다. 파기를 포함한 native 전체 수명주기·경합 suite는 승인 대기/미실행이며 D1 결과로 대체하지 않는다. QLT-015 차단 시나리오와 QLT-016 fixture503 원인도 해결된 것으로 표시하지 않는다.
 
 
 ## QLT-010 — 프로젝트 CRUD 단일화 (2026-10-09)

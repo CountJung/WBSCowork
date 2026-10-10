@@ -21,7 +21,7 @@
 
 ## 스키마와 실행 모드
 
-`drizzle/0003_free_zarek.sql`은 기존 테이블/데이터 변경 없이 두 테이블을 추가한다. Sites 게시가 적용한다. Node/MariaDB는 기존 슈퍼관리자 schema initialization에 additive `CREATE TABLE IF NOT EXISTS`를 통합했으며 실제 native DB 실행 검증은 OPS-028로 남긴다. 기존 마이그레이션 0000~0002는 수정하지 않았다.
+`drizzle/0003_free_zarek.sql`은 기존 테이블/데이터 변경 없이 두 테이블을 추가한다. Sites 게시가 적용한다. 최초 Node/MariaDB 구현은 슈퍼관리자 schema initialization에 additive `CREATE TABLE IF NOT EXISTS`를 통합했다. 이후 native schema는 [불변 version/checksum migration](NATIVE_DATABASE_MIGRATIONS.md)으로 전환했고, 초기 버그 계약의 실제 DB 검증은 [OPS-028 완료 기록](COMPLETED_LOG.md#ops-028--nodemariadb-동시-검토-및-테스트-로더-호환성-2026-10-08)에 있다. 기존 마이그레이션 0000~0002는 수정하지 않았다.
 
 ## 검증
 
@@ -29,11 +29,11 @@
 - `npm run test:sites:http`: 실제 build Worker + 합성 JWT로 두 guest/두 member/admin/superuser 접근, SSR 정보 누출, 입력 위조·XSS·CSRF·길이/경로 제한·same-cookie role downgrade 검사.
 - 공개 production의 실제 제보 쓰기 테스트는 사용자 승인 범위와 별도로 기록한다. 합성 local 검사를 실사용자 다중 계정 검사로 표현하지 않는다.
 
-2026-10-08 게시 전 검증: lint/types/FSD/build 통과, unit 17, D1/R2 57, bug D1 26, actual Worker HTTP 185, credential-free auth 18 통과. 독립 리뷰 지적의 replay-race와 native upsert ambiguity를 수정 후 재검증했다. Native MariaDB daemon은 없어 실행 미검증(OPS-028).
+2026-10-08 게시 전 검증: lint/types/FSD/build 통과, unit 17, D1/R2 57, bug D1 26, actual Worker HTTP 185, credential-free auth 18 통과. 독립 리뷰 지적의 replay-race와 native upsert ambiguity를 수정 후 재검증했다. 당시 dot 환경에는 Native MariaDB daemon이 없어 실행 미검증이었으며, 후속 exact-commit 결과는 아래와 OPS-028에서 구분한다.
 
-현재 public Site version 3에서 위 화면과 빈 데이터 상태를 실제 소유자 세션으로 확인했다. 원본 QA 프로젝트의 승인된 파기는 완료됐고 사용자/감사 기록은 보존했다. 이 feature 자체의 실제 제보 저장·검토는 OPS-029의 별도 승인 후 확인한다.
+최초 public Site version3 게시 때 위 화면과 빈 데이터 상태를 실제 소유자 세션으로 확인했다. 원본 QA 프로젝트의 승인된 파기는 완료됐고 사용자/감사 기록은 보존했다. 이후 실제 제보 저장·검토는 별도 승인 후 OPS-029에서 확인했다. 현재 게시본은 [P1 인수 결과](P1_ACCEPTANCE_2026-10-09.md#게시-및-데이터-보존)의 version10이다.
 
-후속 확인: OPS-028 exact f31f9dc native 검증 통과(React19.2.6 기준), OPS-030 version4 React19.2.8 Worker 게시, OPS-029 승인된 실제 report1 작성·추가 설명·검토·해결 및 filter 확인 완료. report1/events1–4는 정리 방식 결정(OPS-031) 전까지 보존한다.
+후속 확인: OPS-028 exact f31f9dc native 검증 통과(React19.2.6 기준), OPS-030 version4 React19.2.8 Worker 게시, OPS-029 승인된 실제 report1 작성·추가 설명·검토·해결 및 filter 확인 완료. OPS-029 당시 report1은 version4/events1–4까지 보존됐고, 이후 OPS-031에서 version8/events1–8의 정확한 대상 승인을 받아 정리했다([후속 기록](SITES_BUG_QA_2026-10-08.md#후속-수명주기-및-정리-결과)).
 
 ## 검증 완료·휴지통·영구 삭제 (OPS-031)
 
@@ -43,6 +43,6 @@
 - 지문은 원문·상태·검증·전체 순서화된 이력에 대한 SHA-256이다. 계정 파기로 독립적으로 NULL이 될 수 있는 계정 연결 ID는 지문에서 제외한다. 이를 계정 신원에 대한 암호학적 증명으로 사용하지 않는다. UI의 30건 페이지가 아니라 전체 이력을 50건씩 읽는다.
 - 하나의 DB transaction/batch에서 최소 삭제 증빙을 생성하고 해당 이력과 원문을 삭제한다. 실패하면 전체 rollback된다. native MariaDB는 먼저 parent row FOR UPDATE를 잠가 READ COMMITTED에서도 복원과 삭제가 교차하지 않게 한다. Sites D1 batch도 원자적이다. 재시도는 같은 수행자·대상·operation token·지문으로 이미 완료된 삭제만 확인한다.
 - `bug_report_purge_receipts`에는 대상 번호, 수행자 계정 연결, 시각, 버전, 이력 수/마지막 ID, 내용 지문, 재시도 식별자만 남고 제목·본문·검토 내용 사본은 남기지 않는다. 이 증빙은 운영 audit의 5일 정리와 별도다. 앱에서 최종 삭제를 복구할 수 없으며 호스팅 백업/진단 기록의 삭제를 보장하지 않는다.
-- `0004_fresh_killer_shrike.sql`은 기존 테이블의 nullable/default column 추가와 새 증빙 테이블만 포함한다. 이전 적용 migration 수정·운영 데이터 DML·table rebuild는 없다. native schema initialization은 이미 존재하는 bug 테이블에도 additive column/FK upgrade를 수행한다.
+- `0004_fresh_killer_shrike.sql`은 기존 테이블의 nullable/default column 추가와 새 증빙 테이블만 포함한다. 이전 적용 migration 수정·운영 데이터 DML·table rebuild는 없다. 최초 native schema initialization에도 additive column/FK upgrade를 제공했으며, 현재 운영 절차는 [native versioned migration](NATIVE_DATABASE_MIGRATIONS.md)을 따른다.
 
-실환경 report1의 영구 삭제는 아직 승인되지 않았다. 승인된 안전한 검증/휴지통/복원과 정확한 대상의 영구 삭제 승인을 구분한다.
+실환경 합성 report #1은 검증·휴지통·복원을 확인한 뒤, version8/events1–8의 정확한 대상에 대한 별도 승인으로 영구 삭제를 완료했다. 본문·이력 제거와 최소 증빙 1건 보존을 확인했다. 이 완료는 향후 다른 대상의 삭제 승인이나 native 파기 테스트 승인으로 확대하지 않는다. 남은 native 전체·파기 검증은 [TODO OPS-031](TODO.md#10단계--배포), 완료된 게시/실환경 범위는 [완료 기록](COMPLETED_LOG.md#ops-031--버그-수명주기-게시와-승인된-실환경-정리-완료분)을 따른다.

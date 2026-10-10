@@ -1,7 +1,7 @@
 # WBS 태스크 — 진행 목록
 
 > **살아있는 문서** — 단계 범위, 검증 절차, 블로커가 바뀔 때마다 업데이트하십시오.
-> 최종 검토: 2026-10-09 · 다음 번호: **QLT-017 / RPT-021 / OPS-033 / PRD-045**
+> 최종 검토: 2026-10-10 · 다음 번호: **QLT-017 / RPT-021 / OPS-033 / PRD-045**
 
 완료된 항목은 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮긴다. 이 문서에는 열린 항목만 남긴다.
 
@@ -83,7 +83,7 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 
 ### 10단계 — 배포
 
-- [~] **OPS-031** 버그 검증 완료·휴지통·영구 삭제 — 관리자 검증/휴지통/복원, SU 전용 현재 버전·전체 이력 지문·제목 확인 영구 삭제를 정식 기능으로 구현한다. 원문·이력은 최종 삭제 전 보존하고 최소 삭제 증빙은 별도 보존한다. 격리 D1/Worker 회귀·독립 안전성 검토·기존 MariaDB additive upgrade 포함. 실환경 합성 제보 #1의 검증/휴지통/복원은 승인된 테스트 범위이며 영구 삭제는 최신 정확한 대상을 보고한 뒤 별도 승인한다.
+- [!] **OPS-031** native 버그 수명주기 전체·영구 삭제 검증 — 기능 게시와 승인된 실환경 합성 제보 #1의 검증/휴지통/복원·영구 삭제는 [완료분 기록](COMPLETED_LOG.md#ops-031--버그-수명주기-게시와-승인된-실환경-정리-완료분)으로 분리했다. 남은 것은 별도 승인 대기 중인 격리 MariaDB의 파기 포함 전체 수명주기·경합 검증이다. 비파괴 native 16조건, D1/Worker 결과나 P1 관계 교체 권한 승인을 native 파기 검증 완료/승인으로 간주하지 않는다. QLT-015의 차단된 저장소 경합 및 QLT-016의 미해결 fixture503은 별도 항목이다.
 - [ ] **OPS-032** 남은 의존성 보안 유지보수 — OPS-030은 실제 Worker RSC decoder의 특정 advisory만 해결했다. NextAuth4.24.15, native MariaDB3.5.3, Next/이미지·build-only tooling 등은 실제 실행 경로와 호환성을 구분해 검토한다. 전체 npm audit 해소를 주장하거나 일괄 major override를 하지 않는다.
 
 
@@ -249,33 +249,21 @@ membership/recipient consent와 threat model 승인 이후에만 delivery를 검
 
 ### OPS-022 — 클라우드 검증 환경의 빌드·인증 전제 확정
 
-**분류** 환경 / 배포 전제 (2026-10-08)
+완료: [Sites Worker 전환 및 공개 게시](COMPLETED_LOG.md#ops-022--sites-worker-전환-및-공개-게시-2026-10-08). 기존 heading은 이전 링크 호환을 위해 유지한다.
 
-SHA `2f6b74d7b77106d38ad914eee14e1e073c61b039`의 격리 검증 결과는
-[CLOUD_INSTALL_REPORT_2026-10-08.md](CLOUD_INSTALL_REPORT_2026-10-08.md)에 기록했다.
+초기 SHA `2f6b74d7b77106d38ad914eee14e1e073c61b039`의 저장된 클라우드 환경 실측은 [CLOUD_INSTALL_REPORT_2026-10-08.md](CLOUD_INSTALL_REPORT_2026-10-08.md)에 그대로 보존한다. 그 보고서의 Google Fonts 다운로드 실패, 오프라인 fixture 빌드, `NO_SECRET` 500, 47건 테스트 및 디스크 수치는 **당시 해당 환경**의 결과다. 이후 Sites 게시·인증 완료 여부나 현재 환경의 측정값으로 해석하지 않는다.
 
-- 기본 `npm run build`는 Google Fonts Roboto 다운로드 실패로 exit 1이다. 공식 Google fonts 저장소의 실제 폰트와 별도 response fixture를 쓰는 오프라인 Turbopack 빌드는 exit 0이다. 이 환경 보완은 원본 소스 변경이나 기본 빌드의 네트워크 성공을 뜻하지 않는다.
-- 자격증명을 사용·생성하지 않은 production HTTP 검사에서 `/privacy`는 200이고 인증 의존 경로는 NextAuth `NO_SECRET`로 500이다. 배포 담당자는 승인된 호스팅과 기존 OAuth callback/secret 전달 방식을 확정해야 한다. 기존 `users.role` 유지에는 기존 DB 연결 또는 별도 승인된 이전이 필요하다.
-- Linux native DB 탐지의 `spawnSync('command', ['-v', ...])`는 `ENOENT`다. 환경 전용 shim을 별도 준비했고 앱/기존 하네스는 수정하지 않았다. 정식 지원을 결정할 때 Linux 탐지를 보완한다.
-- Node 26 `mock.module()`의 `ExperimentalWarning`은 테스트 계약의 현재 한계다. suppression 없이 로그를 보존했다.
-- MariaDB 컨테이너는 `io_uring` EPERM 후 libaio로 동작한다. 디스크 DB의 `max_open_files` 상한 경고도 기록했다. 47건 테스트는 통과했고 호스트 보안·sysctl·리소스 설정은 변경하지 않았다. 운영 DB 요구량은 대상 호스팅에서 다시 확인한다.
-- npm 11.20의 최초 설치 훅 미승인 경고는 별도 고정 버전 설정과 `npm rebuild esbuild sharp unrs-resolver`로 보완했다. 원본 package/lock은 그대로다.
-
-외부 게시, 실제 Google 로그인, 인증된 production HTTP 역할 매트릭스, 운영 DB와 브라우저 검증은 이 작업 범위에서 미실행이다.
+현재 공개 Site version10과 source `3b4af81`의 게시 결과·인증 경계·브라우저 확인 범위는 [P1 인수 결과](P1_ACCEPTANCE_2026-10-09.md#게시-및-데이터-보존)에 있다. 실제 다중 Google 계정 협업과 미실행 native 파기·차단된 경합 검증은 이 완료에 포함하지 않는다.
 
 ---
 
 ### OPS-023 — Sites 배포 환경과 Google OAuth 호환성 검증
 
-**분류** Sites 게시 / 환경 준비 (2026-10-08)
+완료: [인증 후 보호 화면 실환경 브라우저 검증](COMPLETED_LOG.md#ops-023--인증-후-보호-화면-실환경-브라우저-검증-2026-10-08). 기존 heading은 이전 링크 호환을 위해 유지한다.
 
-[SITES_PREFLIGHT_2026-10-08.md](SITES_PREFLIGHT_2026-10-08.md)에 기술 제약, 검증 결과와 남은 작업을 기록했다. `feat/sites-deployment` 브랜치에 실측 체크포인트를 push했고 main은 원본 SHA를 보존한다.
+기존 Google OAuth/NextAuth v4와 역할·비공개 자료 정책을 유지한 Worker 빌드·HTTP 검증, D1/R2 전환, 공개 게시 및 소유자의 실제 Google 로그인 후 보호 화면 확인을 완료했다. [초기 preflight](SITES_PREFLIGHT_2026-10-08.md)의 비공개·미게시·미검증 문구는 전환 전 기록이며 현재 상태가 아니다. [실환경 QA](SITES_LIVE_QA_2026-10-08.md)와 [최신 게시/검증 한계](P1_ACCEPTANCE_2026-10-09.md)를 함께 본다.
 
-- Sites용 빌드·배포 환경을 준비한 뒤 작은 인증 검증본부터 실행한다.
-- Google OAuth/NextAuth v4의 실제 Worker 호환성과 외부 사용자 접근 범위는 미확인이다. 인증 경로가 성립한 뒤에만 D1/R2 전체 전환한다.
-- 실제 OAuth callback/secret 전달, 기존 데이터·role 이전, 유료 서비스는 별도 사용자 판단 지점이다. 인증 우회·ChatGPT 로그인 대체·개발 포트의 게시 대체를 하지 않는다.
-- `wbscowork` 사이트 등록과 예약 origin 확인은 완료했고 프로젝트 ID를 `.openai/hosting.json`에 보존했다. 초기 비공개·미게시 상태를 유지한다.
-- Worker 빌드·HTTP, D1/R2 전환, 실제 Google 로그인과 배포는 미실행이다.
+기존 운영 데이터·역할의 자동 이전이나 실제 타인 계정의 권한 변경을 수행했다는 뜻은 아니다. 합성 Worker 역할 검사, 실제 소유자 세션 확인, 다중 실계정 미실행 범위를 구분한다.
 
 ---
 

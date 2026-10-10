@@ -17,6 +17,8 @@ public Site version4 / source `9a5367d607ce9a515b794d9a963a673a404a00f9`에서 �
 
 ## 정확한 테스트 기록
 
+아래 표는 OPS-029 작성·검토 단계의 snapshot이며 현재 남아 있는 데이터 목록이 아니다. 후속 수명주기와 최종 정리는 아래에 기록한다.
+
 | 구분 | ID | 내용 |
 |---|---|---|
 | bug_reports | 1 | 닷프로 검증용 버그, resolved, version4 |
@@ -29,6 +31,15 @@ native read-only D1 조회로 ID/status/version/관계를 확인했다. 과거 Q
 
 ## 정리의 경계
 
-이 archive는 원문/처리 이력 보존을 위해 일반 삭제 endpoint를 제공하지 않는다. Sites connector의 DB 도구는 read-only이고 공식 public docs에서 row-delete 경로를 확인하지 못했다. 별도 cloud browser의 Sites 관리 화면은 ChatGPT 로그인이 없어 owner Settings UI의 행 삭제 지원 여부도 확인하지 못했다. 그 계정 로그인을 시작하지 않았고 probe tab은 닫았다.
+당시 archive는 원문/처리 이력 보존을 위해 일반 삭제 endpoint를 제공하지 않았다. Sites connector의 DB 도구는 read-only이고 공식 public docs에서 row-delete 경로를 확인하지 못했다. 별도 cloud browser의 Sites 관리 화면은 ChatGPT 로그인이 없어 owner Settings UI의 행 삭제 지원 여부도 확인하지 못했다. 그 계정 로그인을 시작하지 않았고 probe tab은 닫았다.
 
-report1/events1–4는 보존 중이다. schema-only migration에 data 삭제를 넣거나 숨은 endpoint/직접 Cloudflare 자격증명으로 우회하지 않는다. 지원되는 owner 기능 또는 명시적으로 승인된 가시적·감사 가능한 superuser maintenance 기능을 결정하고, 정확한 대상의 영구 삭제를 별도 확인한 뒤 진행한다(OPS-031).
+이 단계에서는 report1/events1–4를 보존하고 지원되는 정리 기능과 별도 승인을 기다렸다. schema-only migration에 data 삭제를 넣거나 숨은 endpoint/직접 Cloudflare 자격증명으로 우회하지 않았다. 이후 사용자가 요청한 정식 수명주기 기능으로 처리한 결과는 다음과 같다.
+
+## 후속 수명주기 및 정리 결과
+
+- OPS-031 정식 기능을 version5로 게시한 후 동일 소유자 세션에서 검증 완료→휴지통→복원→휴지통을 확인했다. 원문을 덮어쓰지 않고 처리 이력이 추가됐다.
+- 최종 삭제 직전 대상은 report #1 「닷프로 검증용 버그」 한 건, resolved/verified/trashed, version8, events1–8이었다. 최신 대상을 재확인하고 사용자의 해당 1건 영구 삭제 승인 후 정상 SU 제목·지문 확인 UI로 처리했다.
+- 본문과 events1–8이 없어지고 최소 삭제 증빙 1건만 남은 것을 읽기 전용으로 확인했다. 기존 사용자·역할·감사 기록과 다른 데이터는 보존했다. 첨부파일은 없는 제보였다.
+- 증빙에는 대상 ID, 수행자 계정 연결, 시각, 버전, 이력 수/마지막 ID, 내용 지문, 재시도 식별자만 남으며 제목·본문·검토 내용 사본은 남지 않는다. 호스팅 백업/진단 기록의 삭제까지 보장하지 않는다.
+- 이후 version10 게시 전후에도 기존 사용자와 증빙 row가 같았다([보존 확인](P1_ACCEPTANCE_2026-10-09.md#게시-및-데이터-보존)). 이 문서의 2026-10-10 동기화는 과거 확인 결과의 정정이며 새 실환경 삭제나 테스트 실행이 아니다.
+- native 파기 포함 전체 수명주기 검증은 아직 승인 대기/미실행이다. QLT-015 차단된 저장소 경합 및 QLT-016 fixture503 원인 확인도 별도 보류/미해결이며, 이번 실환경 정리 완료를 해당 검증 통과로 간주하지 않는다.
