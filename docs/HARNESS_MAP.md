@@ -16,7 +16,8 @@
 | --- | --- | --- | --- |
 | `npm run dev` | `node --import tsx scripts/run-next.ts dev` | 개발 서버 | APP_PORT 출력 후 route 응답 |
 | `npm run dev:debug` | 위 명령 + `--inspect` | 서버 디버깅 | inspector와 dev server 기동 |
-| `npm run build` | `vinext build` | Sites Worker build | exit 0, dist/server/index.js 생성 |
+| `npm run build` | `node --import tsx scripts/run-next.ts build` | main native Next build | exit 0, .next route 생성 |
+| `npm run build:sites` | `vinext build` | 명시적 Sites Worker build | exit 0, dist/server/index.js 생성 |
 | `npm run build:native` / `npm run build:next` | `node --import tsx scripts/run-next.ts build` | 기존 Node/Next 빌드 | exit 0, route 생성 |
 | `npm run test:sites:auth` | `node scripts/test-sites-auth.mjs` | 빌드한 Worker의 NextAuth 계약 | 18건 통과; 실제 Google 로그인과 구분 |
 | `npm run start` | `node --import tsx scripts/run-next.ts start` | native Node production server | 선행 build:next 후 APP_PORT listen |
@@ -514,3 +515,8 @@ npm11.9는 실행 환경의 `http-proxy` config 경고를 출력했다. 의존�
 
 
 같은 오프라인 fixture로 기본 Turbopack 경로도 시도했으나 font import-map `url not found`로 실패했다. 이 fixture는 Webpack 방식의 mock response이며 NAS의 정상 Google Fonts 요청 결과가 아니다. 별도로 logging의 동적 파일 경로 추적에서 `Encountered unexpected file in NFT list` 경고 2건을 관찰했다. 기본 Turbopack 성공이나 이 경고 해결을 주장하지 않으며 NAS 수동 인수(OPS-021)에 남긴다. 독립 검토에서 발견한 CR/CRLF·export·다중 줄·인용부호·반복 저장 경계를 dotenv와 맞추고 합성 보존 확인을 추가했다.
+
+
+## 2026-10-10 main NAS 인계
+
+공통 native 호환성/설정 보호 checkpoint `b43704e89dd48ebe6304510fe420ccda3d218c5b`를 포함한 P0/P1·품질 변경을 main에 통합한다. feature의 기본 `build`는 Vinext, main은 동일한 `build:native` 명령으로 설정하며 두 명시적 별칭을 유지한다. 후속 변경은 이 package script와 문서뿐이므로 위 최종 코드의 오프라인 Webpack 빌드·8조건·정적 검사 결과를 재사용한다. main 기본 `npm run build -- --help`가 Next CLI로 연결되는 것을 확인했고 상대 문서 링크/anchor172개와 package/lock 일치를 검사했다. 실제 NAS 기본 빌드·서버 기동·DB 적용·앱 시나리오는 실행하지 않았다. [NAS 수동 절차/확인표](NAS_UPDATE_GUIDE.md)를 제공하고 OPS-021의 실제 환경 검증은 열린 상태로 둔다. 공개 Site version10은 재게시하지 않는다.

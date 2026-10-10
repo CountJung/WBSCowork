@@ -6,7 +6,7 @@
     "dev": "node --import tsx scripts/run-next.ts dev",
     "dev:debug": "node --import tsx scripts/run-next.ts dev --inspect",
     "db:check": "node --import tsx scripts/check-db.ts",
-    "build": "vinext build",
+    "build": "node --import tsx scripts/run-next.ts build",
     "start": "node --import tsx scripts/run-next.ts start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",

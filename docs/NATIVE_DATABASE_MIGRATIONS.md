@@ -19,7 +19,7 @@
 
 ## 버전·적용 절차 (QLT-012)
 
-D1은 기존 `drizzle/` 게시 migration을 유지한다. Native MariaDB는 `native-migration-v1.ts`의 불변 baseline+기존 schema additive upgrade를 `schema_migrations(version,name,checksum,applied_at)`로 추적한다. 이미 적용된 명세는 편집하지 않고 새 버전/handler를 추가한다. v1 checksum은 `8dea300dc59fc6a4d7c0fcb0a54b4a4fdec2db9d2681b303be9c1208d7007092`다.
+D1은 기존 `drizzle/` 게시 migration을 유지한다. Native MariaDB는 `native-migration-v1.ts`–`native-migration-v8.ts`의 불변 명세와 기존 schema additive upgrade를 `schema_migrations(version,name,checksum,applied_at)`로 추적한다. 이미 적용된 명세는 편집하지 않고 새 버전/handler를 추가한다. v1 checksum은 `8dea300dc59fc6a4d7c0fcb0a54b4a4fdec2db9d2681b303be9c1208d7007092`다.
 
 1. 운영자가 앱 쓰기 중지/점검 창과 검증된 백업을 준비한다. 이 문서는 실제 운영 적용 승인을 대신하지 않는다.
 2. `npm run db:migrate -- --status`는 runtime identity로 읽기만 수행한다. ledger 없음/대기/검증 오류를 구분하며 조회가 ledger를 생성하지 않는다.
@@ -27,7 +27,7 @@ D1은 기존 `drizzle/` 게시 migration을 유지한다. Native MariaDB는 `nat
 4. 하나의 전용 연결이 DB별 `GET_LOCK(...,10)`을 획득하고 생성/검증/ledger 기록/명시 COMMIT/lock release를 수행한다. schema 연결은 항상 닫으며 일반 deadlock 재시도를 사용하지 않는다.
 5. 알려지지 않은 버전·중복/빈 순서·name/checksum 불일치는 domain DDL 전에 거부한다. 각 버전은 postcondition 검증 후에만 성공을 기록한다. 기존 필드의 타입/nullable/default/identity, 전체 길이 index/unique, FK target/delete rule, CHECK, InnoDB/utf8mb4_unicode_ci를 확인한다.
 6. 문서화된 누락 컬럼/FK만 추가한다. legacy role은 정확한 `admin/member/guest` 값일 때만 ENUM/default를 확장한다. `ADMIN`, 공백/알 수 없는 role 등을 권한 값으로 자동 변환하지 않는다. 원문/이력/private/ID를 재작성하지 않는다.
-7. 이미 적용된 상태에서도 schema drift를 확인한다. schema 접속/driver 오류는 계정명·비밀번호·SQL을 UI/감사 로그에 그대로 전파하지 않고 안전한 코드/운영 안내만 전달한다.
+7. `--apply`는 이미 적용된 상태에서도 schema drift를 확인한다. `--status`는 ledger와 readiness를 읽으며 같은 전체 postcondition 검증을 대신하지 않는다. schema 접속/driver 오류는 계정명·비밀번호·SQL을 UI/감사 로그에 그대로 전파하지 않고 안전한 코드/운영 안내만 전달한다.
 
 ## 실패·복구·rollback
 
@@ -40,7 +40,7 @@ MariaDB의 CREATE/ALTER는 [암묵적으로 commit](https://mariadb.com/docs/ser
 
 ## 비파괴 native 검증
 
-`npm run test:native:migrations`는 `.env`를 읽지 않고 `TEST_DB_*`/`TEST_DB_SCHEMA_*`만 사용하며 loopback:3307을 강제한다. 무작위 새 `wbs_mig_*_test` DB만 생성하고 모든 DB/행을 보존한다. 빈 설치, 기존 core/pre-lifecycle upgrade, 재실행·원문/role/private 보존, 겹치는 fresh runner, DDL 후 ledger 전 중단/재개, autocommit0 durable ledger, 대문자/공백 role·prefix unique index·latin1 drift·checksum 오류 거부를 검사한다. 실제 계정/권한 변경, DELETE/DROP/TRUNCATE/purge가 없다.
+`npm run test:native:migrations`는 `.env`를 읽지 않고 `TEST_DB_*`/`TEST_DB_SCHEMA_*`만 사용하며 loopback:3307을 강제한다. 무작위 새 `wbs_mig_*_test` DB만 생성하고 DB·도메인 자료·이력을 보존한다. 빈 설치, 기존 core/pre-lifecycle upgrade, 재실행·원문/role/private 보존, 겹치는 fresh runner, DDL 후 ledger 전 중단/재개, autocommit0 durable ledger, 대문자/공백 role·prefix unique index·latin1 drift·checksum 오류 거부를 검사한다. DB/프로젝트/업무/파일/이력의 purge, DROP/TRUNCATE나 실제 계정/권한 변경은 하지 않는다. P1 확장 이후에는 새 합성 `task_dependencies` 관계 집합을 같은 transaction에서 교체하는 DELETE가 포함된다. 원래 관계는 event에 보존되고 rollback/이전 집합 복원을 검사하며, 이 신규 테스트 DB의 해당 표에 한해서만 승인된 DELETE 권한을 사용했다. 기존 보존 DB 정리나 프로젝트 파기가 아니다.
 
 로컬 dot 검증: lint/types/FSD, unit85, Worker build/quality375/auth18 및 RSC decoder fingerprint PASS. schema identity 단위 계약은 이후 driver 오류정보 비노출 검사를 포함해 5건이다. 운영 최소권한 적용이나 운영 migration 완료를 뜻하지 않는다.
 
@@ -59,10 +59,32 @@ MariaDB의 CREATE/ALTER는 [암묵적으로 commit](https://mariadb.com/docs/ser
 
 새 명세 `native-migration-v2.ts`의 checksum은 `c010a7e166ece374ab7b8046086fa67011225cebca5f5435928f5289e8ca8549`다. v1 명세·checksum은 그대로다. projects의 goal/success_criteria와 tasks의 deliverable/definition_of_done/review_required를 additive ALTER로 추가한다. 기존 행은 빈 문구/검토 안 함으로 보존되고 원래 값과 ID를 재작성하지 않는다. v2 도중 중단되면 누락 필드만 재개하며 잘못된 기존 타입은 거부한다.
 
-전용 native 하네스는 populated-v1 ledger/행 보존, 부분 v2 재개, 잘못된 v2 필드 거부를 추가했다. 실제 MariaDB v2 검증은 exact-commit 실행 대기다. D1은 별도 `drizzle/0005_work_goals.sql`을 사용한다. 새 코드 배포 전 schema 적용이 필요하며 readiness는 필수 새 컬럼이 없을 때 안내한다.
+전용 native 하네스는 populated-v1 ledger/행 보존, 부분 v2 재개, 잘못된 v2 필드 거부를 추가했다. 아래에 후속 exact-commit MariaDB 결과를 기록한다. D1은 별도 `drizzle/0005_work_goals.sql`을 사용한다. 새 코드 배포 전 schema 적용이 필요하며 readiness는 필수 새 컬럼이 없을 때 안내한다.
 
 v2 실제 검증: exact38602c8에서 migration35, 추가 보존9, migration unit12, lint/types/FSD PASS. MariaDB11.4.13/Node26.11.1의 승인된 영속 fixture에서 새 DB14개를 보존하고 기존 DB와 정지/재시작 데이터·파일을 확인했다.
 
 ## 업무 실행 v3 (PRD-035/036)
 
-`native-migration-v3.ts` checksum `c175311bceb4f66d8f0808e7eff68e85f15344acd27c250197af01a6ad81c080`. tasks에 요청·상태·버전·검토자 metadata를 추가하고 task_events에 생성/재배정/상태 이력을 남긴다. 기존 작업은 현재 상태를 `baseline`으로 기록하며 이전 시각을 추측하지 않는다. 기존 행·role·private scope를 수정하지 않는다. v1/v2 불변, 중단 후 누락 구조만 재개한다. 실제 v3 검증은 pending이며 하네스는 새 합성 DB에 concurrent creation/status·same-token replay·former-owner 거부·no-review 완료를 추가했다. 모든 합성 DB/행은 보존한다.
+`native-migration-v3.ts` checksum `c175311bceb4f66d8f0808e7eff68e85f15344acd27c250197af01a6ad81c080`. tasks에 요청·상태·버전·검토자 metadata를 추가하고 task_events에 생성/재배정/상태 이력을 남긴다. 기존 작업은 현재 상태를 `baseline`으로 기록하며 이전 시각을 추측하지 않는다. 기존 행·role·private scope를 수정하지 않는다. v1/v2 불변, 중단 후 누락 구조만 재개한다. 하네스는 새 합성 DB에 concurrent creation/status·same-token replay·former-owner 거부·no-review 완료를 추가했다. 모든 합성 DB/행은 보존한다.
+
+
+v3 실제 검증: exact `72a9b39`에서 native48, migration unit13, lint/types/FSD PASS. 서로 다른 token/같은 version의 정상 stale, 같은 token replay, 재배정 후 이전 담당 거부·현재 담당 완료와 이력 일치를 검사했다. 새 합성 DB15개와 이전 DB·파일의 재시작 보존을 확인했다. SQL deadlock은 기존 bounded whole-transaction retry로 처리됐으며 원래 요청을 외부에서 재시도해 통과시킨 결과가 아니다.
+
+## 현재 schema v1–v8 범위
+
+| 버전 | 추가 구조와 기존 자료 처리 |
+| --- | --- |
+| v1 | 기존 core6표와 독립 버그 원문/이력/최소 purge receipt3표, 기존 명시 컬럼·역할 계약을 검사/보완 |
+| v2 | 프로젝트 목표/성공 기준, 업무 산출물/완료 기준/검토 필요 여부 |
+| v3 | 업무 상태·담당/검토 metadata·중복 방지·버전, `task_events`와 기존 업무 baseline |
+| v4 | 제출 현재 버전/자료 링크, 불변 `submission_revisions`·`submission_events`, 기존 첨부의 revision1·댓글의 nullable revision 연결; 기존 제출의 원문/private/file 참조를 baseline으로 보존 |
+| v5 | 업무 검토가 선택한 정확한 submission/revision을 가리키는 nullable 필드 |
+| v6 | WBS와 독립적인 `task_dependencies`, 프로젝트 관계 갱신 버전/token |
+| v7 | 템플릿 적용의 payload/token 중복 방지 `task_template_runs` |
+| v8 | 수신자별 알림 읽음 상태 `notification_reads` |
+
+도메인 관리 표는 총15개이며 `schema_migrations` ledger는 별도다. 기존 migration/checksum을 수정하거나 D1 SQL을 MariaDB에 적용하지 않는다. 새 기능 사용 전 모든 version1–8 적용, pendingVersions 빈 배열, 필수15표/새 컬럼 준비를 확인한다. v3/v4의 baseline은 도입 시점의 자료이며 과거 변경 사건을 재구성하지 않는다. 기존 Google 계정·role·private 원문·파일 bytes를 자동 이전하거나 대체하지 않는다.
+
+최종 P0 native `d18cef8`의 additive77과 P1 `3b4af81`의 전체 harness99 + 관계 교체/rollback/복원4 PASS는 [P0 인수 기록](P0_ACCEPTANCE_2026-10-09.md)과 [P1 인수 기록](P1_ACCEPTANCE_2026-10-09.md)에 있다. P1의 초기 DELETE 권한1142 중단과 이후 새 합성 DB 한 곳/한 표에 한정한 승인 재검증도 구분해 보존한다. 승인된 loopback MariaDB11.4.13 fixture 결과이며, NAS 운영 DB나 main native CLI 수정 후의 실제 DB 실행 결과는 아니다. 남은 native purge/별도 강등 interleaving/차단된 cleanup race는 이 통과에 포함되지 않는다.
+
+기존 NAS 업데이트의 백업·쓰기 중지·명시적 적용·수동 인수·rollback 한계는 [NAS 업데이트 안내](NAS_UPDATE_GUIDE.md)를 따른다. 이번 main 통합에서는 실제 DB 명령을 실행하지 않는다.

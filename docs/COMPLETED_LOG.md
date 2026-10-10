@@ -472,3 +472,8 @@ NAS main 통합 준비에서 발견한 공통 native 호환성을 수정했다. 
 native 설정 화면의 추가 키 처리에서 `DB_SCHEMA_USER/PASSWORD`가 노출·수정될 수 있던 경로를 차단했다. 읽기와 legacy 키 표시에서 제외하고, 위조 입력/키 줄바꿈을 거부하며 일반 설정 저장 시 파일의 기존 protected entry와 알 수 없는 추가 설정을 보존한다. export/다중 줄 값도 브라우저로 보내지 않고 server-side 원문을 유지한다. 실제 비밀값 노출이나 운영 설정 변경을 확인했다는 뜻은 아니다.
 
 자격증명 없는 CLI help/입력 검사와 새 합성 파일의 읽기·저장·보존 8조건을 확인했다. 실제 DB 연결, 앱 기능 시나리오, NAS 실행은 하지 않았으며 사용자 수동 인수 대상이다. 구체적인 빌드·정적 검증 범위는 [하네스 기록](HARNESS_MAP.md#2026-10-10-native-통합-준비)을 따른다.
+
+
+## OPS-021 준비 기록 — main native 통합 (2026-10-10)
+
+P0/P1·품질 기능과 공통 native 호환성 checkpoint `b43704e89dd48ebe6304510fe420ccda3d218c5b`를 main 실행 경로에 통합한다. main 기본 `build`는 native Next, feature 기본 build는 Sites이며 양쪽의 명시적 별칭은 유지한다. [NAS 업데이트 안내](NAS_UPDATE_GUIDE.md)에 기존 환경/DB/첨부 보존, 별도 schema identity의 명시적 v1–v8 적용, DDL rollback 한계, 수동 P0/P1 인수와 중단/복구 기준을 정리했다. 이 절의 완료 범위는 소스·문서 인계다. 실제 NAS 환경 정의·빌드·DB 적용·수동 인수는 TODO의 OPS-021에 남으며 운영 배포나 Site 재게시를 수행하지 않았다.

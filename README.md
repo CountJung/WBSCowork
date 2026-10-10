@@ -2,29 +2,30 @@
 
 Next.js App Router 기반 태스크 중심 WBS 협업 시스템입니다.
 
-프로젝트·태스크 CRUD, 간트 시각화, 태스크별 Markdown 제출물, 공개/비공개 제출물, 파일 첨부, 댓글, 관리자 패널, 홈 대시보드 요약을 포함합니다.
+프로젝트 목표·업무 카드·담당자·내 업무, 간트, 산출물 버전·검토/보완/완료, 공개/비공개 파일·댓글, 선후행 의존성, 수동 템플릿, 권한 기반 검색·인앱 알림, 버그 제보·관리자 검토를 포함합니다.
 
 ---
 
-## Sites 배포 브랜치
+## 실행 환경과 NAS 업데이트
 
-공개 서비스: https://wbscowork.cometgnome.chatgpt.site
+`main`은 기존 **Node/Next.js + MariaDB + 로컬 파일** 환경을 기본으로 사용합니다. 기존 NAS 업데이트·백업·v1–v8 migration·수동 P0/P1 인수 순서는 [NAS 업데이트 안내](docs/NAS_UPDATE_GUIDE.md)를 따릅니다. NAS 자체 배포/운영 DB 검증은 수동으로 수행합니다.
 
-- Sites: `npm run build` → `npm run start:sites` (로컬 Worker). 운영 배포는 동일 Site의 공식 게시 절차를 사용합니다.
-- 기존 Node/Next: `npm run dev`; production은 `npm run build:next` → `npm run start`입니다.
-- Sites는 D1/R2와 배포 환경 설정을 사용합니다. 아래 MariaDB/로컬 파일/.env 안내는 **Node 실행 경로**에 해당합니다. 인증 secret은 Sites 설정에서 직접 입력하며 소스에 저장하지 않습니다.
-- [게시 결과·현재 환경 용량](docs/SITES_PUBLICATION_2026-10-08.md), [검증 범위](docs/SITES_VALIDATION_2026-10-08.md), [하네스 명령](docs/HARNESS_MAP.md).
+- `npm run build` 또는 `npm run build:native` → `npm run start`: native production 실행. 기존 `build:next` 별칭도 유지합니다.
+- `npm run build:sites` → `npm run start:sites`: 별도 Sites Worker 로컬 실행. feature 브랜치의 기본 `build`는 Vinext를 유지합니다.
+- Sites는 D1/R2와 배포 환경 설정, native는 MariaDB/로컬 파일/기존 환경 설정을 사용합니다. 데이터를 자동으로 서로 이전하지 않습니다.
+- 기존 공개 서비스: https://wbscowork.cometgnome.chatgpt.site . main 반영만으로 이 Site를 재게시하지 않습니다.
+- [Sites 게시 기록](docs/SITES_PUBLICATION_2026-10-08.md), [최신 P1 검증 범위](docs/P1_ACCEPTANCE_2026-10-09.md), [하네스 명령](docs/HARNESS_MAP.md).
 
 ## 빠른 시작
 
 ```bash
-npm install
+npm ci --include=dev
 npm run dev
 ```
 
 브라우저에서 [http://localhost:3000](http://localhost:3000) 을 엽니다.
 
-`.env`에 `APP_PORT`를 설정하면 지정 포트로 실행됩니다. Node용 `build:next`와 `start` 스크립트는 동일한 env 파일을 사용합니다.
+`.env`에 `APP_PORT`를 설정하면 지정 포트로 실행됩니다. Node용 `build`/`build:native`/`build:next`와 `start` 스크립트는 동일한 env 파일을 사용합니다. 전체 lockfile 설치에는 Node22.12 이상이 필요하며 실제 NAS 플랫폼에서 확인해야 합니다.
 
 ---
 
@@ -71,7 +72,7 @@ npm run dev
 
 ## 환경 설정
 
-`env.example`의 변수를 `.env`로 복사하고 실제 값을 입력합니다.
+신규 설치에서는 `env.example`을 참고해 설정합니다. 기존 설치는 `.env`·서비스 주입 설정을 보존하고 예제로 덮어쓰지 않습니다.
 
 ### 필수 MariaDB 변수
 
@@ -103,7 +104,7 @@ npm run db:check -- --validate-only
 npm run db:check
 ```
 
-관리자 UI에서도 슈퍼관리자가 DB와 핵심 테이블(`users`, `projects`, `tasks`, `submissions`, `comments`)을 직접 생성할 수 있습니다.
+`npm run db:migrate -- --status`는 native migration 상태를 읽습니다. 명시적 `--apply` 또는 SU DB 관리 action은 별도 `DB_SCHEMA_USER/DB_SCHEMA_PASSWORD`를 사용해 v1–v8을 적용합니다. schema 키는 웹 설정 폼에서 읽거나 편집하지 않습니다. 적용 전 백업·쓰기 중지와 [native migration 계약](docs/NATIVE_DATABASE_MIGRATIONS.md)을 확인하십시오. 계정/권한은 자동 생성·변경하지 않습니다.
 
 ---
 
@@ -113,7 +114,8 @@ npm run db:check
 npm run lint          # ESLint 검사
 npm run typecheck     # tsc --noEmit
 npm run check:fsd     # FSD import 경계 검사 (fixture self-test + 저장소 검사)
-npm run build         # 프로덕션 빌드
+npm run build         # main: native Next 프로덕션 빌드
+npm run build:sites   # 별도 Sites Worker 빌드
 npm run db:check      # DB 연결 테스트
 npm run dev:debug     # Node 인스펙터 포함 dev 서버
 ```
@@ -126,12 +128,13 @@ npm run dev:debug     # Node 인스펙터 포함 dev 서버
 
 | 문서 | 내용 |
 | --- | --- |
-| [docs/TODO.md](docs/TODO.md) | 열린 항목(`T-###` 고유번호), 상태, 선행 관계 |
+| [docs/TODO.md](docs/TODO.md) | 열린 항목(`QLT/RPT/OPS/PRD-###`), 상태, 선행 관계 |
 | [docs/COMPLETED_LOG.md](docs/COMPLETED_LOG.md) | 완료 항목의 배경과 회귀 방지 수단 |
 | [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) | 제품 정의, MVP 범위, DB 설계 |
 | [docs/MASTER_PLAN.html](docs/MASTER_PLAN.html) | 운영 로드맵 (브라우저에서 열기) |
 | [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md) | 코드 탐색 지도 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 인증·인가, 가시성, 데이터 경계 |
+| [docs/NAS_UPDATE_GUIDE.md](docs/NAS_UPDATE_GUIDE.md) | 기존 NAS 업데이트·백업·migration·수동 인수 |
 | [docs/HARNESS_MAP.md](docs/HARNESS_MAP.md) | 실행·검증 명령과 기준선 |
 | [docs/manual/](docs/manual/) | 사용자 교육 슬라이드와 빠른 참조 카드 |
 | [AGENTS.md](AGENTS.md) | AI 에이전트 작업 규칙 |

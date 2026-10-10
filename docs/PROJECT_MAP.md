@@ -157,10 +157,12 @@ users       1 ── N comments
 
 ### Native migration 진입점 (QLT-012/013)
 
-`npm run db:migrate`(기본 read-only) / SU database action → `database-admin` → 전용 schema connection → `native-migrations.server.ts` lock/ledger/검증 → 불변 `native-migration-v1.ts`. 일반 runtime readiness는 기존 DB identity를 사용한다. D1 `drizzle/`와 분리되며 이번 변경에 새 Sites migration은 없다. [운영 절차](NATIVE_DATABASE_MIGRATIONS.md).
+`npm run db:migrate`(기본 read-only) / SU database action → `database-admin` → 전용 schema connection → `native-migrations.server.ts` lock/ledger/검증 → 불변 `native-migration-v1.ts`–`native-migration-v8.ts`. 일반 runtime readiness는 기존 DB identity를 사용한다. D1 `drizzle/`와 분리되며 이번 변경에 새 Sites migration은 없다. [운영 절차](NATIVE_DATABASE_MIGRATIONS.md).
 
 P1 의존성: `src/entities/task/api/task-dependencies.server.ts`의 graph CAS와 `src/shared/server/task-dependencies`의 실행 guard, `src/features/task-dependencies` action, `src/widgets/task-dependencies` UI가 WBS와 별도 선후행을 담당한다. 상세 범위는 [P1 계획](P1_IMPLEMENTATION_PLAN.md).
 
 P1 템플릿: `src/entities/task/model/task-templates.ts`의 versioned catalog와 `api/task-template.server.ts`의 원자적 application, `src/features/task-templates`, `src/widgets/task-templates`의 편집 미리보기를 사용한다.
 
 P1 검색: `/search` → `src/widgets/work-search` → `src/entities/task/api/work-search.server.ts`. 버전 가시성·필터·건수·snippet은 같은 SQL relation에서 계산한다.
+
+Native NAS 실행은 `scripts/run-next.ts`와 main의 기본 `build`/`start`를 사용한다. 명시적 Worker 빌드는 `build:sites`다. 환경·백업·migration·수동 인수는 [NAS 업데이트 안내](NAS_UPDATE_GUIDE.md)를 따른다.

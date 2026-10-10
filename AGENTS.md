@@ -80,8 +80,9 @@ npm run check:fsd     # FSD import 경계 (fixture self-test + 저장소 검사)
 npm test              # 단위 + 가시성 e2e (DB 없으면 DB suite는 사유 남기고 건너뜀)
 npm run test:db:up    # 테스트 전용 MariaDB 기동 (127.0.0.1:3307 / wbs_app_test)
 npm run test:db:down  # 테스트 DB 종료 및 데이터 폐기
-npm run build         # Sites Worker 프로덕션 빌드
-npm run build:next    # 기존 Node/Next 빌드
+npm run build         # main: native Next 프로덕션 빌드
+npm run build:native  # 명시적 Node/Next 빌드 (build:next 별칭 유지)
+npm run build:sites   # 명시적 Sites Worker 빌드
 npm run test:sites:auth # 실제 workerd 인증 계약 (가상 테스트 값만)
 npm run test:sites:storage # 로컬 D1/R2 및 실패 복구
 npm run test:sites:http # 실제 Worker HTTP 권한/업로드 계약
@@ -90,6 +91,8 @@ npm run db:migrate -- --status # native ledger 읽기 전용 (명시 --apply만 
 npm run test:native:migrations # loopback3307 새 *_test DB를 보존하는 additive 검증
 npm run dev:debug     # Node 인스펙터 포함 dev 서버
 ```
+
+main 기본 build는 native이며 feat/sites-deployment의 기본 build는 Vinext다. 실행 대상을 넘나드는 검증에는 `build:native`/`build:sites`를 명시한다. NAS의 운영 적용·수동 검증은 [NAS 업데이트 안내](docs/NAS_UPDATE_GUIDE.md)를 따른다.
 
 가시성·권한 경계를 건드리면 `npm test`를 반드시 실행한다. 테스트 DB는 개발용(3306)과 포트·DB 이름이 분리되어 있고, `_test`로 끝나지 않는 DB 이름은 하네스가 거부한다.
 
