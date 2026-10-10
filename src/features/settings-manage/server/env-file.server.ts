@@ -4,6 +4,7 @@ import path from "node:path";
 import { constants as fsConstants } from "node:fs";
 import { resetRuntimeEnvCache } from "@/src/shared/server/runtime-env/index.server";
 import { initializeServerLogging } from "@/src/shared/server/logging/index.server";
+import { assertEnvContentMatches, parseEnvFileContent, serializeEnvValue, splitProtectedEnvContent, validateEditableEnvKeys } from "./protected-env";
 
 export type EditableEnvEntry = {
   key: string;
@@ -85,67 +86,13 @@ function getLegacyOverrideEnvFilePath() {
   return path.join(getWorkspaceRoot(), ".env.local");
 }
 
-function parseEnvFileContent(fileContent: string) {
-  const entries = new Map<string, string>();
-
-  for (const line of fileContent.split(/\r?\n/)) {
-    const trimmedLine = line.trim();
-
-    if (!trimmedLine || trimmedLine.startsWith("#")) {
-      continue;
-    }
-
-    const separatorIndex = line.indexOf("=");
-
-    if (separatorIndex < 0) {
-      continue;
-    }
-
-    const rawKey = line.slice(0, separatorIndex).trim();
-    const rawValue = line.slice(separatorIndex + 1);
-
-    if (!rawKey) {
-      continue;
-    }
-
-    if (
-      (rawValue.startsWith('"') && rawValue.endsWith('"')) ||
-      (rawValue.startsWith("'") && rawValue.endsWith("'"))
-    ) {
-      entries.set(rawKey, rawValue.slice(1, -1).replace(/\\n/g, "\n"));
-      continue;
-    }
-
-    entries.set(rawKey, rawValue);
-  }
-
-  return entries;
-}
-
-function serializeEnvValue(value: string) {
-  if (value.length === 0) {
-    return '""';
-  }
-
-  if (/^[A-Za-z0-9_./:@-]+$/.test(value)) {
-    return value;
-  }
-
-  return JSON.stringify(value).replace(/\n/g, "\\n");
-}
-
-async function readEnvFileMap() {
-  const envFilePath = getEditableEnvFilePath();
-
+async function readEnvFileContent(envFilePath: string) {
   try {
-    await access(envFilePath, fsConstants.F_OK);
-  } catch {
-    return new Map<string, string>();
+    return await readFile(envFilePath, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return "";
+    throw error;
   }
-
-  const fileContent = await readFile(envFilePath, "utf8");
-
-  return parseEnvFileContent(fileContent);
 }
 
 export async function getLegacyOverrideKeys() {
@@ -160,7 +107,7 @@ export async function getLegacyOverrideKeys() {
 
   const fileContent = await readFile(legacyOverrideFilePath, "utf8");
 
-  return [...parseEnvFileContent(fileContent).keys()].filter((key) => knownEnvKeys.includes(key)).sort();
+  return [...parseEnvFileContent(splitProtectedEnvContent(fileContent).editableContent).keys()].filter((key) => knownEnvKeys.includes(key)).sort();
 }
 
 export function getLegacyOverrideEnvPath() {
@@ -177,13 +124,14 @@ async function syncLegacyOverrideFile() {
   }
 
   const fileContent = await readFile(legacyOverrideFilePath, "utf8");
-  const legacyEntries = parseEnvFileContent(fileContent);
+  const { editableContent, protectedContent } = splitProtectedEnvContent(fileContent);
+  const legacyEntries = parseEnvFileContent(editableContent);
 
   for (const key of knownEnvKeys) {
     legacyEntries.delete(key);
   }
 
-  if (legacyEntries.size === 0) {
+  if (legacyEntries.size === 0 && !protectedContent) {
     await rm(legacyOverrideFilePath, { force: true });
     return;
   }
@@ -194,7 +142,9 @@ async function syncLegacyOverrideFile() {
     "",
   ];
 
-  await writeFile(legacyOverrideFilePath, `${lines.join("\n").trim()}\n`, "utf8");
+  const output = `${lines.join("\n").trim()}\n${protectedContent}`;
+  assertEnvContentMatches(output, new Map([...legacyEntries, ...parseEnvFileContent(protectedContent)]));
+  await writeFile(legacyOverrideFilePath, output, "utf8");
 }
 
 export async function getEditableEnvEntries(): Promise<EditableEnvEntry[]> {
@@ -203,7 +153,8 @@ export async function getEditableEnvEntries(): Promise<EditableEnvEntry[]> {
     const keys = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "NEXTAUTH_SECRET", "NEXTAUTH_URL", "SUPERUSER_EMAIL", "UPLOAD_MAX_FILE_SIZE_MB", "LOG_RETENTION_DAYS"];
     return keys.map((key) => ({ key, value: process.env[key]?.trim() ? "설정됨" : "미설정 (기본값 사용 가능)", source: "process" }));
   }
-  const fileEntries = await readEnvFileMap();
+  const { editableContent } = splitProtectedEnvContent(await readEnvFileContent(getEditableEnvFilePath()));
+  const fileEntries = parseEnvFileContent(editableContent);
   const extraKeys = [...fileEntries.keys()].filter((key) => !knownEnvKeys.includes(key)).sort();
   const orderedKeys = [...knownEnvKeys, ...extraKeys];
 
@@ -237,14 +188,16 @@ export async function saveEditableEnvEntries(entries: Record<string, string>) {
   const normalizedEntries = Object.entries(entries)
     .map(([key, value]) => [key.trim(), value] as const)
     .filter(([key]) => key.length > 0);
+  validateEditableEnvKeys(normalizedEntries);
+  const { editableContent, protectedContent } = splitProtectedEnvContent(await readEnvFileContent(getEditableEnvFilePath()));
+  const existingExtras = [...parseEnvFileContent(editableContent)].filter(([key]) => !knownEnvKeys.includes(key));
+  const entryMap = new Map([...existingExtras, ...normalizedEntries]);
 
-  const extraKeys = normalizedEntries
-    .map(([key]) => key)
+  const extraKeys = [...entryMap.keys()]
     .filter((key) => !knownEnvKeys.includes(key))
     .sort();
 
   const orderedKeys = [...knownEnvKeys, ...extraKeys].filter((key, index, array) => array.indexOf(key) === index);
-  const entryMap = new Map(normalizedEntries);
   const sections = editableEnvGroups.map((group) => ({
     ...group,
     lines: group.keys.map((key) => `${key}=${serializeEnvValue(entryMap.get(key) ?? defaultEnvValues[key] ?? "")}`),
@@ -264,7 +217,11 @@ export async function saveEditableEnvEntries(entries: Record<string, string>) {
     fileLines.push("");
   }
 
-  await writeFile(getEditableEnvFilePath(), `${fileLines.join("\n").trim()}\n`, "utf8");
+  const output = `${fileLines.join("\n").trim()}\n${protectedContent}`;
+  const expectedEntries = new Map(orderedKeys.map(key => [key, entryMap.get(key) ?? defaultEnvValues[key] ?? ""]));
+  for (const [key, value] of parseEnvFileContent(protectedContent)) expectedEntries.set(key, value);
+  assertEnvContentMatches(output, expectedEntries);
+  await writeFile(getEditableEnvFilePath(), output, "utf8");
   await syncLegacyOverrideFile();
 
   for (const key of orderedKeys) {

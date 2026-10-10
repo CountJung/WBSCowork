@@ -30,13 +30,17 @@
     "db:migrate": "node --import tsx scripts/migrate-database.ts",
     "test:native:migrations": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-native-migrations.ts",
     "test:sites:workflow": "node scripts/test-sites-http.mjs --workflow",
-    "test:sites:p1": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-p1-contracts.ts"
+    "test:sites:p1": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-p1-contracts.ts",
+    "build:sites": "vinext build",
+    "build:native": "node --import tsx scripts/run-next.ts build",
+    "check:native:entrypoints": "node --conditions=react-server --import tsx --test tests/native-settings-file.test.ts tests/native-entrypoints.test.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^9.0.0",
     "@mui/material-nextjs": "^9.0.0",
+    "@next/env": "16.2.4",
     "drizzle-orm": "0.45.2",
     "frappe-gantt": "^1.2.2",
     "mariadb": "^3.5.2",
@@ -46,7 +50,8 @@
     "react-dom": "19.2.8",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "tsx": "^4.23.13"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
@@ -63,7 +68,6 @@
     "eslint-config-next": "16.2.4",
     "pptxgenjs": "^4.0.1",
     "react-server-dom-webpack": "19.2.8",
-    "tsx": "^4.23.13",
     "typescript": "^5",
     "vinext": "1.0.0-beta.5",
     "vite": "8.0.13",

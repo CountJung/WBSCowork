@@ -1,7 +1,7 @@
 # WBS 태스크 — 진행 목록
 
 > **살아있는 문서** — 단계 범위, 검증 절차, 블로커가 바뀔 때마다 업데이트하십시오.
-> 최종 검토: 2026-10-10 · 다음 번호: **QLT-017 / RPT-021 / OPS-033 / PRD-045**
+> 최종 검토: 2026-10-10 · 다음 번호: **QLT-018 / RPT-021 / OPS-033 / PRD-045**
 
 완료된 항목은 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮긴다. 이 문서에는 열린 항목만 남긴다.
 
@@ -63,7 +63,7 @@ PRD-040~043은 [완료 기록](COMPLETED_LOG.md#prd-040--주제-현황과-선후
 <a id="qlt-012--versioned-migration-부재"></a>
 <a id="t-011--테스트-커버리지-확장"></a>
 <a id="qlt-011--테스트-커버리지-확장"></a>
-완료: [QLT-012 native versioned migration](COMPLETED_LOG.md#qlt-012--native-versioned-migration-2026-10-09), [QLT-011 테스트 경계 확장](COMPLETED_LOG.md#qlt-011--날짜계층첨부역할-회귀-확장-2026-10-09), [QLT-010 프로젝트 CRUD 중복 정리](COMPLETED_LOG.md#qlt-010--프로젝트-crud-단일화-2026-10-09), [QLT-014 타입 생성물 정리](COMPLETED_LOG.md#qlt-014--필요한-next-타입-유지와-잔재-제외-2026-10-09).
+완료: [QLT-017 native 실행·설정 경계](COMPLETED_LOG.md#qlt-017--native-esm-실행과-schema-설정-비노출-2026-10-10), [QLT-012 native versioned migration](COMPLETED_LOG.md#qlt-012--native-versioned-migration-2026-10-09), [QLT-011 테스트 경계 확장](COMPLETED_LOG.md#qlt-011--날짜계층첨부역할-회귀-확장-2026-10-09), [QLT-010 프로젝트 CRUD 중복 정리](COMPLETED_LOG.md#qlt-010--프로젝트-crud-단일화-2026-10-09), [QLT-014 타입 생성물 정리](COMPLETED_LOG.md#qlt-014--필요한-next-타입-유지와-잔재-제외-2026-10-09).
 
 
 - [!] **[QLT-013](#qlt-013--db-credential-최소권한-분리)** runtime pool과 schema admin의 credential 분리 — 코드 지원 완료, 실제 계정·권한 적용/검증 승인 대기
@@ -241,7 +241,7 @@ membership/recipient consent와 threat model 승인 이후에만 delivery를 검
 착수 체크리스트:
 
 - [ ] 배포 대상 환경 정의(아키텍처, Node 버전, MariaDB 위치)
-- [ ] 빌드·기동 절차 정리
+- [ ] 빌드·기동 절차 정리 — native Webpack 오프라인 폰트 fixture 빌드는 확인했으나 NAS 기본 Turbopack/정상 폰트 다운로드는 미확인이다. fixture의 font URL 실패와 동적 파일 NFT 추적 경고는 [하네스 기록](HARNESS_MAP.md#2026-10-10-native-통합-준비)을 따른다.
 - [ ] env·볼륨 경계 정의 — `UPLOAD_DIR`, `LOG_DIR`, DB 자격 증명
 - [ ] 백업·복구 절차와 로그 보존 기간 확정
 

@@ -26,6 +26,7 @@
 - [x] **[QLT-011](#qlt-011--날짜계층첨부역할-회귀-확장-2026-10-09)** 날짜·계층·첨부·역할 회귀 확장 · 2026-10-09
 - [x] **[QLT-012](#qlt-012--native-versioned-migration-2026-10-09)** native versioned migration · 2026-10-09
 - [x] **[QLT-014](#qlt-014--필요한-next-타입-유지와-잔재-제외-2026-10-09)** 필요한 Next 타입 유지와 잔재 제외 · 2026-10-09
+- [x] **[QLT-017](#qlt-017--native-esm-실행과-schema-설정-비노출-2026-10-10)** native ESM 실행과 schema 설정 비노출 · 2026-10-10
 
 ---
 
@@ -462,3 +463,12 @@ create 경로(`createSubmissionAction`, `createCommentAction`)도 상위 관계�
 - 배정·검토 요청·보완 요청·승인/관련 피드백에 대해 대상자별 읽지 않은 알림과 해당 카드/버전 링크가 있다. 전체 변경을 모두에게 뿌리지 않는다.
 - 중복 이벤트 재처리에도 같은 알림이 쌓이지 않는다. 재배정/권한 회수 이후에는 알림 제목·요약·직접 링크로 이전 자료가 노출되지 않는다.
 - 알림과 보존할 업무 검토 이력을 구분한다. 외부 발송·정기 digest·새 OAuth 권한은 이 작업에서 활성화하지 않고 기존 RPT-020과 별도 승인 계약을 따른다.
+
+
+## QLT-017 — native ESM 실행과 schema 설정 비노출 (2026-10-10)
+
+NAS main 통합 준비에서 발견한 공통 native 호환성을 수정했다. ESM 프로젝트의 `@next/env` CommonJS import와 Next CLI resolver를 수정하여 dev/build/start 및 DB CLI가 실행되도록 했다. `tsx`와 직접 사용하는 `@next/env`를 runtime dependency로 선언했으며 버전 업그레이드는 없다. `build:native`/`build:next`는 같은 Next 빌드이고 `build:sites`는 별도 Worker 빌드다.
+
+native 설정 화면의 추가 키 처리에서 `DB_SCHEMA_USER/PASSWORD`가 노출·수정될 수 있던 경로를 차단했다. 읽기와 legacy 키 표시에서 제외하고, 위조 입력/키 줄바꿈을 거부하며 일반 설정 저장 시 파일의 기존 protected entry와 알 수 없는 추가 설정을 보존한다. export/다중 줄 값도 브라우저로 보내지 않고 server-side 원문을 유지한다. 실제 비밀값 노출이나 운영 설정 변경을 확인했다는 뜻은 아니다.
+
+자격증명 없는 CLI help/입력 검사와 새 합성 파일의 읽기·저장·보존 8조건을 확인했다. 실제 DB 연결, 앱 기능 시나리오, NAS 실행은 하지 않았으며 사용자 수동 인수 대상이다. 구체적인 빌드·정적 검증 범위는 [하네스 기록](HARNESS_MAP.md#2026-10-10-native-통합-준비)을 따른다.

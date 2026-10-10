@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
-import { loadEnvConfig } from "@next/env";
+import { createRequire } from "node:module";
+import nextEnv from "@next/env";
 import { getRuntimeEnv } from "../src/shared/server/runtime-env/index.server";
 
 type NextCommand = "build" | "dev" | "start";
@@ -14,13 +15,13 @@ function getRequestedCommand(): NextCommand {
   throw new Error("지원되는 명령은 build, dev 또는 start 뿐입니다.");
 }
 
-loadEnvConfig(process.cwd());
+nextEnv.loadEnvConfig(process.cwd());
 
 const command = getRequestedCommand();
 const extraArgs = process.argv.slice(3);
 const runtimeEnv = getRuntimeEnv();
 const appPort = String(runtimeEnv.appPort);
-const nextBinPath = require.resolve("next/dist/bin/next");
+const nextBinPath = createRequire(import.meta.url).resolve("next/dist/bin/next");
 const nextArgs = [nextBinPath, command];
 
 process.env.PORT = appPort;

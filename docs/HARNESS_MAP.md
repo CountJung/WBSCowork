@@ -17,7 +17,7 @@
 | `npm run dev` | `node --import tsx scripts/run-next.ts dev` | 개발 서버 | APP_PORT 출력 후 route 응답 |
 | `npm run dev:debug` | 위 명령 + `--inspect` | 서버 디버깅 | inspector와 dev server 기동 |
 | `npm run build` | `vinext build` | Sites Worker build | exit 0, dist/server/index.js 생성 |
-| `npm run build:next` | `node --import tsx scripts/run-next.ts build` | 기존 Node/Next 빌드 | exit 0, route 생성 |
+| `npm run build:native` / `npm run build:next` | `node --import tsx scripts/run-next.ts build` | 기존 Node/Next 빌드 | exit 0, route 생성 |
 | `npm run test:sites:auth` | `node scripts/test-sites-auth.mjs` | 빌드한 Worker의 NextAuth 계약 | 18건 통과; 실제 Google 로그인과 구분 |
 | `npm run start` | `node --import tsx scripts/run-next.ts start` | native Node production server | 선행 build:next 후 APP_PORT listen |
 | `npm run lint` | `eslint` | 정적 검사 | error/warning 0 |
@@ -502,3 +502,15 @@ source `82d7d516ef34ed8718dbfe09d6189b7f81cacfe8` / tree `4144cbda144bc79311f82d
 - 기존 실제 로그인으로 검색 GET/필터 유지/0건과 알림 unread/all을 확인하고 알림500px·검색485px의 가로 넘침 없음, 모바일 메뉴·light/dark를 검사했다. System/원래 창 크기를 복원했다. 새 운영 테스트 자료는 생성하지 않았다.
 - 게시 직후 옛 route404 및 새 AppShell 청크의 일시적 fetch 실패가 있었고 추가 배포 없이 reload1회 후 정상화됐다. 정확한 원인 확정은 아니다. 뒤의 별도 HTTP 관찰 프로세스는 네트워크 승인 취소로 결과 수집이 중단되어 재시도하지 않았다. 이미 관찰한 익명 session200/빈 객체, 새 route307 및 실제 UI와 구분한다.
 - 로컬 합성 browser preview는 별도 browser에서 localhost 연결 실패/오류탭 URL 정책 차단으로 중단했다. 로컬 템플릿 클릭·실제 다중 Google 사용자의 채워진 UI는 미실행. QLT-015/기존 native purge/별도 강등 interleaving은 재시도하지 않았다. [전체 인수와 한계](P1_ACCEPTANCE_2026-10-09.md).
+
+
+## 2026-10-10 native 통합 준비
+
+QLT-017은 native CLI ESM 호환성과 schema key의 설정 화면 비노출/보존 수정이다. `npm run check:native:entrypoints`는 dev/build/start의 help, DB CLI help/잘못된 flag/설정만 확인, 합성 설정 파일 읽기·저장 8조건을 검사한다. 현재 작업 폴더의 `.env`나 실제 DB를 사용하지 않고 새 임시 파일을 보존한다. 실제 비밀값을 출력하지 않으며 HTTP 서버도 시작하지 않는다.
+
+기존 Node24.19.0/npm11.9 환경에서 초기 Next CLI는 ESM import 오류로 실패했고 수정 후 8조건을 통과했다. 기본 Google Fonts 외부 다운로드 성공은 이번 확인 범위가 아니다. 이미 확보된 실제 Roboto woff2/CSS와 `NEXT_FONT_GOOGLE_MOCKED_RESPONSES` 환경 전용 fixture를 사용한 `npm run build:native -- --webpack`이 Next16 production compile·타입·정적 페이지·동적 route 출력을 통과했다. 이 fixture는 저장소/배포 설정에 넣지 않으며 NAS 기본 Turbopack 빌드와 구분한다. 최종 소스의 lint0/0, typecheck, FSD self-test5와 경계 검사도 통과했다. 기존 전체 unit/DB/HTTP 앱 시나리오는 사용자 수동 인수 요청에 따라 다시 실행하지 않았다.
+
+npm11.9는 실행 환경의 `http-proxy` config 경고를 출력했다. 의존성 버전이나 네트워크/보안 설정을 임의 변경하지 않았으며 새 npm major로 자동 업데이트하지 않았다. DB/live/수동 제품 시나리오, NAS 재기동/볼륨/역방향 proxy, 실제 OAuth와 기존 차단된 QLT-015/native 파기는 실행하지 않았다.
+
+
+같은 오프라인 fixture로 기본 Turbopack 경로도 시도했으나 font import-map `url not found`로 실패했다. 이 fixture는 Webpack 방식의 mock response이며 NAS의 정상 Google Fonts 요청 결과가 아니다. 별도로 logging의 동적 파일 경로 추적에서 `Encountered unexpected file in NFT list` 경고 2건을 관찰했다. 기본 Turbopack 성공이나 이 경고 해결을 주장하지 않으며 NAS 수동 인수(OPS-021)에 남긴다. 독립 검토에서 발견한 CR/CRLF·export·다중 줄·인용부호·반복 저장 경계를 dotenv와 맞추고 합성 보존 확인을 추가했다.
