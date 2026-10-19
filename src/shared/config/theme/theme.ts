@@ -47,10 +47,15 @@ const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 20,
+    // Numeric sx radii multiply this unit (e.g. borderRadius: 4 = 16px).
+    borderRadius: 4,
   },
   typography: {
     fontFamily: "var(--font-roboto), system-ui, sans-serif",
+    allVariants: {
+      wordBreak: "keep-all",
+      overflowWrap: "anywhere",
+    },
     h2: {
       fontWeight: 700,
       lineHeight: 1.1,
@@ -64,6 +69,11 @@ const theme = createTheme({
     },
   },
   components: {
+    MuiContainer: {
+      defaultProps: {
+        maxWidth: "xl",
+      },
+    },
     MuiAppBar: {
       styleOverrides: {
         root: {

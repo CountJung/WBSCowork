@@ -11,7 +11,7 @@ import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 
 function Unavailable({ message }: { message: string }) {
-  return <Container component="main" maxWidth="lg" sx={{ py: 5 }}><Stack spacing={3}>
+  return <Container component="main" sx={{ py: 5 }}><Stack spacing={3}>
     <Typography variant="h4">내 업무</Typography><Alert severity="warning">{message}</Alert>
   </Stack></Container>;
 }
@@ -33,7 +33,7 @@ export default async function PersonalWorkPage({ searchParams }: { searchParams:
   const result = await listPersonalWorkPage({ viewerUserId: user.id, isSuperuser: Boolean(session.user.isSuperuser) }, filters, today);
   const currentFilters = { ...filters, page: result.page };
 
-  return <Container component="main" maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
+  return <Container component="main" sx={{ py: { xs: 4, md: 6 } }}>
     <Stack spacing={3}>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ justifyContent: "space-between", alignItems: { sm: "center" } }}>
         <Stack spacing={1}><Typography variant="h4">내 업무</Typography><Typography color="text.secondary">여러 프로젝트에서 맡은 일과 기여한 일, 지금 검토할 산출물을 확인하세요.</Typography></Stack>

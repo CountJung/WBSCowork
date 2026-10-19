@@ -15,7 +15,7 @@ export default async function WorkSearchPage({searchParams}:{searchParams:WorkSe
  const user=await getUserByEmail(session.user.email??'');if(!user)return unavailable;
  const [result,projects,users]=await Promise.all([searchWork({viewerUserId:user.id,isSuperuser:session.user.isSuperuser},filters),listAllProjects(),listUserNames()]);
  const current={...filters,page:result.page};
- return <Container component="main" maxWidth="lg" sx={{py:{xs:4,md:6}}}><Stack spacing={3}>
+ return <Container component="main" sx={{py:{xs:4,md:6}}}><Stack spacing={3}>
  <Typography variant="h4">업무·산출물 검색</Typography><Typography color="text.secondary">업무 제목·설명과 제출 본문·파일명·작성자 이름에서 찾습니다. 파일 내용이나 외부 링크는 가져오지 않습니다.</Typography>
  <Paper elevation={0} sx={{p:3,borderRadius:3}}><Stack component="form" method="get" action="/search" spacing={2}>
  <TextField name="q" label="검색어" defaultValue={filters.q} slotProps={{htmlInput:{maxLength:160}}}/>

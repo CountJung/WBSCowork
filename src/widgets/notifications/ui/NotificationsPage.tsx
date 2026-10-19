@@ -15,7 +15,7 @@ export default async function NotificationsPage({searchParams}:{searchParams:Rec
  const database=await getDatabaseAdminStatus();if(!['users','projects','tasks','submissions','submission_revisions','submission_events','task_events','comments','notification_reads'].every(name=>database.tables.some(t=>t.name===name&&t.exists&&!t.missingColumns.length)))return unavailable;
  const user=await getUserByEmail(session.user.email??'');if(!user)return unavailable;
  const result=await listNotifications({userId:user.id,isSuperuser:session.user.isSuperuser},filters);
- return <Container component="main" maxWidth="md" sx={{py:{xs:4,md:6}}}><Stack spacing={3}>
+ return <Container component="main" sx={{py:{xs:4,md:6}}}><Stack spacing={3}>
  <Stack direction="row" spacing={1} sx={{alignItems:'center'}}><Typography variant="h4">내 알림</Typography><Chip label={`읽지 않음 ${result.unread}`}/></Stack>
  <Typography color="text.secondary">배정·검토·보완·승인과 내 제출물 댓글을 확인하세요. 현재 담당/역할/조회 권한에 맞는 알림만 표시됩니다. 외부 메일·메신저는 발송하지 않습니다.</Typography>
  <Stack component="nav" aria-label="알림 범위" direction="row" spacing={1}><Button variant={filters.scope==='unread'?'contained':'outlined'} href="/notifications">읽지 않음</Button><Button variant={filters.scope==='all'?'contained':'outlined'} href="/notifications?scope=all">전체 알림</Button></Stack>

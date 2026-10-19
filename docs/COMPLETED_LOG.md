@@ -1,7 +1,7 @@
 # WBS 태스크 — 완료 기록
 
 > **누적 문서** — 완료된 항목만 담는다. 진행 중인 일은 [TODO.md](TODO.md)에 있다.
-> 최종 갱신: 2026-10-10
+> 최종 갱신: 2026-10-19
 
 여기에는 **나중에 다시 참조할 가치가 있는 것만** 남긴다. 판단 기준은 "이 결정을 모르는 사람이 같은 실수를 반복할 수 있는가"다. 단순 작업(오타, 포맷, 의존성 범프)은 git 이력으로 충분하므로 옮기지 않는다.
 
@@ -27,6 +27,8 @@
 - [x] **[QLT-012](#qlt-012--native-versioned-migration-2026-10-09)** native versioned migration · 2026-10-09
 - [x] **[QLT-014](#qlt-014--필요한-next-타입-유지와-잔재-제외-2026-10-09)** 필요한 Next 타입 유지와 잔재 제외 · 2026-10-09
 - [x] **[QLT-017](#qlt-017--native-esm-실행과-schema-설정-비노출-2026-10-10)** native ESM 실행과 schema 설정 비노출 · 2026-10-10
+
+- [x] **[QLT-018](#qlt-018--공통-헤더본문-너비와-메뉴-줄바꿈-2026-10-19)** 공통 헤더/본문 너비와 메뉴 줄바꿈 · 2026-10-19
 
 ---
 
@@ -477,3 +479,10 @@ native 설정 화면의 추가 키 처리에서 `DB_SCHEMA_USER/PASSWORD`가 노
 ## OPS-021 준비 기록 — main native 통합 (2026-10-10)
 
 P0/P1·품질 기능과 공통 native 호환성 checkpoint `b43704e89dd48ebe6304510fe420ccda3d218c5b`를 main 실행 경로에 통합한다. main 기본 `build`는 native Next, feature 기본 build는 Sites이며 양쪽의 명시적 별칭은 유지한다. [NAS 업데이트 안내](NAS_UPDATE_GUIDE.md)에 기존 환경/DB/첨부 보존, 별도 schema identity의 명시적 v1–v8 적용, DDL rollback 한계, 수동 P0/P1 인수와 중단/복구 기준을 정리했다. 이 절의 완료 범위는 소스·문서 인계다. 실제 NAS 환경 정의·빌드·DB 적용·수동 인수는 TODO의 OPS-021에 남으며 운영 배포나 Site 재게시를 수행하지 않았다.
+
+
+## QLT-018 — 공통 헤더/본문 너비와 메뉴 줄바꿈 (2026-10-19)
+
+헤더 lg와 작업 xl의 불일치, 단일 flex 행의 수축, 제한 없는 사용자 이름, 반경20px×sx4=80px가 원인이었다. Container 기본 xl, 반응형 grid/기존 모바일 Drawer, 메뉴 nowrap, 이름 칩 상한과 전체 title, 한국어 keep-all/긴 문자열 anywhere, 반경4px 단위로 수정했다. 운영 설정·데이터·권한·migration은 변경하지 않았다.
+
+실제 production Worker와 합성 D1/브라우저에서 1920/1699/1440/1280/1024/390px의 작업·관리자·버그 화면/권한별 메뉴/긴 이름 48조건 PASS, console·page error0. 기준 main 6조건에서는30개 실패 재현. native/Sites build, lint/typecheck/FSD, Worker auth18 PASS. 기존 npm test105/108과 DB 미실행은 QLT-019로 분리했다. 공개 Site/NAS의 실제 반영과 수동 인수는 수행하지 않았다. [전체 검증과 적용 경로](UI_LAYOUT_2026-10-19.md).

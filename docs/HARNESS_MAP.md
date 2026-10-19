@@ -18,6 +18,7 @@
 | `npm run dev:debug` | 위 명령 + `--inspect` | 서버 디버깅 | inspector와 dev server 기동 |
 | `npm run build` | `node --import tsx scripts/run-next.ts build` | main native Next build | exit 0, .next route 생성 |
 | `npm run build:sites` | `vinext build` | 명시적 Sites Worker build | exit 0, dist/server/index.js 생성 |
+| `npm run test:ui:layout` | `scripts/test-ui-layout.mjs` + `.py` | 빌드한 Worker/D1 + 실제 Chromium 공통 레이아웃 | Python Playwright와 Chromium 필요, 6개 너비 geometry/메뉴/Drawer/긴 이름 |
 | `npm run build:native` / `npm run build:next` | `node --import tsx scripts/run-next.ts build` | 기존 Node/Next 빌드 | exit 0, route 생성 |
 | `npm run test:sites:auth` | `node scripts/test-sites-auth.mjs` | 빌드한 Worker의 NextAuth 계약 | 18건 통과; 실제 Google 로그인과 구분 |
 | `npm run start` | `node --import tsx scripts/run-next.ts start` | native Node production server | 선행 build:next 후 APP_PORT listen |
@@ -520,3 +521,15 @@ npm11.9는 실행 환경의 `http-proxy` config 경고를 출력했다. 의존�
 ## 2026-10-10 main NAS 인계
 
 공통 native 호환성/설정 보호 checkpoint `b43704e89dd48ebe6304510fe420ccda3d218c5b`를 포함한 P0/P1·품질 변경을 main에 통합한다. feature의 기본 `build`는 Vinext, main은 동일한 `build:native` 명령으로 설정하며 두 명시적 별칭을 유지한다. 후속 변경은 이 package script와 문서뿐이므로 위 최종 코드의 오프라인 Webpack 빌드·8조건·정적 검사 결과를 재사용한다. main 기본 `npm run build -- --help`가 Next CLI로 연결되는 것을 확인했고 상대 문서 링크/anchor172개와 package/lock 일치를 검사했다. 실제 NAS 기본 빌드·서버 기동·DB 적용·앱 시나리오는 실행하지 않았다. [NAS 수동 절차/확인표](NAS_UPDATE_GUIDE.md)를 제공하고 OPS-021의 실제 환경 검증은 열린 상태로 둔다. 공개 Site version10은 재게시하지 않는다.
+
+
+## 2026-10-19 공통 UI 레이아웃
+
+[QLT-018 검증 기록](UI_LAYOUT_2026-10-19.md). Node24.19.0/npm11.9.0, Python Playwright/Chromium151.0.7922.173, 실제 production Worker + 메모리 D1/R2 합성 fixture다.
+
+- `npm run test:ui:layout`: 48조건 PASS, 실패0/console error0/page error0. 1920/1699/1440/1280/1024/390, 빈/채운 작업·관리자·버그·관리자 리뷰·긴 이름, guest/member/admin/superuser/anonymous, Drawer 항목·경계·한국어 단어, dark 선호/Light 전환을 확인했다. 산출물 `.test-artifacts/layout/after/`의 PNG/JSON. baseline main의 `--before`6조건은30개 회귀 실패를 재현했다.
+- `npm run build:sites`와 `npm run build:native` exit0; 기본 Turbopack 정상 폰트 다운로드도 성공. 실제 NAS 서비스 기동/운영 DB는 검증하지 않았다. `npm run test:sites:auth`18 PASS, 실제 Google 교환은 미실행.
+- 최종 `lint`0/0, `typecheck` exit0, `check:fsd` fixture5 + 위반0. 양쪽 빌드가 `.next/types`를 공유해 동시 생성 중 보인 초기 TS2305는 native build 후 순차 typecheck로 해소했다. 같은 checkout에서 양쪽 build를 동시에 실행하지 않는다.
+- `npm test`:105 PASS/3 FAIL, 총108. baseline `0891513`도 동일. `download-headers`, `project-actions`, `test-preload`에서 `GoogleProvider is not a function`으로 실패하는 Node24 mock 호환은 **QLT-019**. 인증/보안 구현을 UI 변경에 섞지 않았다. MariaDB3307 ECONNREFUSED로 DB suite는 미실행.
+- 기존 native NFT 추적 경고2건은 OPS-021. Vinext proxy 감지 경고와 route 분류 안내, Node mock experimental 경고, @esbuild-kit 설치 deprecation도 관찰했다. 기존 QLT-015/016 차단·불확실 시나리오는 실행하지 않았고 이번 성공으로 대체하지 않는다.
+- Chromium sandbox를 끄지 않았다. 관리형 shell sandbox에서는 SUID 설정 오류로 실패했고 승인된 실행 경로에서는 Chromium 자체 sandbox=true로 성공했다. 원본 Library 이미지 materialize는 공식 helper가 `library file transfer failed: download failed`를 반환해 재시도도 실패했다. 메타데이터만 확인했고 전후 이미지는 합성 화면이다.

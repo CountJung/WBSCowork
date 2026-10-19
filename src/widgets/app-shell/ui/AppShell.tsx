@@ -105,6 +105,11 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
     session?.user?.role ?? "guest",
     Boolean(session?.user?.isSuperuser),
   )}`;
+  const sessionChipSx = {
+    display: { xs: "none", lg: "inline-flex" },
+    minWidth: 0,
+    maxWidth: { lg: 240, xl: 160 },
+  };
 
   function handleModeChange(_event: MouseEvent<HTMLElement>, value: AppThemeMode | null) {
     if (!value) {
@@ -128,12 +133,13 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
 
   const authAction =
     status === "authenticated" && session?.user ? (
-      <Button variant="outlined" onClick={() => signOut({ callbackUrl: "/" })}>
+      <Button variant="outlined" sx={{ whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => signOut({ callbackUrl: "/" })}>
         로그아웃
       </Button>
     ) : (
       <Button
         variant="outlined"
+        sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
         disabled={!authProvidersConfigured}
         onClick={() => signIn("google", { callbackUrl: "/tasks" })}
       >
@@ -151,9 +157,15 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
       }}
     >
       <AppBar position="sticky">
-        <Container maxWidth="lg">
-          <Toolbar disableGutters sx={{ minHeight: 78, py: 1.5, gap: 2, justifyContent: "space-between" }}>
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0 }}>
+        <Container>
+          <Toolbar disableGutters sx={{
+            minHeight: 78,
+            py: 1.5,
+            gap: { xs: 1, sm: 2 },
+            display: "grid",
+            gridTemplateColumns: { xs: "minmax(0, 1fr) auto", xl: "minmax(0, 1fr) auto auto" },
+          }}>
+            <Stack direction="row" spacing={1.5} useFlexGap sx={{ alignItems: "center", minWidth: 0 }}>
               <IconButton
                 onClick={() => setMobileNavOpen(true)}
                 aria-label="메뉴 열기"
@@ -162,6 +174,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
                   display: { xs: "inline-flex", md: "none" },
                   minWidth: 44,
                   minHeight: 44,
+                  flexShrink: 0,
                   borderRadius: 1.5,
                   border: "1px solid",
                   borderColor: "divider",
@@ -177,17 +190,26 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
                   component={Link}
                   href="/"
                   variant="h6"
-                  sx={{ fontWeight: 800, letterSpacing: "0.04em", width: "fit-content" }}
+                  title={appName}
+                  noWrap
+                  sx={{ fontWeight: 800, letterSpacing: "0.04em", maxWidth: "100%" }}
                 >
                   {appName}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }}>
+                <Typography variant="body2" color="text.secondary" noWrap sx={{ display: { xs: "none", sm: "block" } }}>
                   Task 기반 WBS 협업 시스템
                 </Typography>
               </Stack>
             </Stack>
 
-            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", display: { xs: "none", md: "flex" } }}>
+            <Stack component="nav" aria-label="주 메뉴" direction="row" spacing={1.25} sx={{
+              alignItems: "center",
+              justifyContent: "center",
+              display: { xs: "none", md: "flex" },
+              gridRow: { md: 2, xl: 1 },
+              gridColumn: { md: "1 / -1", xl: 2 },
+              "& .MuiButton-root": { whiteSpace: "nowrap", flexShrink: 0 },
+            }}>
               {navItems.map((item) => {
                 const active = isActivePath(pathname, item.href);
 
@@ -238,7 +260,14 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
               ) : null}
             </Stack>
 
-            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", justifyContent: "flex-end" }}>
+            <Stack direction="row" spacing={1.25} sx={{
+              alignItems: "center",
+              justifyContent: "flex-end",
+              minWidth: 0,
+              gridRow: 1,
+              gridColumn: { xs: 2, xl: 3 },
+              "& > *": { flexShrink: 0 },
+            }}>
               <Tooltip title="개인정보 처리지침">
                 <IconButton
                   component={Link}
@@ -279,21 +308,24 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
                   label={sessionChipLabel}
                   color="primary"
                   variant="filled"
-                  sx={{ display: { xs: "none", lg: "inline-flex" } }}
+                  title={sessionChipLabel}
+                  sx={sessionChipSx}
                 />
               ) : session?.user?.role === "admin" ? (
                 <Chip
                   label={sessionChipLabel}
                   color="secondary"
                   variant="outlined"
-                  sx={{ display: { xs: "none", lg: "inline-flex" } }}
+                  title={sessionChipLabel}
+                  sx={sessionChipSx}
                 />
               ) : status === "authenticated" && session?.user ? (
                 <Chip
                   label={sessionChipLabel}
                   color="default"
                   variant="outlined"
-                  sx={{ display: { xs: "none", lg: "inline-flex" } }}
+                  title={sessionChipLabel}
+                  sx={sessionChipSx}
                 />
               ) : null}
 
@@ -419,6 +451,8 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
           {status === "authenticated" && session?.user ? (
             <Chip
               label={sessionChipLabel}
+              title={sessionChipLabel}
+              sx={{ maxWidth: "100%", minWidth: 0 }}
               color={session.user.isSuperuser ? "primary" : "default"}
               variant={session.user.isSuperuser ? "filled" : "outlined"}
             />

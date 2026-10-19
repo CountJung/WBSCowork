@@ -169,7 +169,7 @@ export default async function AdminProjectsPage({ searchParams }: AdminProjectsP
 
   if (!runtimeEnv.database.configured) {
     return (
-      <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">프로젝트 관리</Typography>
           <Alert severity="warning">
@@ -187,7 +187,7 @@ export default async function AdminProjectsPage({ searchParams }: AdminProjectsP
 
   if (!projectsTableReady) {
     return (
-      <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">프로젝트 관리</Typography>
           <Alert severity="warning">
@@ -201,7 +201,7 @@ export default async function AdminProjectsPage({ searchParams }: AdminProjectsP
   const projects = await listAllProjects();
 
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+    <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
       <Stack spacing={3}>
         <Stack spacing={1}>
           <Typography variant="h3">프로젝트 관리</Typography>

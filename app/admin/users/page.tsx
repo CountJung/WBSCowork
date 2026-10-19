@@ -62,7 +62,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
 
   if (!runtimeEnv.database.configured) {
     return (
-      <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">사용자 관리</Typography>
           <Alert severity="warning">
@@ -81,7 +81,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
 
   if (!usersTableReady) {
     return (
-      <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">사용자 관리</Typography>
           <Alert severity="warning">
@@ -106,7 +106,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   const guestCount = users.filter((user) => user.role === "guest").length;
 
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+    <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
       <Stack spacing={3}>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ justifyContent: "space-between" }}>
           <Stack spacing={1}>

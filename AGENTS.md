@@ -77,6 +77,7 @@ docs/          # 모든 하위 문서 (루트에는 README/AGENTS/CLAUDE 만 둔
 npm run lint          # ESLint 검사
 npm run typecheck     # tsc --noEmit
 npm run check:fsd     # FSD import 경계 (fixture self-test + 저장소 검사)
+npm run test:ui:layout # build:sites 후 Python Playwright/Chromium 합성 UI 6개 너비 회귀
 npm test              # 단위 + 가시성 e2e (DB 없으면 DB suite는 사유 남기고 건너뜀)
 npm run test:db:up    # 테스트 전용 MariaDB 기동 (127.0.0.1:3307 / wbs_app_test)
 npm run test:db:down  # 테스트 DB 종료 및 데이터 폐기
@@ -97,6 +98,8 @@ main 기본 build는 native이며 feat/sites-deployment의 기본 build는 Vinex
 가시성·권한 경계를 건드리면 `npm test`를 반드시 실행한다. 테스트 DB는 개발용(3306)과 포트·DB 이름이 분리되어 있고, `_test`로 끝나지 않는 DB 이름은 하네스가 거부한다.
 
 기준선과 미실행 사유는 [docs/HARNESS_MAP.md](docs/HARNESS_MAP.md) 10절에 있다.
+
+공통 헤더/업무 화면의 Container는 theme의 기본 `xl`(1536px)을 사용한다. 읽기용 개인정보/버그 상세만 명시적 `md`를 유지한다. AppShell은 md~xl 미만에서 메뉴를 별도 행에 놓고 md 미만에서는 Drawer를 사용한다. `sx.borderRadius` 숫자는 `theme.shape.borderRadius`의 배수이므로 기본 단위 4px를 큰 카드 반경 값으로 바꾸지 않는다. [레이아웃 검증](docs/UI_LAYOUT_2026-10-19.md).
 
 ---
 

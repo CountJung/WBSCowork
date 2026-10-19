@@ -1,7 +1,7 @@
 # WBS 태스크 — 진행 목록
 
 > **살아있는 문서** — 단계 범위, 검증 절차, 블로커가 바뀔 때마다 업데이트하십시오.
-> 최종 검토: 2026-10-10 · 다음 번호: **QLT-018 / RPT-021 / OPS-033 / PRD-045**
+> 최종 검토: 2026-10-19 · 다음 번호: **QLT-020 / RPT-021 / OPS-033 / PRD-045**
 
 완료된 항목은 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮긴다. 이 문서에는 열린 항목만 남긴다.
 
@@ -37,6 +37,8 @@
 ---
 
 ## 열린 항목
+
+- [ ] **QLT-019** Node24 단위 하네스 mock 호환 기준선 복구 — `npm test`는 수정 전 `0891513`과 UI 수정본 모두 108건 중 105 PASS/3 FAIL. `download-headers`, `project-actions`, `test-preload`의 auth import에서 `GoogleProvider is not a function`; `mockModuleExports`의 Node26 `exports` 계약과 Node24 실행 경로를 별도 수정·검증한다. UI 변경에서 인증 구현/테스트 우회를 섞지 않는다. DB suite는 127.0.0.1:3307 ECONNREFUSED로 미실행. [하네스 기록](HARNESS_MAP.md#2026-10-19-공통-ui-레이아웃).
 
 ### 제품 목표 — 주제에서 팀 산출물 완료까지
 

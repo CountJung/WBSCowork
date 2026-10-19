@@ -66,7 +66,7 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
   ]);
 
   return (
-    <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
+    <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
       <Stack spacing={3}>
         <Stack spacing={1}>
           <Typography variant="h3">관리 로그</Typography>

@@ -39,6 +39,10 @@
 
 ## 3. 주요 실행 흐름
 
+### 공통 UI 레이아웃
+
+`src/shared/config/theme/theme.ts`의 `MuiContainer.defaultProps.maxWidth = xl`을 AppShell·작업·관리자·버그 목록·개인 업무·검색·알림·제출 이력이 공유한다. 개인정보와 버그 상세의 긴 글은 명시적 `md` 예외다. `src/widgets/app-shell/ui/AppShell.tsx`는 xl 이상 한 행, md~xl 미만 두 행, md 미만 Drawer를 사용한다. `scripts/test-ui-layout.mjs`/`.py`는 격리 합성 D1과 production Worker/JS/CSS/font를 사용해 화면과 메뉴를 검증한다. [검증 기록](UI_LAYOUT_2026-10-19.md).
+
 ### 인증
 
 `GoogleProvider → src/entities/user auth.server callbacks → user repository sync/role resolve → JWT token → session.user.{role,isSuperuser}`
