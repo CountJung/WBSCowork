@@ -259,7 +259,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   if (!runtimeEnv.database.configured) {
     return (
-      <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">작업 관리</Typography>
             {returnTo?<Button href={returnTo} sx={{alignSelf:"flex-start"}}>내 업무로 돌아가기</Button>:null}
@@ -282,7 +282,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const revisionsReady=["submission_revisions","submission_events","submission_attachments","task_dependencies","task_template_runs"].every(name=>databaseStatus.tables.some(table=>table.name===name&&table.exists&&table.missingColumns.length===0));
   if (!revisionsReady || !taskEventsReady || !projectsTableReady || !tasksTableReady || !submissionsTableReady || !commentsTableReady || !usersTableReady) {
     return (
-      <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">작업 관리</Typography>
             {returnTo?<Button href={returnTo} sx={{alignSelf:"flex-start"}}>내 업무로 돌아가기</Button>:null}
@@ -336,17 +336,17 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const attachmentsBySubmissionId = groupAttachmentsBySubmissionId(attachments);
 
   return (
-    <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
+    <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
       <Stack spacing={3}>
         <Stack direction={{ xs: "column", lg: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
-          <Stack spacing={1}>
+          <Stack spacing={1} sx={{ minWidth: 0 }}>
             <Typography variant="h3">작업 관리</Typography>
             {returnTo?<Button href={returnTo} sx={{alignSelf:"flex-start"}}>내 업무로 돌아가기</Button>:null}
             <Typography variant="body1" color="text.secondary">
               프로젝트별 WBS 작업, 제출물, 댓글을 관리하는 화면입니다. guest는 읽기 전용이고, member와 슈퍼유저는 생성·수정·삭제가 가능합니다.
             </Typography>
           </Stack>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+          <Stack direction="row" spacing={1.5} useFlexGap sx={{ flexWrap: "wrap", flexShrink: 0, alignContent: "flex-start" }}>
             <Chip label={`현재 권한 ${getUserRoleLabel(session.user.role, session.user.isSuperuser)}`} color={canWrite ? "success" : "default"} />
             <Chip label={`프로젝트 ${projects.length}`} color="primary" />
             <Chip label={`작업 ${orderedTasks.length}`} />

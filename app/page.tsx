@@ -28,7 +28,7 @@ export default async function Home({ searchParams }: HomePageProps) {
 
   if (!session?.user) {
     return (
-      <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Stack spacing={1.5}>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
@@ -56,7 +56,7 @@ export default async function Home({ searchParams }: HomePageProps) {
 
   if (!runtimeEnv.database.configured) {
     return (
-      <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">홈</Typography>
           <Alert severity="warning">
@@ -73,7 +73,7 @@ export default async function Home({ searchParams }: HomePageProps) {
 
   if (!projectsTableReady || !tasksTableReady) {
     return (
-      <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">홈</Typography>
           <Alert severity="warning">
@@ -95,7 +95,7 @@ export default async function Home({ searchParams }: HomePageProps) {
   const orderedTasks = getOrderedTasks(tasks);
 
   return (
-    <Container component="main" maxWidth="xl" sx={{ py: { xs: 6, md: 10 } }}>
+    <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
       <Stack spacing={3}>
         <Stack direction={{ xs: "column", lg: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
           <Stack spacing={1}>

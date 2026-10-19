@@ -81,7 +81,7 @@ export async function BugListPage({
   const pageHref = (page: number) =>
     `${base}?${new URLSearchParams({ page: String(page), q: data.query, ...(data.status ? { status: data.status } : {}) })}`;
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 4, md: 7 } }}>
+    <Container component="main" sx={{ py: { xs: 4, md: 7 } }}>
       <Stack spacing={3}>
         <Typography variant="h3">
           {trash ? "버그 제보 휴지통" : admin ? "버그 리뷰" : "내 버그 제보"}

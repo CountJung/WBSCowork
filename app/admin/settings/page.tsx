@@ -21,7 +21,7 @@ export default async function AdminSettingsPage() {
   const initialSnapshot = await getAdminSettingsSnapshot();
 
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+    <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
       <Stack spacing={3}>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ justifyContent: "space-between" }}>
           <Stack spacing={1}>

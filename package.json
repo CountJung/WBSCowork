@@ -33,7 +33,8 @@
     "test:sites:p1": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-p1-contracts.ts",
     "build:sites": "vinext build",
     "build:native": "node --import tsx scripts/run-next.ts build",
-    "check:native:entrypoints": "node --conditions=react-server --import tsx --test tests/native-settings-file.test.ts tests/native-entrypoints.test.mjs"
+    "check:native:entrypoints": "node --conditions=react-server --import tsx --test tests/native-settings-file.test.ts tests/native-entrypoints.test.mjs",
+    "test:ui:layout": "node scripts/test-ui-layout.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

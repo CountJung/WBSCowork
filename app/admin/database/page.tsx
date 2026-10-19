@@ -23,7 +23,7 @@ export default async function AdminDatabasePage() {
 
   if (!runtimeEnv.database.configured) {
     return (
-      <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
         <Stack spacing={3}>
           <Typography variant="h3">DB 관리</Typography>
           <Alert severity="warning">
@@ -40,7 +40,7 @@ export default async function AdminDatabasePage() {
   const initialStatus = await getDatabaseAdminStatus();
 
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+    <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
       <Stack spacing={3}>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ justifyContent: "space-between" }}>
           <Stack spacing={1}>

@@ -29,7 +29,7 @@ export default async function AdminPage() {
   }
 
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+    <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
       <Stack spacing={3}>
         <Stack spacing={1}>
           <Typography variant="h3">관리자 전용 페이지</Typography>
