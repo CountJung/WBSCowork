@@ -19,6 +19,9 @@
 | `npm run build` | `vinext build` | Sites Worker build | exit 0, dist/server/index.js 생성 |
 | `npm run build:sites` | `vinext build` | 명시적 Sites Worker build | exit 0, dist/server/index.js 생성 |
 | `npm run test:ui:layout` | `scripts/test-ui-layout.mjs` + `.py` | 빌드한 Worker/D1 + 실제 Chromium 공통 레이아웃 | Python Playwright와 Chromium 필요, 6개 너비 geometry/메뉴/Drawer/긴 이름 |
+| `npm run test:sites:network` | `tests/test_site_network.py` | 합성 네트워크/실행 경계 회귀 | 12조건 PASS; 운영 요청 없음 |
+| `npm run diagnose:sites:network -- --url <SITE_ORIGIN>` | `scripts/test-sites-live.py --diagnose` | 기존 proxy CONNECT·정책 읽기 전용 진단 | 거부는exit1; diagnostic 완료는live HTTP 통과 아님 |
+| `npm run test:sites:live -- --url <SITE_ORIGIN>` | 같은 CLI의 anonymous GET-only smoke | 공개 페이지/session/보호 route redirect | 6계약 모두통과; 거부는nonzero, JSON phase/status 보존 |
 | `npm run build:native` / `npm run build:next` | `node --import tsx scripts/run-next.ts build` | 기존 Node/Next 빌드 | exit 0, route 생성 |
 | `npm run test:sites:auth` | `node scripts/test-sites-auth.mjs` | 빌드한 Worker의 NextAuth 계약 | 18건 통과; 실제 Google 로그인과 구분 |
 | `npm run start` | `node --import tsx scripts/run-next.ts start` | native Node production server | 선행 build:next 후 APP_PORT listen |
@@ -532,3 +535,13 @@ npm11.9는 실행 환경의 `http-proxy` config 경고를 출력했다. 의존�
 ### 같은 날 Sites 게시
 
 승인 SHA `0a2cbb5`가 public version11로 게시됐고 환경 revision11을 유지했다. source-only 원격 빌드의 초기 `build_output_missing_hosting_metadata` 실패는 동일 소스의 검증된 로컬 archive 제공으로 복구했다. 성공 deployment `appgdep_6ad5960689f881918f7dde37c3376428`. 운영16개 표 row 비교 동일, 최근5분 Worker error0. 실사이트 HTTP/UI는 네트워크 proxy403으로 미검증(OPS-033). [게시·artifact·실패/복구 전체 기록](SITES_LAYOUT_PUBLICATION_2026-10-19.md).
+
+### 테스트 네트워크 진단·하네스 보강 — QLT-020
+
+[전체 진단과 관리자 조치](SITES_TEST_NETWORK_2026-10-19.md). 잘못된 프록시 선택은 없고 대소문자 proxy 설정이 일치했다. read-only 플랫폼 restricted 정책의 대상host 누락과 실제 CONNECT403/본문 `Domain forbidden`을 확인했다. 정책 파일은0444/현재 사용자 쓰기 불가다. host 규칙 추가는 네트워크 범위를 바꾸므로 OPS-034에서 승인·플랫폼 담당자 적용 대기로 남겼고 우회하지 않았다.
+
+`test:sites:network`12 PASS(실제 loopback CONNECT/HTTP 포함), loopback guard 후 `test:ui:layout`48조건 PASS/console·page error0, lint0/0·typecheck exit0. 소스 앱/DB/인증·권한 경계 변경은 없어 앱 build·전체Node 단위·배포는 반복하지 않았다. 기존 QLT-019의 Node24 실패는 별도다.
+
+`diagnose:sites:network`와 `test:sites:live`의 운영 URL 실행은 모두 실제exit1, `failure_stage=proxy_connect`, CONNECT403/`Domain forbidden`, `live_http_completed=false`다. pass나skip으로 바꾸지 않았다. 보고서는 `.test-artifacts/sites-live/`에 있으며 임의 응답 본문·자격증명·redirect query를 저장하지 않는다. 플랫폼 담당자 적용 후 같은 명령으로 재검증해야 한다.
+
+부모의 별도 클라우드 Chrome에서 04:25 UTC/1188×761의 `/`와 `/tasks` 정상 UI 확인을 보고했다. 이 결과는 접속 경로 차이의 증거이며 코딩 환경 smoke나 남은6너비 전체 인수를 대체하지 않는다.

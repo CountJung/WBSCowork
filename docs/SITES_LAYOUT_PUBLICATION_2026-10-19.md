@@ -29,6 +29,8 @@
 - [소스 검증](UI_LAYOUT_2026-10-19.md): Chromium 합성48조건, 양쪽 build, lint/typecheck/FSD, Worker auth18 PASS. 기존 Node24 단위3건 실패/DB 미실행은 QLT-019와 구분한다.
 - **실사이트 HTTP·UI는 미검증**: 일반 HTTP는 proxy CONNECT403, Chromium은 `ERR_TUNNEL_CONNECTION_FAILED`, 웹 읽기 도구도 URL 접근 실패였다. 새 게시 후 정상 Chromium 재시도도 같은 네트워크 제한이었다. proxy 우회·보안 설정 변경·실제 계정 로그인은 하지 않았다. 접속 가능한 브라우저에서 실제 로그인된 작업/관리자/버그 화면의6개 너비를 확인하는 인수는 OPS-033에 남긴다. 소스 합성 검증을 live QA로 계산하지 않는다.
 
+후속 보고: 부모의 별도 클라우드 Chrome에서 04:25 UTC/1188×761의 홈·로그인된 작업 화면을 정상 확인했다. 코딩 환경은 추가 진단에서 플랫폼 restricted outbound 허용 목록의 대상host 누락과 `Domain forbidden` 응답을 확인했다. 새 익명 운영 smoke·합성 guard 및 승인 후 필요한 최소 조치는 [네트워크 진단](SITES_TEST_NETWORK_2026-10-19.md)에 있으며, OPS-033/034의 남은 범위와 구분한다.
+
 ## 다음 클라우드 작업의 게시 조건과 흐름
 
 사용자가 해당 작업에서 **게시까지 명시적으로 요청한 경우** 저장소·현재 게시/소스 변경 확인 → bounded 구현 → 합성 검증과 품질 검사 → 작업 단위 커밋·푸시 → 기존 Site/audience/binding을 보존해 게시 → exact version/SHA와 HTTP/UI/데이터 보존 확인 → 결과 문서화까지 진행한다. 그 외에는 게시 전에 확인한다. 항상 자동 게시하는 규칙은 저장하지 않는다. 운영 데이터 변경·계정 권한/비밀값/보안 설정 변경·NAS 배포는 해당 클라우드 게시 요청에 포함되지 않는다.

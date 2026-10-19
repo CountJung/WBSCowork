@@ -78,6 +78,9 @@ npm run lint          # ESLint 검사
 npm run typecheck     # tsc --noEmit
 npm run check:fsd     # FSD import 경계 (fixture self-test + 저장소 검사)
 npm run test:ui:layout # build:sites 후 Python Playwright/Chromium 합성 UI 6개 너비 회귀
+npm run test:sites:network # 합성 네트워크 계약/스크립트 회귀; 운영 요청 없음
+npm run diagnose:sites:network -- --url <SITE_ORIGIN> # 현 프록시/정책 읽기 전용 진단
+npm run test:sites:live -- --url <SITE_ORIGIN> # 정상 네트워크에서 익명 GET-only 운영 HTTP smoke
 npm test              # 단위 + 가시성 e2e (DB 없으면 DB suite는 사유 남기고 건너뜀)
 npm run test:db:up    # 테스트 전용 MariaDB 기동 (127.0.0.1:3307 / wbs_app_test)
 npm run test:db:down  # 테스트 DB 종료 및 데이터 폐기
@@ -99,6 +102,8 @@ npm run dev:debug     # Node 인스펙터 포함 dev 서버
 공통 헤더/업무 화면의 Container는 theme의 기본 `xl`(1536px)을 사용한다. 읽기용 개인정보/버그 상세만 명시적 `md`를 유지한다. AppShell은 md~xl 미만에서 메뉴를 별도 행에 놓고 md 미만에서는 Drawer를 사용한다. `sx.borderRadius` 숫자는 `theme.shape.borderRadius`의 배수이므로 기본 단위 4px를 큰 카드 반경 값으로 바꾸지 않는다. [레이아웃 검증](docs/UI_LAYOUT_2026-10-19.md).
 
 클라우드 작업은 사용자가 해당 작업에서 **게시까지 명시적으로 요청한 경우** 검증 → 작업 단위 커밋·푸시 → 기존 Sites 게시 → 결과 확인까지 진행한다. 그 외에는 게시 전에 확인한다. 이번 배포 승인은 향후 작업의 게시를 자동 승인하지 않는다. NAS 배포, 운영 데이터, 계정 권한·비밀정보·보안 설정 변경은 포함하지 않는다. [게시 기록과 절차](docs/SITES_LAYOUT_PUBLICATION_2026-10-19.md).
+
+합성 브라우저 하네스는 loopback만 허용하며 운영 호스트에 합성 session을 보내지 않는다. 운영 HTTP smoke와 로컬 합성 결과를 구분하고 proxy 거부를 pass/skip으로 바꾸지 않는다. 플랫폼 network policy/NO_PROXY/프록시/인증서는 임의 변경하지 않는다. [진단·관리자 최소 조치](docs/SITES_TEST_NETWORK_2026-10-19.md).
 
 ---
 

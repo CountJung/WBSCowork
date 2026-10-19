@@ -34,7 +34,10 @@
     "build:sites": "vinext build",
     "build:native": "node --import tsx scripts/run-next.ts build",
     "check:native:entrypoints": "node --conditions=react-server --import tsx --test tests/native-settings-file.test.ts tests/native-entrypoints.test.mjs",
-    "test:ui:layout": "node scripts/test-ui-layout.mjs"
+    "test:ui:layout": "node scripts/test-ui-layout.mjs",
+    "test:sites:live": "python3 scripts/test-sites-live.py",
+    "diagnose:sites:network": "python3 scripts/test-sites-live.py --diagnose",
+    "test:sites:network": "python3 -m unittest discover -s tests -p test_site_network.py -v"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -4,10 +4,11 @@ import os
 import sys
 from pathlib import Path
 from urllib.parse import unquote, urlparse
+from sites_test_network import validate_origin
 from playwright.sync_api import sync_playwright
 
 settings = json.load(sys.stdin)
-root = settings['url'].rstrip('/')
+root = validate_origin(settings['url'], local_only=True)
 assets = Path('dist/client').resolve()
 baseline = '--before' in sys.argv
 output = Path('.test-artifacts/layout/before' if baseline else '.test-artifacts/layout/after')
