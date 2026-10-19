@@ -528,3 +528,7 @@ npm11.9는 실행 환경의 `http-proxy` config 경고를 출력했다. 의존�
 - `npm test`:105 PASS/3 FAIL, 총108. baseline `0891513`도 동일. `download-headers`, `project-actions`, `test-preload`에서 `GoogleProvider is not a function`으로 실패하는 Node24 mock 호환은 **QLT-019**. 인증/보안 구현을 UI 변경에 섞지 않았다. MariaDB3307 ECONNREFUSED로 DB suite는 미실행.
 - 기존 native NFT 추적 경고2건은 OPS-021. Vinext proxy 감지 경고와 route 분류 안내, Node mock experimental 경고, @esbuild-kit 설치 deprecation도 관찰했다. 기존 QLT-015/016 차단·불확실 시나리오는 실행하지 않았고 이번 성공으로 대체하지 않는다.
 - Chromium sandbox를 끄지 않았다. 관리형 shell sandbox에서는 SUID 설정 오류로 실패했고 승인된 실행 경로에서는 Chromium 자체 sandbox=true로 성공했다. 원본 Library 이미지 materialize는 공식 helper가 `library file transfer failed: download failed`를 반환해 재시도도 실패했다. 메타데이터만 확인했고 전후 이미지는 합성 화면이다.
+
+### 같은 날 Sites 게시
+
+승인 SHA `0a2cbb5`가 public version11로 게시됐고 환경 revision11을 유지했다. source-only 원격 빌드의 초기 `build_output_missing_hosting_metadata` 실패는 동일 소스의 검증된 로컬 archive 제공으로 복구했다. 성공 deployment `appgdep_6ad5960689f881918f7dde37c3376428`. 운영16개 표 row 비교 동일, 최근5분 Worker error0. 실사이트 HTTP/UI는 네트워크 proxy403으로 미검증(OPS-033). [게시·artifact·실패/복구 전체 기록](SITES_LAYOUT_PUBLICATION_2026-10-19.md).

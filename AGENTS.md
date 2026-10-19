@@ -98,6 +98,8 @@ npm run dev:debug     # Node 인스펙터 포함 dev 서버
 
 공통 헤더/업무 화면의 Container는 theme의 기본 `xl`(1536px)을 사용한다. 읽기용 개인정보/버그 상세만 명시적 `md`를 유지한다. AppShell은 md~xl 미만에서 메뉴를 별도 행에 놓고 md 미만에서는 Drawer를 사용한다. `sx.borderRadius` 숫자는 `theme.shape.borderRadius`의 배수이므로 기본 단위 4px를 큰 카드 반경 값으로 바꾸지 않는다. [레이아웃 검증](docs/UI_LAYOUT_2026-10-19.md).
 
+클라우드 작업은 사용자의 2026-10-19 요청에 따라 검증·작업 단위 commit/push·기존 Sites 게시·게시 후 확인까지 기본 진행한다. 개별 미게시 지시는 우선하며 NAS 배포, 운영 데이터, 계정 권한·비밀정보·보안 설정 변경을 포함하지 않는다. [게시 기록과 절차](docs/SITES_LAYOUT_PUBLICATION_2026-10-19.md).
+
 ---
 
 ## 문서 스택

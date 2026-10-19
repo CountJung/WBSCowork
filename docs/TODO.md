@@ -1,7 +1,7 @@
 # WBS 태스크 — 진행 목록
 
 > **살아있는 문서** — 단계 범위, 검증 절차, 블로커가 바뀔 때마다 업데이트하십시오.
-> 최종 검토: 2026-10-19 · 다음 번호: **QLT-020 / RPT-021 / OPS-033 / PRD-045**
+> 최종 검토: 2026-10-19 · 다음 번호: **QLT-020 / RPT-021 / OPS-034 / PRD-045**
 
 완료된 항목은 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮긴다. 이 문서에는 열린 항목만 남긴다.
 
@@ -84,6 +84,8 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 - [!] **[RPT-020](#rpt-020--d5-delivery-검토)** D5 consent·threat model 승인 후 delivery 검토 — 선행 RPT-019
 
 ### 10단계 — 배포
+
+- [!] **OPS-033** Sites version11 실사이트 HTTP/UI 인수 — 게시 소스 `0a2cbb5`, terminal succeeded. 실행 환경의 proxy CONNECT403/Chromium `ERR_TUNNEL_CONNECTION_FAILED`로 실제 응답·보호 화면6개 너비는 미검증. 접속 가능한 브라우저에서 읽기 전용으로 확인한다. 합성48 PASS/게시 성공과 구분하며 설정·권한 변경이나 proxy 우회를 하지 않는다. [게시 기록](SITES_LAYOUT_PUBLICATION_2026-10-19.md).
 
 - [!] **OPS-031** native 버그 수명주기 전체·영구 삭제 검증 — 기능 게시와 승인된 실환경 합성 제보 #1의 검증/휴지통/복원·영구 삭제는 [완료분 기록](COMPLETED_LOG.md#ops-031--버그-수명주기-게시와-승인된-실환경-정리-완료분)으로 분리했다. 남은 것은 별도 승인 대기 중인 격리 MariaDB의 파기 포함 전체 수명주기·경합 검증이다. 비파괴 native 16조건, D1/Worker 결과나 P1 관계 교체 권한 승인을 native 파기 검증 완료/승인으로 간주하지 않는다. QLT-015의 차단된 저장소 경합 및 QLT-016의 미해결 fixture503은 별도 항목이다.
 - [ ] **OPS-032** 남은 의존성 보안 유지보수 — OPS-030은 실제 Worker RSC decoder의 특정 advisory만 해결했다. NextAuth4.24.15, native MariaDB3.5.3, Next/이미지·build-only tooling 등은 실제 실행 경로와 호환성을 구분해 검토한다. 전체 npm audit 해소를 주장하거나 일괄 major override를 하지 않는다.
