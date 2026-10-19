@@ -65,3 +65,16 @@ npm run test:sites:live -- --url https://wbscowork.cometgnome.chatgpt.site
 이는 **코딩 실행 환경**에서 단일 사이트로 나가는 HTTP(S) 접근 범위를 늘리는 변경이다. 사이트 공개 범위·사용자 역할·OAuth·DNS·들어오는 포트·NAS를 바꾸지 않는다. 네트워크 범위 변경은 사용자 승인 후 플랫폼 네트워크 정책 담당자가 적용해야 한다. 이번에는 적용하지 않았으며 읽기 전용 파일의 chmod/수정, 프록시 비활성화, NO_PROXY 추가, 직결을 시도하지 않았다. `*.chatgpt.site`나 다른 도메인을 열 필요는 없다. 이 실행 환경에는 플랫폼 관리 화면/쓰기 API가 제공되지 않아 로컬 파일 편집으로 적용된다고 주장하지 않는다.
 
 담당자 적용 후 진단에서 CONNECT200을 확인하고 live smoke를 실행한 다음, 접속 가능한 브라우저에서 보호 화면의6개 너비를 확인한다. 계속 실패하면 실제 phase/status를 보존하고 새 근거에 따라 조사하며 허용 범위를 자동 확대하지 않는다.
+
+## 단일 호스트 승인 후 관리 경로 확인
+
+사용자가 위 정확한host 하나의 추가를 이번 작업에서 승인했다. 프록시 해제·NO_PROXY·다른host·전체 인터넷 허용은 승인하지 않았다. 현재 실행기에는 선택된 Cloud 환경의 네트워크 정책 수정 API나 관리 화면 조작 도구가 없고, 로컬 정책 파일 직접 편집이 지원 방식이라는 근거도 없다. 다른 리소스인 Vercel Sandbox의 세션 정책 전체 교체 도구는 이 환경과 연결된 session ID가 없어 사용하지 않았다. 이는 승인 대기가 아니라 플랫폼 관리 경로 접근 대기다.
+
+[공식 Cloud environments 안내](https://learn.chatgpt.com/docs/environments/cloud-environments#connect-to-services)에 따르면 환경 편집 화면에서 도메인을 추가한다. 환경 소유자가 수행할 절차:
+
+1. **Settings → Codex Cloud → Environments**에서 WBSCowork에 사용하는 환경의 **… → Edit**를 연다.
+2. **Internet access**에서 기존 접근 모드와 허용 목록은 보존하고 **Additional allowed domains**에 `wbscowork.cometgnome.chatgpt.site` 하나만 추가한다. **All (unrestricted)**로 전환하거나 목록 전체를 교체하지 않는다. API나 YAML/JSON을 입력하는 화면이 아니라 domain 입력 필드다.
+3. 저장 후 **환경 Republish**를 수행한다. 이는 WBSCowork 사이트 재게시가 아니다. 공식 문서는 기존 작업이 자신의 상태를 유지하므로 새 작업에서 확인하도록 안내한다.
+4. 새 작업에서 `fix/sites-test-network-diagnostics` 브랜치를 사용해 위 진단과 `test:sites:live`를 실행한다. 정책에 정확한host만 추가됐는지, 기존proxy/NO_PROXY가 유지되는지 확인하고 실제 HTTP6계약 통과를 확인한다.
+
+환경이 목록에 없거나 Agent Security가 잠겨 있으면 환경 소유자/워크스페이스 관리자에게 같은 단일host 요청을 전달한다. 이 실행기에서는 사용자의 실제 설정 화면을 열지 못했으므로 문서의 UI 경로와 실제 계정의 표시/권한이 일치하는지는 확인하지 못했다. 현 실행기 재검증은 여전히 exit1/`CONNECT 403 Forbidden`/`Domain forbidden`이며 변경이 적용됐다고 주장하지 않는다.

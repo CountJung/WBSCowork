@@ -545,3 +545,5 @@ npm11.9는 실행 환경의 `http-proxy` config 경고를 출력했다. 의존�
 `diagnose:sites:network`와 `test:sites:live`의 운영 URL 실행은 모두 실제exit1, `failure_stage=proxy_connect`, CONNECT403/`Domain forbidden`, `live_http_completed=false`다. pass나skip으로 바꾸지 않았다. 보고서는 `.test-artifacts/sites-live/`에 있으며 임의 응답 본문·자격증명·redirect query를 저장하지 않는다. 플랫폼 담당자 적용 후 같은 명령으로 재검증해야 한다.
 
 부모의 별도 클라우드 Chrome에서 04:25 UTC/1188×761의 `/`와 `/tasks` 정상 UI 확인을 보고했다. 이 결과는 접속 경로 차이의 증거이며 코딩 환경 smoke나 남은6너비 전체 인수를 대체하지 않는다.
+
+단일host 추가를 사용자가 승인한 후에도 실행기에 적용 가능한 Cloud 정책 수정 API/관리 화면 접근이 없었다. read-only 정책 파일은 편집하지 않았고 승인 후 동일 live 명령도 exit1/CONNECT403/`Domain forbidden`이었다. 공식 환경 편집 UI의 Additional allowed domains와 환경Republish/새 작업 재검증 경로를 [진단 문서](SITES_TEST_NETWORK_2026-10-19.md#단일-호스트-승인-후-관리-경로-확인)에 기록했다. 실제 사용자 화면은 미확인이며 OPS-034는 플랫폼 담당자 적용 대기다.
