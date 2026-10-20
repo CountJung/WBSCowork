@@ -10,10 +10,10 @@ Next.js App Router 기반 태스크 중심 WBS 협업 시스템입니다.
 
 ## 실행 환경과 NAS 업데이트
 
-`main`은 기존 **Node/Next.js + MariaDB + 로컬 파일** 환경을 기본으로 사용합니다. 기존 NAS 업데이트·백업·v1–v8 migration·수동 P0/P1 인수 순서는 [NAS 업데이트 안내](docs/NAS_UPDATE_GUIDE.md)를 따릅니다. NAS 자체 배포/운영 DB 검증은 수동으로 수행합니다.
+`main`은 기존 **Node/Next.js + MariaDB + 로컬 파일** 환경을 기본으로 사용합니다. 기존 NAS 업데이트·백업·v1–v9 migration·수동 P0/P1 인수 순서는 [NAS 업데이트 안내](docs/NAS_UPDATE_GUIDE.md)를 따릅니다. NAS 자체 배포/운영 DB 검증은 수동으로 수행합니다.
 
-- `npm run build` 또는 `npm run build:native` → `npm run start`: native production 실행. 기존 `build:next` 별칭도 유지합니다.
-- `npm run build:sites` → `npm run start:sites`: 별도 Sites Worker 로컬 실행. feature 브랜치의 기본 `build`는 Vinext를 유지합니다.
+- main의 `npm run build` 또는 양쪽의 `npm run build:native` → `npm run start`: native production 실행. 기존 `build:next` 별칭도 유지합니다.
+- `npm run build:sites` → `npm run start:sites`: 별도 Sites Worker 로컬 실행. `sites` 브랜치의 기본 `build`는 Vinext를 유지합니다.
 - Sites는 D1/R2와 배포 환경 설정, native는 MariaDB/로컬 파일/기존 환경 설정을 사용합니다. 데이터를 자동으로 서로 이전하지 않습니다.
 - 기존 공개 서비스: https://wbscowork.cometgnome.chatgpt.site . main 반영만으로 이 Site를 재게시하지 않습니다.
 - [Sites 게시 기록](docs/SITES_PUBLICATION_2026-10-08.md), [최신 P1 검증 범위](docs/P1_ACCEPTANCE_2026-10-09.md), [하네스 명령](docs/HARNESS_MAP.md).
