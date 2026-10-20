@@ -1,6 +1,6 @@
 # WBSCowork Agent Guide
 
-> **살아있는 문서** — 프로젝트 구조, 역할, 규칙, 검증 명령이 바뀔 때마다 업데이트하십시오.  
+> **살아있는 문서** — 프로젝트 구조, 역할, 규칙, 검증 명령이 바뀔 때마다 업데이트하십시오.
 > 하위 문서는 모두 `/docs/` 에서 관리합니다.
 
 ---
@@ -30,8 +30,8 @@
 
 ## 제출물 공개 범위
 
-- `visibility = "public"`: 모든 인증 사용자 조회 가능  
-- `visibility = "private"`: 작성자 본인 + 관리자(admin) + 슈퍼관리자만 조회 가능  
+- `visibility = "public"`: 모든 인증 사용자 조회 가능
+- `visibility = "private"`: 작성자 본인 + 관리자(admin) + 슈퍼관리자만 조회 가능
 - 역할 기반 필터링은 `src/entities/submission`의 `SubmissionVisibilityFilter`로 처리
 
 ---
@@ -84,8 +84,9 @@ npm run test:sites:live -- --url <SITE_ORIGIN> # 정상 네트워크에서 익�
 npm test              # 단위 + 가시성 e2e (DB 없으면 DB suite는 사유 남기고 건너뜀)
 npm run test:db:up    # 테스트 전용 MariaDB 기동 (127.0.0.1:3307 / wbs_app_test)
 npm run test:db:down  # 테스트 DB 종료 및 데이터 폐기
-npm run build         # Sites Worker 프로덕션 빌드
-npm run build:next    # 기존 Node/Next 빌드
+npm run build         # main: native Next / sites: Vinext Worker 프로덕션 빌드
+npm run build:native  # 명시적 Node/Next 빌드 (build:next 별칭 유지)
+npm run build:sites   # 명시적 Sites Worker 빌드
 npm run test:sites:auth # 실제 workerd 인증 계약 (가상 테스트 값만)
 npm run test:sites:storage # 로컬 D1/R2 및 실패 복구
 npm run test:sites:http # 실제 Worker HTTP 권한/업로드 계약
@@ -94,6 +95,8 @@ npm run db:migrate -- --status # native ledger 읽기 전용 (명시 --apply만 
 npm run test:native:migrations # loopback3307 새 *_test DB를 보존하는 additive 검증
 npm run dev:debug     # Node 인스펙터 포함 dev 서버
 ```
+
+main 기본 build는 native이며 sites의 기본 build는 Vinext다. 실행 대상을 넘나드는 검증에는 `build:native`/`build:sites`를 명시한다. NAS의 운영 적용·수동 검증은 [NAS 업데이트 안내](docs/NAS_UPDATE_GUIDE.md)를 따른다.
 
 가시성·권한 경계를 건드리면 `npm test`를 반드시 실행한다. 테스트 DB는 개발용(3306)과 포트·DB 이름이 분리되어 있고, `_test`로 끝나지 않는 DB 이름은 하네스가 거부한다.
 
@@ -132,7 +135,7 @@ npm run dev:debug     # Node 인스펙터 포함 dev 서버
 
 ## Next.js 버전 주의
 
-이 저장소는 **Next.js 16 App Router**를 사용합니다. 훈련 데이터와 API·컨벤션이 다를 수 있습니다.  
+이 저장소는 **Next.js 16 App Router**를 사용합니다. 훈련 데이터와 API·컨벤션이 다를 수 있습니다.
 코드 작성 전 `node_modules/next/dist/docs/`를 반드시 참조하십시오.
 
 ---
@@ -154,3 +157,5 @@ Native MariaDB schema 변경은 DB_SCHEMA_USER/DB_SCHEMA_PASSWORD 전용 연결�
 팀 업무: `/my-work`는 count/list/link에 동일 viewer/current-role SQL 조건을 사용한다. `/submissions/[id]`의 검토 action은 현재 담당자의 특정 현재 버전만 선택하고 reviewer 권한·visibility·self-approval 배제·token/version을 transaction 안에서 재검사한다. 상세 검토 사유를 공개 task event에 복사하지 않는다. form pending UI는 shared SubmitButton을 사용하며 서버의 중복 방지·권한 검사를 대신하지 않는다. [사용 안내](docs/TEAM_WORKFLOW_GUIDE.md), [P0 인수 범위](docs/P0_ACCEPTANCE_2026-10-09.md).
 
 버그 스크린샷 생성은 PNG/JPEG/WebP, 각2MiB·최대3개다. `shared/server/private-files`와 기존 R2/UPLOAD_DIR를 재사용하고 모든 직접 조회에 부모 제보 권한을 적용한다. `test:sites:bug-screenshots`와 `test:sites:bug-screenshots:browser`는 격리 합성 회귀이며 운영으로 session을 보내지 않는다. Native 첨부 제보의 최종 파기는 QLT-020에서 fail-closed로 보존한다. [구현·검증](docs/BUG_SCREENSHOTS_2026-10-20.md).
+
+장기 브랜치는 `main`(NAS/native)과 `sites`(ChatGPT Sites/Worker) 두 개다. 공통 수정은 검증한 patch로 양쪽에 반영하고 환경 기본값을 전체 merge로 덮지 않는다. 임시 브랜치는 반영 후 원격 archive tag를 검증하고 정리한다. [브랜치 역할·반영 매핑·복구](docs/BRANCH_POLICY_2026-10-20.md). 브랜치 ref 정리 자체는 배포 승인이 아니다.

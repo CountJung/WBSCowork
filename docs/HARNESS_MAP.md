@@ -16,7 +16,7 @@
 | --- | --- | --- | --- |
 | `npm run dev` | `node --import tsx scripts/run-next.ts dev` | 개발 서버 | APP_PORT 출력 후 route 응답 |
 | `npm run dev:debug` | 위 명령 + `--inspect` | 서버 디버깅 | inspector와 dev server 기동 |
-| `npm run build` | `vinext build` | Sites Worker build | exit 0, dist/server/index.js 생성 |
+| `npm run build` | main: `node --import tsx scripts/run-next.ts build`; sites: `vinext build` | 브랜치별 대상 유지 | main `.next/`, sites `dist/` 생성 |
 | `npm run build:sites` | `vinext build` | 명시적 Sites Worker build | exit 0, dist/server/index.js 생성 |
 | `npm run test:ui:layout` | `scripts/test-ui-layout.mjs` + `.py` | 빌드한 Worker/D1 + 실제 Chromium 공통 레이아웃 | Python Playwright와 Chromium 필요, 6개 너비 geometry/메뉴/Drawer/긴 이름 |
 | `npm run test:sites:network` | `tests/test_site_network.py` | 합성 네트워크/실행 경계 회귀 | 12조건 PASS; 운영 요청 없음 |
@@ -521,6 +521,11 @@ npm11.9는 실행 환경의 `http-proxy` config 경고를 출력했다. 의존�
 같은 오프라인 fixture로 기본 Turbopack 경로도 시도했으나 font import-map `url not found`로 실패했다. 이 fixture는 Webpack 방식의 mock response이며 NAS의 정상 Google Fonts 요청 결과가 아니다. 별도로 logging의 동적 파일 경로 추적에서 `Encountered unexpected file in NFT list` 경고 2건을 관찰했다. 기본 Turbopack 성공이나 이 경고 해결을 주장하지 않으며 NAS 수동 인수(OPS-021)에 남긴다. 독립 검토에서 발견한 CR/CRLF·export·다중 줄·인용부호·반복 저장 경계를 dotenv와 맞추고 합성 보존 확인을 추가했다.
 
 
+## 2026-10-10 main NAS 인계
+
+공통 native 호환성/설정 보호 checkpoint `b43704e89dd48ebe6304510fe420ccda3d218c5b`를 포함한 P0/P1·품질 변경을 main에 통합한다. feature의 기본 `build`는 Vinext, main은 동일한 `build:native` 명령으로 설정하며 두 명시적 별칭을 유지한다. 후속 변경은 이 package script와 문서뿐이므로 위 최종 코드의 오프라인 Webpack 빌드·8조건·정적 검사 결과를 재사용한다. main 기본 `npm run build -- --help`가 Next CLI로 연결되는 것을 확인했고 상대 문서 링크/anchor172개와 package/lock 일치를 검사했다. 실제 NAS 기본 빌드·서버 기동·DB 적용·앱 시나리오는 실행하지 않았다. [NAS 수동 절차/확인표](NAS_UPDATE_GUIDE.md)를 제공하고 OPS-021의 실제 환경 검증은 열린 상태로 둔다. 공개 Site version10은 재게시하지 않는다.
+
+
 ## 2026-10-19 공통 UI 레이아웃
 
 [QLT-018 검증 기록](UI_LAYOUT_2026-10-19.md). Node24.19.0/npm11.9.0, Python Playwright/Chromium151.0.7922.173, 실제 production Worker + 메모리 D1/R2 합성 fixture다.
@@ -559,3 +564,9 @@ npm11.9는 실행 환경의 `http-proxy` config 경고를 출력했다. 의존�
 최종 bug HTTP200/full HTTP248 PASS. full fixture는 새스크린샷 외 기존20MiB/submission/version CRUD도 실행했다. 완료된 합성 제출물 삭제의 실패 로그/redirect가 관찰됐으며 QLT-021에 실제 삭제 완료와 오류 표시의 차이를 남긴다. 일회성 기존404 response 소비 실패는 최종 동일 명령에서 재현되지 않았다. 오류 없는 전체 운영 인수를 주장하지 않는다.
 
 Sites version12/source0d1a1a3/deployment appgdep_6ad701611af48191b37ff6b4a1548d2c는2026-10-20 05:51:39UTC succeeded로 확인했다. public/access policy/env revision11 유지. 게시 전후15개 업무·계정·버그 표의 모든 row 동일, 새 screenshot표0건. 최근5분 Worker error0. 운영 UI 접근 차단은 별도다.
+
+## 2026-10-20 main/sites 브랜치 정리 (OPS-036)
+
+main을3f62450로 fast-forward하고31ad5cf의 공통 runtime/test/schema 경로를 정확히 이식했다. `app/src/db/drizzle/scripts/tests/.gitignore` 차이0, dependencies/lockfile/native config·run-next/start 유지. main 기본 native production build와 native CLI8, network12/첨부D1R228을 확인했다. main/sites 역할·archive tip·복구·정확한 gate 결과는 [브랜치 정책](BRANCH_POLICY_2026-10-20.md)에 있다. `npm test`는 기존105/108·QLT-019이며3307 DB suite는 현재 미기동으로 사유를 남겼다. 운영 DB/migration·NAS 배포·Sites source push/save/deploy는 수행하지 않는다.
+
+이번 main 기본 Turbopack production build는 exit0이며 `Encountered unexpected file in NFT list` 경고1건(logging 동적 경로)을 관찰했다. 기존 OPS-021 기준선으로 유지한다. main의 next.config.ts와 scripts/run-next.ts는 original0891513과 bytes가 동일하다. native CLI8·lint/types/FSD 통과, 공통network12/첨부D1R228 통과.

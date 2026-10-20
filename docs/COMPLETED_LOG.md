@@ -477,6 +477,11 @@ native 설정 화면의 추가 키 처리에서 `DB_SCHEMA_USER/PASSWORD`가 노
 자격증명 없는 CLI help/입력 검사와 새 합성 파일의 읽기·저장·보존 8조건을 확인했다. 실제 DB 연결, 앱 기능 시나리오, NAS 실행은 하지 않았으며 사용자 수동 인수 대상이다. 구체적인 빌드·정적 검증 범위는 [하네스 기록](HARNESS_MAP.md#2026-10-10-native-통합-준비)을 따른다.
 
 
+## OPS-021 준비 기록 — main native 통합 (2026-10-10)
+
+P0/P1·품질 기능과 공통 native 호환성 checkpoint `b43704e89dd48ebe6304510fe420ccda3d218c5b`를 main 실행 경로에 통합한다. main 기본 `build`는 native Next, feature 기본 build는 Sites이며 양쪽의 명시적 별칭은 유지한다. [NAS 업데이트 안내](NAS_UPDATE_GUIDE.md)에 기존 환경/DB/첨부 보존, 별도 schema identity의 명시적 v1–v8 적용, DDL rollback 한계, 수동 P0/P1 인수와 중단/복구 기준을 정리했다. 이 절의 완료 범위는 소스·문서 인계다. 실제 NAS 환경 정의·빌드·DB 적용·수동 인수는 TODO의 OPS-021에 남으며 운영 배포나 Site 재게시를 수행하지 않았다.
+
+
 ## QLT-018 — 공통 헤더/본문 너비와 메뉴 줄바꿈 (2026-10-19)
 
 헤더 lg와 작업 xl의 불일치, 단일 flex 행의 수축, 제한 없는 사용자 이름, 반경20px×sx4=80px가 원인이었다. Container 기본 xl, 반응형 grid/기존 모바일 Drawer, 메뉴 nowrap, 이름 칩 상한과 전체 title, 한국어 keep-all/긴 문자열 anywhere, 반경4px 단위로 수정했다. 운영 설정·데이터·권한·migration은 변경하지 않았다.
@@ -494,3 +499,7 @@ native 설정 화면의 추가 키 처리에서 `DB_SCHEMA_USER/PASSWORD`가 노
 원문과 최대3개의 PNG/JPEG/WebP(각2MiB)를 함께 저장한다. 미리보기/제거/실패 시 초안 유지/상세 새로고침·private bytes를 제공하며 기존 파일 IO와 D1/R2 cleanup lease를 재사용한다. Drizzle0013/native v9는 additive다. lint/types/FSD/build, bugD158/첨부D1R228/Worker bugHTTP200/fullHTTP248/Chromium19/공통layout48/auth18/network12/native99 PASS. 기존 QLT-019/016과 발견된 QLT-021, Native 첨부 purge 정리QLT-020은 열린 상태다. 운영 UI와 게시 결과는 [정확한 기록](BUG_SCREENSHOTS_2026-10-20.md)에 별도 남긴다. NAS/운영 계정·권한 변경 없음.
 
 PRD-045 게시 확인: 기존 public Site version12, source0d1a1a3, deployment appgdep_6ad701611af48191b37ff6b4a1548d2c succeeded(2026-10-20 05:51:39UTC). 기존15개 표 전체 row와 public policy 보존, 운영 UI는 OPS-035에서 별도 인수한다.
+
+## OPS-036 — main(NAS) / sites(ChatGPT Sites) 두 브랜치 정리 (2026-10-20)
+
+기존6개 원격 tip·main/게시용 ancestry와 patch-id를 조사했다. UI3f62450는 whole patch가 아닌 app/src/scripts/package 범위에서0a2cbb5와 동일했고, main은 고유native0891513과3f62450 ancestry를 보존했다. Sites31ad5cf의 완료 공통 변경을 main에 선택 이식하고 native 기본 build/운영 문서를 유지했다. 다른4개 임시 branch tip은 게시용 ancestry에 모두 포함돼 있다. 삭제 전 각tip과 originalmain까지6개 annotated archive tag를 원격에 push/peeled SHA 확인했다. `sites`는 기존 게시용31ad5cf history를 그대로 계승한다. 역할·반영 표·태그/복구·검증과 최종 실제 refs는 [브랜치 정책](BRANCH_POLICY_2026-10-20.md)을 따른다. NAS/사이트 재배포·권한/보호 설정 변경은 없다.
