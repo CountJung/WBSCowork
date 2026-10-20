@@ -178,3 +178,8 @@ Native NAS 실행은 `scripts/run-next.ts`와 main의 기본 `build`/`start`를 
 ## 버그 스크린샷 (2026-10-20)
 
 `BugReportForm`은 선택/미리보기/제거/실패 보존을 담당한다. `entities/bug-report/api/screenshots.server.ts`가 검증/권한 조회/미참조 파일 정리를 제공하고 `shared/server/private-files`를 기존 submission 파일 IO와 함께 사용한다. `/api/bug-screenshots/[screenshotId]`는 비공개 bytes route다. Drizzle0013/native v9와 검증 진입점은 [첨부 기록](BUG_SCREENSHOTS_2026-10-20.md)을 따른다.
+
+
+### 제출물 최종 삭제 판정 (QLT-021)
+
+`src/entities/submission/api/submission-repository.server.ts`의 `deleteSubmission`은 guarded DELETE/RETURNING의 요청 ID로 성공을 판정한다. `src/features/task-workspace/server/actions.ts`는 commit 이전 실패와 이후 followup 오류를 분리한다. `scripts/test-submission-delete.ts`는 실제 D1/MariaDB 비교·권한 변경·rollback, `tests/submission-delete-actions.test.ts`는 action fault injection, `scripts/verify-sites-crud.mjs`는 production Worker HTTP/redirect/audit/파일 경계를 검사한다. [분석과 실행 명령](QLT_021_SUBMISSION_DELETE_2026-10-21.md).

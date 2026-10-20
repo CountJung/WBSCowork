@@ -87,8 +87,24 @@ export async function verifySitesCrud({ request, db, bucket, actorCookies, actio
   check((await html(route)).includes('CRUD_COMMENT_EDITED'),'comment update appears in fresh render');
   await submit(route,member,deleteComment,{...subScope,commentId:comment.id});
   check(!(await db.prepare('SELECT id FROM comments WHERE id=?').bind(comment.id).first()),'owner comment deletion removes synthetic record');
-  await submit(route,member,deleteSubmission,{...subScope,confirmRevisionDeletion:'yes'});
+  const deleteOutcome=response=>new URL(response.headers.get('Location'),actionOrigin).searchParams;
+  const deniedDelete=await submit(route,other,deleteSubmission,{...subScope,confirmRevisionDeletion:'yes'});
+  check(deleteOutcome(deniedDelete).get('status')==='error'&&Boolean(await db.prepare('SELECT id FROM submissions WHERE id=?').bind(submission.id).first()),'cross-user deletion returns error and preserves the synthetic submission');
+  // Force a real FK error at the last statement, after the guarded writes.
+  await db.prepare('CREATE TABLE qlt_crud_delete_restrict(submission_id INTEGER PRIMARY KEY REFERENCES submissions(id) ON DELETE RESTRICT)').run();
+  await db.prepare('INSERT INTO qlt_crud_delete_restrict VALUES(?)').bind(submission.id).run();
+  const taskBeforeDelete=JSON.stringify(await db.prepare('SELECT * FROM tasks WHERE id=?').bind(parent.id).first());
+  const failedDelete=await submit(route,member,deleteSubmission,{...subScope,confirmRevisionDeletion:'yes'});
+  check(deleteOutcome(failedDelete).get('status')==='error'&&Boolean(await db.prepare('SELECT id FROM submissions WHERE id=?').bind(submission.id).first())&&taskBeforeDelete===JSON.stringify(await db.prepare('SELECT * FROM tasks WHERE id=?').bind(parent.id).first()),'delete FK failure returns error and rolls back metadata/task writes');
+  check((await Promise.all(attachments.map(a=>bucket.head(a.file_path)))).every(Boolean),'rollback never removes referenced private bytes');
+  await db.prepare('DROP TABLE qlt_crud_delete_restrict').run();
+  const deletionAudits=async message=>Number((await db.prepare('SELECT COUNT(*) AS n FROM audit_logs WHERE message=?').bind(message).first()).n);
+  const failuresBefore=await deletionAudits('submission.delete failed'),completedBefore=await deletionAudits('submission.delete completed');
+  const successfulDelete=await submit(route,member,deleteSubmission,{...subScope,confirmRevisionDeletion:'yes'});
+  check(successfulDelete.status===303&&deleteOutcome(successfulDelete).get('status')==='success'&&deleteOutcome(successfulDelete).get('message')==='제출물을 삭제했습니다.','committed cascade deletion returns the actual success redirect');
+  check(await deletionAudits('submission.delete failed')===failuresBefore&&await deletionAudits('submission.delete completed')===completedBefore+1,'committed deletion records success without a false failure audit');
   check(!(await db.prepare('SELECT id FROM submissions WHERE id=?').bind(submission.id).first()),'owner submission deletion removes synthetic metadata');
+  for(const table of ['submission_revisions','submission_events','submission_attachments','comments'])check(Number((await db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE submission_id=?`).bind(submission.id).first()).n)===0,`successful deletion removes synthetic ${table}`);
   check((await Promise.all(attachments.map(a=>bucket.head(a.file_path)))).every(value=>value===null),'submission deletion cleans every synthetic private object');
   await submit(route,member,deleteTask,{projectId,taskId:parent.id,confirmRevisionDeletion:'yes'});
   const detached=await db.prepare('SELECT parent_id,depth FROM tasks WHERE id=?').bind(child.id).first();

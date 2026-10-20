@@ -2,6 +2,7 @@ import "./helpers/bootstrap";
 
 import { test, describe, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { setSession, clearSession } from "./helpers/bootstrap";
 import { allActorNames, sessionFor, testActors, type TestActorName } from "./helpers/session";
 import { ensureSchema, seedFixture, type Fixture } from "./helpers/fixture";
@@ -218,6 +219,11 @@ describe("3. 수정·삭제는 author 또는 명시된 관리자만 가능하다
       taskId: fixture.taskId,
       submissionId,
       content: "수정된 내용",
+      // seedFixture starts every submission at revision1; exercise the current
+      // mutation contract rather than failing before the ownership assertion.
+      operationToken: randomUUID(),
+      expectedRevision: 1,
+      changeSummary: "격리 가시성 검증 수정",
       ...extra,
     });
   }

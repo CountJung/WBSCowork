@@ -13,6 +13,7 @@
     "check:fsd": "node --import tsx scripts/check-fsd-boundaries.ts",
     "test": "node --import tsx scripts/run-tests.ts",
     "test:unit": "node --import tsx scripts/run-tests.ts --unit",
+    "test:submission:delete": "node --conditions=react-server --import tsx scripts/test-submission-delete.ts",
     "test:db:up": "node --import tsx scripts/test-database.ts up",
     "test:db:down": "node --import tsx scripts/test-database.ts down",
     "test:db:status": "node --import tsx scripts/test-database.ts status",

@@ -629,6 +629,7 @@ export async function deleteSubmissionAction(formData: FormData) {
   const session = await requireWritableSession(projectId);
 
   let cleanupFailed = false;
+  let metadataDeleted = false;
   let redirectPath: string;
 
   try {
@@ -645,6 +646,7 @@ export async function deleteSubmissionAction(formData: FormData) {
     if(getSingleValue(formData.get("confirmRevisionDeletion"))!=="yes")throw new Error("제출물과 모든 버전 삭제를 확인해야 합니다.");
 
     const submission = await deleteSubmission(submissionId,{userId:user.id,isAdmin:user.role==="admin",isSuperuser:!!session.user.isSuperuser});
+    metadataDeleted = true;
     for(const filePath of new Set(revisionFilesToClean))await deleteStoredSubmissionAttachment(filePath).catch(()=>{cleanupFailed=true;});
 
     // 레거시 단일 파일 정리
@@ -715,17 +717,22 @@ export async function deleteSubmissionAction(formData: FormData) {
       "tasks",
       {
         actorEmail: session.user.email ?? null,
-        action: "submission.delete",
+        action: metadataDeleted ? "submission.delete.followup" : "submission.delete",
         entityType: "submission",
         projectId,
         taskId,
+        metadata: { metadataDeleted, cleanupFailed },
       },
       error,
     );
 
     redirectPath = buildTasksPath(
       "error",
-      error instanceof Error ? error.message : "제출물 삭제 중 알 수 없는 오류가 발생했습니다.",
+      metadataDeleted
+        ? cleanupFailed
+          ? "제출물 DB는 삭제됐고 파일 정리는 재시도 대기 중입니다. 목록을 확인해 주세요."
+          : "제출물은 삭제됐지만 후속 처리 중 오류가 발생했습니다. 목록을 확인해 주세요."
+        : error instanceof Error ? error.message : "제출물 삭제 중 알 수 없는 오류가 발생했습니다.",
       { projectId, taskId },
     );
   }

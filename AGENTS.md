@@ -89,6 +89,7 @@ npm run build:native  # 명시적 Node/Next 빌드 (build:next 별칭 유지)
 npm run build:sites   # 명시적 Sites Worker 빌드
 npm run test:sites:auth # 실제 workerd 인증 계약 (가상 테스트 값만)
 npm run test:sites:storage # 로컬 D1/R2 및 실패 복구
+npm run test:submission:delete # 실제 D1 + 새 loopback3307 MariaDB 삭제/권한/rollback 회귀
 npm run test:sites:http # 실제 Worker HTTP 권한/업로드 계약
 npm run db:check      # DB 연결 테스트
 npm run db:migrate -- --status # native ledger 읽기 전용 (명시 --apply만 schema DDL)

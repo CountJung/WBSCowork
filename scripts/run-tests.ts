@@ -40,11 +40,11 @@ async function probeDatabase(): Promise<{ ok: true; version: string } | { ok: fa
   }
 }
 
-function runNodeTest(files: string[]) {
+function runNodeTest(files: string[], bootstrap = true) {
   return new Promise<number>((resolve) => {
     const child = spawn(
       process.execPath,
-      ["--import", new URL("../tests/helpers/preload.mjs", import.meta.url).href, "--test", "--experimental-test-module-mocks", "--test-reporter=spec", ...files],
+      ["--import", bootstrap ? new URL("../tests/helpers/preload.mjs", import.meta.url).href : "tsx", "--test", "--experimental-test-module-mocks", "--test-reporter=spec", ...files],
       { stdio: "inherit", env: process.env },
     );
 
@@ -58,7 +58,9 @@ async function main() {
 
   console.log("· 단위/정책 suite 실행");
 
-  const unitExitCode = await runNodeTest(UNIT_TESTS);
+  // These action fault-injection mocks own next/cache and must not reuse the bootstrap mocks.
+  const actionExitCode = await runNodeTest(["tests/submission-delete-actions.test.ts"], false);
+  const unitExitCode = (await runNodeTest(UNIT_TESTS)) || actionExitCode;
   let databaseExitCode = 0;
 
   if (unitOnly) {
