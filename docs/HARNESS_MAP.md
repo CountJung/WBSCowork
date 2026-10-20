@@ -557,3 +557,5 @@ npm11.9는 실행 환경의 `http-proxy` config 경고를 출력했다. 의존�
 설치: 기본 npm cache 쓰기 실패 후 `npm ci --cache /workspace/.cache/npm` 성공. 소스/lockfile 변경 없음. Vinext build 뒤 Next 생성 validator와 routes stub 충돌은 `node node_modules/next/dist/bin/next typegen` 후 typecheck로 복구했다. Chromium은 승인 실행 경로에서 기본 sandbox를 유지했다. 상세 evidence/한계/최종 게이트는 [첨부 기록](BUG_SCREENSHOTS_2026-10-20.md)을 따른다.
 
 최종 bug HTTP200/full HTTP248 PASS. full fixture는 새스크린샷 외 기존20MiB/submission/version CRUD도 실행했다. 완료된 합성 제출물 삭제의 실패 로그/redirect가 관찰됐으며 QLT-021에 실제 삭제 완료와 오류 표시의 차이를 남긴다. 일회성 기존404 response 소비 실패는 최종 동일 명령에서 재현되지 않았다. 오류 없는 전체 운영 인수를 주장하지 않는다.
+
+Sites version12/source0d1a1a3/deployment appgdep_6ad701611af48191b37ff6b4a1548d2c는2026-10-20 05:51:39UTC succeeded로 확인했다. public/access policy/env revision11 유지. 게시 전후15개 업무·계정·버그 표의 모든 row 동일, 새 screenshot표0건. 최근5분 Worker error0. 운영 UI 접근 차단은 별도다.

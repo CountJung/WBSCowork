@@ -40,3 +40,15 @@ Native v9도 additive 명세를 추가했으며 별도 운영 적용은 하지 �
 이 환경에는 Sites 스킬의 `site-workflow.mjs`/`build-site.mjs`가 설치돼 있지 않아, 기존 version11의 문서화된 대체 흐름을 따른다. 정확한 GitHub SHA를 Sites source main에 fast-forward, 같은 SHA의 로컬 Vinext output과 변경 없는 hosting manifest·append-only Drizzle migration을 archive로 묶어 native save/deploy 도구로 게시한다. credential은 메모리에서 echo-off stdin으로만 전달한다. 이 절차는 네트워크 제한이나 공개 범위 변경을 우회하지 않는다.
 
 최종 Worker HTTP: `node scripts/test-sites-http.mjs --bugs` 200 PASS; `npm run test:sites:http` 248 PASS. full fixture는 기존20MiB 업로드, 부모/첨부 가시성, 버그 수명주기, 새 이미지 권한, 기존 CRUD/파일 정리/역할 refresh/logout을 포함한다. 누락 token/version/변경 요약/현재 revision scope/삭제 확인 필드만 합성 하네스에 보완했다. full suite 중 기존 제출물 삭제가 DB/파일 제거 후에도 오류 로그/오류 redirect를 반환하는 현상을 발견했다(QLT-021). 이를 오류 없는 사용자 흐름으로 주장하지 않는다. 한 회차의 기존404 response 소비 오류는 동일 명령 최종 재실행에서 재현되지 않았다.
+
+## 최종 게시 확인
+
+- 동일 Site project: `appgprj_6ac75dba14348191801b002e0f2a0937`.
+- URL: https://wbscowork.cometgnome.chatgpt.site — 버그 폼 https://wbscowork.cometgnome.chatgpt.site/bugs .
+- 게시 version12: `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`.
+- 실제 게시 SHA: `0d1a1a3afe8680ddd7c1281b583fd9d846cc0bc1` (`feat: attach private screenshots to bug reports`). GitHub `feat/bug-screenshots`/`feat/sites-deployment` 및 별도 Sites source main에 fast-forward push하고 원격 일치를 확인했다. GitHub NAS main은 `089151345f4221fb11e7c07adafc8748d571e319` 그대로다.
+- deployment: `appgdep_6ad701611af48191b37ff6b4a1548d2c`, **succeeded**, 2026-10-20 05:51:39 UTC, env revision11. native deploy 반환과 `get_site`/`get_site_version`으로 version12·exactSHA·deployment 연결을 확인했다. pending/unknown 상태가 아니다.
+- source archive: `/workspace/wbscowork-bug-screenshots-0d1a1a3.tar.gz`, 1,485,966 bytes, 로컬 SHA256 `6b6bba6afeaa878d605c06271976bc5bce663228b26ccad3a8f887913b3c28cd`. Sites 정규화 archive는350files/5,273,600bytes, hash `sha256:6ead63551d163a42f3051af51fd8aa8607da9a81b7f5b7134488d07202409309`.
+- 게시 후 get_site public/access policy(revision2) 전체 동일. read-only D1에서 새 screenshot표/버그 fingerprint컬럼을 확인했다. 게시 전후15개 표의 전체 row가 동일하고 모든 조회는 pagination/truncation이 없다. 사용자2명과 기존 purge receipt1건 보존, 새 screenshot표0건이다. 운영 synthetic report를 만들지 않았다. audit전체/R2 inventory를 비교한 것은 아니다.
+- 게시 직후 최근5분 Worker error event0건. 차단된 실행기의 요청이 Worker까지 도달했다는 의미나 운영 브라우저 성공의 근거로 쓰지 않는다.
+- 이 문단은 게시 후 문서 전용 후속 commit으로 저장한다. 실제 게시 소스 SHA는 위 `0d1a1a3`이며 후속 문서 commit을 배포 SHA로 혼동하지 않는다. 운영 UI는 기존 outbound 제한으로 여전히 미검증(OPS-035)이다.

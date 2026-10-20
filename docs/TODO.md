@@ -39,7 +39,7 @@
 ## 열린 항목
 
 - [ ] **QLT-020** Native 첨부 버그 제보의 durable 파일 정리 — v9 schema/업로드/조회는 제공하되 첨부 있는 제보의 native 영구 삭제는 파일 정리 ledger가 구현되기 전 fail-closed로 보존한다. Sites는 기존 R2 cleanup queue를 사용한다. NAS 적용 없음. [구현 기록](BUG_SCREENSHOTS_2026-10-20.md).
-- [!] **OPS-035** 버그 스크린샷 운영 UI 인수 — 로컬 Chromium 1280/390px 합성 회귀와 운영 화면을 구분한다. 운영 익명 smoke는 기존 CONNECT403으로 실패했다. 부모의 접속 가능한 브라우저에서 `/bugs` 첨부 폼을 읽기 전용으로 확인한다. 실제 제보 생성·삭제나 계정 권한 변경은 이번 QA에서 하지 않는다.
+- [!] **OPS-035** 버그 스크린샷 운영 UI 인수 — version12/source0d1a1a3 게시 succeeded와 기존 데이터·public policy 보존은 확인했다. 로컬 Chromium 1280/390px 합성 회귀와 운영 화면을 구분한다. 운영 익명 smoke는 기존 CONNECT403으로 실패했다. 부모의 접속 가능한 브라우저에서 `/bugs` 첨부 폼을 읽기 전용으로 확인한다. 실제 제보 생성·삭제나 계정 권한 변경은 이번 QA에서 하지 않는다.
 
 
 - [ ] **QLT-019** Node24 단위 하네스 mock 호환 기준선 복구 — `npm test`는 수정 전 `0891513`과 UI 수정본 모두 108건 중 105 PASS/3 FAIL. `download-headers`, `project-actions`, `test-preload`의 auth import에서 `GoogleProvider is not a function`; `mockModuleExports`의 Node26 `exports` 계약과 Node24 실행 경로를 별도 수정·검증한다. UI 변경에서 인증 구현/테스트 우회를 섞지 않는다. DB suite는 127.0.0.1:3307 ECONNREFUSED로 미실행. [하네스 기록](HARNESS_MAP.md#2026-10-19-공통-ui-레이아웃).

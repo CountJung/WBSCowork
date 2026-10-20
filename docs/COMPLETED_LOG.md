@@ -492,3 +492,5 @@ native 설정 화면의 추가 키 처리에서 `DB_SCHEMA_USER/PASSWORD`가 노
 ## PRD-045 — 버그 제보 스크린샷 (2026-10-20)
 
 원문과 최대3개의 PNG/JPEG/WebP(각2MiB)를 함께 저장한다. 미리보기/제거/실패 시 초안 유지/상세 새로고침·private bytes를 제공하며 기존 파일 IO와 D1/R2 cleanup lease를 재사용한다. Drizzle0013/native v9는 additive다. lint/types/FSD/build, bugD158/첨부D1R228/Worker bugHTTP200/fullHTTP248/Chromium19/공통layout48/auth18/network12/native99 PASS. 기존 QLT-019/016과 발견된 QLT-021, Native 첨부 purge 정리QLT-020은 열린 상태다. 운영 UI와 게시 결과는 [정확한 기록](BUG_SCREENSHOTS_2026-10-20.md)에 별도 남긴다. NAS/운영 계정·권한 변경 없음.
+
+PRD-045 게시 확인: 기존 public Site version12, source0d1a1a3, deployment appgdep_6ad701611af48191b37ff6b4a1548d2c succeeded(2026-10-20 05:51:39UTC). 기존15개 표 전체 row와 public policy 보존, 운영 UI는 OPS-035에서 별도 인수한다.
