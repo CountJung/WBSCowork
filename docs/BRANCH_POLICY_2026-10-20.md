@@ -46,7 +46,7 @@ git push origin restore/shared-desktop-layout:refs/heads/restore/shared-desktop-
 
 전체 commit 기준 `git cherry -v`에서는 divergent commit이 모두 `+`였고 patch-equivalent(`-`) commit은 없었다. 다만 UI3f62450와 Sites0a2cbb5는 문서 기준선이 달라 전체 patch-id는 다르고, **app/src/scripts/package 범위 stable patch-id는 둘 다 `2daf58344eab928f18612091412eaa23c204eec7`**이다. 실제 runtime/test diff도 같아서 레이아웃 기능이 누락됐다고 판단하지 않았다. main-only0891513은 native build 기본값·NAS 안내를 변경하며 sites에 전체 적용하지 않는다.
 
-main에는3f62450 ancestry를 그대로 반영한 뒤31ad5cf의 검증된 공통 app/src/db/drizzle/scripts/tests/.gitignore를 정확히 이식한다. dependencies/lockfile/runtime config·native script는 그대로다. 충돌은 환경별 문서/기본 build에서만 해소하고 NAS guide·기존 native 검증 기록을 보존한다. Sites 게시 이력eed6ff9/ad19c05의 현재 유효한 strict 정책/증거 문서는 반영하되 superseded 자동 게시 문구를 되살리지 않는다. 고유 미완성 app 변경은 발견하지 않았다. 알려진 QLT-019/016/020/021과 OPS 미해결은 계속 명시한다.
+main에는3f62450 ancestry를 그대로 반영한 뒤31ad5cf의 검증된 공통 app/src/db/drizzle/scripts/tests/sites/worker.ts/.gitignore를 정확히 이식한다. dependencies/lockfile/runtime config·native script는 그대로다. 충돌은 환경별 문서/기본 build에서만 해소하고 NAS guide·기존 native 검증 기록을 보존한다. Sites 게시 이력eed6ff9/ad19c05의 현재 유효한 strict 정책/증거 문서는 반영하되 superseded 자동 게시 문구를 되살리지 않는다. 고유 미완성 app 변경은 발견하지 않았다. 알려진 QLT-019/016/020/021과 OPS 미해결은 계속 명시한다.
 
 ## archive 태그
 
@@ -66,3 +66,11 @@ main에는3f62450 ancestry를 그대로 반영한 뒤31ad5cf의 검증된 공통
 Native v9는 소스에 포함하지만 실제 NAS DB에 적용하지 않는다. 기존 사용자의 role/원문/파일 보존과 명시 migration gate는 유지한다. QLT-020의 첨부 있는 native 제보 purge는 durable 정리까지 fail-closed다. 사이트 version12/public/env revision11/운영 데이터를 유지하고 새 source credential/save/deploy 호출을 하지 않는다. 운영 브라우저는 과거 CONNECT403 한계와 부모의 별도 확인 범위를 유지한다.
 
 main 통합 검증: 기본 `npm run build`(native Turbopack) exit0, CLI8 PASS, lint0/0·typecheck·FSD5/위반0, network12/첨부D1R228 PASS. 기존 Node 단위105/108 실패3건은 QLT-019, DB suite는3307 미기동/ECONNREFUSED로 미실행이다. native build의 logging 동적 경로 NFT 경고1건은 기존 OPS-021로 남긴다. main next.config/run-next·start script와 dependency/lockfile은 original0891513과 동일하다.
+
+## 원격 정리 실행 확인
+
+`main`과 새 `sites`를 일반 fast-forward/new-branch atomic push로 먼저 확인한 다음, 원격 archive6개의 peeled SHA를 다시 대조했다. 삭제 전 temporary pre-push 검사기가 Git transport가 광고한 원격tip5개가 조사/보존 SHA와 같은지 확인했고, `--atomic --delete`로 정확한5개만 삭제했다. 강제 push/force-with-lease, 보호/권한 변경, tag 삭제는 사용하지 않았다. `git ls-remote --heads origin`에서 main/sites만 남은 실제 결과를 확인했다.
+
+main의 `sites/worker.ts`도 검증된 Sites 원본과 맞췄다. 이는 native 실행 경로를 바꾸지 않으면서 명시적 build:sites를 어느 브랜치에서 실행해도 첨부7MiB 계약이 맞게 하기 위한 마지막 누락 patch다. 최종 main/sites의 runtime·test·schema·설정·문서는 모두 동일하고 package.json의 build 기본값만 다르다(나머지 package 값/lockfile 동일). main은 originalmain/3f62450 ancestry, sites는 original31ad5cf ancestry를 그대로 보존한다.
+
+Sites 기본 build exit0, Worker auth18 PASS, Sites 타입/lint 통과를 추가 확인했다. native build/CLI8과 main의 타입/lint/FSD, network12/첨부D1R228을 합쳐 두 실행 경로를 검증했다. native NFT1 경고와 기존 npm test105/108·DB 미실행 사유는 위 기준선을 유지한다. GitHub CI는 등록된 workflow/check0이므로 로컬 성공을 CI 성공이라고 표현하지 않는다. 마지막 ref SHA·tag 검증 receipt는 작업 산출물 `.test-artifacts/branch-cleanup/result.json`과 최종 인계에서 확인한다.

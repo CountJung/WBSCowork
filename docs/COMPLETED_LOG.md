@@ -503,3 +503,5 @@ PRD-045 게시 확인: 기존 public Site version12, source0d1a1a3, deployment a
 ## OPS-036 — main(NAS) / sites(ChatGPT Sites) 두 브랜치 정리 (2026-10-20)
 
 기존6개 원격 tip·main/게시용 ancestry와 patch-id를 조사했다. UI3f62450는 whole patch가 아닌 app/src/scripts/package 범위에서0a2cbb5와 동일했고, main은 고유native0891513과3f62450 ancestry를 보존했다. Sites31ad5cf의 완료 공통 변경을 main에 선택 이식하고 native 기본 build/운영 문서를 유지했다. 다른4개 임시 branch tip은 게시용 ancestry에 모두 포함돼 있다. 삭제 전 각tip과 originalmain까지6개 annotated archive tag를 원격에 push/peeled SHA 확인했다. `sites`는 기존 게시용31ad5cf history를 그대로 계승한다. 역할·반영 표·태그/복구·검증과 최종 실제 refs는 [브랜치 정책](BRANCH_POLICY_2026-10-20.md)을 따른다. NAS/사이트 재배포·권한/보호 설정 변경은 없다.
+
+OPS-036 원격 실행: 원격 archive6개를 재확인하고 Git pre-push의 exact-tip 검사 후5개 임시 branch를 atomic 삭제했다. 실제 원격 heads는 main/sites 두 개다. 기존 Sites version12의 별도 source repository/게시/공개 범위를 변경하지 않았다. 마지막 Worker7MiB 공통 patch까지 main에 반영해 두 branch의 차이는 package 기본 build만 유지한다. 최종 SHA는 작업 receipt와 인계를 따른다.
