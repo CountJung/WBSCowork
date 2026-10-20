@@ -567,6 +567,6 @@ Sites version12/source0d1a1a3/deployment appgdep_6ad701611af48191b37ff6b4a1548d2
 
 ## 2026-10-20 main/sites 브랜치 정리 (OPS-036)
 
-main을3f62450로 fast-forward하고31ad5cf의 공통 runtime/test/schema 경로를 정확히 이식했다. `app/src/db/drizzle/scripts/tests/.gitignore` 차이0, dependencies/lockfile/native config·run-next/start 유지. main 기본 native production build와 native CLI8, network12/첨부D1R228을 확인했다. main/sites 역할·archive tip·복구·정확한 gate 결과는 [브랜치 정책](BRANCH_POLICY_2026-10-20.md)에 있다. `npm test`는 기존105/108·QLT-019이며3307 DB suite는 현재 미기동으로 사유를 남겼다. 운영 DB/migration·NAS 배포·Sites source push/save/deploy는 수행하지 않는다.
+main을3f62450로 fast-forward하고31ad5cf의 공통 runtime/test/schema 경로를 정확히 이식했다. `app/src/db/drizzle/scripts/tests/sites/worker.ts/.gitignore` 차이0, dependencies/lockfile/native config·run-next/start 유지. main 기본 native production build와 native CLI8, network12/첨부D1R228을 확인했다. main/sites 역할·archive tip·복구·정확한 gate 결과는 [브랜치 정책](BRANCH_POLICY_2026-10-20.md)에 있다. `npm test`는 기존105/108·QLT-019이며3307 DB suite는 현재 미기동으로 사유를 남겼다. 운영 DB/migration·NAS 배포·Sites source push/save/deploy는 수행하지 않는다.
 
 이번 main 기본 Turbopack production build는 exit0이며 `Encountered unexpected file in NFT list` 경고1건(logging 동적 경로)을 관찰했다. 기존 OPS-021 기준선으로 유지한다. main의 next.config.ts와 scripts/run-next.ts는 original0891513과 bytes가 동일하다. native CLI8·lint/types/FSD 통과, 공통network12/첨부D1R228 통과.
