@@ -15,7 +15,7 @@
 - 제목 160자, 재현 8,000자, 예상/실제 결과 각 4,000자, 추가 설명/검토/해결 각 4,000자.
 - 내부 경로 500자. query/fragment 제거, 외부 URL·protocol-relative/backslash/공백 경로 거부. 경로는 링크로 자동 실행하지 않는다.
 - 수정 참조는 선택적 7~40자리 Git SHA 텍스트. HTML/Markdown 실행 없음; React escaped plain text만 출력.
-- bug 페이지 경로에서 Worker body cap 64KiB; 모든 bug Server Action은 파싱 후 48KiB envelope 제한 및 file input 거부를 다시 검사한다. 다른 route로 보낸 action도 검증을 거친다. 전체 Worker의 기존 hard cap은 22MiB다.
+- `/bugs` 생성 multipart는 Worker 7MiB, 다른 bug endpoint는 64KiB다. 모든 action의 텍스트 envelope는 48KiB이고 생성만 PNG/JPEG/WebP 스크린샷 2MiB × 최대3개를 받는다. 서버 signature·크기·개수·첨부 필드 검사와 부모 제보 권한을 재검사한다. 다른 action은 계속 file input을 거부하며 전체 Worker hard cap 22MiB와 동시 multipart1건 제한을 유지한다. [첨부 계약·검증](BUG_SCREENSHOTS_2026-10-20.md).
 - Form UUID + actor/kind/report로 idempotency key를 구성한다. 서버는 reporter/role/status 생성 필드를 신뢰하지 않는다.
 - 수정은 expected version과 이미 적용된 operation token 부재를 **동일 atomic UPDATE**에서 검사한다. 상태와 이력은 batch/transaction으로 함께 저장한다. 재전송은 중복 event를 만들지 않고 충돌은 최신 화면 확인을 안내한다.
 

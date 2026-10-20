@@ -1,7 +1,7 @@
 import { getHostedAttachments, isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
-import { queueObjectCleanup, deleteUnreferencedObject, retryObjectCleanup, validateObjectKey } from "@/src/shared/server/object-cleanup/index.server";
-import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { deleteUnreferencedObject, retryObjectCleanup, validateObjectKey } from "@/src/shared/server/object-cleanup/index.server";
+import { storePrivateFile, readPrivateFile } from "@/src/shared/server/private-files/index.server";
+import { readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { getDatabasePool } from "@/src/shared/server/database/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
@@ -14,28 +14,6 @@ export type StoredSubmissionAttachment = {
   filePath: string;
   fileSizeBytes: number;
 };
-
-/**
- * 파일 시스템 저장 경로용 — ASCII 안전 문자만 허용
- */
-function sanitizeFileName(fileName: string) {
-  const baseName = path.basename(fileName).trim() || "attachment";
-  const normalizedName = baseName.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^_+/, "");
-
-  return normalizedName.length > 0 ? normalizedName.slice(0, 120) : "attachment";
-}
-
-/**
- * DB 저장·화면 표시용 파일명 — 한글·유니코드 글자/숫자/일반 문장부호 보존
- * 제어 문자, 경로 구분자, OS 예약 문자만 제거한다
- */
-function sanitizeDisplayFileName(fileName: string) {
-  const baseName = path.basename(fileName).trim() || "attachment";
-  // 제어문자(\x00-\x1F, \x7F), 경로 구분자(/\\), OS 예약 문자(:*?"<>|) 제거
-  const normalizedName = baseName.replace(/[\x00-\x1F\x7F/\\:*?"<>|]+/g, "_").replace(/^_+/, "");
-
-  return normalizedName.length > 0 ? normalizedName.slice(0, 255) : "attachment";
-}
 
 function assertPathWithinRoot(rootPath: string, targetPath: string) {
   const normalizedRoot = path.resolve(rootPath);
@@ -78,45 +56,7 @@ export async function saveUploadedSubmissionAttachment(
 
   if (!Number.isSafeInteger(input.taskId) || input.taskId <= 0 || !Number.isSafeInteger(input.authorId) || input.authorId <= 0) throw new Error("Invalid attachment owner or task.");
 
-  if (isHostedRuntime()) {
-    // Read bounded chunks for a stable replay digest; no second whole-file allocation.
-    const hash=createHash("sha256"), reader=file.stream().getReader();
-    for(;;){const chunk=await reader.read();if(chunk.done)break;hash.update(chunk.value);}
-    const contentHash=hash.digest("hex");
-    const filePath = `submissions/${input.taskId}/${input.authorId}/${randomUUID()}-${sanitizeFileName(file.name)}`;
-    await queueObjectCleanup(filePath, 60 * 60 * 1000);
-    try {
-      // R2 requires a known length. File/Blob retains that length and streams
-      // without allocating a second full-file Buffer or ArrayBuffer.
-      await getHostedAttachments().put(filePath, file as unknown as import("@cloudflare/workers-types").Blob, {
-        httpMetadata: { contentType: "application/octet-stream" },
-      });
-    } catch (error) {
-      await deleteUnreferencedObject(filePath).catch(() => undefined);
-      throw error;
-    }
-    return { contentHash, absolutePath: filePath, filePath, fileMimeType: file.type || "application/octet-stream", fileName: sanitizeDisplayFileName(file.name), fileSizeBytes: file.size };
-  }
-  const uploadRoot = getAbsoluteUploadDirectory();
-  const relativeDirectory = path.join("submissions", String(input.taskId), String(input.authorId));
-  const absoluteDirectory = assertPathWithinRoot(uploadRoot, path.join(uploadRoot, relativeDirectory));
-  const safeFileName = sanitizeFileName(file.name || "attachment");
-  const storedFileName = `${Date.now()}-${randomUUID()}-${safeFileName}`;
-  const absolutePath = assertPathWithinRoot(absoluteDirectory, path.join(absoluteDirectory, storedFileName));
-  const fileBuffer = Buffer.from(await file.arrayBuffer());
-
-  await mkdir(absoluteDirectory, { recursive: true });
-  await writeFile(absolutePath, fileBuffer);
-
-  return {
-    absolutePath,
-    contentHash:createHash("sha256").update(fileBuffer).digest("hex"),
-    fileMimeType: file.type || "application/octet-stream",
-    // 화면 표시·다운로드용 파일명은 한글·유니코드를 그대로 보존한다
-    fileName: sanitizeDisplayFileName(file.name || "attachment"),
-    filePath: path.relative(uploadRoot, absolutePath).split(path.sep).join("/"),
-    fileSizeBytes: file.size,
-  };
+  return storePrivateFile(file, `submissions/${input.taskId}/${input.authorId}`);
 }
 
 export async function deleteStoredSubmissionAttachment(filePath: string | null | undefined) {
@@ -129,7 +69,7 @@ export async function deleteStoredSubmissionAttachment(filePath: string | null |
     return;
   }
 
-  const referenced=await getDatabasePool().query("SELECT EXISTS(SELECT 1 FROM submission_attachments WHERE file_path=? UNION ALL SELECT 1 FROM submissions WHERE file_path=? UNION ALL SELECT 1 FROM submission_revisions WHERE file_path=?) AS live",[filePath,filePath,filePath]) as {live:number}[];
+  const referenced=await getDatabasePool().query("SELECT EXISTS(SELECT 1 FROM submission_attachments WHERE file_path=? UNION ALL SELECT 1 FROM submissions WHERE file_path=? UNION ALL SELECT 1 FROM submission_revisions WHERE file_path=? UNION ALL SELECT 1 FROM bug_report_screenshots WHERE file_path=?) AS live",[filePath,filePath,filePath,filePath]) as {live:number}[];
   if(!referenced[0]||Number(referenced[0].live))throw new Error("Attachment reference cannot be cleared; native cleanup refused.");
   await rm(resolveStoredSubmissionAttachmentPath(filePath), { force: true });
 }
@@ -141,21 +81,7 @@ export function resolveStoredSubmissionAttachmentPath(filePath: string) {
   return assertPathWithinRoot(uploadRoot, path.join(uploadRoot, filePath));
 }
 
-export async function readStoredSubmissionAttachment(filePath: string) {
-  if (isHostedRuntime()) {
-    const object = await getHostedAttachments().get(validateObjectKey(filePath));
-    if (!object) throw new Error("Attachment object not found.");
-    return { absolutePath: filePath, buffer: object.body as unknown as ReadableStream<Uint8Array>, fileSizeBytes: object.size };
-  }
-  const absolutePath = resolveStoredSubmissionAttachmentPath(filePath);
-  const [buffer, fileStats] = await Promise.all([readFile(absolutePath), stat(absolutePath)]);
-
-  return {
-    absolutePath,
-    buffer,
-    fileSizeBytes: fileStats.size,
-  };
-}
+export const readStoredSubmissionAttachment = readPrivateFile;
 
 /**
  * 지정된 디렉터리가 비어 있으면 삭제합니다.

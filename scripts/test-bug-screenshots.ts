@@ -1,0 +1,71 @@
+/** Ephemeral D1/R2 fixtures. Never connects to the hosted Site or real accounts. */
+import "../tests/helpers/bootstrap";
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { readdir, readFile } from "node:fs/promises";
+import { Miniflare } from "miniflare";
+import type { D1Database, R2Bucket } from "@cloudflare/workers-types";
+import { runWithHostedBindings } from "../src/shared/server/hosted-runtime/index.server";
+import { retryObjectCleanup, deleteUnreferencedObject, queueObjectCleanup } from "../src/shared/server/object-cleanup/index.server";
+import { createBugReport, getBugReport, listBugScreenshots, getBugScreenshot, storeBugScreenshots, discardBugScreenshot } from "../src/entities/bug-report/index.server";
+import { validateScreenshotBytes, validateScreenshotSelection } from "../src/entities/bug-report";
+const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jf9sAAAAASUVORK5CYII=","base64");
+const file = (name="합성.png")=>new File([png],name,{type:"image/png"});
+const input={title:"Synthetic screenshot report", reproduction:"steps",expected:"expected",actual:"actual",page_path:"/bugs"};
+const own={userId:1,canReview:false}, other={userId:2,canReview:false}, admin={userId:3,canReview:true};
+const mf = new Miniflare({cf:false,modules:true,script:"export default {fetch(){return new Response('test')}}",compatibilityDate:"2026-05-15",d1Databases:{DB:"bug-screenshots-test"},r2Buckets:{ATTACHMENTS:"bug-screenshots-files"}});
+let checks=0;
+function check(ok:unknown,message:string){assert.ok(ok,message);checks++;console.log(`PASS ${message}`);}
+try {
+ const db=await mf.getD1Database("DB"),bucket=await mf.getR2Bucket("ATTACHMENTS");
+ for(const name of (await readdir("drizzle")).filter(f=>f.endsWith(".sql")).sort()) for(const sql of (await readFile(`drizzle/${name}`,"utf8")).split("--> statement-breakpoint").map(s=>s.trim()).filter(Boolean))await db.prepare(sql).run();
+ await db.prepare("INSERT INTO users(id,email,name,role) VALUES(1,'guest@example.test','guest','guest'),(2,'member@example.test','member','member'),(3,'admin@example.test','admin','admin')").run();
+ const bindings={DB:db as unknown as D1Database,ATTACHMENTS:bucket as unknown as R2Bucket};
+ await runWithHostedBindings(bindings,async()=>{
+  await validateScreenshotBytes([file()]);checks++;
+  const jpeg=new File([new Uint8Array([255,216,255,224,0,0,255,217])],"sample.jpg",{type:"image/jpeg"});
+  const webp=new File([new Uint8Array([82,73,70,70,8,0,0,0,87,69,66,80,86,80,56,32])],"sample.webp",{type:"image/webp"});
+  await validateScreenshotBytes([jpeg,webp]);checks++;
+  for(const f of [new File(["<svg/>"],"x.svg",{type:"image/svg+xml"}),new File(["fake"],"spoof.png",{type:"image/png"}),new File([png],"wrong.jpg",{type:"image/jpeg"}),new File([],"empty.png",{type:"image/png"}),new File([new Uint8Array(2097153)],"huge.png",{type:"image/png"})]) {await assert.rejects(validateScreenshotBytes([f]));checks++;}
+  assert.throws(()=>validateScreenshotSelection([file(),file(),file(),file()]));checks++;
+  const legacy=await createBugReport(own,randomUUID(),input);
+  check((await listBugScreenshots(legacy,own)).length===0,"reports without attachments remain readable");
+  const token=randomUUID(),stored=await storeBugScreenshots([file(),file("second.png"),file("third.png")],own);
+  const id=await createBugReport(own,token,input,stored);
+  const screenshots=await listBugScreenshots(id,own);
+  check(screenshots.length===3&&Boolean(await getBugReport(id,own)),"report text and three screenshots commit together");
+  check((await listBugScreenshots(id,other)).length===0&&(await getBugScreenshot(screenshots[0].id,other))===null,"other user's metadata and bytes lookup denied");
+  check((await listBugScreenshots(id,admin)).length===3&&Boolean(await getBugScreenshot(screenshots[0].id,admin)),"administrator retains authorized screenshot access");
+  check((await listBugScreenshots(id,own)).length===3&&Boolean(await bucket.head(stored[0].filePath)),"fresh database read retains screenshot metadata and R2 bytes");
+  await assert.rejects(deleteUnreferencedObject(stored[0].filePath));checks++;
+  const replay=await storeBugScreenshots([file(),file("second.png"),file("third.png")],own);
+  check(await createBugReport(own,token,input,replay)===id,"identical screenshot replay returns same report");
+  for(const f of replay)await discardBugScreenshot(f.filePath);
+  check((await listBugScreenshots(id,own)).length===3&&(await bucket.list()).objects.length===3,"replay has no duplicate screenshots or orphan files");
+  await assert.rejects(createBugReport(own,token,{...input,title:"changed"},stored));checks++;
+  check((await getBugReport(id,own))?.title===input.title,"conflicting replay preserves immutable original");
+  await db.prepare("UPDATE bug_reports SET trashed_at=CURRENT_TIMESTAMP WHERE id=?").bind(id).run();
+  check((await getBugScreenshot(screenshots[0].id,own))===null&&(await listBugScreenshots(id,own)).length===0,"trash hides attachments from reporter");
+  check(Boolean(await getBugScreenshot(screenshots[0].id,admin))&&(await listBugScreenshots(id,admin,true)).length===3,"reviewer can inspect screenshots in trash");
+  await db.prepare("UPDATE bug_reports SET trashed_at=NULL WHERE id=?").bind(id).run();
+  const rollbackToken=randomUUID(),rollbackFiles=await storeBugScreenshots([file()],own);
+  await db.prepare("CREATE TRIGGER synthetic_bug_event_failure BEFORE INSERT ON bug_report_events BEGIN SELECT RAISE(ABORT,'synthetic rollback'); END").run();
+  await assert.rejects(createBugReport(own,rollbackToken,input,rollbackFiles));checks++;
+  check(!(await db.prepare("SELECT id FROM bug_reports WHERE creation_token=?").bind(`1:create:${rollbackToken}`).first()),"metadata transaction failure leaves no partial report");
+  await db.prepare("DROP TRIGGER synthetic_bug_event_failure").run();
+  for(const f of rollbackFiles)await discardBugScreenshot(f.filePath);
+  check(!(await bucket.head(rollbackFiles[0].filePath)),"failed metadata upload removed safely");
+  const expired=await storeBugScreenshots([file()],own);
+  await db.prepare("UPDATE file_cleanup_jobs SET staging_expires_at=NULL WHERE object_key=?").bind(expired[0].filePath).run();
+  const expiredToken=randomUUID();await assert.rejects(createBugReport(own,expiredToken,input,expired));checks++;
+  check(!(await db.prepare("SELECT id FROM bug_reports WHERE creation_token=?").bind(`1:create:${expiredToken}`).first()),"expired staging lease rolls back text and metadata");
+  for(const f of expired)await discardBugScreenshot(f.filePath);
+  let writes=0;
+  await runWithHostedBindings({...bindings,ATTACHMENTS:{put:async(...args:Parameters<R2Bucket['put']>)=>{if(++writes===2)throw new Error("synthetic R2 failure");return bucket.put(...args as Parameters<typeof bucket.put>);},delete:bucket.delete.bind(bucket)} as unknown as R2Bucket},async()=>{await assert.rejects(storeBugScreenshots([file(),file()],own));checks++;});
+  check((await bucket.list()).objects.length===3,"mid-upload storage failure cleans earlier objects without report creation");
+  const cleanup=await storeBugScreenshots([file()],own);await queueObjectCleanup(cleanup[0].filePath);
+  await retryObjectCleanup();
+  check(!(await bucket.head(cleanup[0].filePath)),"durable cleanup retries abandoned uploads");
+ });
+ console.log(`Bug screenshot storage checks passed: ${checks}`);
+}finally{await mf.dispose();}

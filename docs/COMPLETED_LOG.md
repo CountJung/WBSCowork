@@ -29,6 +29,7 @@
 - [x] **[QLT-017](#qlt-017--native-esm-실행과-schema-설정-비노출-2026-10-10)** native ESM 실행과 schema 설정 비노출 · 2026-10-10
 
 - [x] **[QLT-018](#qlt-018--공통-헤더본문-너비와-메뉴-줄바꿈-2026-10-19)** 공통 헤더/본문 너비와 메뉴 줄바꿈 · 2026-10-19
+- [x] **[QLT-020](#qlt-020--운영-smoke와-테스트-네트워크-진단-2026-10-19)** 운영 smoke와 테스트 네트워크 진단 · 2026-10-19
 
 ---
 
@@ -486,3 +487,19 @@ P0/P1·품질 기능과 공통 native 호환성 checkpoint `b43704e89dd48ebe6304
 헤더 lg와 작업 xl의 불일치, 단일 flex 행의 수축, 제한 없는 사용자 이름, 반경20px×sx4=80px가 원인이었다. Container 기본 xl, 반응형 grid/기존 모바일 Drawer, 메뉴 nowrap, 이름 칩 상한과 전체 title, 한국어 keep-all/긴 문자열 anywhere, 반경4px 단위로 수정했다. 운영 설정·데이터·권한·migration은 변경하지 않았다.
 
 실제 production Worker와 합성 D1/브라우저에서 1920/1699/1440/1280/1024/390px의 작업·관리자·버그 화면/권한별 메뉴/긴 이름 48조건 PASS, console·page error0. 기준 main 6조건에서는30개 실패 재현. native/Sites build, lint/typecheck/FSD, Worker auth18 PASS. 기존 npm test105/108과 DB 미실행은 QLT-019로 분리했다. 공개 Site/NAS의 실제 반영과 수동 인수는 수행하지 않았다. [전체 검증과 적용 경로](UI_LAYOUT_2026-10-19.md).
+
+## QLT-020 — 운영 smoke와 테스트 네트워크 진단 (2026-10-19)
+
+운영 사이트의 CONNECT403을 사이트 자체 오류로 오해하지 않도록 기존 proxy/플랫폼 read-only 정책과 실제 안전한 CONNECT 응답을 진단한다. restricted 허용 목록의 정확한host 누락과 `Domain forbidden`을 확인했고 프록시 설정 충돌은 없었다. 정책/프록시/NO_PROXY를 변경하지 않았으며 필요한 단일host 추가는 OPS-034에 보류했다.
+
+합성12조건·기존 로컬UI48조건·lint/typecheck 통과. 새 운영 smoke는 GET-only/anonymous/redirect 미추적이며 거부 시 exit1과 실제phase/status, 운영 검사 미완료를 기록한다. 합성 브라우저는 loopback만 허용해 운영에 가상session을 보내지 않는다. 운영 연결 자체는 여전히 실패하며 이를 통과나skip으로 숨기지 않았다. [현재값·재현·관리자 최소 변경](SITES_TEST_NETWORK_2026-10-19.md).
+
+## PRD-045 — 버그 제보 스크린샷 (2026-10-20)
+
+원문과 최대3개의 PNG/JPEG/WebP(각2MiB)를 함께 저장한다. 미리보기/제거/실패 시 초안 유지/상세 새로고침·private bytes를 제공하며 기존 파일 IO와 D1/R2 cleanup lease를 재사용한다. Drizzle0013/native v9는 additive다. lint/types/FSD/build, bugD158/첨부D1R228/Worker bugHTTP200/fullHTTP248/Chromium19/공통layout48/auth18/network12/native99 PASS. 기존 QLT-019/016과 발견된 QLT-021, Native 첨부 purge 정리QLT-020은 열린 상태다. 운영 UI와 게시 결과는 [정확한 기록](BUG_SCREENSHOTS_2026-10-20.md)에 별도 남긴다. NAS/운영 계정·권한 변경 없음.
+
+PRD-045 게시 확인: 기존 public Site version12, source0d1a1a3, deployment appgdep_6ad701611af48191b37ff6b4a1548d2c succeeded(2026-10-20 05:51:39UTC). 기존15개 표 전체 row와 public policy 보존, 운영 UI는 OPS-035에서 별도 인수한다.
+
+## OPS-036 — main(NAS) / sites(ChatGPT Sites) 두 브랜치 정리 (2026-10-20)
+
+기존6개 원격 tip·main/게시용 ancestry와 patch-id를 조사했다. UI3f62450는 whole patch가 아닌 app/src/scripts/package 범위에서0a2cbb5와 동일했고, main은 고유native0891513과3f62450 ancestry를 보존했다. Sites31ad5cf의 완료 공통 변경을 main에 선택 이식하고 native 기본 build/운영 문서를 유지했다. 다른4개 임시 branch tip은 게시용 ancestry에 모두 포함돼 있다. 삭제 전 각tip과 originalmain까지6개 annotated archive tag를 원격에 push/peeled SHA 확인했다. `sites`는 기존 게시용31ad5cf history를 그대로 계승한다. 역할·반영 표·태그/복구·검증과 최종 실제 refs는 [브랜치 정책](BRANCH_POLICY_2026-10-20.md)을 따른다. NAS/사이트 재배포·권한/보호 설정 변경은 없다.

@@ -3,10 +3,11 @@ import json
 import os
 import sys
 from pathlib import Path
+from sites_test_network import validate_origin
 from playwright.sync_api import sync_playwright
 
 settings=json.load(sys.stdin)
-root=settings['url'].rstrip('/')
+root=validate_origin(settings['url'], local_only=True)
 errors=[]
 with sync_playwright() as p:
     Path('.test-artifacts/chrome-config').mkdir(parents=True,exist_ok=True)

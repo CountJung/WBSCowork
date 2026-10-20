@@ -16,9 +16,12 @@
 | --- | --- | --- | --- |
 | `npm run dev` | `node --import tsx scripts/run-next.ts dev` | 개발 서버 | APP_PORT 출력 후 route 응답 |
 | `npm run dev:debug` | 위 명령 + `--inspect` | 서버 디버깅 | inspector와 dev server 기동 |
-| `npm run build` | `node --import tsx scripts/run-next.ts build` | main native Next build | exit 0, .next route 생성 |
+| `npm run build` | main: `node --import tsx scripts/run-next.ts build`; sites: `vinext build` | 브랜치별 대상 유지 | main `.next/`, sites `dist/` 생성 |
 | `npm run build:sites` | `vinext build` | 명시적 Sites Worker build | exit 0, dist/server/index.js 생성 |
 | `npm run test:ui:layout` | `scripts/test-ui-layout.mjs` + `.py` | 빌드한 Worker/D1 + 실제 Chromium 공통 레이아웃 | Python Playwright와 Chromium 필요, 6개 너비 geometry/메뉴/Drawer/긴 이름 |
+| `npm run test:sites:network` | `tests/test_site_network.py` | 합성 네트워크/실행 경계 회귀 | 12조건 PASS; 운영 요청 없음 |
+| `npm run diagnose:sites:network -- --url <SITE_ORIGIN>` | `scripts/test-sites-live.py --diagnose` | 기존 proxy CONNECT·정책 읽기 전용 진단 | 거부는exit1; diagnostic 완료는live HTTP 통과 아님 |
+| `npm run test:sites:live -- --url <SITE_ORIGIN>` | 같은 CLI의 anonymous GET-only smoke | 공개 페이지/session/보호 route redirect | 6계약 모두통과; 거부는nonzero, JSON phase/status 보존 |
 | `npm run build:native` / `npm run build:next` | `node --import tsx scripts/run-next.ts build` | 기존 Node/Next 빌드 | exit 0, route 생성 |
 | `npm run test:sites:auth` | `node scripts/test-sites-auth.mjs` | 빌드한 Worker의 NextAuth 계약 | 18건 통과; 실제 Google 로그인과 구분 |
 | `npm run start` | `node --import tsx scripts/run-next.ts start` | native Node production server | 선행 build:next 후 APP_PORT listen |
@@ -533,3 +536,37 @@ npm11.9는 실행 환경의 `http-proxy` config 경고를 출력했다. 의존�
 - `npm test`:105 PASS/3 FAIL, 총108. baseline `0891513`도 동일. `download-headers`, `project-actions`, `test-preload`에서 `GoogleProvider is not a function`으로 실패하는 Node24 mock 호환은 **QLT-019**. 인증/보안 구현을 UI 변경에 섞지 않았다. MariaDB3307 ECONNREFUSED로 DB suite는 미실행.
 - 기존 native NFT 추적 경고2건은 OPS-021. Vinext proxy 감지 경고와 route 분류 안내, Node mock experimental 경고, @esbuild-kit 설치 deprecation도 관찰했다. 기존 QLT-015/016 차단·불확실 시나리오는 실행하지 않았고 이번 성공으로 대체하지 않는다.
 - Chromium sandbox를 끄지 않았다. 관리형 shell sandbox에서는 SUID 설정 오류로 실패했고 승인된 실행 경로에서는 Chromium 자체 sandbox=true로 성공했다. 원본 Library 이미지 materialize는 공식 helper가 `library file transfer failed: download failed`를 반환해 재시도도 실패했다. 메타데이터만 확인했고 전후 이미지는 합성 화면이다.
+
+### 같은 날 Sites 게시
+
+승인 SHA `0a2cbb5`가 public version11로 게시됐고 환경 revision11을 유지했다. source-only 원격 빌드의 초기 `build_output_missing_hosting_metadata` 실패는 동일 소스의 검증된 로컬 archive 제공으로 복구했다. 성공 deployment `appgdep_6ad5960689f881918f7dde37c3376428`. 운영16개 표 row 비교 동일, 최근5분 Worker error0. 실사이트 HTTP/UI는 네트워크 proxy403으로 미검증(OPS-033). [게시·artifact·실패/복구 전체 기록](SITES_LAYOUT_PUBLICATION_2026-10-19.md).
+
+### 테스트 네트워크 진단·하네스 보강 — QLT-020
+
+[전체 진단과 관리자 조치](SITES_TEST_NETWORK_2026-10-19.md). 잘못된 프록시 선택은 없고 대소문자 proxy 설정이 일치했다. read-only 플랫폼 restricted 정책의 대상host 누락과 실제 CONNECT403/본문 `Domain forbidden`을 확인했다. 정책 파일은0444/현재 사용자 쓰기 불가다. host 규칙 추가는 네트워크 범위를 바꾸므로 OPS-034에서 승인·플랫폼 담당자 적용 대기로 남겼고 우회하지 않았다.
+
+`test:sites:network`12 PASS(실제 loopback CONNECT/HTTP 포함), loopback guard 후 `test:ui:layout`48조건 PASS/console·page error0, lint0/0·typecheck exit0. 소스 앱/DB/인증·권한 경계 변경은 없어 앱 build·전체Node 단위·배포는 반복하지 않았다. 기존 QLT-019의 Node24 실패는 별도다.
+
+`diagnose:sites:network`와 `test:sites:live`의 운영 URL 실행은 모두 실제exit1, `failure_stage=proxy_connect`, CONNECT403/`Domain forbidden`, `live_http_completed=false`다. pass나skip으로 바꾸지 않았다. 보고서는 `.test-artifacts/sites-live/`에 있으며 임의 응답 본문·자격증명·redirect query를 저장하지 않는다. 플랫폼 담당자 적용 후 같은 명령으로 재검증해야 한다.
+
+부모의 별도 클라우드 Chrome에서 04:25 UTC/1188×761의 `/`와 `/tasks` 정상 UI 확인을 보고했다. 이 결과는 접속 경로 차이의 증거이며 코딩 환경 smoke나 남은6너비 전체 인수를 대체하지 않는다.
+
+단일host 추가를 사용자가 승인한 후에도 실행기에 적용 가능한 Cloud 정책 수정 API/관리 화면 접근이 없었다. read-only 정책 파일은 편집하지 않았고 승인 후 동일 live 명령도 exit1/CONNECT403/`Domain forbidden`이었다. 공식 환경 편집 UI의 Additional allowed domains와 환경Republish/새 작업 재검증 경로를 [진단 문서](SITES_TEST_NETWORK_2026-10-19.md#단일-호스트-승인-후-관리-경로-확인)에 기록했다. 실제 사용자 화면은 미확인이며 OPS-034는 플랫폼 담당자 적용 대기다.
+
+## 2026-10-20 버그 스크린샷
+
+`npm run test:sites:bug-screenshots`: ephemeral D1/R228 PASS. `npm run test:sites:bug-screenshots:browser`: build:sites 후 loopback production Worker + Python Playwright/Chromium1280/390px19 PASS. 기존 layout48/bugD158/auth18/network12/native additive99 PASS. `node scripts/test-sites-http.mjs --bugs`는 기존 버그/새 첨부 HTTP만 실행한다.
+
+`npm test`: 단위105 PASS/3 FAIL, DB 가시성 suite import FAIL. `test:sites:storage`도 같은 GoogleProvider import 오류; Node24.19.0/임시Node26.12.0 모두 재현(QLT-019). 동시 업무 workflow는503 재현(QLT-016). Native 첨부 버그의 영구 삭제는 durable 정리까지 fail-closed(QLT-020), NAS 배포 없음. live 익명 smoke는 CONNECT403/Domain forbidden으로 exit1/HTTP 미완료(OPS-034/035).
+
+설치: 기본 npm cache 쓰기 실패 후 `npm ci --cache /workspace/.cache/npm` 성공. 소스/lockfile 변경 없음. Vinext build 뒤 Next 생성 validator와 routes stub 충돌은 `node node_modules/next/dist/bin/next typegen` 후 typecheck로 복구했다. Chromium은 승인 실행 경로에서 기본 sandbox를 유지했다. 상세 evidence/한계/최종 게이트는 [첨부 기록](BUG_SCREENSHOTS_2026-10-20.md)을 따른다.
+
+최종 bug HTTP200/full HTTP248 PASS. full fixture는 새스크린샷 외 기존20MiB/submission/version CRUD도 실행했다. 완료된 합성 제출물 삭제의 실패 로그/redirect가 관찰됐으며 QLT-021에 실제 삭제 완료와 오류 표시의 차이를 남긴다. 일회성 기존404 response 소비 실패는 최종 동일 명령에서 재현되지 않았다. 오류 없는 전체 운영 인수를 주장하지 않는다.
+
+Sites version12/source0d1a1a3/deployment appgdep_6ad701611af48191b37ff6b4a1548d2c는2026-10-20 05:51:39UTC succeeded로 확인했다. public/access policy/env revision11 유지. 게시 전후15개 업무·계정·버그 표의 모든 row 동일, 새 screenshot표0건. 최근5분 Worker error0. 운영 UI 접근 차단은 별도다.
+
+## 2026-10-20 main/sites 브랜치 정리 (OPS-036)
+
+main을3f62450로 fast-forward하고31ad5cf의 공통 runtime/test/schema 경로를 정확히 이식했다. `app/src/db/drizzle/scripts/tests/.gitignore` 차이0, dependencies/lockfile/native config·run-next/start 유지. main 기본 native production build와 native CLI8, network12/첨부D1R228을 확인했다. main/sites 역할·archive tip·복구·정확한 gate 결과는 [브랜치 정책](BRANCH_POLICY_2026-10-20.md)에 있다. `npm test`는 기존105/108·QLT-019이며3307 DB suite는 현재 미기동으로 사유를 남겼다. 운영 DB/migration·NAS 배포·Sites source push/save/deploy는 수행하지 않는다.
+
+이번 main 기본 Turbopack production build는 exit0이며 `Encountered unexpected file in NFT list` 경고1건(logging 동적 경로)을 관찰했다. 기존 OPS-021 기준선으로 유지한다. main의 next.config.ts와 scripts/run-next.ts는 original0891513과 bytes가 동일하다. native CLI8·lint/types/FSD 통과, 공통network12/첨부D1R228 통과.

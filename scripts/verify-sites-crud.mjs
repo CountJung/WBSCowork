@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 /** Isolated workerd HTTP lifecycle using only synthetic D1/R2 and signed test actors. */
 export async function verifySitesCrud({ request, db, bucket, actorCookies, actionOrigin, check }) {
   const admin = actorCookies.admin, member = actorCookies.member1, other = actorCookies.member2;
@@ -13,6 +14,9 @@ export async function verifySitesCrud({ request, db, bucket, actorCookies, actio
     return id;
   };
   async function submit(route, cookie, actionId, fields, files=[]) {
+    fields={operationToken:randomUUID(),changeSummary:"Synthetic revised output",...fields};
+    if(actionId.endsWith('#updateTaskAction')) fields.version=(await db.prepare('SELECT version FROM tasks WHERE id=?').bind(Number(fields.taskId)).first()).version;
+    if(actionId.endsWith('#updateSubmissionAction')) fields.expectedRevision=(await db.prepare('SELECT current_revision FROM submissions WHERE id=?').bind(Number(fields.submissionId)).first()).current_revision;
     const boundary='wbs-crud-fixture';
     let body='';
     for(const [name,value] of [[actionId,''],...Object.entries(fields)]) body+=`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`;
@@ -58,7 +62,7 @@ export async function verifySitesCrud({ request, db, bucket, actorCookies, actio
   const submission=await db.prepare("SELECT id FROM submissions WHERE content='CRUD_PRIVATE_SUBMISSION'").first();
   check(Boolean(submission),'private submission and upload commit via Worker multipart action');
   const subScope={...scope,submissionId:submission.id};
-  let attachments=(await db.prepare('SELECT * FROM submission_attachments WHERE submission_id=?').bind(submission.id).all()).results;
+  let attachments=(await db.prepare('SELECT a.* FROM submission_attachments a JOIN submissions s ON s.id=a.submission_id WHERE a.submission_id=? AND a.revision_number=s.current_revision').bind(submission.id).all()).results;
   check(attachments.length===1&&(await bucket.get(attachments[0].file_path))!==null,'committed attachment has R2 bytes');
   check((await request(`/api/submission-attachments/${attachments[0].id}`,other)).status===404,'other member cannot download freshly uploaded private file');
   check((await(await request(`/api/submission-attachments/${attachments[0].id}`,member)).text())==='PRIVATE_ATTACHMENT_ONE','owner downloads exact fresh attachment bytes');
@@ -67,7 +71,7 @@ export async function verifySitesCrud({ request, db, bucket, actorCookies, actio
   await submit(route,other,updateSubmission,{...subScope,content:'FORBIDDEN_SUBMISSION_EDIT',visibility:'public'});
   check((await db.prepare('SELECT content,visibility FROM submissions WHERE id=?').bind(submission.id).first()).content==='CRUD_PRIVATE_SUBMISSION','cross-user private submission edit is rejected');
   await submit(route,member,updateSubmission,{...subScope,content:'CRUD_PRIVATE_EDITED',visibility:'private'},[{name:'same-name.txt',content:'PRIVATE_ATTACHMENT_TWO'}]);
-  attachments=(await db.prepare('SELECT * FROM submission_attachments WHERE submission_id=? ORDER BY id').bind(submission.id).all()).results;
+  attachments=(await db.prepare('SELECT a.* FROM submission_attachments a JOIN submissions s ON s.id=a.submission_id WHERE a.submission_id=? AND a.revision_number=s.current_revision ORDER BY id').bind(submission.id).all()).results;
   check(attachments.length===2&&attachments[0].file_path!==attachments[1].file_path,'repeated filename on edit creates independent attachment');
   check((await html(route)).includes('CRUD_PRIVATE_EDITED')&&!(await html(route,other)).includes('CRUD_PRIVATE_EDITED'),'fresh render keeps edited submission private');
   await submit(route,other,createComment,{...subScope,content:'FORBIDDEN_COMMENT'});
@@ -83,10 +87,10 @@ export async function verifySitesCrud({ request, db, bucket, actorCookies, actio
   check((await html(route)).includes('CRUD_COMMENT_EDITED'),'comment update appears in fresh render');
   await submit(route,member,deleteComment,{...subScope,commentId:comment.id});
   check(!(await db.prepare('SELECT id FROM comments WHERE id=?').bind(comment.id).first()),'owner comment deletion removes synthetic record');
-  await submit(route,member,deleteSubmission,subScope);
+  await submit(route,member,deleteSubmission,{...subScope,confirmRevisionDeletion:'yes'});
   check(!(await db.prepare('SELECT id FROM submissions WHERE id=?').bind(submission.id).first()),'owner submission deletion removes synthetic metadata');
   check((await Promise.all(attachments.map(a=>bucket.head(a.file_path)))).every(value=>value===null),'submission deletion cleans every synthetic private object');
-  await submit(route,member,deleteTask,{projectId,taskId:parent.id});
+  await submit(route,member,deleteTask,{projectId,taskId:parent.id,confirmRevisionDeletion:'yes'});
   const detached=await db.prepare('SELECT parent_id,depth FROM tasks WHERE id=?').bind(child.id).first();
   check(detached?.parent_id===null&&detached.depth===0,'deleting parent re-roots child with correct depth');
   await submit('/admin/projects',admin,deleteProject,{projectId,confirmDestruction:'yes'});

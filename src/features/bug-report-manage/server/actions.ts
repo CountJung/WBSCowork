@@ -7,6 +7,9 @@ import {
   createBugReport,
   changeBugLifecycle,
   purgeBugReport,
+  storeBugScreenshots,
+  discardBugScreenshot,
+  type StoredBugScreenshot,
 } from "@/src/entities/bug-report/index.server";
 import {
   bugText,
@@ -22,11 +25,13 @@ function positive(value: FormDataEntryValue | null) {
     throw new Error("식별자 또는 버전이 올바르지 않습니다.");
   return number;
 }
-function validateEnvelope(data: FormData) {
+function validateEnvelope(data: FormData, screenshots = false) {
   let bytes = 0;
   for (const [key, value] of data.entries()) {
-    if (typeof value !== "string")
-      throw new Error("버그 제보에는 첨부파일을 받지 않습니다.");
+    if (typeof value !== "string") {
+      if (screenshots && key === "screenshots") continue;
+      throw new Error("허용되지 않은 첨부파일입니다.");
+    }
     bytes += new TextEncoder().encode(key + value).length;
   }
   if (bytes > 48 * 1024) throw new Error("제보 요청이 너무 큽니다.");
@@ -38,21 +43,33 @@ function refresh(id: number) {
   revalidatePath("/admin/bugs/trash");
   revalidatePath(`/admin/bugs/trash/${id}`);
 }
-export async function createBugReportAction(data: FormData) {
+async function submitBugReport(data: FormData) {
   const viewer = await requireBugViewer("/bugs");
-  let result: string;
+  let stored: StoredBugScreenshot[] = [];
   try {
-    validateEnvelope(data);
-    const input = parseBugInput(data),
-      token = bugToken(data.get("requestToken"));
-    const id = await createBugReport(viewer, token, input);
+    validateEnvelope(data, true);
+    const input = parseBugInput(data), token = bugToken(data.get("requestToken"));
+    const files = data.getAll("screenshots");
+    if (files.some(f=>typeof f === "string")) throw new Error("Invalid screenshot input");
+    stored = await storeBugScreenshots((files as File[]).filter(f=>f.size || f.name),viewer);
+    const id = await createBugReport(viewer,token,input,stored);
     refresh(id);
-    result = `/bugs/${id}?saved=1`;
+    return {id};
   } catch {
-    // Never serialize SQL errors, private input or submitted tokens to logs/redirects.
-    result = "/bugs?error=invalid";
+    return {error:"제보를 저장하지 못했습니다. PNG·JPEG·WebP, 파일당 2MB 이하·최대 3개인지 확인한 뒤 다시 시도하세요. 입력 내용과 선택한 파일은 유지됩니다."};
+  } finally {
+    // Referenced winning uploads are protected; replay/failed uploads are removed or queued.
+    for (const file of stored) await discardBugScreenshot(file.filePath).catch(()=>undefined);
   }
-  redirect(result);
+}
+export async function createBugReportAction(data: FormData) {
+  const result = await submitBugReport(data);
+  redirect(result.id ? `/bugs/${result.id}?saved=1` : "/bugs?error=invalid");
+}
+export async function createBugReportFormAction(_previous: {error:string} | null, data: FormData): Promise<{error:string} | null> {
+  const result = await submitBugReport(data);
+  if (result.id) redirect(`/bugs/${result.id}?saved=1`);
+  return {error: result.error!};
 }
 export async function appendBugNoteAction(data: FormData) {
   const viewer = await requireBugViewer("/bugs");

@@ -11,6 +11,7 @@ import {
   listBugReports,
   listBugEvents,
   getBugPurgeSnapshot,
+  listBugScreenshots,
 } from "@/src/entities/bug-report/index.server";
 import {
   bugStatuses,
@@ -84,6 +85,7 @@ export async function loadBugDetail(id: number, eventPage = 1, trash = false) {
     viewer,
     report,
     purge,
+    screenshots: await listBugScreenshots(id, viewer, trash),
     events: await listBugEvents(id, viewer, eventPage, trash),
   };
 }

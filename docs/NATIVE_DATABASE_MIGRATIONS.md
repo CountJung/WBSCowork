@@ -88,3 +88,7 @@ v3 실제 검증: exact `72a9b39`에서 native48, migration unit13, lint/types/F
 최종 P0 native `d18cef8`의 additive77과 P1 `3b4af81`의 전체 harness99 + 관계 교체/rollback/복원4 PASS는 [P0 인수 기록](P0_ACCEPTANCE_2026-10-09.md)과 [P1 인수 기록](P1_ACCEPTANCE_2026-10-09.md)에 있다. P1의 초기 DELETE 권한1142 중단과 이후 새 합성 DB 한 곳/한 표에 한정한 승인 재검증도 구분해 보존한다. 승인된 loopback MariaDB11.4.13 fixture 결과이며, NAS 운영 DB나 main native CLI 수정 후의 실제 DB 실행 결과는 아니다. 남은 native purge/별도 강등 interleaving/차단된 cleanup race는 이 통과에 포함되지 않는다.
 
 기존 NAS 업데이트의 백업·쓰기 중지·명시적 적용·수동 인수·rollback 한계는 [NAS 업데이트 안내](NAS_UPDATE_GUIDE.md)를 따른다. 이번 main 통합에서는 실제 DB 명령을 실행하지 않는다.
+
+## 버그 스크린샷 v9 (2026-10-20)
+
+`native-migration-v9.ts`는 별도 screenshot metadata 표와 bug_reports.creation_fingerprint만 추가한다. 기존 v1~v8 명세/ledger checksum은 보존한다. loopback3307의 보존형 additive 하네스99 PASS. 운영/NAS migration은 미적용이다. 첨부 있는 native 제보의 최종 삭제는 durable 파일 정리 도입까지 fail-closed로 보존한다(QLT-020). Sites는 별도 Drizzle0013/R2 cleanup queue를 사용한다.

@@ -43,6 +43,10 @@
 
 `src/shared/config/theme/theme.ts`의 `MuiContainer.defaultProps.maxWidth = xl`을 AppShell·작업·관리자·버그 목록·개인 업무·검색·알림·제출 이력이 공유한다. 개인정보와 버그 상세의 긴 글은 명시적 `md` 예외다. `src/widgets/app-shell/ui/AppShell.tsx`는 xl 이상 한 행, md~xl 미만 두 행, md 미만 Drawer를 사용한다. `scripts/test-ui-layout.mjs`/`.py`는 격리 합성 D1과 production Worker/JS/CSS/font를 사용해 화면과 메뉴를 검증한다. [검증 기록](UI_LAYOUT_2026-10-19.md).
 
+### 운영 HTTP와 테스트 네트워크
+
+`scripts/test-sites-live.py` → `sites_test_network.py`는 현 프록시/정책의 안전한 진단과 anonymous GET-only HTTP smoke를 제공한다. 같은 모듈의 loopback origin 검사를 두 로컬 브라우저 하네스가 재사용해 합성 session의 운영 전송을 막는다. `tests/test_site_network.py`는 외부 요청 없이 CONNECT 거부·성공 경로·실패 분류/exit·비밀값 비노출을 검사한다. [플랫폼 제한과 최소 관리자 조치](SITES_TEST_NETWORK_2026-10-19.md).
+
 ### 인증
 
 `GoogleProvider → src/entities/user auth.server callbacks → user repository sync/role resolve → JWT token → session.user.{role,isSuperuser}`
@@ -170,3 +174,7 @@ P1 템플릿: `src/entities/task/model/task-templates.ts`의 versioned catalog�
 P1 검색: `/search` → `src/widgets/work-search` → `src/entities/task/api/work-search.server.ts`. 버전 가시성·필터·건수·snippet은 같은 SQL relation에서 계산한다.
 
 Native NAS 실행은 `scripts/run-next.ts`와 main의 기본 `build`/`start`를 사용한다. 명시적 Worker 빌드는 `build:sites`다. 환경·백업·migration·수동 인수는 [NAS 업데이트 안내](NAS_UPDATE_GUIDE.md)를 따른다.
+
+## 버그 스크린샷 (2026-10-20)
+
+`BugReportForm`은 선택/미리보기/제거/실패 보존을 담당한다. `entities/bug-report/api/screenshots.server.ts`가 검증/권한 조회/미참조 파일 정리를 제공하고 `shared/server/private-files`를 기존 submission 파일 IO와 함께 사용한다. `/api/bug-screenshots/[screenshotId]`는 비공개 bytes route다. Drizzle0013/native v9와 검증 진입점은 [첨부 기록](BUG_SCREENSHOTS_2026-10-20.md)을 따른다.

@@ -60,6 +60,7 @@ export const bugReports = sqliteTable(
       onDelete: "set null",
     }),
     creationToken: text("creation_token").notNull().unique(),
+    creationFingerprint: text("creation_fingerprint").notNull().default(""),
     lastOperationToken: text("last_operation_token").notNull(),
     title: text("title").notNull(),
     reproduction: text("reproduction").notNull(),
@@ -176,3 +177,9 @@ export const taskTemplateRuns=sqliteTable('task_template_runs',{
 export const notificationReads=sqliteTable('notification_reads',{
  id:id(),recipientId:integer('recipient_id').notNull().references(()=>users.id,{onDelete:'cascade'}),projectId:integer('project_id').notNull().references(()=>projects.id,{onDelete:'cascade'}),sourceKind:text('source_kind').notNull(),sourceId:integer('source_id').notNull(),readAt:text('read_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 },t=>[uniqueIndex('notification_read_unique').on(t.recipientId,t.sourceKind,t.sourceId),index('notification_reads_project_idx').on(t.projectId)]);
+
+export const bugReportScreenshots = sqliteTable("bug_report_screenshots", {
+  id:id(), reportId:integer("report_id").notNull().references(()=>bugReports.id,{onDelete:"cascade"}),
+  ordinal:integer("ordinal").notNull(), filePath:text("file_path").notNull().unique(), fileName:text("file_name").notNull(),
+  fileMimeType:text("file_mime_type").notNull(), fileSizeBytes:integer("file_size_bytes").notNull(), contentHash:text("content_hash").notNull(),
+}, t=>[uniqueIndex("bug_screenshot_ordinal_unique").on(t.reportId,t.ordinal), check("bug_screenshot_ordinal_check",sql`${t.ordinal} BETWEEN 0 AND 2`), check("bug_screenshot_size_check",sql`${t.fileSizeBytes} BETWEEN 1 AND 2097152`), check("bug_screenshot_type_check",sql`${t.fileMimeType} IN ('image/png','image/jpeg','image/webp')`)]);

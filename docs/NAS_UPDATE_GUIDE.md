@@ -15,7 +15,7 @@
 | migration 상태 | `npm run db:migrate -- --status` | 읽기 전용; 기본 무인자도 상태 조회 |
 | migration 적용 | `npm run db:migrate -- --apply` | 아래 백업·점검 창·대상 확인 후 운영자가 명시 실행 |
 
-feature 브랜치의 기본 build는 기존 Sites/Vinext를 유지한다. 양쪽에서 `build:native`와 `build:sites`로 대상을 명시할 수 있다. main을 추후 Sites에 반영하려면 검증된 Worker 빌드와 공식 Site 절차를 별도로 수행해야 하며 이번 통합이 공개 Site v10을 재게시하지 않는다.
+sites 브랜치의 기본 build는 기존 Sites/Vinext를 유지한다. 양쪽에서 `build:native`와 `build:sites`로 대상을 명시할 수 있다. main을 추후 Sites에 반영하려면 검증된 Worker 빌드와 공식 Site 절차를 별도로 수행해야 하며 이번 통합이 공개 Site v10을 재게시하지 않는다.
 
 ## 업데이트 전 확인
 
@@ -46,14 +46,14 @@ npm run build:native
 - `next/font/google`는 빌드 시 Roboto CSS/폰트 다운로드가 필요하다. 네트워크 제한으로 실패하면 성공으로 간주하지 않는다. 이번 dot 빌드는 캐시된 실제 Roboto 파일을 쓴 환경 전용 오프라인 fixture + Webpack 결과이며, 그 fixture 설정을 NAS에 복사하지 않는다. 같은 fixture의 Turbopack 빌드는 font import-map 오류로 실패했고 동적 로그 경로 NFT 추적 경고도 관찰했다. 실제 NAS 기본 빌드 결과와 구분하며 [하네스 기록](HARNESS_MAP.md#2026-10-10-native-통합-준비)에 남겼다.
 - 기존 `.env`, `.env.local`, production 환경 파일과 서비스에서 주입한 값의 우선순위를 유지한다. 예제 값으로 덮어쓰거나 새 NextAuth secret을 만들지 않는다. 인증 URL은 기존 NAS HTTPS origin이며 Sites 주소로 바꾸지 않는다.
 
-## MariaDB v1–v8 적용
+## MariaDB v1–v9 적용
 
 실제 운영 DB에 쓰기 전에 [native migration 계약](NATIVE_DATABASE_MIGRATIONS.md)을 읽는다. D1용 `drizzle/*.sql`이나 `db:generate`를 MariaDB에 적용하지 않는다.
 
 1. 아직 서비스를 시작하지 않은 점검 창에서 기존 runtime 설정으로 `npm run db:migrate -- --status`를 실행한다. DB 이름과 존재 여부, 적용/대기 버전, 오류를 확인한다. exit0만으로 준비 완료라고 판단하지 않는다. 이 명령은 ledger/필수 표·컬럼 존재를 읽으며 전체 drift 검증을 수행하지 않는다.
 2. DB 대상이 예상과 다르거나 schema/checksum 오류가 있으면 중단한다. `DB_SCHEMA_USER/DB_SCHEMA_PASSWORD`는 같은 DB 서버/이름에 대한 별도 schema identity다. 미설정 시 runtime 계정으로 자동 대체하지 않는다. 기존의 승인된 보안 설정 경로로 운영자가 구성하며 웹 설정 폼에는 노출·편집하지 않는다.
-3. 쓰기 중지와 백업을 확인한 운영자만 `npm run db:migrate -- --apply`를 실행한다. v1–v8은 새 구조/ledger와 필요한 baseline 기록을 추가한다. 기존 사용자 role·private 원문·ID·파일 bytes를 다른 환경에서 덮어쓰지 않는다. 데이터량에 따라 시간·공간·잠금 비용이 있으므로 NAS에서 따로 확인한다.
-4. `npm run db:migrate -- --status`를 다시 실행해 적용 버전 1–8, pendingVersions 빈 배열, 오류 없음과 15개 관리 표 준비를 확인한다. 관리 표 15개 외에 `schema_migrations` ledger가 별도로 있다. `--apply`는 schema postcondition도 검사한다.
+3. 쓰기 중지와 백업을 확인한 운영자만 `npm run db:migrate -- --apply`를 실행한다. v1–v9는 새 구조/ledger와 필요한 baseline 기록을 추가한다. 기존 사용자 role·private 원문·ID·파일 bytes를 다른 환경에서 덮어쓰지 않는다. 데이터량에 따라 시간·공간·잠금 비용이 있으므로 NAS에서 따로 확인한다.
+4. `npm run db:migrate -- --status`를 다시 실행해 적용 버전 1–9, pendingVersions 빈 배열, 오류 없음과 16개 관리 표 준비를 확인한다. 관리 표 16개 외에 `schema_migrations` ledger가 별도로 있다. `--apply`는 schema postcondition도 검사한다.
 5. 기존 프로젝트/업무/제출/댓글/첨부·사용자 수와 대표 ID/role/private 내용을 백업 전 기준과 대조한다. v3의 task baseline, v4의 submission revision/event baseline은 새 기록이므로 총 이력 수가 증가할 수 있다. 옛 편집 시각이나 담당 변경을 추측해 생성한 기록은 아니다.
 6. 기존 NAS 서비스 명령으로 `npm run start`를 실행하고 아래 수동 인수를 수행한다. `APP_PORT`를 기존 reverse proxy upstream과 맞추며 인증/네트워크 설정을 자동 변경하지 않는다.
 
@@ -100,3 +100,5 @@ npm run build:native
 ## 소스 확인 범위
 
 공통 checkpoint `b43704e89dd48ebe6304510fe420ccda3d218c5b`에서 합성 CLI/설정 파일 보존 8조건, lint/typecheck/FSD와 위 Webpack fixture 빌드를 확인했다. main 후속 변경은 native 기본 build와 이 문서 인계이며 앱/SQL 로직은 동일하다. 기존 P0/P1의 D1 및 MariaDB 검증 기록은 [P0](P0_ACCEPTANCE_2026-10-09.md), [P1](P1_ACCEPTANCE_2026-10-09.md)에 있고 이번 NAS 실행 결과를 의미하지 않는다.
+
+2026-10-20: 공통 레이아웃·버그 스크린샷·합성 네트워크 보호 소스를 main에 통합했다. native v9 screenshot metadata/fingerprint 추가가 있으므로 기존 백업/점검 창/명시 migration 절차 후 NAS에서 별도 인수한다. 이번 Git 브랜치 정리는 NAS 배포나 운영 schema 적용이 아니다. [반영 매핑·복구](BRANCH_POLICY_2026-10-20.md).

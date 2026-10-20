@@ -1,7 +1,7 @@
 # WBS 태스크 — 진행 목록
 
 > **살아있는 문서** — 단계 범위, 검증 절차, 블로커가 바뀔 때마다 업데이트하십시오.
-> 최종 검토: 2026-10-19 · 다음 번호: **QLT-020 / RPT-021 / OPS-033 / PRD-045**
+> 최종 검토: 2026-10-20 · 다음 번호: **QLT-022 / RPT-021 / OPS-037 / PRD-046**
 
 완료된 항목은 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮긴다. 이 문서에는 열린 항목만 남긴다.
 
@@ -37,6 +37,10 @@
 ---
 
 ## 열린 항목
+
+- [ ] **QLT-020** Native 첨부 버그 제보의 durable 파일 정리 — v9 schema/업로드/조회는 제공하되 첨부 있는 제보의 native 영구 삭제는 파일 정리 ledger가 구현되기 전 fail-closed로 보존한다. Sites는 기존 R2 cleanup queue를 사용한다. NAS 적용 없음. [구현 기록](BUG_SCREENSHOTS_2026-10-20.md).
+- [!] **OPS-035** 버그 스크린샷 운영 UI 인수 — version12/source0d1a1a3 게시 succeeded와 기존 데이터·public policy 보존은 확인했다. 로컬 Chromium 1280/390px 합성 회귀와 운영 화면을 구분한다. 운영 익명 smoke는 기존 CONNECT403으로 실패했다. 부모의 접속 가능한 브라우저에서 `/bugs` 첨부 폼을 읽기 전용으로 확인한다. 실제 제보 생성·삭제나 계정 권한 변경은 이번 QA에서 하지 않는다.
+
 
 - [ ] **QLT-019** Node24 단위 하네스 mock 호환 기준선 복구 — `npm test`는 수정 전 `0891513`과 UI 수정본 모두 108건 중 105 PASS/3 FAIL. `download-headers`, `project-actions`, `test-preload`의 auth import에서 `GoogleProvider is not a function`; `mockModuleExports`의 Node26 `exports` 계약과 Node24 실행 경로를 별도 수정·검증한다. UI 변경에서 인증 구현/테스트 우회를 섞지 않는다. DB suite는 127.0.0.1:3307 ECONNREFUSED로 미실행. [하네스 기록](HARNESS_MAP.md#2026-10-19-공통-ui-레이아웃).
 
@@ -84,6 +88,9 @@ D0가 나머지 전부의 선행이다. 순서를 건너뛰면 snapshot 계약�
 - [!] **[RPT-020](#rpt-020--d5-delivery-검토)** D5 consent·threat model 승인 후 delivery 검토 — 선행 RPT-019
 
 ### 10단계 — 배포
+
+- [!] **OPS-033** Sites version11 실사이트 HTTP/UI 인수 — 부모의 별도 클라우드 Chrome에서 04:25 UTC에1188×761의 `/`·로그인된 `/tasks` 레이아웃 정상 확인을 보고했다. 전체6개 너비·관리자/버그 UI 인수는 남아 있다. 코딩 실행 환경의 운영 HTTP smoke는 OPS-034 때문에 실패한다. 합성48 PASS와 구분하고 접속 가능한 브라우저에서 읽기 전용으로 확인한다. [게시 기록](SITES_LAYOUT_PUBLICATION_2026-10-19.md), [네트워크 진단](SITES_TEST_NETWORK_2026-10-19.md).
+- [!] **OPS-034** 코딩 실행 환경의 운영 사이트 outbound 허용 — 정확한host 하나 추가에 대한 사용자 승인 완료. 실행기에는 Cloud 환경 정책 수정 API/화면 권한이 없어 플랫폼 관리 경로 접근 대기이며 아직 미적용이다. restricted 정책의 대상host 누락과 CONNECT403/`Domain forbidden`은 계속 재현된다. 환경 소유자가 Settings → Codex Cloud → Environments → Edit → Internet access → Additional allowed domains에서 해당host만 추가하고 환경Republish 후 새 작업으로 진단/live smoke를 재검증한다. 기존proxy/NO_PROXY/나머지host를 보존한다. [지원 경로·계정 화면 미확인 한계](SITES_TEST_NETWORK_2026-10-19.md#단일-호스트-승인-후-관리-경로-확인).
 
 - [!] **OPS-031** native 버그 수명주기 전체·영구 삭제 검증 — 기능 게시와 승인된 실환경 합성 제보 #1의 검증/휴지통/복원·영구 삭제는 [완료분 기록](COMPLETED_LOG.md#ops-031--버그-수명주기-게시와-승인된-실환경-정리-완료분)으로 분리했다. 남은 것은 별도 승인 대기 중인 격리 MariaDB의 파기 포함 전체 수명주기·경합 검증이다. 비파괴 native 16조건, D1/Worker 결과나 P1 관계 교체 권한 승인을 native 파기 검증 완료/승인으로 간주하지 않는다. QLT-015의 차단된 저장소 경합 및 QLT-016의 미해결 fixture503은 별도 항목이다.
 - [ ] **OPS-032** 남은 의존성 보안 유지보수 — OPS-030은 실제 Worker RSC decoder의 특정 advisory만 해결했다. NextAuth4.24.15, native MariaDB3.5.3, Next/이미지·build-only tooling 등은 실제 실행 경로와 호환성을 구분해 검토한다. 전체 npm audit 해소를 주장하거나 일괄 major override를 하지 않는다.
@@ -280,3 +287,9 @@ membership/recipient consent와 threat model 승인 이후에만 delivery를 검
 - [HARNESS_MAP.md](HARNESS_MAP.md) — 실행·검증 하네스
 - [PROJECT_DIGEST_REPORT_PLAN.md](PROJECT_DIGEST_REPORT_PLAN.md) — 9단계 digest/report 계약
 - [../AGENTS.md](../AGENTS.md) — AI 에이전트 가이드
+
+2026-10-20 QLT-019 재현: 단위105/108,3307 DB 가시성 suite 및 test:sites:storage가 같은 GoogleProvider import로 실패했다. Node26.12.0에서도 재현됐으며 Node24만의 문제라고 단정하지 않는다. Native additive99/버그D158/첨부D1R228/로컬Chromium19와 별도다. QLT-016의 동시 form503도 유지한다.
+
+- [ ] **QLT-021** D1 제출물 최종 삭제 후 실패 표시 — 보완한 로컬 full HTTP248 PASS에서 `submission.delete failed` 로그가 발생했지만 대상 DB/모든 파일 제거 assertion은 통과했다. repository가 D1 cascade 포함 `meta.changes !== 1`을 실패로 판정하는 경로를 별도 확인한다(현재 원인 가설). 오류 redirect/감사 표시와 실제 완료를 일치시키고 관련 변경은 별도 범위에서 검증한다. 이번 운영 삭제 없음.
+
+OPS-036 브랜치 정리의 완료 매핑·archive tag·복구는 [브랜치 정책](BRANCH_POLICY_2026-10-20.md)과 COMPLETED_LOG를 따른다. 기존 QLT-019/016/020/021 및 OPS-021/034/035는 이번 ref 정리의 완료로 해소되지 않는다.
