@@ -10,7 +10,7 @@ type ColumnDefinition = {
   definition: string;
 };
 
-const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments", "bug_reports", "bug_report_events", "bug_report_purge_receipts", "task_events", "submission_revisions", "submission_events", "task_dependencies", "task_template_runs", "notification_reads"] as const;
+const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments", "bug_reports", "bug_report_screenshots", "bug_report_events", "bug_report_purge_receipts", "task_events", "submission_revisions", "submission_events", "task_dependencies", "task_template_runs", "notification_reads"] as const;
 
 export type ManagedTableName = (typeof managedTableNames)[number];
 
@@ -49,7 +49,8 @@ const requiredSubmissionColumns: ColumnDefinition[] = [
 
 const requiredColumnsByTable: Partial<Record<ManagedTableName, string[]>> = {
   bug_report_purge_receipts: ["actor_id","operation_token","fingerprint","report_version","event_count","last_event_id","purged_at"],
-  bug_reports: [...bugLifecycleColumns.map(c=>c.name),"reporter_id","creation_token","last_operation_token","title","reproduction","expected","actual","page_path","status","priority","resolution","fix_commit","version","created_at","updated_at"],
+  bug_report_screenshots: ["report_id","ordinal","file_path","file_name","file_mime_type","file_size_bytes","content_hash"],
+  bug_reports: ["creation_fingerprint",...bugLifecycleColumns.map(c=>c.name),"reporter_id","creation_token","last_operation_token","title","reproduction","expected","actual","page_path","status","priority","resolution","fix_commit","version","created_at","updated_at"],
   bug_report_events: ["lifecycle_action","report_id","actor_id","operation_token","kind","body","status","priority","resolution","fix_commit","report_version","created_at"],
   notification_reads:["recipient_id","project_id","source_kind","source_id","read_at"],
   task_template_runs:["project_id","actor_id","template_key","template_version","operation_token","request_fingerprint","task_count","completed_at"],

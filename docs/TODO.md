@@ -38,6 +38,10 @@
 
 ## 열린 항목
 
+- [ ] **QLT-020** Native 첨부 버그 제보의 durable 파일 정리 — v9 schema/업로드/조회는 제공하되 첨부 있는 제보의 native 영구 삭제는 파일 정리 ledger가 구현되기 전 fail-closed로 보존한다. Sites는 기존 R2 cleanup queue를 사용한다. NAS 적용 없음. [구현 기록](BUG_SCREENSHOTS_2026-10-20.md).
+- [!] **OPS-035** 버그 스크린샷 운영 UI 인수 — 로컬 Chromium 1280/390px 합성 회귀와 운영 화면을 구분한다. 운영 익명 smoke는 기존 CONNECT403으로 실패했다. 부모의 접속 가능한 브라우저에서 `/bugs` 첨부 폼을 읽기 전용으로 확인한다. 실제 제보 생성·삭제나 계정 권한 변경은 이번 QA에서 하지 않는다.
+
+
 - [ ] **QLT-019** Node24 단위 하네스 mock 호환 기준선 복구 — `npm test`는 수정 전 `0891513`과 UI 수정본 모두 108건 중 105 PASS/3 FAIL. `download-headers`, `project-actions`, `test-preload`의 auth import에서 `GoogleProvider is not a function`; `mockModuleExports`의 Node26 `exports` 계약과 Node24 실행 경로를 별도 수정·검증한다. UI 변경에서 인증 구현/테스트 우회를 섞지 않는다. DB suite는 127.0.0.1:3307 ECONNREFUSED로 미실행. [하네스 기록](HARNESS_MAP.md#2026-10-19-공통-ui-레이아웃).
 
 ### 제품 목표 — 주제에서 팀 산출물 완료까지
@@ -282,3 +286,7 @@ membership/recipient consent와 threat model 승인 이후에만 delivery를 검
 - [HARNESS_MAP.md](HARNESS_MAP.md) — 실행·검증 하네스
 - [PROJECT_DIGEST_REPORT_PLAN.md](PROJECT_DIGEST_REPORT_PLAN.md) — 9단계 digest/report 계약
 - [../AGENTS.md](../AGENTS.md) — AI 에이전트 가이드
+
+2026-10-20 QLT-019 재현: 단위105/108,3307 DB 가시성 suite 및 test:sites:storage가 같은 GoogleProvider import로 실패했다. Node26.12.0에서도 재현됐으며 Node24만의 문제라고 단정하지 않는다. Native additive99/버그D158/첨부D1R228/로컬Chromium19와 별도다. QLT-016의 동시 form503도 유지한다.
+
+- [ ] **QLT-021** D1 제출물 최종 삭제 후 실패 표시 — 보완한 로컬 full HTTP248 PASS에서 `submission.delete failed` 로그가 발생했지만 대상 DB/모든 파일 제거 assertion은 통과했다. repository가 D1 cascade 포함 `meta.changes !== 1`을 실패로 판정하는 경로를 별도 확인한다(현재 원인 가설). 오류 redirect/감사 표시와 실제 완료를 일치시키고 관련 변경은 별도 범위에서 검증한다. 이번 운영 삭제 없음.

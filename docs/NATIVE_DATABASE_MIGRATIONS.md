@@ -66,3 +66,7 @@ v2 실제 검증: exact38602c8에서 migration35, 추가 보존9, migration unit
 ## 업무 실행 v3 (PRD-035/036)
 
 `native-migration-v3.ts` checksum `c175311bceb4f66d8f0808e7eff68e85f15344acd27c250197af01a6ad81c080`. tasks에 요청·상태·버전·검토자 metadata를 추가하고 task_events에 생성/재배정/상태 이력을 남긴다. 기존 작업은 현재 상태를 `baseline`으로 기록하며 이전 시각을 추측하지 않는다. 기존 행·role·private scope를 수정하지 않는다. v1/v2 불변, 중단 후 누락 구조만 재개한다. 실제 v3 검증은 pending이며 하네스는 새 합성 DB에 concurrent creation/status·same-token replay·former-owner 거부·no-review 완료를 추가했다. 모든 합성 DB/행은 보존한다.
+
+## 버그 스크린샷 v9 (2026-10-20)
+
+`native-migration-v9.ts`는 별도 screenshot metadata 표와 bug_reports.creation_fingerprint만 추가한다. 기존 v1~v8 명세/ledger checksum은 보존한다. loopback3307의 보존형 additive 하네스99 PASS. 운영/NAS migration은 미적용이다. 첨부 있는 native 제보의 최종 삭제는 durable 파일 정리 도입까지 fail-closed로 보존한다(QLT-020). Sites는 별도 Drizzle0013/R2 cleanup queue를 사용한다.

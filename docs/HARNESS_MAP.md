@@ -547,3 +547,13 @@ npm11.9는 실행 환경의 `http-proxy` config 경고를 출력했다. 의존�
 부모의 별도 클라우드 Chrome에서 04:25 UTC/1188×761의 `/`와 `/tasks` 정상 UI 확인을 보고했다. 이 결과는 접속 경로 차이의 증거이며 코딩 환경 smoke나 남은6너비 전체 인수를 대체하지 않는다.
 
 단일host 추가를 사용자가 승인한 후에도 실행기에 적용 가능한 Cloud 정책 수정 API/관리 화면 접근이 없었다. read-only 정책 파일은 편집하지 않았고 승인 후 동일 live 명령도 exit1/CONNECT403/`Domain forbidden`이었다. 공식 환경 편집 UI의 Additional allowed domains와 환경Republish/새 작업 재검증 경로를 [진단 문서](SITES_TEST_NETWORK_2026-10-19.md#단일-호스트-승인-후-관리-경로-확인)에 기록했다. 실제 사용자 화면은 미확인이며 OPS-034는 플랫폼 담당자 적용 대기다.
+
+## 2026-10-20 버그 스크린샷
+
+`npm run test:sites:bug-screenshots`: ephemeral D1/R228 PASS. `npm run test:sites:bug-screenshots:browser`: build:sites 후 loopback production Worker + Python Playwright/Chromium1280/390px19 PASS. 기존 layout48/bugD158/auth18/network12/native additive99 PASS. `node scripts/test-sites-http.mjs --bugs`는 기존 버그/새 첨부 HTTP만 실행한다.
+
+`npm test`: 단위105 PASS/3 FAIL, DB 가시성 suite import FAIL. `test:sites:storage`도 같은 GoogleProvider import 오류; Node24.19.0/임시Node26.12.0 모두 재현(QLT-019). 동시 업무 workflow는503 재현(QLT-016). Native 첨부 버그의 영구 삭제는 durable 정리까지 fail-closed(QLT-020), NAS 배포 없음. live 익명 smoke는 CONNECT403/Domain forbidden으로 exit1/HTTP 미완료(OPS-034/035).
+
+설치: 기본 npm cache 쓰기 실패 후 `npm ci --cache /workspace/.cache/npm` 성공. 소스/lockfile 변경 없음. Vinext build 뒤 Next 생성 validator와 routes stub 충돌은 `node node_modules/next/dist/bin/next typegen` 후 typecheck로 복구했다. Chromium은 승인 실행 경로에서 기본 sandbox를 유지했다. 상세 evidence/한계/최종 게이트는 [첨부 기록](BUG_SCREENSHOTS_2026-10-20.md)을 따른다.
+
+최종 bug HTTP200/full HTTP248 PASS. full fixture는 새스크린샷 외 기존20MiB/submission/version CRUD도 실행했다. 완료된 합성 제출물 삭제의 실패 로그/redirect가 관찰됐으며 QLT-021에 실제 삭제 완료와 오류 표시의 차이를 남긴다. 일회성 기존404 response 소비 실패는 최종 동일 명령에서 재현되지 않았다. 오류 없는 전체 운영 인수를 주장하지 않는다.

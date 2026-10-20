@@ -250,9 +250,9 @@ export async function verifyBugHttp({
   const excessive = await submit("/bugs", guest, create, {
     ...fields,
     requestToken: randomUUID(),
-    actual: "x".repeat(70000),
+    actual: "x".repeat(7 * 1024 * 1024 + 1),
   });
-  check(excessive.status === 413, "bug request body has 64KiB Worker cap");
+  check(excessive.status === 413, "bug multipart request body has 7MiB Worker cap");
   const alternateBefore = (await db.prepare("SELECT COUNT(*) AS n FROM bug_reports").first()).n;
   await submit("/tasks",guest,create,{...fields,requestToken:randomUUID(),actual:"x".repeat(50000)});
   check((await db.prepare("SELECT COUNT(*) AS n FROM bug_reports").first()).n===alternateBefore,"alternate-route bug action still enforces envelope/input limits");

@@ -152,3 +152,5 @@ Native MariaDB schema 변경은 DB_SCHEMA_USER/DB_SCHEMA_PASSWORD 전용 연결�
 산출물 버전: 쓰기는 canonical submission revision batch만 사용한다. 현재 projection·불변 snapshot·버전 첨부·event를 같은 transaction에 저장하고 expected revision/stable token/bytes fingerprint를 검사한다. 이전 파일 제외는 새 버전일 뿐 물리 삭제가 아니다. current/historical visibility를 함께 검사하며 담당자/검토자 지정으로 private 접근이 늘지 않는다. `/submissions/[id]`의 이력 보존 정책은 TEAM_WORKFLOW_PLAN.md와 privacy 화면을 따른다.
 
 팀 업무: `/my-work`는 count/list/link에 동일 viewer/current-role SQL 조건을 사용한다. `/submissions/[id]`의 검토 action은 현재 담당자의 특정 현재 버전만 선택하고 reviewer 권한·visibility·self-approval 배제·token/version을 transaction 안에서 재검사한다. 상세 검토 사유를 공개 task event에 복사하지 않는다. form pending UI는 shared SubmitButton을 사용하며 서버의 중복 방지·권한 검사를 대신하지 않는다. [사용 안내](docs/TEAM_WORKFLOW_GUIDE.md), [P0 인수 범위](docs/P0_ACCEPTANCE_2026-10-09.md).
+
+버그 스크린샷 생성은 PNG/JPEG/WebP, 각2MiB·최대3개다. `shared/server/private-files`와 기존 R2/UPLOAD_DIR를 재사용하고 모든 직접 조회에 부모 제보 권한을 적용한다. `test:sites:bug-screenshots`와 `test:sites:bug-screenshots:browser`는 격리 합성 회귀이며 운영으로 session을 보내지 않는다. Native 첨부 제보의 최종 파기는 QLT-020에서 fail-closed로 보존한다. [구현·검증](docs/BUG_SCREENSHOTS_2026-10-20.md).

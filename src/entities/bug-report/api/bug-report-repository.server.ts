@@ -1,3 +1,4 @@
+import type { StoredBugScreenshot } from "./screenshots.server";
 import { createHash } from "node:crypto";
 import {
   databaseBatch,
@@ -97,11 +98,13 @@ export async function createBugReport(
   viewer: BugViewer,
   token: string,
   input: NewBugInput,
+  screenshots: StoredBugScreenshot[] = [],
 ) {
   const key = operationKey(viewer, token, "create");
+  const fingerprint = createHash("sha256").update(JSON.stringify({input,screenshots:screenshots.map(f=>[f.fileName,f.fileMimeType,f.fileSizeBytes,f.contentHash])})).digest("hex");
   await databaseBatch([
     {
-      sql: `INSERT INTO bug_reports(reporter_id,creation_token,last_operation_token,title,reproduction,expected,actual,page_path) VALUES(?,?,?,?,?,?,?,?)${ignoreDuplicate("bug_reports")}`,
+      sql: `INSERT INTO bug_reports(reporter_id,creation_token,last_operation_token,title,reproduction,expected,actual,page_path,creation_fingerprint) VALUES(?,?,?,?,?,?,?,?,?)${ignoreDuplicate("bug_reports")}`,
       params: [
         viewer.userId,
         key,
@@ -111,18 +114,23 @@ export async function createBugReport(
         input.expected,
         input.actual,
         input.page_path,
+        fingerprint,
       ],
     },
     {
       sql: `INSERT INTO bug_report_events(report_id,actor_id,operation_token,kind,body,status,priority,resolution,fix_commit,report_version) SELECT id,?,?, 'created','',status,priority,resolution,fix_commit,version FROM bug_reports WHERE creation_token=? AND reporter_id=?${ignoreDuplicate("bug_report_events")}`,
       params: [viewer.userId, key, key, viewer.userId],
     },
+    ...screenshots.map((f,ordinal) => ({
+      sql: `INSERT INTO bug_report_screenshots(report_id,ordinal,file_path,file_name,file_mime_type,file_size_bytes,content_hash) SELECT id,?,?,?,?,?,? FROM bug_reports WHERE creation_token=? AND reporter_id=? AND creation_fingerprint=?${isHostedRuntime()?" ON CONFLICT DO NOTHING":" ON DUPLICATE KEY UPDATE id=bug_report_screenshots.id"}`,
+      params:[ordinal,f.filePath,f.fileName,f.fileMimeType,f.fileSizeBytes,f.contentHash,key,viewer.userId,fingerprint],
+    })),
   ]);
   const rows = (await getDatabasePool().query(
-    "SELECT id FROM bug_reports WHERE creation_token=? AND reporter_id=?",
+    "SELECT id,creation_fingerprint FROM bug_reports WHERE creation_token=? AND reporter_id=?",
     [key, viewer.userId],
-  )) as Array<{ id: number }>;
-  if (!rows[0])
+  )) as Array<{ id: number; creation_fingerprint: string }>;
+  if (!rows[0] || ((rows[0].creation_fingerprint || screenshots.length) && rows[0].creation_fingerprint !== fingerprint))
     throw new Error(
       "제보 저장 상태를 확인하지 못했습니다. 같은 요청으로 다시 시도하세요.",
     );
@@ -282,6 +290,8 @@ export async function getBugPurgeSnapshot(
       trashed_at: canonicalDate(report.trashed_at),
     }),
   );
+  const screenshots = await getDatabasePool().query("SELECT ordinal,file_name,file_mime_type,file_size_bytes,content_hash FROM bug_report_screenshots WHERE report_id=? ORDER BY ordinal",[id]);
+  hash.update(JSON.stringify(screenshots));
   let cursor = 0,
     total = 0;
   // Hash complete history in bounded chunks, not the UI's 30-event page.
@@ -324,6 +334,10 @@ export async function purgeBugReport(
 ) {
   if (!viewer.canReview || !viewer.canPurge)
     throw new Error("제보를 찾을 수 없습니다.");
+  if (!isHostedRuntime()) {
+    const files = await getDatabasePool().query("SELECT id FROM bug_report_screenshots WHERE report_id=? LIMIT 1",[id]) as {id:number}[];
+    if (files.length) throw new Error("첨부가 있는 제보의 native 영구 삭제는 저장 파일 정리 절차가 필요합니다. 원문과 파일을 보존합니다.");
+  }
   const key = operationKey(viewer, token, `purge:${id}`);
   const wasPurged = async () =>
     (

@@ -3,13 +3,14 @@ import { seedSubmissionRevisionFixtures } from "./seed-submission-revision-fixtu
 /** Exercises the production bundle in workerd with synthetic signed JWTs and local D1/R2. */
 import { spawn } from "node:child_process";
 import assert from "node:assert/strict";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Miniflare, Log, LogLevel } from "miniflare";
 import { encode } from "next-auth/jwt";
 import { verifyTeamWorkflow } from "./verify-team-workflow.mjs";
 import { verifySitesQuality } from "./verify-sites-quality.mjs";
+import { verifyBugScreenshotsHttp } from "./verify-bug-screenshots-http.mjs";
 import { verifyBugHttp } from "./verify-bug-http.mjs";
 import { verifySitesCrud } from "./verify-sites-crud.mjs";
 
@@ -106,10 +107,14 @@ try {
   } else if (process.argv.includes("--quality")) {
     await verifySitesQuality({request,db,bucket,actorCookies,actionOrigin,check});
     console.log(`Actual Worker quality checks passed: ${checks}. Ephemeral synthetic fixtures; no delete/purge scenarios or real Google login.`);
+  } else if (process.argv.includes("--bugs")) {
+    await verifyBugHttp({request,db,actorCookies,actionOrigin,secret,check});
+    await verifyBugScreenshotsHttp({request,db,bucket,actorCookies,actionOrigin,check});
+    console.log(`Actual Worker bug HTTP checks passed: ${checks}. Synthetic local fixtures only.`);
   } else {
   const createAction=memberHtml.match(/name="(\$ACTION_ID_[^"]*#createSubmissionAction)"/)?.[1];
   check(Boolean(createAction),"real rendered form exposes existing create-submission action");
-  function smallForm(content){const boundary="wbs-small-boundary";let body="";for(const [name,value]of[[createAction,""],["projectId","1"],["taskId","1"],["content",content],["visibility","private"]])body+=`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`;return body+`--${boundary}--\r\n`;}
+  function smallForm(content){const boundary="wbs-small-boundary";let body="";for(const [name,value]of[[createAction,""],["operationToken",randomUUID()],["projectId","1"],["taskId","1"],["content",content],["visibility","private"]])body+=`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`;return body+`--${boundary}--\r\n`;}
   const beforeDenied=await db.prepare("SELECT COUNT(*) AS n FROM submissions").first();
   const denied=await request("/tasks?projectId=1",actorCookies.guest,{method:"POST",headers:{Origin:actionOrigin,"Content-Type":"multipart/form-data; boundary=wbs-small-boundary"},body:smallForm("FORBIDDEN_WRITE")});
   await denied.text();
@@ -117,7 +122,7 @@ try {
   function largeMultipart(content, delay=0){
     const boundary="wbs-synthetic-upload-boundary";const encoder=new TextEncoder();
     let prefix="";
-    for(const [name,value]of[[createAction,""],["projectId","1"],["taskId","1"],["content",content],["visibility","private"]])prefix+=`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`;
+    for(const [name,value]of[[createAction,""],["operationToken",randomUUID()],["projectId","1"],["taskId","1"],["content",content],["visibility","private"]])prefix+=`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`;
     prefix+=`--${boundary}\r\nContent-Disposition: form-data; name="attachments"; filename="limit.bin"\r\nContent-Type: application/octet-stream\r\n\r\n`;
     const head=encoder.encode(prefix),tail=encoder.encode(`\r\n--${boundary}--\r\n`);let part=-1;
     const body=new ReadableStream({async pull(controller){if(part===-1){controller.enqueue(head);part=0;return;}if(part<20){if(delay)await new Promise(resolve=>setTimeout(resolve,delay));controller.enqueue(new Uint8Array(1024*1024));part++;return;}controller.enqueue(tail);controller.close();}});
@@ -134,6 +139,7 @@ try {
   check((await bucket.head(uploaded.results[0].file_path))?.size===20*1024*1024,"large-upload R2 bytes match declared size");
   check((await request("/api/auth/session",memberCookie)).status===200,"Worker remains responsive after maximum upload");
   await verifyBugHttp({request,db,actorCookies,actionOrigin,secret,check});
+  await verifyBugScreenshotsHttp({request,db,bucket,actorCookies,actionOrigin,check});
   await verifySitesCrud({request,db,bucket,actorCookies,actionOrigin,check});
   await db.prepare("UPDATE users SET role='guest' WHERE id=2").run();
   const refreshed=await(await request("/api/auth/session",memberCookie)).json();

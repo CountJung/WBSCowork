@@ -1,3 +1,4 @@
+import { nativeMigrationV9 } from "./native-migration-v9";
 import { createHash } from "node:crypto";
 import { nativeMigrationV1 } from "./native-migration-v1";
 import { nativeMigrationV8 } from "./native-migration-v8";
@@ -12,7 +13,7 @@ export class NativeMigrationError extends Error {}
 
 export type MigrationConnection = { query(sql: string, values?: unknown[]): Promise<unknown> };
 export type MigrationLedgerRow = { version: number; name: string; checksum: string; appliedAt?: string };
-export const nativeMigrationManifest = [nativeMigrationV1, nativeMigrationV2, nativeMigrationV3, nativeMigrationV4, nativeMigrationV5, nativeMigrationV6, nativeMigrationV7, nativeMigrationV8] as const;
+export const nativeMigrationManifest = [nativeMigrationV1, nativeMigrationV2, nativeMigrationV3, nativeMigrationV4, nativeMigrationV5, nativeMigrationV6, nativeMigrationV7, nativeMigrationV8, nativeMigrationV9] as const;
 export const migrationChecksum = (specification: unknown) => createHash("sha256").update(JSON.stringify(specification)).digest("hex");
 export function quoteSchemaIdentifier(identifier: string) {
   if (!/^[A-Za-z0-9_]{1,64}$/.test(identifier)) throw new NativeMigrationError("Schema identifier must contain 1–64 letters, numbers or underscores.");
@@ -194,6 +195,11 @@ export async function runNativeMigrations(connection: MigrationConnection, datab
       else if (migration.version === 6) await applyNativeV6(connection, database);
       else if (migration.version === 7) { for(const statement of nativeMigrationV7.newTables)await connection.query(statement); await verifyNativeSchema(connection,database,nativeMigrationManifest.filter(m=>m.version<=7).flatMap(m=>[...m.statements])); }
       else if (migration.version === 8) { for(const statement of nativeMigrationV8.newTables)await connection.query(statement); await verifyNativeSchema(connection,database,nativeMigrationManifest.filter(m=>m.version<=8).flatMap(m=>[...m.statements])); }
+      else if (migration.version === 9) {
+        for (const addition of nativeMigrationV9.additions) if (!(await columns(connection,database,addition.table)).some(c=>c.name===addition.name)) await connection.query(`ALTER TABLE ${quoteSchemaIdentifier(addition.table)} ADD COLUMN ${addition.definition}`);
+        for (const statement of nativeMigrationV9.newTables) await connection.query(statement);
+        await verifyNativeSchema(connection,database);
+      }
       else throw new NativeMigrationError("This migration version has no implementation.");
       await connection.query("INSERT INTO schema_migrations(version,name,checksum) VALUES(?,?,?)", [migration.version, migration.name, migrationChecksum(migration)]);
       // Explicit durability even if this dedicated connection inherits autocommit=0.

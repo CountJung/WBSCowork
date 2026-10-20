@@ -1,3 +1,4 @@
+import BugReportForm from "./BugReportForm";
 import { randomUUID } from "node:crypto";
 import {
   Alert,
@@ -20,6 +21,7 @@ import {
   loadBugList,
   loadBugDetail,
   createBugReportAction,
+  createBugReportFormAction,
   appendBugNoteAction,
   reviewBugReportAction,
   changeBugLifecycleAction,
@@ -61,7 +63,7 @@ function Feedback({ params }: { params: Params }) {
     <Alert severity="warning">
       입력 제한과 최신 버전을 확인해 주세요. 다른 변경이 먼저 저장됐거나 접근
       권한이 바뀐 경우 새로고침 후 다시 시도하세요. 새 제보의 재현 방법·예상
-      결과·실제 결과는 필수이며 첨부파일은 지원하지 않습니다.
+      결과·실제 결과는 필수입니다. 스크린샷은 PNG·JPEG·WebP, 파일당 2MB 이하·최대 3개입니다.
     </Alert>
   ) : params.saved ? (
     <Alert severity="success">저장했습니다.</Alert>
@@ -181,51 +183,7 @@ export async function BugListPage({
         </Stack>
         {!admin ? (
           <Paper sx={paper}>
-            <Stack component="form" action={createBugReportAction} spacing={2}>
-              <Typography variant="h5">새 버그 제보</Typography>
-              <Token />
-              <TextField
-                name="title"
-                label="제목"
-                required
-                slotProps={{ htmlInput: { maxLength: 160 } }}
-              />
-              <TextField
-                name="pagePath"
-                label="문제가 발생한 페이지 경로 (선택)"
-                helperText="/tasks 같은 내부 경로만. URL 쿼리와 fragment는 저장하지 않습니다."
-                slotProps={{ htmlInput: { maxLength: 500 } }}
-              />
-              <TextField
-                name="reproduction"
-                label="재현 방법"
-                required
-                multiline
-                minRows={3}
-                slotProps={{ htmlInput: { maxLength: 8000 } }}
-              />
-              <TextField
-                name="expected"
-                label="예상 결과"
-                required
-                multiline
-                minRows={2}
-                slotProps={{ htmlInput: { maxLength: 4000 } }}
-              />
-              <TextField
-                name="actual"
-                label="실제 결과"
-                required
-                multiline
-                minRows={2}
-                slotProps={{ htmlInput: { maxLength: 4000 } }}
-              />
-              <Typography variant="body2">
-                원문은 저장 후 보존됩니다. 정정할 내용은 상세 화면에서 추가
-                설명으로 남길 수 있습니다.
-              </Typography>
-              <SubmitButton>버그 제보 저장</SubmitButton>
-            </Stack>
+            <BugReportForm token={randomUUID()} createAction={createBugReportAction} submitAction={createBugReportFormAction} />
           </Paper>
         ) : null}
       </Stack>
@@ -246,7 +204,7 @@ export async function BugDetailPage({
   const eventPage = Number.isSafeInteger(raw)
     ? Math.min(1000, Math.max(1, raw))
     : 1;
-  const { viewer, report, events, purge } = await loadBugDetail(
+  const { viewer, report, events, purge, screenshots } = await loadBugDetail(
     id,
     eventPage,
     trash,
@@ -281,6 +239,17 @@ export async function BugDetailPage({
             <TextBlock label="재현 방법" value={report.reproduction} />
             <TextBlock label="예상 결과" value={report.expected} />
             <TextBlock label="실제 결과" value={report.actual} />
+            {screenshots.length ? <Stack spacing={2}>
+              <Typography variant="subtitle1" sx={{fontWeight:700}}>스크린샷 {screenshots.length}개</Typography>
+              {screenshots.map(file=><Stack key={file.id} spacing={1} sx={{minWidth:0}}>
+                <Typography variant="body2" sx={{overflowWrap:"anywhere"}}>{file.file_name}</Typography>
+                <a href={`/api/bug-screenshots/${file.id}`} target="_blank" rel="noopener noreferrer" aria-label={`${file.file_name} 원본 보기`}>
+                  {/* Authorized image bytes must use the session cookie, without a public image optimizer. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`/api/bug-screenshots/${file.id}`} alt={file.file_name} loading="lazy" style={{display:"block",maxWidth:"100%",maxHeight:480,objectFit:"contain"}}/>
+                </a>
+              </Stack>)}
+            </Stack> : null}
           </Stack>
         </Paper>
         <Paper sx={paper}>

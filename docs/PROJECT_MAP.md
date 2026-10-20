@@ -172,3 +172,7 @@ P1 의존성: `src/entities/task/api/task-dependencies.server.ts`의 graph CAS�
 P1 템플릿: `src/entities/task/model/task-templates.ts`의 versioned catalog와 `api/task-template.server.ts`의 원자적 application, `src/features/task-templates`, `src/widgets/task-templates`의 편집 미리보기를 사용한다.
 
 P1 검색: `/search` → `src/widgets/work-search` → `src/entities/task/api/work-search.server.ts`. 버전 가시성·필터·건수·snippet은 같은 SQL relation에서 계산한다.
+
+## 버그 스크린샷 (2026-10-20)
+
+`BugReportForm`은 선택/미리보기/제거/실패 보존을 담당한다. `entities/bug-report/api/screenshots.server.ts`가 검증/권한 조회/미참조 파일 정리를 제공하고 `shared/server/private-files`를 기존 submission 파일 IO와 함께 사용한다. `/api/bug-screenshots/[screenshotId]`는 비공개 bytes route다. Drizzle0013/native v9와 검증 진입점은 [첨부 기록](BUG_SCREENSHOTS_2026-10-20.md)을 따른다.

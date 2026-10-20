@@ -488,3 +488,7 @@ native 설정 화면의 추가 키 처리에서 `DB_SCHEMA_USER/PASSWORD`가 노
 운영 사이트의 CONNECT403을 사이트 자체 오류로 오해하지 않도록 기존 proxy/플랫폼 read-only 정책과 실제 안전한 CONNECT 응답을 진단한다. restricted 허용 목록의 정확한host 누락과 `Domain forbidden`을 확인했고 프록시 설정 충돌은 없었다. 정책/프록시/NO_PROXY를 변경하지 않았으며 필요한 단일host 추가는 OPS-034에 보류했다.
 
 합성12조건·기존 로컬UI48조건·lint/typecheck 통과. 새 운영 smoke는 GET-only/anonymous/redirect 미추적이며 거부 시 exit1과 실제phase/status, 운영 검사 미완료를 기록한다. 합성 브라우저는 loopback만 허용해 운영에 가상session을 보내지 않는다. 운영 연결 자체는 여전히 실패하며 이를 통과나skip으로 숨기지 않았다. [현재값·재현·관리자 최소 변경](SITES_TEST_NETWORK_2026-10-19.md).
+
+## PRD-045 — 버그 제보 스크린샷 (2026-10-20)
+
+원문과 최대3개의 PNG/JPEG/WebP(각2MiB)를 함께 저장한다. 미리보기/제거/실패 시 초안 유지/상세 새로고침·private bytes를 제공하며 기존 파일 IO와 D1/R2 cleanup lease를 재사용한다. Drizzle0013/native v9는 additive다. lint/types/FSD/build, bugD158/첨부D1R228/Worker bugHTTP200/fullHTTP248/Chromium19/공통layout48/auth18/network12/native99 PASS. 기존 QLT-019/016과 발견된 QLT-021, Native 첨부 purge 정리QLT-020은 열린 상태다. 운영 UI와 게시 결과는 [정확한 기록](BUG_SCREENSHOTS_2026-10-20.md)에 별도 남긴다. NAS/운영 계정·권한 변경 없음.

@@ -10,8 +10,8 @@ const worker = {
     return runWithHostedBindings(env, async () => {
       const pathname = new URL(request.url).pathname;
       const bugRequest = pathname === "/bugs" || pathname.startsWith("/bugs/") || pathname === "/admin/bugs" || pathname.startsWith("/admin/bugs/");
-      const requestLimit = bugRequest ? 64 * 1024 : MAX_REQUEST_BYTES;
-      const limitMessage = bugRequest ? "버그 제보 요청은 64KB 이하로 제한됩니다." : "요청 크기는 22MB 이하로 제한됩니다.";
+      const requestLimit = pathname === "/bugs" && request.headers.get("Content-Type")?.startsWith("multipart/form-data") ? 7 * 1024 * 1024 : bugRequest ? 64 * 1024 : MAX_REQUEST_BYTES;
+      const limitMessage = `요청 크기는 ${requestLimit}바이트 이하로 제한됩니다.`;
       const multipart = request.headers.get("Content-Type")?.startsWith("multipart/form-data") ?? false;
       if (Number(request.headers.get("Content-Length")) > requestLimit) return new Response(limitMessage, { status: 413 });
       if (multipart && activeMultipartRequests >= 1) return new Response("업로드가 처리 중입니다. 잠시 후 다시 시도해 주세요.", { status: 503, headers: { "Retry-After": "2" } });
