@@ -1,7 +1,7 @@
 # WBS 태스크 — 진행 목록
 
 > **살아있는 문서** — 단계 범위, 검증 절차, 블로커가 바뀔 때마다 업데이트하십시오.
-> 최종 검토: 2026-10-20 · 다음 번호: **QLT-022 / RPT-021 / OPS-037 / PRD-046**
+> 최종 검토: 2026-10-21 · 다음 번호: **QLT-022 / RPT-021 / OPS-037 / PRD-046**
 
 완료된 항목은 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮긴다. 이 문서에는 열린 항목만 남긴다.
 
@@ -290,6 +290,7 @@ membership/recipient consent와 threat model 승인 이후에만 delivery를 검
 
 2026-10-20 QLT-019 재현: 단위105/108,3307 DB 가시성 suite 및 test:sites:storage가 같은 GoogleProvider import로 실패했다. Node26.12.0에서도 재현됐으며 Node24만의 문제라고 단정하지 않는다. Native additive99/버그D158/첨부D1R228/로컬Chromium19와 별도다. QLT-016의 동시 form503도 유지한다.
 
-- [ ] **QLT-021** D1 제출물 최종 삭제 후 실패 표시 — 보완한 로컬 full HTTP248 PASS에서 `submission.delete failed` 로그가 발생했지만 대상 DB/모든 파일 제거 assertion은 통과했다. repository가 D1 cascade 포함 `meta.changes !== 1`을 실패로 판정하는 경로를 별도 확인한다(현재 원인 가설). 오류 redirect/감사 표시와 실제 완료를 일치시키고 관련 변경은 별도 범위에서 검증한다. 이번 운영 삭제 없음.
 
 OPS-036 브랜치 정리의 완료 매핑·archive tag·복구는 [브랜치 정책](BRANCH_POLICY_2026-10-20.md)과 COMPLETED_LOG를 따른다. 기존 QLT-019/016/020/021 및 OPS-021/034/035는 이번 ref 정리의 완료로 해소되지 않는다.
+
+QLT-021은 격리 D1/MariaDB 실측과 최소 수정·회귀 검증 후 [완료 기록](COMPLETED_LOG.md#qlt-021--제출물-삭제-완료-후-실패-표시-2026-10-21)으로 이동했다. [원인·검증](QLT_021_SUBMISSION_DELETE_2026-10-21.md). GitHub 소스 반영이며 운영 배포/삭제는 포함하지 않는다.

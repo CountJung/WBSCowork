@@ -200,10 +200,14 @@ export async function deleteSubmission(submissionId: number, actor?: SubmissionA
       taskId: existingSubmission.taskId, submissionId, actorId: actor?.userId ?? null,
       sourceOperationKey: key, requestFingerprint,
     }),
-    { sql: 'DELETE FROM submissions WHERE id=? AND task_id=? AND last_operation_token=?', params: [submissionId, existingSubmission.taskId, key] },
+    { sql: 'DELETE FROM submissions WHERE id=? AND task_id=? AND last_operation_token=? RETURNING id', params: [submissionId, existingSubmission.taskId, key] },
   ]);
-  const result = results[results.length - 1] as { affectedRows?: number; meta?: { changes?: number } };
-  if (Number(result.affectedRows ?? result.meta?.changes ?? 0) !== 1) {
+  // D1 meta.changes also counts FK cascades and cleanup triggers. RETURNING
+  // identifies only this guarded parent DELETE, in the same committed batch.
+  // MariaDB returns the rowset directly; D1 wraps it in results.
+  const result = results[results.length - 1] as { id: number }[] | { results: { id: number }[] };
+  const deletedRows = Array.isArray(result) ? result : result.results;
+  if (deletedRows.length !== 1 || Number(deletedRows[0].id) !== submissionId) {
     throw new Error("삭제할 제출물이 없거나 권한이 변경되었습니다.");
   }
 

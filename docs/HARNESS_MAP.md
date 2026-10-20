@@ -570,3 +570,17 @@ Sites version12/source0d1a1a3/deployment appgdep_6ad701611af48191b37ff6b4a1548d2
 main을3f62450로 fast-forward하고31ad5cf의 공통 runtime/test/schema 경로를 정확히 이식했다. `app/src/db/drizzle/scripts/tests/sites/worker.ts/.gitignore` 차이0, dependencies/lockfile/native config·run-next/start 유지. main 기본 native production build와 native CLI8, network12/첨부D1R228을 확인했다. main/sites 역할·archive tip·복구·정확한 gate 결과는 [브랜치 정책](BRANCH_POLICY_2026-10-20.md)에 있다. `npm test`는 기존105/108·QLT-019이며3307 DB suite는 현재 미기동으로 사유를 남겼다. 운영 DB/migration·NAS 배포·Sites source push/save/deploy는 수행하지 않는다.
 
 이번 main 기본 Turbopack production build는 exit0이며 `Encountered unexpected file in NFT list` 경고1건(logging 동적 경로)을 관찰했다. 기존 OPS-021 기준선으로 유지한다. main의 next.config.ts와 scripts/run-next.ts는 original0891513과 bytes가 동일하다. native CLI8·lint/types/FSD 통과, 공통network12/첨부D1R228 통과.
+
+
+## 2026-10-21 제출물 최종 삭제 판정 (QLT-021)
+
+[실측 원인·SQL 비교·실행/보존 경계](QLT_021_SUBMISSION_DELETE_2026-10-21.md). `npm run test:submission:delete`는 실제 ephemeral D1과 새 loopback3307 `wbs_delete_*_test` MariaDB를 모두 요구하며 DB 미기동을 skip/pass로 처리하지 않는다. `--d1`/`--maria`로 한쪽만 실행할 수 있다. operating DB/파일·.env는 사용하지 않는다.
+
+- 삭제 DB109 PASS(D1 57/MariaDB52). 직접 부모1행과 cascade/trigger 수를 분리 관측하고, 소유자/admin/SU/신뢰된 내부 호출·현재 역할/소유권 거부·read 이후 강등/소멸·최종 FK 오류·DELETE 뒤 후속 SQL 오류의 실제 rollback을 검사했다. 수정 전 D1 repository의 삭제 후 예외/잔여0행은 RED로 보존한다.
+- `npm test -- --require-db`: 독립 action fault injection8, 기존 unit119, 실제 MariaDB 가시성33. action mocks는 공통 preload와 중복 등록하지 않도록 별도 process/tsx로 실행한다. 가시성의 기존 수정 성공2건은 시작 SHA에서도 필수 token/version/summary 입력 누락으로 실패했고 fixture 폼만 보완했다.
+- `npm run test:sites:http`: 실제 production Worker + 로컬 D1/R2 + 합성 JWT257 PASS. 실패/거부의 오류 로그는 예상 결과이며 성공 cascade의303/정확한 success message/성공 감사 기록/메타데이터·모든 파일 제거를 같이 검사한다.
+- Sites/native Turbopack build exit0, auth18/storage57 PASS. 최종 typecheck/lint exit0, FSD self-test5/위반0. Native의 기존 `Encountered unexpected file in NFT list`2건(logging 동적 경로/계측 asset)은 OPS-021로 유지한다.
+- Node24.19.0/npm11.9.0, MariaDB10.11.14, connector3.5.2, Miniflare4.20260515.0/workerd1.20260515.1. 과거 GoogleProvider import 실패가 이 환경에서 재현되지 않았다는 결과이며 QLT-019의 다른 환경 기준선을 삭제하지 않는다. QLT-015/016/020과 OPS 실제 인수는 별도다.
+- npm proxy 설정/Worker build proxy 감지/experimental module mocks/@esbuild-kit deprecation은 기존 도구 경고다. 격리 MariaDB의 초기 socket/AIO/MAC 제한과 복구 방법은 위 분석 문서에 기록했다. 네트워크 정책·프록시·권한 확대 없음.
+
+운영 DB/자료 삭제·migration·NAS 재기동·사이트 재게시·실 Google 로그인은 수행하지 않는다. GitHub main/sites 공통 patch만 반영하며 각 build 기본값을 유지한다.
