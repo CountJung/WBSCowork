@@ -1,7 +1,7 @@
 /**
  * FSD import boundary checker.
  *
- * docs/FSD_MIGRATION_PLAN.md 4절의 최소 사양을 실행 가능한 게이트로 구현한다.
+ * docs/ARCHITECTURE.md의 FSD 검사 사양의 최소 사양을 실행 가능한 게이트로 구현한다.
  *
  *   npm run check:fsd              저장소 전체 검사
  *   npm run check:fsd -- --self-test   fixture 로 검사기 자체를 검증

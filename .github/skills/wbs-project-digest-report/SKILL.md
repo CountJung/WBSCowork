@@ -20,7 +20,7 @@ Do not trigger it for unrelated task/project CRUD, generic FSD moves, or one-off
 
 1. `AGENTS.md`
 2. `docs/PROJECT_DIGEST_REPORT_PLAN.md`
-3. `docs/FSD_MIGRATION_PLAN.md`
+3. `docs/ARCHITECTURE.md#fsd-의존-경계`
 4. `.github/instructions/quality-gates.instructions.md`
 5. Format references: `.github/skills/document-skills/docx/SKILL.md` and `.github/skills/document-skills/pptx/SKILL.md`
 6. Actual schema/auth/visibility sources: `src/shared/server/database-admin`, `src/entities/user`, `src/entities/submission`, and attachment repository APIs

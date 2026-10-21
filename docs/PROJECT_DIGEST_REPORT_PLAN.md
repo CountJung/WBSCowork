@@ -1,5 +1,7 @@
 # Scheduled Project Digest & Report Export 실행 계획
 
+이 문서는 **아직 구현하지 않은 D0–D5의 설계·선행 조건·인수 계약**을 소유한다. 현재 진행 상태/열린 ID는 [TODO](TODO.md), 현재 코드 구조는 [ARCHITECTURE](ARCHITECTURE.md)를 본다.
+
 > 상태: architecture contract/backlog · **런타임 route, schema, snapshot, renderer, scheduler, delivery는 모두 미구현**
 
 > 목표: 외부 Python agent 없이 Next.js Route Handler + MariaDB + 배포 환경 scheduler로 digest를 재실행 가능하게 생성하고, 같은 snapshot에서 DOCX/PPTX를 내보낸다.
@@ -49,7 +51,7 @@ admin/superuser UI
 | `src/features/project-digest-deliver/server/` | D5 승인 후 adapter; D0~D4에는 만들 필요 없음 |
 | `src/widgets/project-report-admin/` | preview/history/download UI |
 
-FSD 구현은 `docs/FSD_MIGRATION_PLAN.md`의 `shared → entities → features → widgets → app page` 순서와 boundary gate를 따른다. 기능 구현과 기존 코드 구조 이동을 한 변경에 섞지 않는다. `scripts/run-project-digest.ts` CLI는 HTTP trigger의 필수 대안이 아니며 실제 NAS 운영 방식이 CLI로 결정될 때만 추가한다.
+FSD 구현은 `docs/ARCHITECTURE.md#fsd-의존-경계`의 `shared → entities → features → widgets → app page` 순서와 boundary gate를 따른다. 기능 구현과 기존 코드 구조 이동을 한 변경에 섞지 않는다. `scripts/run-project-digest.ts` CLI는 HTTP trigger의 필수 대안이 아니며 실제 NAS 운영 방식이 CLI로 결정될 때만 추가한다.
 
 ## 3. MariaDB schema·권한 계약
 

@@ -1,251 +1,35 @@
-# 제품 정의서 (Product Spec)
-## WBS 기반 협업 & 산출물 공유 시스템 (Next.js + TypeScript)
+# 제품 범위
 
-> 제품 범위·도메인·DB 설계의 기준 문서. 단계별 실행 우선순위와 로드맵은 [MASTER_PLAN.html](MASTER_PLAN.html), 진행 상태는 [TODO.md](TODO.md)를 본다.
+이 문서는 **무엇을 만들고 무엇을 제외하는가**를 소유한다. 단계/완료 기준은 [MASTER_PLAN](MASTER_PLAN.html), 현재 상태는 [TODO](TODO.md), 보안·DB·동작 계약은 [ARCHITECTURE](ARCHITECTURE.md), 실제 파일은 [PROJECT_MAP](PROJECT_MAP.md)을 본다.
 
----
+## 목표와 용어
 
-# 1. 프로젝트 정의
+WBSCowork는 프로젝트 안의 계층형 WBS 태스크와 간트를 중심으로 결과물을 공유·검토하는 협업 시스템이다. 범용 게시판/포럼이나 AI 자동 배정 서비스로 확장하지 않는다.
 
-## 목표
-- WBS/간트 기반으로 주간 업무를 관리
-- 태스크 단위로 산출물 제출 및 공유
-- 팀원 간 피드백 및 협업 지원
+- 프로젝트: 기간·목표·성공 기준을 갖는 업무 범위. 관리자/SU가 생성·수정·파기한다.
+- 업무 카드: 기대 산출물·완료 기준·담당자·선택 검토자·실제 상태·기한. 부모/자식은 업무 분해이고 선후행은 별도 관계다.
+- 산출물: 본문·HTTP(S) 자료 링크·파일과 공개 범위를 갖는 제출물. 변경은 요약을 포함한 새 버전이며 이전 파일과 피드백을 보존한다.
+- 검토: 특정 현재 버전의 승인/보완. 배정만으로 private 열람권을 부여하지 않는다.
+- 버그 제보: 업무와 독립된 비공개 원문/추가 설명/검토 기록. 스크린샷 선택/미리보기/제거/저장/상세 조회를 지원한다.
 
-## 핵심 개념
-> 게시판이 아닙니다  
-> 일반 협업툴이 아닙니다  
-→ **태스크 기반 산출물 관리 시스템**
+## 제공하는 사용자 흐름
 
----
+| 영역 | 범위 |
+| --- | --- |
+| 인증·역할 | NextAuth Google 로그인; 신규 guest, member/admin, env 기반 SU. 메뉴가 아닌 서버 권한 강제 |
+| 프로젝트·WBS·간트 | 프로젝트 선택, 계층 카드·담당/기한, leaf 완료 집계, 카드 집중 라우팅, 미배정·지연·차단·검토 대기 요약 |
+| 산출물·댓글 | Markdown/링크/첨부, public 또는 작성자/admin/SU private, 불변 버전과 버전별 피드백 |
+| 실행·검토 | 실제 상태/근거/재오픈, 검토 요청·승인·보완, 자체 승인 배제, 내 업무/내 검토 대기 |
+| 선후행·템플릿 | 같은 프로젝트의 순환 없는 선행 업무; 편집 미리보기와 원자적 한 번 생성의 수동 예시 템플릿 |
+| 검색·인앱 알림 | 업무·제출 텍스트/파일명/작성자 검색, 권한 적용 건수/페이지; 수신자 event 기반 알림과 읽음 receipt |
+| 버그·운영 | 본인 제보, 관리자 검토/검증/휴지통/복원, 명시 확인된 SU 파기, 비공개 스크린샷 |
 
-# 2. 기술 스택
+## 제외 및 후속 범위
 
-## 프론트엔드 + 백엔드 (통합)
-- Next.js 16 App Router
-- TypeScript
-- React
-- MUI (Material UI)
+실제 다중 Google 계정 협업/실환경 인수는 구현·로컬 합성 검증과 구분한다. 완료·미해결의 단일 출처는 TODO다. OCR/벡터 검색/외부 수집, 프로젝트 참여자 공유권 모델, AI 자동 분해/배정, 외부 issue 연동·자동 코드 실행은 범위에 없다.
 
-## 인증
-- NextAuth v4 (Google OAuth)
+예약 digest 및 DOCX/PPTX export는 아직 [D0–D5 계획](PROJECT_DIGEST_REPORT_PLAN.md)이며 구현된 검색·인앱 알림과 다르다. 외부 발송·새 OAuth·운영 계정/권한 변경은 별도 승인이다.
 
-## 데이터베이스
-- Node 실행: MariaDB
-- Sites 실행: D1/SQLite (Drizzle migration), 첨부 bytes는 비공개 R2
+## 구현 기준
 
-## 기타 라이브러리
-- TanStack Query
-- frappe-gantt (간트 차트)
-
----
-
-# 3. 실제 프로젝트 구조
-
-```
-app/           Next.js App Router 라우트
-  api/         Route Handlers
-  admin/       관리자 페이지
-  tasks/       메인 WBS 태스크 워크스페이스
-src/
-  shared/      공통 UI/config/server utility
-  entities/    도메인 타입·정책·repository
-  features/    Server Action use-case
-  widgets/     전역 앱바, 간트, 태스크 workspace, 관리자 panel
-docs/          모든 프로젝트 문서
-```
-
----
-
-# 4. DB 설계 (MariaDB)
-
-## 프로젝트(projects)
-```sql
-projects (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(255),
-  start_date DATE,
-  end_date DATE,
-  created_at DATETIME
-)
-```
-
-## 사용자(users)
-```sql
-users (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  email VARCHAR(255),
-  name VARCHAR(255),
-  role ENUM('admin','member','guest'),
-  created_at DATETIME
-)
-```
-
-### 역할 체계
-- **슈퍼관리자**: `SUPERUSER_EMAIL` env와 일치하는 계정, 모든 권한
-- **관리자(admin)**: `/admin`, `/admin/users` 접근, 모든 제출물 조회·관리
-- **일반사용자(member)**: 태스크·제출물·댓글 CRUD, 본인 비공개 제출물 조회
-- **게스트(guest)**: 공개 제출물 읽기 전용
-
-## 태스크(tasks)
-```sql
-tasks (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  project_id BIGINT,
-  parent_id BIGINT NULL,
-  title VARCHAR(255),
-  description TEXT,
-  start_date DATE,
-  end_date DATE,
-  depth INT,
-  order_index INT,
-  assignee_id BIGINT,
-  created_at DATETIME
-)
-```
-
-## 제출물(submissions)
-```sql
-submissions (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  task_id BIGINT,
-  author_id BIGINT,
-  content TEXT,
-  file_path VARCHAR(500),
-  visibility ENUM('public','private') NOT NULL DEFAULT 'public',
-  created_at DATETIME
-)
-```
-
-## 댓글(comments)
-```sql
-comments (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  submission_id BIGINT,
-  author_id BIGINT,
-  content TEXT,
-  created_at DATETIME
-)
-```
-
----
-
-# 5. 환경변수
-
-## 필수 정책
-- Node 실행의 설정값은 `.env` 사용; Sites 운영 설정은 호스팅 환경 변수/secret에 저장하고 소스 및 클라이언트에 노출하지 않음
-- 코드 내 하드코딩 금지
-- `.env*` 파일은 AI 작업 컨텍스트에서 제외
-
-## env.example 구성
-```env
-# 앱
-NEXT_PUBLIC_APP_NAME=WBS Task
-APP_PORT=3000
-
-# 데이터베이스
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=password
-DB_NAME=wbs_app
-DB_CONNECTION_LIMIT=5
-DB_CONNECT_TIMEOUT_MS=10000
-
-# 인증 (Google)
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-NEXTAUTH_SECRET=
-NEXTAUTH_URL=http://localhost:3000
-SUPERUSER_EMAIL=admin@example.com
-
-# 파일 업로드
-UPLOAD_DIR=./uploads
-UPLOAD_MAX_FILE_SIZE_MB=200
-
-# 로그
-LOG_DIR=./logs
-LOG_RETENTION_DAYS=5
-LOG_MAX_FILE_SIZE_MB=100
-```
-
----
-
-# 6. 핵심 기능 설계
-
-## 인증
-- Google OAuth 로그인
-- 최초 로그인 시 사용자 생성 (기본 `guest` 권한)
-- `SUPERUSER_EMAIL`과 일치하는 계정은 슈퍼관리자로 처리
-
-## 프로젝트 관리
-- 프로젝트 생성·삭제 (쓰기 권한 사용자)
-
-## WBS (태스크)
-- 트리 구조 (parent_id 기반)
-- 담당자 지정
-- 간트 차트 연동
-
-## 간트 차트
-- 태스크 기반 자동 렌더링
-- frappe-gantt 타임라인
-
-## 산출물 제출
-- Markdown 작성 + 파일 업로드
-- 공개/비공개 설정
-- 태스크에 귀속
-
-## 피드백
-- 제출물 기반 댓글 스레드
-
----
-
-# 7. UI 구조
-
-## 홈 (/)
-- 선택 프로젝트 간트 + 태스크 목록
-
-## 작업 공간 (/tasks)
-- 프로젝트/태스크 CRUD
-- 간트 시각화
-- 태스크별 제출물·댓글
-
-## 관리자 패널 (/admin)
-- 슈퍼관리자: 관리 개요, 로그, 세팅, 사용자 관리, DB 관리
-- 관리자: 관리 개요, 사용자 관리
-
----
-
-# 8. 개발 단계
-
-| 단계 | 내용 | 상태 |
-| --- | --- | --- |
-| 1단계 | Next.js + TypeScript + MUI + NextAuth 세팅 | 완료 |
-| 2단계 | MariaDB 연결, User/Project 모델 | 완료 |
-| 3단계 | 태스크(WBS) CRUD | 완료 |
-| 4단계 | 간트 차트 연동 | 완료 |
-| 5단계 | 제출물 기능 | 완료 |
-| 6단계 | 댓글 기능 | 완료 |
-| 7단계 | 파일 업로드 | 완료 |
-| 역할 확장 | 4단계 역할 + 제출물 공개/비공개 | 완료 |
-| 8단계 | Feature-Sliced Design 구조 정리 | 완료 |
-| 9단계 | Scheduled digest + DOCX/PPTX report export | 예정 |
-| 10단계 | Synology NAS 배포 | 예정 |
-
-단계별 세부 항목과 블로커는 [TODO.md](TODO.md)가 단일 출처이며, 각 항목은 `T-###` 고유번호로 추적한다. 완료된 항목은 [COMPLETED_LOG.md](COMPLETED_LOG.md)로 옮겨진다.
-
----
-
-# 9. 핵심 설계 원칙
-
-- 단순함 유지
-- 태스크 중심 구조 유지
-- MVP 범위 밖 기능 확장 금지
-- 모든 설정은 `.env`로 관리
-- 간트 타임라인이 제품의 시그니처 화면
-
----
-
-## 버그 제보 및 운영 리뷰
-
-모든 Google 로그인 사용자는 역할과 무관하게 본인의 버그를 비공개로 제보하고 추가 설명을 남길 수 있다. 관리자와 슈퍼관리자는 전체 제보를 검색/필터링하고 접수·검토/수정 중·해결·종료 상태, 낮음/보통/높음 우선순위, 공개된 검토 메모와 해결/종료 사유·선택적 Git commit SHA를 기록한다. 원문과 순차 처리 이력은 검토용으로 보관한다. 외부 issue 연동/첨부파일/알림/자동 코드 실행은 지원하지 않는다. [운영 계약](BUG_REPORTS.md).
+Next.js16 App Router/TypeScript/React19/MUI/NextAuth4/frappe-gantt를 사용한다. Node는 MariaDB+UPLOAD_DIR/LOG_DIR, Sites는 Vinext/Worker+D1/R2다. 현재 버전은 package.json/lockfile, 실제 DDL은 native 불변 명세와 drizzle schema/migration이 소유한다. 오래된 DB 컬럼/환경 기본값 사본은 이 문서에 두지 않는다. `env.example`은 키 설명용이고 실값은 아니며 `.env*`는 AI 컨텍스트에서 제외한다.
