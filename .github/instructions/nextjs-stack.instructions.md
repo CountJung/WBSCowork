@@ -18,7 +18,7 @@ Apply the repository-wide guidance from ../copilot-instructions.md to all applic
 ## Project Structure
 
 - Keep top-level routes in root `app/`; route files remain thin entry adapters.
-- Follow `docs/FSD_MIGRATION_PLAN.md`: implementation lives in `src/shared`, `src/entities`, `src/features`, and `src/widgets`; root `app/` remains route/page/action/handler adapter. Do not mix behavior changes with structure moves or create duplicate `src/app`/`src/pages` layers.
+- Follow `docs/ARCHITECTURE.md#fsd-의존-경계`: implementation lives in `src/shared`, `src/entities`, `src/features`, and `src/widgets`; root `app/` remains route/page/action/handler adapter. Do not mix behavior changes with structure moves or create duplicate `src/app`/`src/pages` layers.
 - `components/`, `models/`, and `lib/` compatibility locations were removed in FSD M5. New cross-route domain work should target the mapped FSD slice and expose a public `index.ts` or `index.server.ts` API.
 - Keep domain types and model helpers aligned with Project, User, Task, Submission, and Comment from `docs/PRODUCT_SPEC.md`.
 

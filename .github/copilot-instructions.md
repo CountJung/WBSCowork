@@ -1,71 +1,14 @@
-<!-- Inspired by: https://github.com/github/awesome-copilot/blob/main/instructions/nextjs.instructions.md -->
-<!-- Inspired by: https://github.com/github/awesome-copilot/blob/main/skills/github-copilot-starter/SKILL.md -->
-# WBS Task Repository Instructions
+# WBSCowork Copilot 진입점
 
-## Project Overview
+저장소 공통 규칙·읽기 순서·유일한 문서 등록부는 [AGENTS](../AGENTS.md)를 따른다. 작업 상태는 [TODO](../docs/TODO.md), 코드 위치는 [PROJECT_MAP](../docs/PROJECT_MAP.md), 검증 명령/기준선은 [HARNESS_MAP](../docs/HARNESS_MAP.md)에서 확인한다. 이 파일에 공통 규칙이나 상태를 복제하지 않는다.
 
-- Build the product from `docs/PRODUCT_SPEC.md` as a task-based WBS collaboration system.
-- Keep the implementation scoped to the MVP defined in `docs/PRODUCT_SPEC.md`.
-- Treat the repository as a Next.js App Router application using TypeScript, MUI, NextAuth, MariaDB, TanStack Query, and frappe-gantt.
+- TypeScript/Next/UI: [경로별 stack 지침](instructions/nextjs-stack.instructions.md)
+- 실행·검증: [quality 지침](instructions/quality-gates.instructions.md)
+- Stage1 시작/복구: [bootstrap skill](skills/wbs-stage-one-bootstrap/SKILL.md)
+- React/data fetching/bundle 작업: [성능 skill](skills/react-best-practices/SKILL.md)
+- digest/report: [전용 skill](skills/wbs-project-digest-report/SKILL.md), [미구현 D0–D5 계획](../docs/PROJECT_DIGEST_REPORT_PLAN.md)
+- 문서 생성 출력은 `scripts/outputs/`, runtime report는 `REPORT_DIR` 계약을 따른다.
 
-## Working Agreement
+Graphify는 [AGENTS의 도구 선택](../AGENTS.md#도구별-안내)을 따른다. `graphify-out/GRAPH_REPORT.md`와 wiki가 존재하고 현재 구조를 반영할 때 참고하며, stale/missing 도구를 필수 선행 조건으로 가정하지 않는다. Copilot의 `/graphify`는 그래프 생성 명령이다.
 
-- Read `docs/PRODUCT_SPEC.md` before changing architecture, folder structure, or stage scope.
-- Prefer the smallest change that satisfies the current stage.
-- Preserve a task-centric model. Do not drift into generic board or forum features.
-- Treat the gantt timeline as the signature surface of the product. Route and layout decisions should keep it visually dominant on home and task workspace screens.
-- Gantt popup actions and task-area mutations should preserve focused task context. When the user opens or edits a task, route or scroll them back to that task instead of resetting the workspace to the top.
-- Keep all configuration in environment variables. Do not hardcode secrets, URLs, or deployment-specific paths.
-- Never use sensitive environment files such as `.env`, `.env.local`, or `.env.*` as AI working context, prompt context, or review input. Treat them as out-of-scope unless the user explicitly asks for secret management outside the repository workflow.
-- Treat responsive behavior as a repository-level requirement. UI work must function cleanly across mobile and desktop layouts unless the task explicitly scopes otherwise.
-- Light and dark theme modes must both maintain strong visual contrast. Selected cards, nested panels, upload states, and gantt surfaces must not invert the intended hierarchy or obscure readable content in either mode.
-
-## Quality Gates
-
-- Do not ignore warnings or errors from TypeScript, ESLint, build output, runtime logs, or test runs.
-- If a warning or error cannot be fixed in the current task, record it explicitly in `docs/TODO.md` (backlog) and `docs/HARNESS_MAP.md` (command baseline) with impact and next action.
-- Do not silence checks with blanket disables. Any narrow suppression must include a reason in code and a matching task entry.
-- Validate the touched slice with the narrowest executable command before widening scope. Available: `npm run lint`, `npm run typecheck`, `npm run check:fsd`, `npm run build`, `npm run db:check`.
-
-## Living Artifacts
-
-- Keep `docs/TODO.md`, `docs/PROJECT_MAP.md`, `docs/HARNESS_MAP.md`, `.github/copilot-instructions.md`, and `.github/skills/` alive at all times.
-- Update these files whenever project structure, workflow, validation commands, or stage status changes.
-- Treat these files as operational documents, not one-time setup output.
-- All sub-documents live under `/docs/`; the repository root keeps only `README.md`, `AGENTS.md`, and `CLAUDE.md`. `docs/PROJECT_MAP.md` is the code navigation map and `docs/HARNESS_MAP.md` is the command/validation harness.
-
-## Repository Shape
-
-- Keep root `app/` as the App Router entry. Runtime implementation now lives behind FSD public APIs in `src/shared`, `src/entities`, `src/features`, and `src/widgets`; do not create a duplicate `src/app` or `src/pages` layer, and do not mix behavior changes with structure moves.
-- `components/`, `lib/`, and `models/` compatibility re-exports were removed in FSD M5. New cross-route work should target the mapped FSD slice and expose a public `index.ts` or `index.server.ts` API. Run `npm run check:fsd` whenever `src/` changes.
-- Keep route handlers under app/api/.
-- Prefer Server Components by default and isolate client-only behavior into explicit Client Components.
-
-## Detailed Guidance
-
-- Apply TypeScript and Next.js guidance from .github/instructions/nextjs-stack.instructions.md.
-- Apply workflow and validation guidance from .github/instructions/quality-gates.instructions.md.
-- Use the stage bootstrap workflow from .github/skills/wbs-stage-one-bootstrap/SKILL.md when starting or repairing Stage 1.
-- Apply React/Next.js performance best practices from .github/skills/react-best-practices/SKILL.md when writing, reviewing, or refactoring React components, data fetching, or bundle optimization.
-- Document generation scripts (pptx, docx, pdf) must write output to scripts/outputs/.
-- For runtime scheduled digest/report work, follow `.github/skills/wbs-project-digest-report/SKILL.md` and `docs/PROJECT_DIGEST_REPORT_PLAN.md`. Runtime artifacts use `REPORT_DIR`, not `scripts/outputs/`; start dry-run/download-only and preserve submission visibility.
-
-## graphify
-
-For any question about this repo's architecture, structure, components, or how to add/modify/find
-code, your **first tool call must be** to read `graphify-out/GRAPH_REPORT.md` (if it exists).
-
-Triggers: "how do I…", "where is…", "what does … do", "add/modify a <component>",
-"explain the architecture", or anything that depends on how files or classes relate.
-
-After reading the report (and `graphify-out/wiki/index.md` for deep questions), answer from the
-graph. Only read source files when (a) modifying/debugging specific code, (b) the graph lacks
-the needed detail, or (c) the graph is missing or stale.
-
-Type `/graphify` in Copilot Chat to build or update the graph.
-
-## Sites deployment branch
-
-`npm run build` on main uses the native Next build for NAS; sites keeps the Vinext default. Use explicit `npm run build:sites` for Worker output and `npm run build:native` (or `build:next`) for Node/Next output. See `docs/NAS_UPDATE_GUIDE.md` for manual NAS migration and acceptance; a main update does not publish the Site. Preserve NextAuth Google behavior, role checks and MUI. Keep Vite 8 CommonJS interoperability for NextAuth v4 and run `npm run test:sites:auth` against the built Worker. This contract suite uses synthetic local configuration; it never proves actual Google login. Generated `.vinext`, `.wrangler` and `dist` state must not be committed.
-
-Maintain exactly two long-lived branches: `main` for NAS/native and `sites` for ChatGPT Sites/Workers. Port reviewed common patches while retaining each build default. Archive and remotely verify temporary branch tips before deleting them. Branch maintenance does not publish a Site or deploy NAS. See `docs/BRANCH_POLICY_2026-10-20.md`.
+main(NAS/native)과 sites(Worker)의 기본 build·게시 경계와 archive 복구는 [운영 안내](../docs/NAS_UPDATE_GUIDE.md#브랜치-운영과-복구)를 따른다. Git 반영과 배포 성공을 구분한다.

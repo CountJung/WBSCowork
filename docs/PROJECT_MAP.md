@@ -1,5 +1,7 @@
 # WBSCowork 프로젝트 맵
 
+이 문서는 **실제 경로·라우트·호출의 진입점이 어디인가**를 소유한다. 설계 이유/권한 계약은 [ARCHITECTURE](ARCHITECTURE.md), 상태는 [TODO](TODO.md)를 본다.
+
 > 현재 코드의 탐색 지도. 실행·검증 명령은 [HARNESS_MAP.md](HARNESS_MAP.md), 열린 항목은 [TODO.md](TODO.md), 완료 이력은 [COMPLETED_LOG.md](COMPLETED_LOG.md)를 본다.
 
 ## 1. 루트 지도
@@ -41,11 +43,11 @@
 
 ### 공통 UI 레이아웃
 
-`src/shared/config/theme/theme.ts`의 `MuiContainer.defaultProps.maxWidth = xl`을 AppShell·작업·관리자·버그 목록·개인 업무·검색·알림·제출 이력이 공유한다. 개인정보와 버그 상세의 긴 글은 명시적 `md` 예외다. `src/widgets/app-shell/ui/AppShell.tsx`는 xl 이상 한 행, md~xl 미만 두 행, md 미만 Drawer를 사용한다. `scripts/test-ui-layout.mjs`/`.py`는 격리 합성 D1과 production Worker/JS/CSS/font를 사용해 화면과 메뉴를 검증한다. [검증 기록](UI_LAYOUT_2026-10-19.md).
+`src/shared/config/theme/theme.ts`의 `MuiContainer.defaultProps.maxWidth = xl`을 AppShell·작업·관리자·버그 목록·개인 업무·검색·알림·제출 이력이 공유한다. 개인정보와 버그 상세의 긴 글은 명시적 `md` 예외다. `src/widgets/app-shell/ui/AppShell.tsx`는 xl 이상 한 행, md~xl 미만 두 행, md 미만 Drawer를 사용한다. `scripts/test-ui-layout.mjs`/`.py`는 격리 합성 D1과 production Worker/JS/CSS/font를 사용해 화면과 메뉴를 검증한다. [검증 기록](ARCHITECTURE.md#화면-구조).
 
 ### 운영 HTTP와 테스트 네트워크
 
-`scripts/test-sites-live.py` → `sites_test_network.py`는 현 프록시/정책의 안전한 진단과 anonymous GET-only HTTP smoke를 제공한다. 같은 모듈의 loopback origin 검사를 두 로컬 브라우저 하네스가 재사용해 합성 session의 운영 전송을 막는다. `tests/test_site_network.py`는 외부 요청 없이 CONNECT 거부·성공 경로·실패 분류/exit·비밀값 비노출을 검사한다. [플랫폼 제한과 최소 관리자 조치](SITES_TEST_NETWORK_2026-10-19.md).
+`scripts/test-sites-live.py` → `sites_test_network.py`는 현 프록시/정책의 안전한 진단과 anonymous GET-only HTTP smoke를 제공한다. 같은 모듈의 loopback origin 검사를 두 로컬 브라우저 하네스가 재사용해 합성 session의 운영 전송을 막는다. `tests/test_site_network.py`는 외부 요청 없이 CONNECT 거부·성공 경로·실패 분류/exit·비밀값 비노출을 검사한다. [플랫폼 제한과 최소 관리자 조치](NAS_UPDATE_GUIDE.md#운영-접속과-테스트-네트워크).
 
 ### 인증
 
@@ -76,20 +78,9 @@
 
 별도 migration history table/runner는 없다.
 
-## 4. 데이터 관계
+## 4. 문서 탐색
 
-```text
-projects 1 ── N tasks
-users    1 ── N tasks (assignee, nullable)
-tasks    1 ── N tasks (parent, nullable)
-tasks    1 ── N submissions
-users    1 ── N submissions
-submissions 1 ── N submission_attachments
-submissions 1 ── N comments
-users       1 ── N comments
-```
-
-상세 DDL은 `ARCHITECTURE.md`와 `src/shared/server/database-admin`을 본다.
+읽기 순서와 유일한 문서 등록부는 [AGENTS](../AGENTS.md#읽기-순서와-문서-책임)가 소유한다. 이 지도는 코드 위치만 설명하고 문서 목록이나 검증 수치를 복제하지 않는다.
 
 ## 5. 변경 시 동반 확인
 
@@ -103,22 +94,9 @@ users       1 ── N comments
 | FSD 이동 | public API, server/client boundary, alias `@/*`, `npm run check:fsd` |
 | Next 설정 | `scripts/run-next.ts`, APP_PORT, build/start/dev 모두 |
 
-## 6. 문서 지도
+## 6. 문서 진입점
 
-루트에는 진입점 3개(`README.md`, `AGENTS.md`, `CLAUDE.md`)만 두고 나머지 문서는 모두 `docs/`에 있다.
-
-| 문서 | 성격 | 언제 보는가 |
-| --- | --- | --- |
-| [PRODUCT_SPEC.md](PRODUCT_SPEC.md) | 제품 정의·MVP 범위·DB 설계 | 기능 범위/스키마 판단 |
-| [MASTER_PLAN.html](MASTER_PLAN.html) | 운영 마스터 플랜(사람용, standalone) | 우선순위·로드맵 공유 |
-| PROJECT_MAP.md (이 문서) | 코드 탐색 지도 | 어디를 고칠지 찾을 때 |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | 인증·인가·가시성·데이터 경계 | 정책/구조 변경 |
-| [HARNESS_MAP.md](HARNESS_MAP.md) | 실행·검증 명령과 기준선 | 검증 범위 결정 |
-| [TODO.md](TODO.md) | 열린 항목(`T-###`)·상태·선행 | 매 작업 시작·종료 |
-| [COMPLETED_LOG.md](COMPLETED_LOG.md) | 완료 항목의 원인·조치·회귀 방지 | 항목 완료 시 |
-| [FSD_MIGRATION_PLAN.md](FSD_MIGRATION_PLAN.md) | 8단계 M0~M5 계약 | 구조 이동 |
-| [PROJECT_DIGEST_REPORT_PLAN.md](PROJECT_DIGEST_REPORT_PLAN.md) | 9단계 D0~D5 계약 | digest/report |
-| [manual/](manual/) | 사용자 교육 자료(슬라이드·빠른 참조) | 교육·발표 |
+읽기 순서와 유일한 역할 등록부는 [AGENTS](../AGENTS.md#읽기-순서와-문서-책임)를 따른다. 이 문서는 코드 위치만 관리한다.
 
 ## 7. 권위 자료 우선순위
 
@@ -133,7 +111,7 @@ users       1 ── N comments
 
 - `vite.config.mts`, `sites/worker.ts`: 기존 App Router를 Worker 산출물로 빌드한다. Google/NextAuth와 MUI는 유지한다.
 - `scripts/test-sites-auth.mjs`: 빌드 산출물을 workerd에서 실행하는 인증/익명 접근 계약. 가상 테스트 설정만 사용한다.
-- `docs/SITES_WORKER_AUTH_2026-10-08.md`: 통과 범위와 운영 검증의 남은 단계.
+- `docs/ARCHITECTURE.md#사이트-실행과-인증`: 통과 범위와 운영 검증의 남은 단계.
 
 
 ## D1/R2 및 실패 복구
@@ -167,7 +145,7 @@ users       1 ── N comments
 
 `npm run db:migrate`(기본 read-only) / SU database action → `database-admin` → 전용 schema connection → `native-migrations.server.ts` lock/ledger/검증 → 불변 `native-migration-v1.ts`–`native-migration-v8.ts`. 일반 runtime readiness는 기존 DB identity를 사용한다. D1 `drizzle/`와 분리되며 이번 변경에 새 Sites migration은 없다. [운영 절차](NATIVE_DATABASE_MIGRATIONS.md).
 
-P1 의존성: `src/entities/task/api/task-dependencies.server.ts`의 graph CAS와 `src/shared/server/task-dependencies`의 실행 guard, `src/features/task-dependencies` action, `src/widgets/task-dependencies` UI가 WBS와 별도 선후행을 담당한다. 상세 범위는 [P1 계획](P1_IMPLEMENTATION_PLAN.md).
+P1 의존성: `src/entities/task/api/task-dependencies.server.ts`의 graph CAS와 `src/shared/server/task-dependencies`의 실행 guard, `src/features/task-dependencies` action, `src/widgets/task-dependencies` UI가 WBS와 별도 선후행을 담당한다. 상세 범위는 [P1 계획](ARCHITECTURE.md#팀-업무와-검토-계약).
 
 P1 템플릿: `src/entities/task/model/task-templates.ts`의 versioned catalog와 `api/task-template.server.ts`의 원자적 application, `src/features/task-templates`, `src/widgets/task-templates`의 편집 미리보기를 사용한다.
 
@@ -177,9 +155,9 @@ Native NAS 실행은 `scripts/run-next.ts`와 main의 기본 `build`/`start`를 
 
 ## 버그 스크린샷 (2026-10-20)
 
-`BugReportForm`은 선택/미리보기/제거/실패 보존을 담당한다. `entities/bug-report/api/screenshots.server.ts`가 검증/권한 조회/미참조 파일 정리를 제공하고 `shared/server/private-files`를 기존 submission 파일 IO와 함께 사용한다. `/api/bug-screenshots/[screenshotId]`는 비공개 bytes route다. Drizzle0013/native v9와 검증 진입점은 [첨부 기록](BUG_SCREENSHOTS_2026-10-20.md)을 따른다.
+`BugReportForm`은 선택/미리보기/제거/실패 보존을 담당한다. `entities/bug-report/api/screenshots.server.ts`가 검증/권한 조회/미참조 파일 정리를 제공하고 `shared/server/private-files`를 기존 submission 파일 IO와 함께 사용한다. `/api/bug-screenshots/[screenshotId]`는 비공개 bytes route다. Drizzle0013/native v9와 검증 진입점은 [첨부 기록](BUG_REPORTS.md#스크린샷)을 따른다.
 
 
 ### 제출물 최종 삭제 판정 (QLT-021)
 
-`src/entities/submission/api/submission-repository.server.ts`의 `deleteSubmission`은 guarded DELETE/RETURNING의 요청 ID로 성공을 판정한다. `src/features/task-workspace/server/actions.ts`는 commit 이전 실패와 이후 followup 오류를 분리한다. `scripts/test-submission-delete.ts`는 실제 D1/MariaDB 비교·권한 변경·rollback, `tests/submission-delete-actions.test.ts`는 action fault injection, `scripts/verify-sites-crud.mjs`는 production Worker HTTP/redirect/audit/파일 경계를 검사한다. [분석과 실행 명령](QLT_021_SUBMISSION_DELETE_2026-10-21.md).
+`src/entities/submission/api/submission-repository.server.ts`의 `deleteSubmission`은 guarded DELETE/RETURNING의 요청 ID로 성공을 판정한다. `src/features/task-workspace/server/actions.ts`는 commit 이전 실패와 이후 followup 오류를 분리한다. `scripts/test-submission-delete.ts`는 실제 D1/MariaDB 비교·권한 변경·rollback, `tests/submission-delete-actions.test.ts`는 action fault injection, `scripts/verify-sites-crud.mjs`는 production Worker HTTP/redirect/audit/파일 경계를 검사한다. [분석과 실행 명령](ARCHITECTURE.md#제출물-삭제-결과와-후속-처리-qlt-021).

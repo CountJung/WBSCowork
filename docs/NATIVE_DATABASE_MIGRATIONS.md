@@ -85,7 +85,7 @@ v3 실제 검증: exact `72a9b39`에서 native48, migration unit13, lint/types/F
 
 도메인 관리 표는 총15개이며 `schema_migrations` ledger는 별도다. 기존 migration/checksum을 수정하거나 D1 SQL을 MariaDB에 적용하지 않는다. 새 기능 사용 전 모든 version1–8 적용, pendingVersions 빈 배열, 필수15표/새 컬럼 준비를 확인한다. v3/v4의 baseline은 도입 시점의 자료이며 과거 변경 사건을 재구성하지 않는다. 기존 Google 계정·role·private 원문·파일 bytes를 자동 이전하거나 대체하지 않는다.
 
-최종 P0 native `d18cef8`의 additive77과 P1 `3b4af81`의 전체 harness99 + 관계 교체/rollback/복원4 PASS는 [P0 인수 기록](P0_ACCEPTANCE_2026-10-09.md)과 [P1 인수 기록](P1_ACCEPTANCE_2026-10-09.md)에 있다. P1의 초기 DELETE 권한1142 중단과 이후 새 합성 DB 한 곳/한 표에 한정한 승인 재검증도 구분해 보존한다. 승인된 loopback MariaDB11.4.13 fixture 결과이며, NAS 운영 DB나 main native CLI 수정 후의 실제 DB 실행 결과는 아니다. 남은 native purge/별도 강등 interleaving/차단된 cleanup race는 이 통과에 포함되지 않는다.
+최종 P0 native `d18cef8`의 additive77과 P1 `3b4af81`의 전체 harness99 + 관계 교체/rollback/복원4 PASS는 [P0 인수 기록](COMPLETED_LOG.md#p0p1-인수와-승인된-정리)과 [P1 인수 기록](COMPLETED_LOG.md#p0p1-인수와-승인된-정리)에 있다. P1의 초기 DELETE 권한1142 중단과 이후 새 합성 DB 한 곳/한 표에 한정한 승인 재검증도 구분해 보존한다. 승인된 loopback MariaDB11.4.13 fixture 결과이며, NAS 운영 DB나 main native CLI 수정 후의 실제 DB 실행 결과는 아니다. 남은 native purge/별도 강등 interleaving/차단된 cleanup race는 이 통과에 포함되지 않는다.
 
 기존 NAS 업데이트의 백업·쓰기 중지·명시적 적용·수동 인수·rollback 한계는 [NAS 업데이트 안내](NAS_UPDATE_GUIDE.md)를 따른다. 이번 main 통합에서는 실제 DB 명령을 실행하지 않는다.
 

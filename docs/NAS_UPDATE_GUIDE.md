@@ -1,4 +1,6 @@
-# Synology NAS 업데이트와 수동 인수
+# NAS/Sites 운영·업데이트·복구
+
+이 문서는 **두 실행 환경을 어떻게 안전하게 업데이트·게시·복구하는가**를 소유한다. 현재 상태는 [TODO](TODO.md), 과거 게시/검증 증거는 [COMPLETED_LOG](COMPLETED_LOG.md), schema 상세는 [NATIVE_DATABASE_MIGRATIONS](NATIVE_DATABASE_MIGRATIONS.md)를 본다.
 
 대상: 기존 NAS의 **Node/Next.js + MariaDB + 로컬 업로드/로그** 실행 환경. main에는 Sites에서 개발한 P0/P1·품질 개선을 같은 앱 기능으로 통합한다. Sites의 D1/R2 데이터나 환경 설정을 NAS로 복사하지 않는다. NAS에 직접 접속·배포하거나 운영 DB/계정/권한을 변경한 결과가 아니라, 운영자가 적용하고 수동 확인할 절차다.
 
@@ -15,7 +17,7 @@
 | migration 상태 | `npm run db:migrate -- --status` | 읽기 전용; 기본 무인자도 상태 조회 |
 | migration 적용 | `npm run db:migrate -- --apply` | 아래 백업·점검 창·대상 확인 후 운영자가 명시 실행 |
 
-sites 브랜치의 기본 build는 기존 Sites/Vinext를 유지한다. 양쪽에서 `build:native`와 `build:sites`로 대상을 명시할 수 있다. main을 추후 Sites에 반영하려면 검증된 Worker 빌드와 공식 Site 절차를 별도로 수행해야 하며 이번 통합이 공개 Site v10을 재게시하지 않는다.
+sites 브랜치의 기본 build는 기존 Sites/Vinext를 유지한다. 양쪽에서 `build:native`와 `build:sites`로 대상을 명시할 수 있다. main을 추후 Sites에 반영하려면 검증된 Worker 빌드와 공식 Site 절차를 별도로 수행해야 하며 Git 반영 자체가 공개 Site를 재게시하지 않는다.
 
 ## 업데이트 전 확인
 
@@ -43,7 +45,7 @@ npm run build:native
 
 - `npm ci`는 lockfile을 사용한다. build에는 개발 의존성이 필요하다. `tsx`와 `@next/env`는 production 의존성이므로 빌드 후 production-only 설치에서도 native start/migration CLI가 필요한 loader를 잃지 않는다. `.next`만 복사해 시작하거나 migration에 필요한 `scripts/`, `src/`, `tsconfig.json`을 빠뜨리지 않는다.
 - 기본 Next16 compiler는 Turbopack이다. 실제 NAS에서 기본 빌드를 확인한다. Webpack을 명시하려면 `npm run build:native -- --webpack` 또는 `npm run build -- --webpack`을 사용한다.
-- `next/font/google`는 빌드 시 Roboto CSS/폰트 다운로드가 필요하다. 네트워크 제한으로 실패하면 성공으로 간주하지 않는다. 이번 dot 빌드는 캐시된 실제 Roboto 파일을 쓴 환경 전용 오프라인 fixture + Webpack 결과이며, 그 fixture 설정을 NAS에 복사하지 않는다. 같은 fixture의 Turbopack 빌드는 font import-map 오류로 실패했고 동적 로그 경로 NFT 추적 경고도 관찰했다. 실제 NAS 기본 빌드 결과와 구분하며 [하네스 기록](HARNESS_MAP.md#2026-10-10-native-통합-준비)에 남겼다.
+- `next/font/google`는 빌드 시 Roboto CSS/폰트 다운로드가 필요하다. 네트워크 제한으로 실패하면 성공으로 간주하지 않는다. 이번 dot 빌드는 캐시된 실제 Roboto 파일을 쓴 환경 전용 오프라인 fixture + Webpack 결과이며, 그 fixture 설정을 NAS에 복사하지 않는다. 같은 fixture의 Turbopack 빌드는 font import-map 오류로 실패했고 동적 로그 경로 NFT 추적 경고도 관찰했다. 실제 NAS 기본 빌드 결과와 구분하며 [하네스 기록](HARNESS_MAP.md#검증-기준선)에 남겼다.
 - 기존 `.env`, `.env.local`, production 환경 파일과 서비스에서 주입한 값의 우선순위를 유지한다. 예제 값으로 덮어쓰거나 새 NextAuth secret을 만들지 않는다. 인증 URL은 기존 NAS HTTPS origin이며 Sites 주소로 바꾸지 않는다.
 
 ## MariaDB v1–v9 적용
@@ -99,6 +101,37 @@ npm run build:native
 
 ## 소스 확인 범위
 
-공통 checkpoint `b43704e89dd48ebe6304510fe420ccda3d218c5b`에서 합성 CLI/설정 파일 보존 8조건, lint/typecheck/FSD와 위 Webpack fixture 빌드를 확인했다. main 후속 변경은 native 기본 build와 이 문서 인계이며 앱/SQL 로직은 동일하다. 기존 P0/P1의 D1 및 MariaDB 검증 기록은 [P0](P0_ACCEPTANCE_2026-10-09.md), [P1](P1_ACCEPTANCE_2026-10-09.md)에 있고 이번 NAS 실행 결과를 의미하지 않는다.
+공통 checkpoint `b43704e89dd48ebe6304510fe420ccda3d218c5b`에서 합성 CLI/설정 파일 보존 8조건, lint/typecheck/FSD와 위 Webpack fixture 빌드를 확인했다. main 후속 변경은 native 기본 build와 이 문서 인계이며 앱/SQL 로직은 동일하다. 기존 P0/P1의 D1 및 MariaDB 검증 기록은 [P0](COMPLETED_LOG.md#p0p1-인수와-승인된-정리), [P1](COMPLETED_LOG.md#p0p1-인수와-승인된-정리)에 있고 이번 NAS 실행 결과를 의미하지 않는다.
 
-2026-10-20: 공통 레이아웃·버그 스크린샷·합성 네트워크 보호 소스를 main에 통합했다. native v9 screenshot metadata/fingerprint 추가가 있으므로 기존 백업/점검 창/명시 migration 절차 후 NAS에서 별도 인수한다. 이번 Git 브랜치 정리는 NAS 배포나 운영 schema 적용이 아니다. [반영 매핑·복구](BRANCH_POLICY_2026-10-20.md).
+2026-10-20: 공통 레이아웃·버그 스크린샷·합성 네트워크 보호 소스를 main에 통합했다. native v9 screenshot metadata/fingerprint 추가가 있으므로 기존 백업/점검 창/명시 migration 절차 후 NAS에서 별도 인수한다. 이번 Git 브랜치 정리는 NAS 배포나 운영 schema 적용이 아니다. [반영 매핑·복구](NAS_UPDATE_GUIDE.md#브랜치-운영과-복구).
+
+
+## 브랜치 운영과 복구
+
+장기 branch는 main(NAS/native Next+MariaDB+UPLOAD_DIR/LOG_DIR)와 sites(Vinext/Worker+D1 DB/R2 ATTACHMENTS)다. 공통 검증 patch를 선별 반영하며 전체 merge로 기본 build/환경/데이터를 덮지 않는다. 기본 build만 대상별로 다르고 명시 build:native/build:sites를 모두 제공한다.
+
+임시 feat/fix branch는 반영·PR/CI/보호/배포 연결·고유 미반영 변경을 조사한 뒤 마지막 SHA를 충돌 없는 `archive/branches/<date>/<branch>-<short>` tag로 보존한다. 원격 peeled SHA와 삭제 직전 tip을 확인한 후 일반 delete하며 강제 push/보호 변경/tag 삭제는 하지 않는다. 같은 이름에 새 작업이 있으면 재조사한다. 2026-10-20의 실제6개 태그와 원래 SHA는 COMPLETED_LOG의 OPS-036이 소유한다.
+
+```bash
+# 원격 tag를 가져와 복구 branch를 만든다. 기존 branch를 덮어쓰지 않는다.
+git fetch origin refs/tags/archive/branches/2026-10-20/fix/shared-desktop-layout-3f62450:refs/tags/archive/branches/2026-10-20/fix/shared-desktop-layout-3f62450
+git branch restore/shared-desktop-layout archive/branches/2026-10-20/fix/shared-desktop-layout-3f62450^{commit}
+```
+
+복구 branch의 원격 push/운영 재배포는 해당 작업의 승인 범위에서만 수행한다. GitHub default는 main이다. GitHub sites와 Sites 서비스의 별도 source repository main은 다른 ref다. 과거 feat/sites-deployment라는 이름은 현재 sites의 이력이며 자동 게시 권한이 아니다.
+
+## Sites 게시
+
+1. `.openai/hosting.json`의 기존 project_id·D1/R2 binding과 현재 get_site의 audience/owner/live version을 확인한다. 새 사이트를 등록하거나 공개 범위를 바꾸지 않는다.
+2. 사용자가 이번 작업에서 게시까지 요청한 경우에만 구현·검증한 exact GitHub sites SHA를 공식 source 흐름으로 동기화·push한다. credential은 메모리와 hidden stdin만 사용하고 파일/명령행/로그에 넣지 않는다.
+3. 같은 pushed SHA의 build output을 공식 helper로 package하고 native save/deploy 도구를 사용한다. 확인된 audience에 맞는 도구를 사용하고 terminal succeeded/failed를 확인한다. pending은 poll하고 불확정 결과를 확인 전 재시도하지 않는다.
+4. 알려진 helper 부재 환경의 대체 package는 root `.openai/hosting.json`, `dist/.openai/hosting.json`, `dist/server/index.js`, `dist/client`, `drizzle` 구조를 보존한다. 원본 binding/manifest를 그대로 복사하며 source-only remote build의 missing hosting metadata 실패를 성공으로 추정하지 않는다. 기존 helper가 있으면 그것을 우선한다.
+5. version/source SHA/deployment ID·반환 URL·실제 검증 범위를 COMPLETED_LOG에 간결히 기록한다. 배포 확인과 브라우저 인수, DB row/R2 inventory 비교는 별개다. rollback은 additive schema와 불변 이력에 대한 영향 확인 후 결정하고 자동 down하지 않는다.
+
+## 운영 접속과 테스트 네트워크
+
+코딩 환경의 운영 smoke는 기존 proxy CONNECT 단계에서403/Domain forbidden이었다. read-only `/etc/codex/network-policy.json`의 restricted egress에 정확한 host `wbscowork.cometgnome.chatgpt.site`가 없었고 proxy 변수 선택 충돌은 없었다. TLS 전 차단이므로 앱 권한/Google 오류로 해석하지 않는다.
+
+진단은 HARNESS_MAP의 diagnose:sites:network, live GET-only smoke를 사용한다. 거부는 exit1/proxy_connect/live_http_completed=false이며 pass/skip이 아니다. 합성 브라우저는 loopback만 허용해 운영으로 synthetic cookie를 보내지 않는다. proxy/NO_PROXY/인증서·앱 보안 설정을 바꾸거나 직결로 우회하지 않는다.
+
+사용자는 정확한 host 하나의 추가를 승인했지만 현 실행기에는 플랫폼 관리 API/화면 권한이 없었다(OPS-034). 환경 소유자는 Settings → Codex Cloud → Environments → Edit → Internet access → Additional allowed domains에서 기존 restricted 목록을 보존하고 해당host만 추가한 뒤 환경 Republish/새 작업에서 진단한다. All/unrestricted나 wildcard 허용은 요청하지 않는다. 이는 앱 재게시가 아니다. 실제 계정 UI 표시/권한은 확인하지 못했으며 이 작업에서 설정을 적용하지 않는다. 부모의 다른 클라우드 Chrome에서 읽은 화면은 이 환경의 연결 성공이나 전체 viewport 인수를 대체하지 않는다.

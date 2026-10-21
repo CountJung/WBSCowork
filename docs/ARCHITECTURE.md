@@ -1,10 +1,12 @@
-# WBSCowork 아키텍처
+# WBSCowork 구조와 결정
+
+이 문서는 **왜 그렇게 정했고 경계가 어떻게 연결되는가**를 소유한다. 위치는 [PROJECT_MAP](PROJECT_MAP.md), 현재 상태는 [TODO](TODO.md), 검증 방법/결과는 [HARNESS_MAP](HARNESS_MAP.md), 운영은 [NAS_UPDATE_GUIDE](NAS_UPDATE_GUIDE.md)를 본다.
 
 ## 1. 시스템 경계
 
 WBSCowork는 Next.js 16 App Router 단일 애플리케이션이다. UI, Server Components, Server Actions, Route Handlers가 같은 배포 단위에서 동작한다. Node 실행은 MariaDB 및 로컬/NAS 파일 저장소를, Sites 실행은 Vinext/Workers + D1/SQLite + 비공개 R2를 사용한다. Google NextAuth와 FSD 경계는 동일하다.
 
-Sites의 정확한 구현/검증 계약은 [최종 검증 기록](SITES_VALIDATION_2026-10-08.md)과 [게시 결과](SITES_PUBLICATION_2026-10-08.md)를 참고한다. 아래 MariaDB/파일 경로 설명은 Node 경로를 보존한 것이다.
+Sites의 실행 계약은 아래에, 검증 기준선은 HARNESS_MAP, 게시 이력은 COMPLETED_LOG에 둔다. MariaDB/파일 경로 설명은 Node 실행 경로다.
 
 ```text
 Browser
@@ -25,7 +27,7 @@ src/widgets/features/entities/shared public API
 
 - `sites/worker.ts` → request-scoped `hosted-runtime` → D1/R2 bindings.
 - DB parent/attachment 변경 및 task 계층 갱신은 atomic batch를 사용한다.
-- R2 객체는 두 인증 download route로만 읽으며 공개 URL을 제공하지 않는다.
+- R2 객체는 인증된 제출물/버그 download handler로만 읽으며 공개 URL을 제공하지 않는다.
 - cascade/교체/중단 업로드는 durable cleanup ledger와 지연 재시도로 정리한다.
 - 감사 상세는 D1의 제한된 보존 정책, console은 비민감 요약이다. 감사 저장 장애 시 상세 기록을 보장하지 않는 best-effort 정책을 명시한다.
 - 앱의 superuser 설정 화면은 배포 설정 유무만 표시한다. 실제 secret 및 SUPERUSER_EMAIL은 소유자의 Sites 설정에서 관리한다.
@@ -97,7 +99,7 @@ UI에서 private card가 숨겨진다는 사실만으로 데이터가 보호된�
 
 ## 5. 데이터 아키텍처
 
-`src/shared/server/database-admin`이 현재 managed schema의 사실상 schema manager다.
+Native의 불변 version/checksum migration과 Sites의 Drizzle migration이 schema를 소유한다. 아래는 주요 관계 요약이며 전체 DDL 사본이 아니다.
 
 | 테이블 | 핵심 컬럼 | 관계/삭제 |
 | --- | --- | --- |
@@ -129,7 +131,7 @@ DB cascade는 파일 삭제를 하지 않는다. 삭제 action은 DB 삭제 전 
 - `src/shared/server/logging` 및 `instrumentation.ts`: `LOG_DIR` 롤링 로그와 구조화 action log.
 - action log metadata의 경로성 키(`filePath`, `storedFilePath`, `absolutePath`, `uploadDir`, `path`)는 기록 시 `[redacted]` 또는 `[redacted]:<확장자>`로 축약된다(`REDACTED_METADATA_KEYS`). 비밀값·private content는 애초에 metadata에 담지 않는다.
 
-## 7. 목표 FSD
+## FSD 의존 경계
 
 ```text
 app/          route adapter와 최종 조립 (계속 루트 유지)
@@ -175,4 +177,67 @@ bug_reports / bug_report_events는 프로젝트·작업·제출물과 독립적�
 
 ### 제출물 삭제 결과와 후속 처리 (QLT-021)
 
-`deleteSubmission`은 기존 current-role/ownership token guard와 atomic batch를 유지하고 마지막 DELETE의 `RETURNING id` rowset을 검증한다. D1 meta.changes는 FK/cleanup trigger 쓰기를 포함하므로 MariaDB affectedRows와 같은 부모 행 수로 쓰지 않는다. repository 성공 이후 파일 정리·화면 갱신·감사 기록은 별도 단계다. action은 커밋 이후 오류를 `submission.delete.followup`으로 기록하고 DB 삭제 완료 사실을 사용자에게 알린다. 상세 [경계별 검증](QLT_021_SUBMISSION_DELETE_2026-10-21.md).
+`deleteSubmission`은 기존 current-role/ownership token guard와 atomic batch를 유지하고 마지막 DELETE의 `RETURNING id` rowset을 검증한다. D1 meta.changes는 FK/cleanup trigger 쓰기를 포함하므로 MariaDB affectedRows와 같은 부모 행 수로 쓰지 않는다. repository 성공 이후 파일 정리·화면 갱신·감사 기록은 별도 단계다. action은 커밋 이후 오류를 `submission.delete.followup`으로 기록하고 DB 삭제 완료 사실을 사용자에게 알린다. 실제 D1 변화 수는 부모/FK/trigger/조합에서 1/3/2/4, MariaDB affectedRows는 모두1이었다. 결과 rowset은 batch가 정상 commit 반환한 뒤에만 쓰며 통신 중단의 불확정 commit을 자동 성공/재시도로 바꾸지 않는다. 실패한 batch에서는 파일 정리를 시작하지 않고, metadata 삭제 후 파일 정리 실패는 재시도 대기·후속 오류로 알린다. 검증 명령/조건은 HARNESS_MAP이 소유한다.
+
+
+## 팀 업무와 검토 계약
+
+| 경계 | 확정 계약 |
+| --- | --- |
+| 담당/상태 | 새 담당·검토자는 현재 member/admin/SU여야 한다. 기존 guest 배정은 승급/삭제하지 않고 수행 불가로 표시한다. 카드 편집/재배정 권한과 현재 담당자/admin/SU의 상태 변경 권한은 별개다. planned/in_progress/blocked/review_pending/changes_requested/done을 사용한다. |
+| 완료/재오픈 | 실제 담당자 제출·완료 기준·근거가 필요하다. 검토 필요 카드는 선택된 현재 제출 버전 승인 없이는 직접 완료하지 못한다. 시작 후 reviewRequired 변경을 막으며 재오픈 사유와 이전 판정은 보존한다. leaf만 완료 집계 분모에 넣고 날짜 경과율/부모 관계를 완료·선행으로 취급하지 않는다. |
+| 버전 | 본문·visibility·자료 링크·첨부·변경 요약·실제 editor를 snapshot/첨부/event와 같은 transaction에 저장한다. expected revision/stable token/bytes hash로 충돌과 동일 재시도를 판정한다. 기존 남은 자료만 baseline으로 만들며 과거 덮어쓴 버전/편집 시각을 복원했다고 주장하지 않는다. 기존 댓글은 버전 미지정으로 구분한다. |
+| 파일/가시성 | 첨부 제외는 새 버전이며 과거 파일을 물리 삭제하지 않는다. 현재 parent와 당시 revision 모두 보이는 경우에만 bytes·댓글·이력에 접근한다. HTTP(S) 자료 링크는 서버가 자동 조회하지 않는다. version은 자동 만료하지 않는다. |
+| 검토 | 현재 담당자의 현재 제출 버전만 요청하고 지정 검토자만 결정한다. author/assignee/해당 revision editor는 admin/SU도 자체 승인할 수 없다. 상세 사유는 private 제출 이력에만 두고 공개 task event에는 고정 상태 안내만 기록한다. |
+| 무효화/경합 | 보완한 버전은 새 버전 제출 후 다시 요청한다. 새 revision·완료 후 내용 변경·사유 있는 재오픈은 현재 선택/승인을 무효화하고 과거 판정은 남긴다. 상태·판정·event는 atomic version/token 검사로 한 번만 저장한다. 검토자가 권한을 잃어도 담당자/admin은 검토 취소 가능하다. |
+| 개인 큐 | 내 담당/내 기여/내 검토 대기를 구분한다. 현재 역할/visibility를 count/list/link 모두 SQL에서 적용한다. URL queue filter/선택 위치를 작업 후 복귀 링크에 보존하고 외부 return URL은 거부한다. |
+| 선후행 | 같은 프로젝트의 별도 graph CAS와 task version을 검사한다. 순환·다른 프로젝트 참조를 거부한다. 선행 미완료 시 시작·완료·검토 요청/판정을 보류하되 취소/재오픈은 허용한다. 선행 재오픈으로 과거 후행 승인을 덮지 않고 현재 차단을 따로 표시한다. 개별 업무 삭제 전 관계 해제가 필요하다. |
+| 수동 템플릿 | versioned catalog, 최대20개, 기본 미배정, 상위 제외 시 하위 제외. 미리보기에서 제목/설명/산출물/기준/담당/날짜/포함을 편집한다. 파일·private 본문·접근권·검토 이력은 복사하지 않는다. stable token/payload로 원자적 생성하고 변경 payload 재사용은 거부한다. task를 나중에 삭제해도 receipt로 부활 생성을 막는다. |
+| 검색 | 최신 기본, 승인본은 취소/무효화되지 않은 현재 선택 버전이다. 이전 버전은 parent와 당시 visibility를 함께 적용한다. count/list/snippet/pagination 전에 SQL scope를 걸고 LIKE %, _, !는 literal이다. 업무 카드는 기존 인증 사용자 공유 정책을 유지한다. |
+| 알림 | 원본 배정/검토/댓글 event에서 현재 수신자·상태·역할·가시성으로 파생하고 읽음 receipt만 별도 저장한다. A→B→A 과거 배정을 재알림하지 않으며 중복 읽음은 한 행이다. 원래 작성자의 기존 private 조회권을 유지하고 외부 발송은 하지 않는다. |
+
+account 파기 기능은 현재 없으며 향후 author cascade 전에 선택 검토 근거 무효화가 필요하다. task/submission 전체 영구 삭제는 모든 버전·파일을 포함한 확인을 받는다. 프로젝트는 기존 관리자 명시 확인을 유지한다. 새 이력 작성 후 구형 덮어쓰기 앱으로 writable rollback하지 않는다.
+
+## 사이트 실행과 인증
+
+- NextAuth4의 Babel/CommonJS default export를 Vite8에서 해석하기 위해 `legacy.inconsistentCjsInterop: true`를 유지한다. Google handler/provider·Secure/HttpOnly/SameSite cookie·CSRF·callback/state 검사를 대체하지 않는다.
+- request-scoped D1/R2 binding, 100 bind parameter 한도에 다른 viewer 조건도 포함한 bounded IdScope 분할, UTC timestamp, atomic batch를 사용한다. runtime DDL/.env 편집은 금지한다.
+- R2 저장은 기존 private-files IO를 쓰며 file bytes를 추가 전체 Buffer로 복제하지 않는 bounded hash/stream을 사용한다. staging lease는 cleanup backoff와 분리하고 정리 전에 영구 회수한다. 만료/회수한 업로드의 metadata commit은 DB guard가 거부한다. cleanup은 current·모든 revision·bug screenshot 참조를 확인한다.
+- Worker 전체 요청은22MiB, `/bugs` 생성 multipart만7MiB, 그 외 bug 경로64KiB, bug action text48KiB, 동시 multipart1건이다. storage/DB 한쪽 실패는 새 미참조 파일만 정리하거나 durable queue로 남긴다.
+- 감사 상세는 D1 audit_logs에 기본5일 보존한다. 새 기록 시 만료분 최대500행 정리, 조회 즉시 기간 밖 제외이며 idle 자동 삭제/secure erase를 보장하지 않는다. console은 비민감 요약이다.
+- React/ReactDOM/react-server-dom-webpack19.2.8 direct decoder 경로를 사용한다. dependency 버전만으로 보안 패치를 판정하지 않고 compiled active decoder를 검사한다. 해당 advisory 해결을 전체 dependency audit 완료로 확대하지 않는다.
+
+## 화면 구조
+
+theme의 Container 기본은 xl(1536px), 긴 글 privacy/bug detail은 md다. AppShell은 xl 이상 한 행, md~xl 미만 별도 메뉴 행, md 미만 기존 Drawer를 쓴다. 메뉴 nowrap/비수축, 이름 칩 ellipsis+전체 title, 한국어 keep-all/긴 문자열 anywhere를 유지한다. shape.borderRadius는4px 단위이며 sx 숫자는 배수다. 업무 집중/복귀 맥락과 간트 내부 가로 스크롤을 보존한다. 개요·작업 화면은 간트를 중심으로 배치하며 light/dark 모두 선택 카드·중첩 패널·업로드 상태의 대비를 유지한다. 공통 SubmitButton의 pending 표시는 서버 중복 방지·인가를 대신하지 않는다.
+
+## 결정 색인
+
+| 결정 | 이유/불변식 | 근거/위치 |
+| --- | --- | --- |
+| 루트 app + FSD public API | framework entry와 업무 구현을 분리하고 private 데이터의 client 전이 유출 방지 | 이 문서 FSD 경계, check-fsd-boundaries |
+| 현재+과거 SQL visibility | 과거 public이 현재 private를 공개하거나 담당 배정이 열람권을 늘리지 않음 | 이 문서 산출물/팀 계약 |
+| immutable revision + atomic token | 원본/피드백 보존과 동일 재시도·충돌 분리 | submission-revision 및 task workflow |
+| staging lease와 cleanup backoff 분리 | cleanup retry가 만료된 업로드 권한을 되살리지 않음 | object-cleanup, Drizzle0008 |
+| DELETE RETURNING id (QLT-021) | D1 cascade/trigger 총 변경 수와 직접 삭제 부모를 분리 | 이 문서 QLT-021, test-submission-delete |
+| main/sites 실행 분리 | 코드 공통 수정과 NAS/Sites 데이터·build·배포 경계 분리 | NAS_UPDATE_GUIDE |
+| schema credential/불변 ledger | runtime의 DDL 권한/자동 rollback에 의존하지 않음 | NATIVE_DATABASE_MIGRATIONS |
+| 기존 정본 갱신 | 새 기능/날짜별 보고서 대신 역할별 한 곳에 사실을 소유 | AGENTS 등록부; Git 과거 원문 복구는 COMPLETED_LOG |
+
+### FSD 검사 사양
+
+
+`scripts/check-fsd-boundaries.ts`가 정적 import, dynamic import, `require`, re-export를 대상으로 다음을 검사한다.
+
+| 코드 | 차단 대상 | 심각도 |
+| --- | --- | --- |
+| `layer-direction` | `shared → entities\|features\|widgets`, `entities → features\|widgets`, `features → widgets`, `src → app` | error |
+| `cross-slice` | 같은 레이어의 다른 slice 직접 import | error |
+| `deep-import` | 다른 slice의 `index.ts`/`index.server.ts`를 우회한 내부 파일 참조 | error |
+| `unknown-layer` | `src/` 아래에 정의되지 않은 레이어(예: `src/app`) | error |
+| `client-server` | client 진입점에서 **전이적으로** 도달하는 `*.server.ts(x)`, `src/shared/server/**`, `mariadb`, `node:fs(/promises)`, `server-only` 등 | error |
+| `legacy-import` | src 슬라이스 → `components/`·`lib/`·`models/` | warn |
+
+client 진입점은 `"use client"` 지시문 또는 `*.client.ts(x)` 파일이다. `import type`/`export type`과 `"use server"` 모듈은 client-server 검사에서 제외한다(각각 컴파일 시 소거, 네트워크 경계 대체).
+
+경계 예외를 blanket disable하지 않는다. fixture(`scripts/fixtures/fsd/`)는 허용 방향 1건과 금지 유형 4건을 모두 포함하며, 기본 실행이 self-test를 먼저 통과해야 저장소 검사로 넘어간다. 이 저장소에는 아직 CI 워크플로가 없어 현재는 로컬 게이트다.
