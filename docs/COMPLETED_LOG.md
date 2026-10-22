@@ -42,7 +42,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 11 · 10-19 04:01:18 | 0a2cbb5fc42d8917ba1a605f0e9c5b6360188962 | succeeded, appgdep_6ad5960689f881918f7dde37c3376428; 기존16표 전체 row 동일 |
 | 12 · 10-20 05:51:39 | 0d1a1a3afe8680ddd7c1281b583fd9d846cc0bc1 | succeeded, appgdep_6ad701611af48191b37ff6b4a1548d2c; 기존15표 전체 row·public policy(revision2) 동일. 사용자2/기존receipt1/나머지0, 새screenshot표0 |
 | 13 · 10-22 11:19:22.961 | b249c4dc525a36c4c843876625e2e0dde64c1461 | succeeded, appgdep_6ad9f0d0f3c481919846d8a5be031cc5; QLT-021 포함. public policy revision2/env revision11 유지 |
-| 14 · 10-22 11:59:06.590701 | 41059c82c37d7de718a3e61b414d4ab0331e6c5a | succeeded, appgdep_6ad9fa80e2fc819183a6094e4d07563d; 첨부 transport 오류의 폼 내 안내/초안 보존 안정화. 기존 URL/public access policy revision2/env revision11 유지. 운영 신규·수정 TXT 인수는 대기 |
+| 14 · 10-22 11:59:06.590701 | 41059c82c37d7de718a3e61b414d4ab0331e6c5a | succeeded, appgdep_6ad9fa80e2fc819183a6094e4d07563d; 첨부 transport 오류의 폼 내 안내/초안 보존 안정화. 기존 URL/public access policy revision2/env revision11 유지. 연결 실패 UI 보존 확인. 신규·수정 업로드 인수는 파일 전달 한계로 차단·사용자 수동 확인 대기 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 

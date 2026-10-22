@@ -101,11 +101,15 @@ Native schema readiness는 현재16개 관리 표와 schema_migrations를 확인
 
 ## 제출물 첨부 운영 오류 (QLT-022)
 
-대상은 2026-10-22 version13/source b249c4d의 `/tasks`, 합성 project4/task6였다. 작은 TXT를 포함한 신규 제출은 `This page couldn’t load` 뒤 재조회 제출0/첨부0이었다. 본문만 생성 후 v2·댓글1은 성공했고, 수정 폼에서 TXT 추가도 같은 오류 뒤 기존 v2/첨부0을 유지했다. Chrome console 11:31:39.153Z는 `TypeError: Failed to fetch` at `app-browser-server-action-client-BUPgAzbb.js:1:2058` 및 React form error boundary를 표시했다.
+대상은 2026-10-22 version13/source b249c4d의 `/tasks`, 합성 project4/task6였다. 작은 TXT 선택을 시도한 신규 제출은 `This page couldn’t load` 뒤 재조회 제출0/첨부0이었다. 본문만 생성 후 v2·댓글1은 성공했고, 수정 폼에서 TXT 추가도 같은 오류 뒤 기존 v2/첨부0을 유지했다. Chrome console 11:31:39.153Z는 `TypeError: Failed to fetch` at `app-browser-server-action-client-BUPgAzbb.js:1:2058` 및 React form error boundary를 표시했다.
 
 지원 브라우저 API에는 Network 기록/headers가 없어 실패 요청의 status·Content-Type·requestId·cf-ray는 미확인이다. 기존 Worker 오류 조회에는 대응 오류가 없었고 주변 최근100개(11:27:19–11:31:58)는 본문 생성·수정·댓글의303/완료 로그를 반환했다. 제한·수집 지연 때문에 실패 요청의 Worker 미도달이나 원인을 확정하지 않는다. 작은 TXT를 금지하는 소스 규칙은 없으며, 직접 구성한 multipart HTTP 회귀는 hydrated Chrome의 React Action 파일 전송 경로를 입증하지 않는다.
 
 추가 읽기 확인: 11:38:56Z 무렵 Sites 도구로 실제 D1 `DB`의 `file_cleanup_jobs`를 조회해0행, has_more=false/next_offset=null/truncated=false를 확인했다. 이는 대기 ledger가 없다는 뜻이며 **첨부 DB0·ledger0으로 R2 객체 잔여0을 증명하지 않는다**. R2 inventory/bytes는 확인하지 않았다.
+
+version14 부모 운영 재검증에서는 전송 실패 뒤 페이지 유지·입력/선택 표시 보존·연결 끊김 안내가 PASS였고, fresh read는 제출0/첨부0이었다. 이때 표시된 `qlt022-a.txt ()`의 크기는 공란이었다. v13은 shell `/tmp` 파일을 chooser에 전달했으나 Chrome host에서 보이는지는 확인하지 못했다. v14는 cua 실행 파일시스템의 write/read/stat48bytes를 확인했지만 Chrome host와 같은 파일시스템이라는 지원 계약은 없다. chooser 계약은 “absolute paths visible to browser”이며 별도 transfer API도 없다. 파일명 표시·크기 공란은 실제 File bytes 선택 성공을 증명하지 않는다. 관측 시점 DOM `input.files=[]`도 앱 reset 가능성이 있어 최초 선택 실패나 앱 버그의 증거로 단정하지 않는다. React 내부 상태는 조회하지 않았고 Network status/headers는 지원 API에 없어 미확인이다.
+
+따라서 운영 신규·수정 업로드 성공 인수는 **자동화 파일 전달을 검증할 수 없는 한계로 차단**됐다. 운영 연결 실패의 근본 원인과 앱 원인은 미확정이며 사용자 직접 작은 TXT 선택·등록 확인 결과를 기다린다. 남은 합성 project#5 `QLT022-QA-20261022-1204` / task#7 `QLT022 합성 TXT 첨부 회귀`는 제출물 생성 확인이 없고 대상별 영구 삭제 승인 요청 중이다. 정리 완료로 표시하지 않으며 이 후속 문서 단계에서 앱 수정·게시·새 제품 테스트·삭제를 수행하지 않았다.
 
 후속 사용자 요청으로 첨부 오류 수정·검증 및 검증 후 기존 사이트 게시가 승인됐다. 실제 게시 성공은 별도 확인하며 새 운영 영구 삭제 대상은 별도 승인 경계를 유지한다. 운영은 기존 실패 Network/Console 기록이 제공될 때 시각·상태·요청/응답 Content-Type·request/ray ID만 안전하게 수집해 Worker와 대조한다. Cookie/Authorization/OAuth 값·전체 HAR는 공유하지 않는다. 원인 후보는 브라우저/진입 구간, RSC 직렬화·디코딩,413/동시multipart503, R2/lease/DB 실패이며 현 증거로 특정하지 않는다.
 
@@ -124,7 +128,7 @@ Native schema readiness는 현재16개 관리 표와 schema_migrations를 확인
 | focused ESLint/Python compile/FSD/types | PASS; FSD self-test5·경계오류0. typecheck는 Vinext가 덮어쓴 Next 생성 route 타입 충돌 후 기존 Next typegen 절차로 PASS | 필수 생성 타입/include 삭제나 보안 옵션 변경으로 통과시키지 않음 |
 | `npm run test:unit` | action8 PASS, unit105/108로 GoogleProvider3 FAIL | 기존 QLT-019 재현이며 전체 unit 통과가 아님 |
 
-이 안정화는 연결 실패를 폼 안에서 처리하도록 바꾼 범위다. 서버 인가·SQL/schema·비공개 다운로드 URL은 변경하지 않았다. 동일 앱 소스의 main82a8777/sites41059c8을 푸시하고 version14 게시 succeeded를 확인했다. 정확한 source/version/deployment/archive 근거는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다. 부모 브라우저의 운영 신규·수정 TXT 첨부 인수는 아직 대기이며 최초 운영 연결 차단 원인도 미확정이므로 QLT-022를 열린 상태로 유지한다.
+이 안정화는 연결 실패를 폼 안에서 처리하도록 바꾼 범위다. 서버 인가·SQL/schema·비공개 다운로드 URL은 변경하지 않았다. 동일 앱 소스의 main82a8777/sites41059c8을 푸시하고 version14 게시 succeeded를 확인했다. 정확한 source/version/deployment/archive 근거는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다. 운영의 연결 실패 처리 UI 통과와 실제 파일 업로드 성공은 별개다. 운영 신규·수정 TXT 인수는 위 자동화 파일 전달 한계로 차단되어 사용자 수동 확인 대기이며, 최초 연결 실패 원인도 미확정이므로 QLT-022를 열린 상태로 유지한다.
 
 ## 문서 정리 검증
 
