@@ -42,7 +42,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 11 · 10-19 04:01:18 | 0a2cbb5fc42d8917ba1a605f0e9c5b6360188962 | succeeded, appgdep_6ad5960689f881918f7dde37c3376428; 기존16표 전체 row 동일 |
 | 12 · 10-20 05:51:39 | 0d1a1a3afe8680ddd7c1281b583fd9d846cc0bc1 | succeeded, appgdep_6ad701611af48191b37ff6b4a1548d2c; 기존15표 전체 row·public policy(revision2) 동일. 사용자2/기존receipt1/나머지0, 새screenshot표0 |
 | 13 · 10-22 11:19:22.961 | b249c4dc525a36c4c843876625e2e0dde64c1461 | succeeded, appgdep_6ad9f0d0f3c481919846d8a5be031cc5; QLT-021 포함. public policy revision2/env revision11 유지 |
-| 14 · 10-22 11:59:06.590701 | 41059c82c37d7de718a3e61b414d4ab0331e6c5a | succeeded, appgdep_6ad9fa80e2fc819183a6094e4d07563d; 첨부 transport 오류의 폼 내 안내/초안 보존 안정화. 기존 URL/public access policy revision2/env revision11 유지. 연결 실패 UI 보존 확인. 신규·수정 업로드 인수는 파일 전달 한계로 차단·사용자 수동 확인 대기 |
+| 14 · 10-22 11:59:06.590701 | 41059c82c37d7de718a3e61b414d4ab0331e6c5a | succeeded, appgdep_6ad9fa80e2fc819183a6094e4d07563d; 첨부 transport 오류의 폼 내 안내/초안 보존 안정화. 기존 URL/public access policy revision2/env revision11 유지. 연결 실패 UI 보존 및 사용자 신규 첨부·새로고침·다운로드 PASS. 운영 수정 시 추가 첨부는 미검증 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -63,7 +63,7 @@ version14 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_d5ff1c027aec81
 
 사용자의 명시적 대상별 영구 삭제 승인 뒤 11:34:38.645Z 제출물#4를 삭제했다. UI `제출물을 삭제했습니다.` / `status=success`, 알림 query를 제거한 task URL 새로고침의 제출0·댓글0, `/submissions/4`의404를 확인했다. `/admin/logs`는 INFO / tasks / `submission.delete completed`와 submissionId4/taskId6/projectId4를 표시했다. 승인받은 작업#6와 프로젝트#4도 이어 삭제한 뒤 `/tasks`의 프로젝트0·작업0·제출0·댓글0을 확인했다.
 
-이 결과로 **하위 버전·댓글 cascade 후 실제 삭제를 실패로 오인하던 QLT-021 핵심 경로의 운영 인수는 PASS**다. 제출물 모든 버전과 댓글의 영구 삭제는 앱에서 복원할 수 없으며, 이 승인은 해당 합성 대상에 한정된다. 첨부0개였으므로 운영 첨부 bytes 삭제·R2 전체 잔여 없음·강제 refresh/audit 실패 경로는 검증하지 않았다. 후속 오류 주입은 기존 로컬 회귀 근거와 구분한다. 실제 파일 업로드/정리는 QLT-022가 미완료다.
+이 결과로 **하위 버전·댓글 cascade 후 실제 삭제를 실패로 오인하던 QLT-021 핵심 경로의 운영 인수는 PASS**다. 제출물 모든 버전과 댓글의 영구 삭제는 앱에서 복원할 수 없으며, 이 승인은 해당 합성 대상에 한정된다. 첨부0개였으므로 운영 첨부 bytes 삭제·R2 전체 잔여 없음·강제 refresh/audit 실패 경로는 검증하지 않았다. 후속 오류 주입은 기존 로컬 회귀 근거와 구분한다. 후속 사용자 신규 파일 업로드는 통과했으나, 운영 추가 첨부·파일 삭제는 QLT-022에서 미검증으로 구분한다.
 
 version13 archive는349files/5,273,600bytes, content hash `sha256:3a6e12848f23d3805556e470ded0e006dba52d7fadab56b6767d25fe6b67503f`다. 반환된 저장/배포 provenance 확인과 Chrome 인수 근거를 함께 기록했으며 이 문서 단계에서는 재게시·데이터 변경·추가 테스트를 수행하지 않았다.
 
