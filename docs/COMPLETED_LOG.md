@@ -42,8 +42,11 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 11 · 10-19 04:01:18 | 0a2cbb5fc42d8917ba1a605f0e9c5b6360188962 | succeeded, appgdep_6ad5960689f881918f7dde37c3376428; 기존16표 전체 row 동일 |
 | 12 · 10-20 05:51:39 | 0d1a1a3afe8680ddd7c1281b583fd9d846cc0bc1 | succeeded, appgdep_6ad701611af48191b37ff6b4a1548d2c; 기존15표 전체 row·public policy(revision2) 동일. 사용자2/기존receipt1/나머지0, 새screenshot표0 |
 | 13 · 10-22 11:19:22.961 | b249c4dc525a36c4c843876625e2e0dde64c1461 | succeeded, appgdep_6ad9f0d0f3c481919846d8a5be031cc5; QLT-021 포함. public policy revision2/env revision11 유지 |
+| 14 · 10-22 11:59:06.590701 | 41059c82c37d7de718a3e61b414d4ab0331e6c5a | succeeded, appgdep_6ad9fa80e2fc819183a6094e4d07563d; 첨부 transport 오류의 폼 내 안내/초안 보존 안정화. 기존 URL/public access policy revision2/env revision11 유지. 운영 신규·수정 TXT 인수는 대기 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
+
+version14 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_d5ff1c027aec8191a156027e98bc5df9`다. 코드 checkpoint는 GitHub main `82a8777a6ffe636c99366c81722fa9941836b2a7` / sites `41059c82c37d7de718a3e61b414d4ab0331e6c5a`이며 정상 atomic push 후 원격 SHA를 확인했다. 기본 build 차이만 보존했고 동일 sites 소스를 별도 Sites source repository의 main에 반영한 뒤 저장·게시했다. 문서만 갱신하는 후속 commit은 앱 재게시 근거가 아니다.
 
 ### package와 복구 근거
 
@@ -51,6 +54,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 - version11 source-only 첫 deployment `appgdep_6ad59501b7ac8191af20d8792878205a`는 build_output_missing_hosting_metadata로 terminal failed. 같은 SHA의 로컬 dist metadata/정확한 dist 경로 archive로 복구했다. 실패를 숨기거나 migration/권한을 변경하지 않았다.
 - version12 archive350files/5,273,600bytes, normalized SHA256 `6ead63551d163a42f3051af51fd8aa8607da9a81b7f5b7134488d07202409309`. 원래 gzip1,485,966bytes, SHA256 `6b6bba6afeaa878d605c06271976bc5bce663228b26ccad3a8f887913b3c28cd`. 배포 직후 최근5분 error0은 운영 UI 인수나 차단된 요청의 Worker 도달 근거가 아니다.
 - version10 초기 old menu/404·청크 import 실패는 재배포 없이 reload1회 후 정상화했다. asset 전환 시점 불일치는 가설이며 원인 확정 아님. 반복 HTTP 관찰은 네트워크 승인 취소로 수집 중단 후 재시도하지 않았다.
+- version14 저장 archive는350files/5,273,600bytes, normalized content hash `sha256:46b3b742157c665ff887b4ea18ea61062b9703d6aa3d81cceefe9819f3d2cf32`다. 정상 게시 확인은 운영 첨부 인수나 최초 연결 차단 원인 해결을 증명하지 않으며 [QLT-022 검증 기록](HARNESS_MAP.md#제출물-첨부-운영-오류-qlt-022)의 남은 경계를 유지한다.
 - 모든 row 비교는 기록된 표/complete page 범위이며 audit전체/R2 bucket inventory 동일성을 보장한 것이 아니다. additive 이력/선후행 도입 후 구형 writable 앱으로 rollback하면 계약을 깰 수 있어 forward fix가 기본이다.
 
 ## QLT-021 운영 인수와 승인된 합성 정리

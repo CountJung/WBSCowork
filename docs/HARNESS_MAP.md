@@ -124,7 +124,7 @@ Native schema readiness는 현재16개 관리 표와 schema_migrations를 확인
 | focused ESLint/Python compile/FSD/types | PASS; FSD self-test5·경계오류0. typecheck는 Vinext가 덮어쓴 Next 생성 route 타입 충돌 후 기존 Next typegen 절차로 PASS | 필수 생성 타입/include 삭제나 보안 옵션 변경으로 통과시키지 않음 |
 | `npm run test:unit` | action8 PASS, unit105/108로 GoogleProvider3 FAIL | 기존 QLT-019 재현이며 전체 unit 통과가 아님 |
 
-이 안정화는 연결 실패를 폼 안에서 처리하도록 바꾼 범위다. 서버 인가·SQL/schema·비공개 다운로드 URL은 변경하지 않았다. 새 버전의 실제 게시와 부모 브라우저의 운영 신규·수정 첨부 인수는 아직 완료로 판정하지 않으며 QLT-022를 열린 상태로 유지한다.
+이 안정화는 연결 실패를 폼 안에서 처리하도록 바꾼 범위다. 서버 인가·SQL/schema·비공개 다운로드 URL은 변경하지 않았다. 동일 앱 소스의 main82a8777/sites41059c8을 푸시하고 version14 게시 succeeded를 확인했다. 정확한 source/version/deployment/archive 근거는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다. 부모 브라우저의 운영 신규·수정 TXT 첨부 인수는 아직 대기이며 최초 운영 연결 차단 원인도 미확정이므로 QLT-022를 열린 상태로 유지한다.
 
 ## 문서 정리 검증
 
