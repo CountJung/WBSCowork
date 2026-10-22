@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | 제품 | 기반 WBS/FSD와 팀 업무 P0/P1, 버그/스크린샷 구현 완료 | 실제 다중 Google 계정·채워진 UI 인수는 합성 검증과 별개 |
 | Git 소스 | QLT-022 안정화는 main82a8777 / sites41059c8에 반영·정상 atomic push 후 원격 SHA 확인 | 양쪽 문서는 같고 기본 build 차이 유지. 코드 checkpoint 상세는 게시 원장 |
-| 운영 게시 | 기존 public Sites version14, source41059c8의 terminal succeeded 확인 | [게시 원장](COMPLETED_LOG.md#sites-게시-원장). 부모 Chrome의 운영 신규·수정 TXT 인수는 대기, NAS 배포 없음 |
+| 운영 게시 | 기존 public Sites version14, source41059c8의 terminal succeeded 확인 | [게시 원장](COMPLETED_LOG.md#sites-게시-원장). 운영 신규·수정 TXT 인수는 자동화 파일 전달 한계로 차단되어 사용자 직접 선택 확인 대기. NAS 배포 없음 |
 | 최근 검증 | QLT-021 핵심 삭제 오판은 실제 Google 세션의 운영 UI 인수 PASS | [검증 기준선](HARNESS_MAP.md#검증-기준선). 첨부 업로드·운영 파일 삭제는 QLT-022 미완료이며 다른 열린 항목도 유지 |
 | 후속 계획 | digest/report D0–D5 미구현, 실제 NAS 적용/인수 미완료 | D0부터 순서대로 진행, delivery는 별도 동의·승인 |
 
@@ -25,7 +25,7 @@
 | QLT-016 | [ ] | Worker 동시 form의 간헐503 원인 확인. 재실행 통과를 원인 해결로 바꾸지 않음 | [검증 기준선](HARNESS_MAP.md#검증-기준선) |
 | QLT-019 | [ ] | GoogleProvider import 실패를 환경별로 분리해 재현성 확인. QLT-021 회차 통과 환경에서는 미재현이었으나 이번 첨부 회귀의 unit에서 다시 관측됐다. 해당 실패를 해결·전체 통과로 표시하지 않음 | [하네스](HARNESS_MAP.md#검증-기준선) |
 | QLT-020 | [ ] | Native 첨부 bug의 durable 파일 정리 도입. 그전 영구 삭제는 fail-closed 유지 | [버그 계약](BUG_REPORTS.md#스크린샷) |
-| QLT-022 | [~] | 연결 거부 시 페이지 오류로 빠지던 경로를 로컬 주입으로 재현해 초안·파일 유지와 수동 재시도를 구현했다. 실제 Chrome 신규·수정·다운로드·실패 후 재시도는 로컬 통과. 운영 최초 Failed to fetch의 연결 차단 원인은 미재현·미확정이다. 안정화 version14 게시 후 부모 브라우저의 운영 신규·수정 TXT 인수와 합성 파일 정리 근거를 기다린다. 새 영구 삭제 대상은 별도 승인 | [관측·미확인 경계](HARNESS_MAP.md#제출물-첨부-운영-오류-qlt-022) |
+| QLT-022 | [!] | 안정화 version14의 연결 실패 안내·페이지/입력 보존은 운영에서 통과했으나, 실제 파일의 Chrome 전달을 보장할 수 없어 신규·수정 업로드 성공 인수는 차단됐다. 사용자 직접 작은 TXT 선택·등록 확인 결과 대기. 운영 연결 실패의 근본 원인은 미확정이며 앱 오류로 단정하지 않는다. 남은 합성 자료의 대상별 영구 삭제 승인도 대기 | [관측·미확인 경계](HARNESS_MAP.md#제출물-첨부-운영-오류-qlt-022) |
 | OPS-021 | [~] | NAS 소스/업데이트 절차는 준비됨. 실제 플랫폼·백업·기본 build·v1–v9 적용·기동·자료/역할/수동 인수는 운영자가 수행. 기존 NFT warning도 유지 | [운영 안내](NAS_UPDATE_GUIDE.md) |
 | OPS-031 | [!] | Native bug purge 포함 전체 수명주기/두 isolation-level 경합 검증은 별도 승인 대기. 비파괴16조건·Sites 삭제 완료와 구분 | [완료 범위](COMPLETED_LOG.md#실환경-qa와-삭제-승인-경계) |
 | OPS-032 | [ ] | Next/NextAuth/MariaDB 등 남은 dependency advisory를 실제 native/Worker 사용 경로별 검토. 전체 npm audit 해결이나 강제 major override를 주장하지 않음 | [보안 근거](COMPLETED_LOG.md#보안-패치와-활성-decoder) |
