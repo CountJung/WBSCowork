@@ -20,7 +20,7 @@
 | OPS-034 네트워크 하네스 | 기존 proxy/정책 read-only 진단, CONNECT403과 site HTTP403 구분, 익명 GET-only smoke, browser loopback guard와 합성12조건. 플랫폼 host 추가 승인과 실제 적용은 별개; 현 환경 적용 대기 |
 | PRD-045, 2026-10-20 | bug 본문+private screenshot 3×2MiB, preview/remove/실패 초안 유지/detail/refresh, MIME bytes·권한·lease/rollback. 0013/native v9 additive. version12 게시. native 첨부 purge는 QLT-020 미해결 |
 | OPS-036, 2026-10-20 | 아래 archive6개 검증 후5개 임시 remote branch atomic 삭제. main/sites2개, 공통 code/schema/test/document와 기본 build 차이 보존. NAS 배포/Sites 재게시 없음 |
-| QLT-021, 2026-10-21 | D1 총 변경 수를 부모 삭제 수로 오인. DELETE RETURNING의 요청 id rowset과 commit 후 followup 분리. main ddcedd6/sites c1c55da, DB109/action8/unit119/visibility33/Worker257, 양쪽 build/lint/types/FSD PASS. 운영에는 아직 게시/적용하지 않음 |
+| QLT-021, 2026-10-21 | D1 총 변경 수를 부모 삭제 수로 오인. DELETE RETURNING의 요청 id rowset과 commit 후 followup 분리. main ddcedd6/sites c1c55da, DB109/action8/unit119/visibility33/Worker257, 양쪽 build/lint/types/FSD PASS. 후속 version13의 핵심 삭제 오판 운영 인수는 아래 별도 기록. NAS 적용·첨부 인수는 포함하지 않음 |
 
 과거 네트워크 기록의 제목 QLT-020은 당시 잘못 중복 사용된 표기다. 현재 TODO의 QLT-020은 native 첨부 bug 파일 정리를 뜻하며 번호를 다시 발급하지 않는다. QLT-015/016/019, OPS-021/031/032/033/034/035는 이 완료 색인으로 닫히지 않는다.
 
@@ -41,8 +41,9 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 10 · 10-09 18:04:25 | 3b4af81e175ca0cd889fdc2cb2f13bead9bec7b0 | succeeded, appgdep_6ac92c90e644819192a066f2b25c9d6c; D1 0010–0012, 기존13표 전체 row 동일/새3표0 |
 | 11 · 10-19 04:01:18 | 0a2cbb5fc42d8917ba1a605f0e9c5b6360188962 | succeeded, appgdep_6ad5960689f881918f7dde37c3376428; 기존16표 전체 row 동일 |
 | 12 · 10-20 05:51:39 | 0d1a1a3afe8680ddd7c1281b583fd9d846cc0bc1 | succeeded, appgdep_6ad701611af48191b37ff6b4a1548d2c; 기존15표 전체 row·public policy(revision2) 동일. 사용자2/기존receipt1/나머지0, 새screenshot표0 |
+| 13 · 10-22 11:19:22.961 | b249c4dc525a36c4c843876625e2e0dde64c1461 | succeeded, appgdep_6ad9f0d0f3c481919846d8a5be031cc5; QLT-021 포함. public policy revision2/env revision11 유지 |
 
-미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. GitHub 최신 QLT-021 소스와 실제 live source0d1a1a3는 별개다.
+미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
 ### package와 복구 근거
 
@@ -51,6 +52,16 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 - version12 archive350files/5,273,600bytes, normalized SHA256 `6ead63551d163a42f3051af51fd8aa8607da9a81b7f5b7134488d07202409309`. 원래 gzip1,485,966bytes, SHA256 `6b6bba6afeaa878d605c06271976bc5bce663228b26ccad3a8f887913b3c28cd`. 배포 직후 최근5분 error0은 운영 UI 인수나 차단된 요청의 Worker 도달 근거가 아니다.
 - version10 초기 old menu/404·청크 import 실패는 재배포 없이 reload1회 후 정상화했다. asset 전환 시점 불일치는 가설이며 원인 확정 아님. 반복 HTTP 관찰은 네트워크 승인 취소로 수집 중단 후 재시도하지 않았다.
 - 모든 row 비교는 기록된 표/complete page 범위이며 audit전체/R2 bucket inventory 동일성을 보장한 것이 아니다. additive 이력/선후행 도입 후 구형 writable 앱으로 rollback하면 계약을 깰 수 있어 forward fix가 기본이다.
+
+## QLT-021 운영 인수와 승인된 합성 정리
+
+2026-10-22, 위 version13에서 부모 클라우드 Chrome의 기존 Google 인증·슈퍼관리자 세션으로 인수했다. 합성 프로젝트#4 `QLT021-QA-20261022-1127` / 작업#6 / 제출물#4에 본문 v1·v2와 댓글1개를 만들었다. 첨부는0개였으며 업로드 실패의 상세 관측은 [QLT-022 검증 기록](HARNESS_MAP.md#제출물-첨부-운영-오류-qlt-022)이 소유한다.
+
+사용자의 명시적 대상별 영구 삭제 승인 뒤 11:34:38.645Z 제출물#4를 삭제했다. UI `제출물을 삭제했습니다.` / `status=success`, 알림 query를 제거한 task URL 새로고침의 제출0·댓글0, `/submissions/4`의404를 확인했다. `/admin/logs`는 INFO / tasks / `submission.delete completed`와 submissionId4/taskId6/projectId4를 표시했다. 승인받은 작업#6와 프로젝트#4도 이어 삭제한 뒤 `/tasks`의 프로젝트0·작업0·제출0·댓글0을 확인했다.
+
+이 결과로 **하위 버전·댓글 cascade 후 실제 삭제를 실패로 오인하던 QLT-021 핵심 경로의 운영 인수는 PASS**다. 제출물 모든 버전과 댓글의 영구 삭제는 앱에서 복원할 수 없으며, 이 승인은 해당 합성 대상에 한정된다. 첨부0개였으므로 운영 첨부 bytes 삭제·R2 전체 잔여 없음·강제 refresh/audit 실패 경로는 검증하지 않았다. 후속 오류 주입은 기존 로컬 회귀 근거와 구분한다. 실제 파일 업로드/정리는 QLT-022가 미완료다.
+
+version13 archive는349files/5,273,600bytes, content hash `sha256:3a6e12848f23d3805556e470ded0e006dba52d7fadab56b6767d25fe6b67503f`다. 반환된 저장/배포 provenance 확인과 Chrome 인수 근거를 함께 기록했으며 이 문서 단계에서는 재게시·데이터 변경·추가 테스트를 수행하지 않았다.
 
 ## P0P1 인수와 승인된 정리
 

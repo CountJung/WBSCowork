@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Box, Button, Checkbox, Chip, Divider, FormControl, FormControlLabel, FormLabel, Paper, Radio, RadioGroup, Stack, TextField, Typography } from "@mui/material";
+import { useCallback, useEffect, useRef, useState, useTransition, type FormEvent } from "react";
+import { Alert, Box, Button, Checkbox, Chip, Divider, FormControl, FormControlLabel, FormLabel, Paper, Radio, RadioGroup, Stack, TextField, Typography } from "@mui/material";
 import MarkdownContent from "@/src/shared/ui/markdown-content";
 import SubmitButton from "@/src/shared/ui/submit-button";
 import type { Comment } from "@/src/entities/comment";
@@ -28,6 +28,34 @@ type TaskSubmissionPanelProps = {
   updateCommentAction: ContentAction;
   updateSubmissionAction: ContentAction;
 };
+
+// Handle transport rejection before it reaches the page error boundary. Native
+// form actions remain available before hydration; manual submission retains drafts.
+function useSubmissionUpload(action: ContentAction) {
+  const [error, setError] = useState("");
+  const [pending, startTransition] = useTransition();
+  const inFlight = useRef(false);
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (inFlight.current) return;
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    inFlight.current = true;
+    setError("");
+    startTransition(async () => {
+      try {
+        await action(data);
+      } catch (failure) {
+        // Redirects include validation/authentication results and belong to the router.
+        if (failure && typeof failure === "object" && "digest" in failure && String(failure.digest).startsWith("NEXT_REDIRECT")) throw failure;
+        setError("업로드 연결이 끊겼습니다. 입력과 첨부를 유지했습니다. 저장 여부를 목록에서 확인한 뒤 다시 시도해 주세요.");
+      } finally {
+        inFlight.current = false;
+      }
+    });
+  }
+  return { submit, pending, error, clearError: () => setError("") };
+}
 
 function SubmissionOperationFields({revision}:{revision?:number}) {
   const [token]=useState(()=>crypto.randomUUID());
@@ -443,6 +471,11 @@ export default function TaskSubmissionPanel({
   const [openPreviews, setOpenPreviews] = useState<Set<string>>(new Set());
   const [editingSubmissionId, setEditingSubmissionId] = useState<number | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const createUpload = useSubmissionUpload(createSubmissionAction);
+  const editUpload = useSubmissionUpload(async data => {
+    await updateSubmissionAction(data);
+    setEditingSubmissionId(null);
+  });
   const totalCommentCount = submissions.reduce(
     (count, submission) => count + (commentsBySubmissionId[submission.id]?.length ?? 0),
     0,
@@ -547,7 +580,7 @@ export default function TaskSubmissionPanel({
                         />
                         {canEdit && editingSubmissionId !== submission.id ? (
                           <>
-                            <Button size="small" variant="outlined" onClick={() => setEditingSubmissionId(submission.id)}>
+                            <Button size="small" variant="outlined" onClick={() => { editUpload.clearError(); setEditingSubmissionId(submission.id); }}>
                               수정
                             </Button>
                             <Stack component="form" action={deleteSubmissionAction}>
@@ -749,10 +782,9 @@ export default function TaskSubmissionPanel({
                         <Stack spacing={1.5}>
                           <Stack
                             component="form"
-                            action={async (formData: FormData) => {
-                              await updateSubmissionAction(formData);
-                              setEditingSubmissionId(null);
-                            }}
+                            key={`${submission.id}:${submission.currentRevision}:upload`}
+                            action={updateSubmissionAction}
+                            onSubmit={editUpload.submit}
                             spacing={1.5}
                           >
                             <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
@@ -773,11 +805,12 @@ export default function TaskSubmissionPanel({
                             {submission.filePath ? (
                               <FormControlLabel control={<Checkbox name="clearAttachment" />} label="새 버전에서 기존 단일 첨부 제외 (이전 버전 보존)" />
                             ) : null}
+                            {editUpload.error ? <Alert severity="error">{editUpload.error}</Alert> : null}
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
-                              <SubmitButton pendingLabel="제출물 저장 중…" variant="outlined">
+                              <SubmitButton pending={editUpload.pending} pendingLabel="제출물 저장 중…" variant="outlined">
                                 저장
                               </SubmitButton>
-                              <Button type="button" variant="text" onClick={() => setEditingSubmissionId(null)}>
+                              <Button type="button" variant="text" disabled={editUpload.pending} onClick={() => setEditingSubmissionId(null)}>
                                 취소
                               </Button>
                             </Stack>
@@ -795,7 +828,7 @@ export default function TaskSubmissionPanel({
         {!canWrite ? null : (
           <>
             <Divider />
-            <Stack component="form" action={createSubmissionAction} spacing={1.5}>
+            <Stack key={`create:${submissions.map(s => s.id).join(",")}`} component="form" action={createSubmissionAction} onSubmit={createUpload.submit} spacing={1.5}>
               <SubmissionOperationFields key={`create:${submissions.map(s=>s.id).join(",")}`}/>
               <TextField name="materialUrl" label="자료 링크 (선택)" slotProps={{htmlInput:{maxLength:2048}}}/>
               <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
@@ -811,8 +844,9 @@ export default function TaskSubmissionPanel({
               />
               <VisibilityRadio defaultValue="public" />
               <AttachmentInput helperText="문서, 이미지, 압축파일 등 여러 파일을 동시에 선택할 수 있습니다." />
+              {createUpload.error ? <Alert severity="error">{createUpload.error}</Alert> : null}
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
-                <SubmitButton pendingLabel="제출 등록 중…" variant="contained">
+                <SubmitButton pending={createUpload.pending} pendingLabel="제출 등록 중…" variant="contained">
                   제출 등록
                 </SubmitButton>
               </Stack>

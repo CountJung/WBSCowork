@@ -34,6 +34,7 @@
 | `npm run test:sites:storage` | ephemeral D1/R2 upload/실패/참조 보호 |
 | `npm run test:sites:http` | build 후 actual Worker/D1/R2 full HTTP; --bugs면 버그 범위 |
 | `npm run test:sites:browser` | 기존 Worker의 합성 desktop/mobile; loopback만 |
+| `npm run test:sites:submission-upload:browser` | production Worker+격리 D1/R2의 hydrated Chromium 제출 TXT 신규·수정·재조회·다운로드·연결실패 초안/파일 보존·수동 재시도; 1280/390px, loopback만 |
 | `npm run test:sites:bug-screenshots` | ephemeral D1/R2 이미지·권한·rollback·lease28 |
 | `npm run test:sites:bug-screenshots:browser` | build 후 Python Playwright/Chromium 첨부19; loopback만 |
 | `npm run test:sites:bugs` | 독립 bug archive D1 계약 |
@@ -85,21 +86,51 @@ Native schema readiness는 현재16개 관리 표와 schema_migrations를 확인
 
 ## 검증 기준선
 
-아래는 **해당 SHA에서 이미 실행한 기록**이다. 이번 문서 정리에서 제품 검사를 재실행했다는 뜻이 아니다. 전체 이전 원문과 복구 경로는 COMPLETED_LOG가 보존한다.
+아래는 **해당 SHA·환경에서 실행한 기록**이다. 과거 로컬 회귀와 후속 실제 운영 UI 인수를 구분하며, 문서 갱신 자체가 제품 검사를 재실행했다는 뜻은 아니다. 전체 이전 원문과 복구 경로는 COMPLETED_LOG가 보존한다.
 
 | 기준 | 실제 결과 | 범위/남은 한계 |
 | --- | --- | --- |
 | QLT-021, main ddcedd6/sites c1c55da, 2026-10-21 | DB109(D1 57/MariaDB52), action8, unit119, visibility33, Worker HTTP257, native/Sites build, lint/types/FSD PASS | Node24.19/MariaDB10.11.14, local fixtures. 운영 DB/삭제·새 Google 로그인·NAS/Sites 배포 미실행. 과거 QLT-019는 이 환경에서 미재현이며 다른 환경까지 닫지 않음 |
+| QLT-021 운영 UI, version13/source b249c4d, 2026-10-22 | 실제 Google 세션으로 버전·댓글이 있는 합성 제출물의 삭제 성공/새로고침/상세404/성공 감사 확인. 핵심 삭제 오판 인수 PASS | 부모 Chrome 관측, 대상별 승인·정리 상세는 [완료 기록](COMPLETED_LOG.md#qlt-021-운영-인수와-승인된-합성-정리). 첨부0개여서 운영 파일 정리는 미검증. 첨부 오류는 QLT-022 |
 | screenshot0d1a1a3, 2026-10-20 | D1/R2 28, bugD1 58, bugHTTP200/fullHTTP248, Chromium19(1280/390), layout48(6너비), auth18/network12/native additive99 PASS | unit105/108·GoogleProvider3실패, visibility/storage import실패, workflow 동시503을 당시 실패로 보존. QLT-021은 다음 회차 수정됨 |
 | branch 정리 a28188e/56e397c, 2026-10-20 | main native build/CLI8, Sites build/auth18, 양쪽 lint/types/FSD, network12/screenshot28 PASS | 기본 build만 의미상 다름. 새 배포 없음. native logging 동적 NFT1 경고 |
 | P0/P1, 2026-10-09 | P0 Worker412/quality375/native77; P1 unit119 / D1 65/Worker472/quality375/auth18/native99+관계복원4 | 실계정2개 협업/채워진 template browser/native purge·강등 interleaving·storage race는 미확인. 최초503과 좁은 관계 DELETE1142 실패를 성공에 합산하지 않음 |
 | 초기 전환/보안/버그, 2026-10-08 | auth18, storage57, bug lifecycleD158/Worker217; React19.2.8 active decoder fingerprint | 실환경 owner1계정의 승인된 QA는 별도 기록. 전체 dependency audit 완료 아님 |
 
-환경 기준선: 기존 native NFT 동적 logging 경고(회차에 따라1/2), Vinext proxy 감지/route static 분류, Node mock experimental, npm proxy/@esbuild-kit deprecation을 해결됐다고 주장하지 않는다. QLT-015의 차단된 두 cleanup runner 정지/재개는 미실행, QLT-016 동시503 원인은 미확정, QLT-020 native 첨부 purge는 fail-closed다. QLT-021은 최신 코드에서 수정됐고 version12에는 아직 게시됐다고 기록하지 않는다.
+환경 기준선: 기존 native NFT 동적 logging 경고(회차에 따라1/2), Vinext proxy 감지/route static 분류, Node mock experimental, npm proxy/@esbuild-kit deprecation을 해결됐다고 주장하지 않는다. QLT-015의 차단된 두 cleanup runner 정지/재개는 미실행, QLT-016 동시503 원인은 미확정, QLT-020 native 첨부 purge는 fail-closed다. QLT-021 핵심 삭제 오판은 version13에서 운영 인수를 통과했다. 로컬의 권한·rollback·후속 오류 주입 통과를 운영에서 강제로 확인한 것으로 확대하지 않으며, 별도 첨부 실패 QLT-022는 미완료다.
+
+## 제출물 첨부 운영 오류 (QLT-022)
+
+대상은 2026-10-22 version13/source b249c4d의 `/tasks`, 합성 project4/task6였다. 작은 TXT를 포함한 신규 제출은 `This page couldn’t load` 뒤 재조회 제출0/첨부0이었다. 본문만 생성 후 v2·댓글1은 성공했고, 수정 폼에서 TXT 추가도 같은 오류 뒤 기존 v2/첨부0을 유지했다. Chrome console 11:31:39.153Z는 `TypeError: Failed to fetch` at `app-browser-server-action-client-BUPgAzbb.js:1:2058` 및 React form error boundary를 표시했다.
+
+지원 브라우저 API에는 Network 기록/headers가 없어 실패 요청의 status·Content-Type·requestId·cf-ray는 미확인이다. 기존 Worker 오류 조회에는 대응 오류가 없었고 주변 최근100개(11:27:19–11:31:58)는 본문 생성·수정·댓글의303/완료 로그를 반환했다. 제한·수집 지연 때문에 실패 요청의 Worker 미도달이나 원인을 확정하지 않는다. 작은 TXT를 금지하는 소스 규칙은 없으며, 직접 구성한 multipart HTTP 회귀는 hydrated Chrome의 React Action 파일 전송 경로를 입증하지 않는다.
+
+추가 읽기 확인: 11:38:56Z 무렵 Sites 도구로 실제 D1 `DB`의 `file_cleanup_jobs`를 조회해0행, has_more=false/next_offset=null/truncated=false를 확인했다. 이는 대기 ledger가 없다는 뜻이며 **첨부 DB0·ledger0으로 R2 객체 잔여0을 증명하지 않는다**. R2 inventory/bytes는 확인하지 않았다.
+
+후속 사용자 요청으로 첨부 오류 수정·검증 및 검증 후 기존 사이트 게시가 승인됐다. 실제 게시 성공은 별도 확인하며 새 운영 영구 삭제 대상은 별도 승인 경계를 유지한다. 운영은 기존 실패 Network/Console 기록이 제공될 때 시각·상태·요청/응답 Content-Type·request/ray ID만 안전하게 수집해 Worker와 대조한다. Cookie/Authorization/OAuth 값·전체 HAR는 공유하지 않는다. 원인 후보는 브라우저/진입 구간, RSC 직렬화·디코딩,413/동시multipart503, R2/lease/DB 실패이며 현 증거로 특정하지 않는다.
+
+구현 담당의 앱 수정 전 기준선(main ff5e830): 기존 `build:sites`는 통과했고 proxy 감지·static 분류 한계는 기존 경고로 남겼다. `scripts/test-submission-upload-browser.mjs`/`.py`는 실제 hydrated Chromium→loopback→격리 D1/R2 경로를 사용한다. 기본 실행의 Chromium SUID sandbox 초기화 실패는 환경 실패이며 앱 회귀 실패로 세지 않는다. 보안 옵션을 바꾸지 않은 동일 명령의 승인 실행에서 1280/390px TXT 신규·수정(v2)·새로고침·exact bytes 다운로드는 모두 통과했다. 최초 신규 multipart+x-rsc-action 요청은1211/1210bytes, 응답303 및 text/x-component였고 합성 D1 첨부 metadata와21byte qa.txt 저장을 확인했다. 따라서 **운영 최초 Failed to fetch의 연결 차단 원인은 미재현·미확정**이다.
+
+로컬 연결 실패 주입은 다른 범위다. Chromium `route.abort('connectionfailed')`가 기존 React form error boundary와 입력 유지 안내 부재를 재현했다(RED). `TaskSubmissionPanel.tsx`의 신규·수정 두 폼은 onSubmit/useTransition으로 transport 거부를 잡아 폼 안에 안내하고 입력·선택 파일을 유지한다. 서버의 NEXT_REDIRECT는 router로 다시 던지고 자동 재전송은 하지 않는다. Shared SubmitButton의 선택적 pending 값은 기존 useFormStatus와 함께 쓰며 서버 권한·SQL·저장 계약은 바꾸지 않았다.
+
+구현 담당의 최종 로컬 결과는 main ff5e830 기반의 수정 작업 트리에서 다음과 같다. 문서 담당이 제품 검사를 다시 실행한 것으로 계산하지 않는다.
+
+| 검증·모드 | 실제 결과 | 경계 |
+| --- | --- | --- |
+| hydrated Chromium,1280/390px | 너비별8시나리오 PASS: 신규·수정v2·exact bytes 다운로드/새로고침, 생성 연결 실패 초안 보존/수동 재시도1행, 수정 연결 실패 기존v2·초안 보존/수동 재시도v3, HTTP503 주입 시 초안 보존·uncaught 없음, 가로 overflow 없음 | 실제 Chrome 파일 포함 Action과 로컬 연결·응답 실패 주입. 운영 최초 연결 차단은 미재현 |
+| 격리 D1/R2 영속 상태 대조 | 합성 제출4건의 revision3/1/3/1, 버전 첨부 metadata14건과 참조 bytes, hydrated multipart+x-rsc-action 성공 응답303의8요청 확인 | metadata 참조 수와 고유 R2 객체 수를 같은 값으로 세지 않음 |
+| native/Sites build | 두 대상 PASS. native는 기본 Turbopack | native의 기존 logging NFT2 warning, Sites proxy 감지·static 분류 한계 유지 |
+| auth/decoder/actual Worker HTTP | 인증18·active decoder·Worker HTTP257 PASS | 합성 로컬 runtime 증거, 실제 Google 로그인·운영 첨부 인수는 아님 |
+| focused ESLint/Python compile/FSD/types | PASS; FSD self-test5·경계오류0. typecheck는 Vinext가 덮어쓴 Next 생성 route 타입 충돌 후 기존 Next typegen 절차로 PASS | 필수 생성 타입/include 삭제나 보안 옵션 변경으로 통과시키지 않음 |
+| `npm run test:unit` | action8 PASS, unit105/108로 GoogleProvider3 FAIL | 기존 QLT-019 재현이며 전체 unit 통과가 아님 |
+
+이 안정화는 연결 실패를 폼 안에서 처리하도록 바꾼 범위다. 서버 인가·SQL/schema·비공개 다운로드 URL은 변경하지 않았다. 새 버전의 실제 게시와 부모 브라우저의 운영 신규·수정 첨부 인수는 아직 완료로 판정하지 않으며 QLT-022를 열린 상태로 유지한다.
 
 ## 문서 정리 검증
 
-기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.
+2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.
+
+2026-10-22 QLT-021 후속 문서 검증: main ff5e830/sites b249c4d를 기준으로 문서 전담 역할에서 기존 AGENTS/TODO/HARNESS_MAP/COMPLETED_LOG만 로컬 갱신했다. 개인 docs-canon SKILL.md는 읽어 적용했으나 제공된 `scripts/check_docs.py` 리소스 읽기가 실패했고 로컬 경로도 찾지 못해 **원본 형식 검사기는 미실행**이다. 저장소의 `node scripts/check-docs.mjs`는 문서30·등록16/핵심7·상대링크167·npm명령84 PASS, `git diff --check` PASS다. 별도 내용 검토로 version13의 게시 provenance/부모 Chrome 인수 근거, QLT-022의 남은 조건·승인 경계, 과거 로컬 수치와 현재 운영 결과의 분리 및 기존 고유 이력 보존을 확인했다. 이 QLT-021 문서 정리 단계에서는 제품 테스트 재실행·앱 수정·재게시·운영 데이터 변경·커밋·푸시를 수행하지 않았다.
 
 ## 환경 메모
 

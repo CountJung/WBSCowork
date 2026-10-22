@@ -8,6 +8,7 @@ type SubmitButtonProps = Omit<
   "component" | "href" | "type" | "loading" | "loadingIndicator" | "loadingPosition"
 > & {
   pendingLabel: string;
+  pending?: boolean;
 };
 
 // Keep this component inside its native form so only that action controls pending.
@@ -15,9 +16,11 @@ export default function SubmitButton({
   children,
   disabled = false,
   pendingLabel,
+  pending: controlledPending = false,
   ...props
 }: SubmitButtonProps) {
-  const { pending } = useFormStatus();
+  const status = useFormStatus();
+  const pending = status.pending || controlledPending;
 
   return (
     <Button
