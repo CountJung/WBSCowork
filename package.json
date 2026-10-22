@@ -40,7 +40,8 @@
     "test:sites:bug-screenshots:browser": "node scripts/test-bug-screenshots-browser.mjs",
     "test:sites:live": "python3 scripts/test-sites-live.py",
     "diagnose:sites:network": "python3 scripts/test-sites-live.py --diagnose",
-    "test:sites:network": "python3 -m unittest discover -s tests -p test_site_network.py -v"
+    "test:sites:network": "python3 -m unittest discover -s tests -p test_site_network.py -v",
+    "test:sites:submission-upload:browser": "node scripts/test-submission-upload-browser.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
