@@ -82,7 +82,7 @@ Native schema readiness는 현재16개 관리 표와 schema_migrations를 확인
 
 모든 synthetic browser 입력은 loopback만 허용하고 외부 요청을 차단한다. 기본 Chromium sandbox를 유지한다. 이 실행기의 shell sandbox에서 SUID 구성이 거부되면 정책을 변경하거나 --no-sandbox로 우회하지 않고 지원되는 승인 실행 경로/미실행 사유를 사용한다.
 
-진단/live 명령은 HARNESS와 NAS_UPDATE_GUIDE의 proxy 경계를 유지한다. CONNECT403/Domain forbidden은 proxy_connect/exit1/live_http_completed=false이며 사이트 HTTP403과 구분한다. 인증 cookie 없이 GET만 하고 로그인 redirect를 따라가지 않는다. 플랫폼 정책/프록시/NO_PROXY/인증서를 바꾸지 않는다.
+진단/live 명령은 HARNESS와 NAS_UPDATE_GUIDE의 proxy 경계를 유지한다. CONNECT403/Domain forbidden은 proxy_connect/exit1/live_http_completed=false이며 사이트 HTTP403과 구분한다. 인증 cookie 없이 GET만 하고 로그인 redirect를 따라가지 않는다. 플랫폼 정책/프록시/NO_PROXY/인증서를 바꾸지 않는다. version13 게시 점검 환경에서는 기존 proxy CONNECT200·익명 GET smoke가 통과했다. 정책 파일은 읽을 수 없어 플랫폼 설정 적용 자체는 미확인이며 과거 환경의403 기록과 구분한다.
 
 ## 검증 기준선
 
@@ -91,6 +91,7 @@ Native schema readiness는 현재16개 관리 표와 schema_migrations를 확인
 | 기준 | 실제 결과 | 범위/남은 한계 |
 | --- | --- | --- |
 | QLT-021, main ddcedd6/sites c1c55da, 2026-10-21 | DB109(D1 57/MariaDB52), action8, unit119, visibility33, Worker HTTP257, native/Sites build, lint/types/FSD PASS | Node24.19/MariaDB10.11.14, local fixtures. 운영 DB/삭제·새 Google 로그인·NAS/Sites 배포 미실행. 과거 QLT-019는 이 환경에서 미재현이며 다른 환경까지 닫지 않음 |
+| QLT-021 초기 게시 점검, version13/source b249c4d, 2026-10-22 | Sites build·D1 삭제57·독립 action8·Worker HTTP257 PASS. 배포 후 변경 없는 동일 bundle의 격리 HTTP257 및 익명 live GET6 PASS | Node24.19.0/npm11.9.0, ephemeral D1/R2·합성 session은 운영에 전송하지 않음. 타인 삭제 거부·FK rollback/파일 보존·정상303/감사/파생행·해당 객체 삭제 확인. MariaDB/unit/visibility 재실행 아님. 후속 실계정 UI 인수와 별도 |
 | QLT-021 운영 UI, version13/source b249c4d, 2026-10-22 | 실제 Google 세션으로 버전·댓글이 있는 합성 제출물의 삭제 성공/새로고침/상세404/성공 감사 확인. 핵심 삭제 오판 인수 PASS | 부모 Chrome 관측, 대상별 승인·정리 상세는 [완료 기록](COMPLETED_LOG.md#qlt-021-운영-인수와-승인된-합성-정리). 첨부0개여서 운영 파일 정리는 미검증. 첨부 오류는 QLT-022 |
 | screenshot0d1a1a3, 2026-10-20 | D1/R2 28, bugD1 58, bugHTTP200/fullHTTP248, Chromium19(1280/390), layout48(6너비), auth18/network12/native additive99 PASS | unit105/108·GoogleProvider3실패, visibility/storage import실패, workflow 동시503을 당시 실패로 보존. QLT-021은 다음 회차 수정됨 |
 | branch 정리 a28188e/56e397c, 2026-10-20 | main native build/CLI8, Sites build/auth18, 양쪽 lint/types/FSD, network12/screenshot28 PASS | 기본 build만 의미상 다름. 새 배포 없음. native logging 동적 NFT1 경고 |
@@ -98,6 +99,8 @@ Native schema readiness는 현재16개 관리 표와 schema_migrations를 확인
 | 초기 전환/보안/버그, 2026-10-08 | auth18, storage57, bug lifecycleD158/Worker217; React19.2.8 active decoder fingerprint | 실환경 owner1계정의 승인된 QA는 별도 기록. 전체 dependency audit 완료 아님 |
 
 환경 기준선: 기존 native NFT 동적 logging 경고(회차에 따라1/2), Vinext proxy 감지/route static 분류, Node mock experimental, npm proxy/@esbuild-kit deprecation을 해결됐다고 주장하지 않는다. QLT-015의 차단된 두 cleanup runner 정지/재개는 미실행, QLT-016 동시503 원인은 미확정, QLT-020 native 첨부 purge는 fail-closed다. QLT-021 핵심 삭제 오판은 version13에서 운영 인수를 통과했다. 로컬의 권한·rollback·후속 오류 주입 통과를 운영에서 강제로 확인한 것으로 확대하지 않으며, 별도 첨부 실패 QLT-022는 미완료다.
+
+version13 초기 게시 직후 `npm run test:sites:live -- --url https://wbscowork.cometgnome.chatgpt.site`는 `/`·`/privacy`·`/api/auth/session`의200 및 `/tasks`·`/admin`·`/bugs`의307→`/api/auth/signin`을 확인했다(exit0/live_http_completed=true). 로그인 redirect는 따라가지 않았다. 이는 인증된 삭제 인수가 아니며 위 후속 실계정 운영 결과를 대신하지 않는다.
 
 ## 제출물 첨부 운영 오류 (QLT-022)
 

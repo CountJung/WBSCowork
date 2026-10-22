@@ -30,7 +30,7 @@
 | OPS-031 | [!] | Native bug purge 포함 전체 수명주기/두 isolation-level 경합 검증은 별도 승인 대기. 비파괴16조건·Sites 삭제 완료와 구분 | [완료 범위](COMPLETED_LOG.md#실환경-qa와-삭제-승인-경계) |
 | OPS-032 | [ ] | Next/NextAuth/MariaDB 등 남은 dependency advisory를 실제 native/Worker 사용 경로별 검토. 전체 npm audit 해결이나 강제 major override를 주장하지 않음 | [보안 근거](COMPLETED_LOG.md#보안-패치와-활성-decoder) |
 | OPS-033 | [!] | 레이아웃 실사이트의 전체6개 너비·관리자/버그 UI 인수. 부모 Chrome의 홈/tasks1188×761 확인은 부분 근거 | [접속 경계](NAS_UPDATE_GUIDE.md#운영-접속과-테스트-네트워크) |
-| OPS-034 | [!] | 정확한host 한 개 outbound 추가는 사용자 승인 완료, 플랫폼 관리 경로 접근/적용 대기. 환경 republish 후 새 작업에서 기존 proxy를 유지해 재진단 | [최소 조치](NAS_UPDATE_GUIDE.md#운영-접속과-테스트-네트워크) |
+| OPS-034 | [!] | 과거 환경의 host 추가 승인·차단 기록 보존. version13 게시 점검 환경은 기존 proxy CONNECT200·익명 GET smoke 통과. 정책 파일/플랫폼 설정 적용 자체는 직접 미확인으로 환경별 결과를 구분 | [접속 기준선](HARNESS_MAP.md#브라우저와-운영-연결) |
 | OPS-035 | [!] | version12 스크린샷의 실제 운영 UI 인수. 합성Chromium1280/390 결과와 구분하고 운영 제보 생성/삭제를 임의로 하지 않음 | [버그 계약](BUG_REPORTS.md#스크린샷) |
 | RPT-015 | [ ] | D0 versioned DigestSnapshot·privacy fixture·stable hash | [D0–D5 계획](PROJECT_DIGEST_REPORT_PLAN.md) |
 | RPT-016 | [ ] | D1 manual JSON preview; RPT-015 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
