@@ -59,6 +59,8 @@ version14 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_d5ff1c027aec81
 
 ## QLT-021 운영 인수와 승인된 합성 정리
 
+version13 초기 게시 점검 회차의 별도 근거: 실계정 합성 자료를 만들기 전 배포 직전/직후 read-only로 audit_logs를 제외한17표의 전체 페이지를 비교해 행 내용이 같았다(users2, bug_report_purge_receipts1, 나머지15표0; has_more=false·truncated=false). 환경 변수 entries/revision11·public policy revision2·D1/R2 binding도 유지됐다. 이는 **그 두 시점의 비교**이며 이후 사용자 자료가 생성된 version14의 현재 DB나 audit 전체·R2 bucket inventory가 같다는 주장이 아니다. 당시 Sites build와 격리 삭제/HTTP·익명 GET 결과는 [하네스 기준선](HARNESS_MAP.md#검증-기준선)에 보충한다.
+
 2026-10-22, 위 version13에서 부모 클라우드 Chrome의 기존 Google 인증·슈퍼관리자 세션으로 인수했다. 합성 프로젝트#4 `QLT021-QA-20261022-1127` / 작업#6 / 제출물#4에 본문 v1·v2와 댓글1개를 만들었다. 첨부는0개였으며 업로드 실패의 상세 관측은 [QLT-022 검증 기록](HARNESS_MAP.md#제출물-첨부-운영-오류-qlt-022)이 소유한다.
 
 사용자의 명시적 대상별 영구 삭제 승인 뒤 11:34:38.645Z 제출물#4를 삭제했다. UI `제출물을 삭제했습니다.` / `status=success`, 알림 query를 제거한 task URL 새로고침의 제출0·댓글0, `/submissions/4`의404를 확인했다. `/admin/logs`는 INFO / tasks / `submission.delete completed`와 submissionId4/taskId6/projectId4를 표시했다. 승인받은 작업#6와 프로젝트#4도 이어 삭제한 뒤 `/tasks`의 프로젝트0·작업0·제출0·댓글0을 확인했다.
