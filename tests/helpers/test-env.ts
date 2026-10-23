@@ -54,6 +54,8 @@ export function applyTestEnv() {
   process.env.SUPERUSER_EMAIL = TEST_SUPERUSER_EMAIL;
   process.env.NEXTAUTH_SECRET = "test-secret-not-a-real-credential";
   process.env.NEXTAUTH_URL = "http://127.0.0.1:3000";
+  process.env.GOOGLE_CLIENT_ID = "synthetic-google-client-id";
+  process.env.GOOGLE_CLIENT_SECRET = "synthetic-google-client-secret";
 
   process.env.UPLOAD_DIR = process.env.TEST_UPLOAD_DIR ?? "./.test-artifacts/uploads";
   process.env.LOG_DIR = process.env.TEST_LOG_DIR ?? "./.test-artifacts/logs";

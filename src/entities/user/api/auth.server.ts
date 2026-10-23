@@ -10,6 +10,13 @@ const runtimeEnv = getRuntimeEnv();
 const googleClientId = runtimeEnv.auth.googleClientId;
 const googleClientSecret = runtimeEnv.auth.googleClientSecret;
 
+// NextAuth v4 publishes a Babel CommonJS default: Node ESM receives its export
+// object while Next/Vite interop receives the function. Use the real provider
+// in both runtimes without changing its OAuth configuration or checks.
+const createGoogleProvider = typeof GoogleProvider === "function"
+  ? GoogleProvider
+  : (GoogleProvider as unknown as { default: typeof GoogleProvider }).default;
+
 export function isSuperuserEmail(email?: string | null) {
   const superuserEmail = getRuntimeEnv().auth.superuserEmail;
 
@@ -33,7 +40,7 @@ function getProfilePicture(profile: unknown) {
 export const authOptions = {
   providers: runtimeEnv.auth.googleProviderConfigured
     ? [
-        GoogleProvider({
+        createGoogleProvider({
           clientId: googleClientId!,
           clientSecret: googleClientSecret!,
         }),
