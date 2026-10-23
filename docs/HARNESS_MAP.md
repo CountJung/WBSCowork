@@ -372,7 +372,7 @@ source94be65a 불변 Worker의 정식 HTTP266 실행1회가 `verify-bug-http.mjs
 
 ## 남은 품질과 digest 구현 진행
 
-이 회차는 로컬 구현·검증을 마쳤고 아래 외부 인수 게이트를 남긴다. 운영 version18·sourceccabf81은 유지하며 중간 게시0이다. 아래는 구현 담당이 전달한 소스/실DB/compiled artifact 근거이며 실제 운영 적용 성공이 아니다. 실제 사용자 project5/task7/submission5/attachment7·계정/환경·NAS와 차단된 운영 네트워크 경계를 유지한다.
+이 회차는 로컬 구현·검증을 마쳤고 아래 외부 인수 게이트를 남긴다. 로컬 검증 당시 운영 version18·sourceccabf81을 유지하며 중간 게시0이었다. 후속 최종 게시 결과는 [v19 이력](#version19-승인과-운영-배포)을 따른다. 아래는 구현 담당이 전달한 소스/실DB/compiled artifact 근거이며 실제 운영 적용 성공이 아니다. 실제 사용자 project5/task7/submission5/attachment7·계정/환경·NAS와 차단된 운영 네트워크 경계를 유지한다.
 
 | 범위 | 확인된 단계 근거/남은 경계 |
 | --- | --- |
@@ -408,21 +408,27 @@ Vinext TransformStream은 route가 설정한 Content-Length를 제거하고 chun
 
 compiled18은 DOCX9,425/PPTX81,094bytes의 OOXML·SHA/ETag/R2 metadata, 현재 권한/공개 필터·201 생성/200 같은 요청 재전송의1run/2files를 대조했다. entry `6f781e9f29e53016491ee353c06bd2b648b6edd65a797052fe67dab15fd9fc68`,351files fingerprint `a06326312d2415b6b42662a447c62c62705e726093d7091de2d2463c4880c0c7`는 전후 불변이다. 실제 Chromium/NAS·시각 OOXML 인수와 구분한다.
 
-구현 source main `bd6f4efea7f78221e4d7a2597a01497ffbfd0acc`/sites `5032410a5b5117daabf709ce17514f63af3eeb99`의 push·remote ls-remote를 확인했다. 공통 source/package/lock 동일·기본 build 차이를 보존한다. combined CI status는 두 SHA 각각 statuses0이며 통과가 아니다. 기존 Actions403을 재시도하지 않았다. 후속 문서 HEAD와 운영 v18 source는 별개다.
+구현 source main `bd6f4efea7f78221e4d7a2597a01497ffbfd0acc`/sites `5032410a5b5117daabf709ce17514f63af3eeb99`의 push·remote ls-remote를 확인했다. 공통 source/package/lock 동일·기본 build 차이를 보존한다. combined CI status는 두 SHA 각각 statuses0이며 통과가 아니다. 기존 Actions403을 재시도하지 않았다. 당시 후속 문서 HEAD와 운영 v18 source는 별개였고 이후 v19는 아래에서 구분한다.
 
 새 명령은 현재 package에 등록돼 있음을 문서 담당이 확인했다. 새 보고서나 DDL 사본을 만들지 않고 원본 docs-canon 검사 미가용 경계를 유지한다.
 
-### 저장 version19와 배포 거부
+### version19 승인과 운영 배포
 
 추가 회귀만 포함한 GitHub mainffda904/sites409f514 푸시와 공식 source repository main `409f514a56dfac47932f0d3f874650f4e8b059bc`의 정상 fast-forward·ls-remote 일치를 확인했다. 최종 compiled SSR/RSC+OOXML33조건 PASS, 기존 entry6f781e9f…/351files fingerprint a0632631…는 불변이다. 수동 RSC GET307은 인증 실패가 아니라 같은 경로의 canonical `?_rsc` redirect였고 따라간 응답200을 확인했다. 실제 브라우저는 Native SUID sandbox 차단으로 미검증이며 설정 우회0이다.
 
-기존 사이트의 version19 저장은 성공했지만 **운영 배포는 실행되지 않았다**. 대상 `deploy_site_version` 호출은 자동 승인 검토에서 다음 이유로 거부됐다: “Production deployment external commitment replacing maintainedv18; active instructions prohibit publish until parentreview”. 최신 최종 게시 위임과 충돌하는 검토 결과이며 새 근거 없이 재시도/우회하지 않았다. version19 재조회는 deployment_id=null·배포ID 없음이다. 정확한 version/archive 식별자는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유하며 저장v19를 운영v19로 쓰지 않는다.
+최초 시도에서는 기존 사이트 version19 저장은 성공했지만 **운영 배포는 실행되지 않았다**. 대상 `deploy_site_version` 호출은 자동 승인 검토에서 다음 이유로 거부됐다: “Production deployment external commitment replacing maintainedv18; active instructions prohibit publish until parentreview”. 최신 최종 게시 위임과 충돌하는 검토 결과이며 새 근거 없이 재시도/우회하지 않았다. 당시 version19 재조회는 deployment_id=null·배포ID 없음이었다. 정확한 version/archive 식별자는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유하며 최초 저장 성공을 배포 성공으로 소급하지 않는다.
 
-D1 0017은 CREATE3표+CREATE INDEX8개의11문장만 있고 DML/ALTER/DROP/GRANT가 없으나 배포 거부로 **미적용**이다. 실DB는23표이며25행 pagination으로 audit270행을 포함한 모든 표/컬럼/행을 투영 생략·잘림 없이 전후 대조해 정확히 같았다. 사용자 project5/task7/submission5/attachment7 metadata·사용자2명의 role·membership0을 보존했다. 독립 R2 inventory/원본 bytes는 조회하지 않았고 전체 backup 검증도 아니다.
+D1 0017은 CREATE3표+CREATE INDEX8개의11문장만 있고 DML/ALTER/DROP/GRANT가 없다. 최초 거부 시에는 미적용·실DB23표였으며25행 pagination으로 audit270행을 포함한 모든 표/컬럼/행을 투영 생략·잘림 없이 전후 대조해 정확히 같았다. 사용자 project5/task7/submission5/attachment7 metadata·사용자2명의 role·membership0을 보존했다. 독립 R2 inventory/원본 bytes는 조회하지 않았고 전체 backup 검증도 아니다.
 
 public policy revision2·auth_client·env revision11의5keys는 동일하며 실제 값은 출력하지 않았다. cloud automations는 빈 배열, DIGEST_SCHEDULER_ENABLED/DIGEST_ALLOW_ARTIFACTS 설정 없음으로 예약/산출물 opt-in을 활성화하지 않았다. v18 saved archive는 code fallback 참조로 확인했으나 DB 자동 down/backup 복원을 실행한 것은 아니다. Native v13/v14/NAS 적용·영구 삭제·환경/계정 변경·코딩 proxy 재시도0이다.
 
-최종 Worker artifact에서 dev audit23건의 취약 동작 도달 경로는 발견하지 못했다. Vinext 하위 image-size2.0.2는 build metadata 전용이며 bundle parser/import가 없고 image optimizer route의 등록0 응답302/400은 bytes parser를 호출하지 않았다. 이는 취약점 해결이나 무위험 보증이 아니며 production audit0/전체23 잔여 구분은 유지한다. 남은 조치는 OPS-038의 승인 충돌 해소 후 정확한 저장 version19 배포 결과 확인이며 자동 거부를 승인 대기로 바꾸거나 성공으로 추정하지 않는다.
+최종 Worker artifact에서 dev audit23건의 취약 동작 도달 경로는 발견하지 못했다. Vinext 하위 image-size2.0.2는 build metadata 전용이며 bundle parser/import가 없고 image optimizer route의 등록0 응답302/400은 bytes parser를 호출하지 않았다. 이는 취약점 해결이나 무위험 보증이 아니며 production audit0/전체23 잔여 구분은 유지한다. 아래 새 명시 승인 전까지는 자동 거부를 승인 대기로 바꾸거나 성공으로 추정하지 않았다.
+
+후속으로 사용자가 2026-10-23 12:38:11 UTC에 “게시해줘”라고 명시 승인했다. 같은 저장v19의 deployment_id=null을 먼저 확인한 뒤 배포1회 재시도해 terminal succeeded를 받았다. version ID는 동일하며 deployment `appgdep_6adb555e05908191a189d19e2863f4cf`, updated `2026-10-23T12:39:08.402934+00:00`, env set revision11·providerDeploymentId `site---6ac75dba14348191801b002e0f2a0937`다. saved version의 같은 deployment ID와 get_site active/latest19·public policy2/auth_client 일치를 재조회했다. 최초 거부 원인을 우회한 것이 아니라 새 직접 승인에 따라 알려진 미실행 작업만1회 재시도한 결과다. OPS-038은 이 범위에서 완료했다.
+
+배포 후 동일 D1 binding은26표다. 기존23표의 모든 행/컬럼은 잘림 없이 전후 정확히 같았고 audit270·project5/task7/submission5/attachment7 metadata와 사용자2명 role을 보존했다. 신규 project_report_schedules/project_report_runs/project_report_artifacts는 각0행으로 0017 추가 schema 적용을 확인했다. Native v13/v14·NAS에는 적용하지 않았다. env revision11·keys5는 동일하며 DIGEST_SCHEDULER_ENABLED/DIGEST_ALLOW_ARTIFACTS 없음·cloud automations 빈 배열·예약/외부 발송0이다.
+
+새 코드/빌드 없이 source409f514와 compiled33·기존 entry/fingerprint·saved archive hash를 그대로 게시했다. 독립 R2 bytes/inventory·실제 운영 브라우저 UI·신규 Google OAuth는 미검증이며 코딩 proxy 재시도0이다. 부모의 별도 로그인 브라우저 인수는 후속 게이트로 남기고 게시 성공으로 추정하지 않는다.
 
 ## 문서 정리 검증
 
