@@ -10,7 +10,7 @@ type ColumnDefinition = {
   definition: string;
 };
 
-const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments", "bug_reports", "bug_report_screenshots", "bug_report_events", "bug_report_purge_receipts", "task_events", "submission_revisions", "submission_events", "task_dependencies", "task_template_runs", "notification_reads", "project_members", "activity_teams", "activity_team_members", "project_workspace_events", "activity_team_leaders", "native_bug_file_cleanup_jobs", "project_report_schedules", "project_report_runs", "project_report_artifacts"] as const;
+const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments", "bug_reports", "bug_report_screenshots", "bug_report_events", "bug_report_purge_receipts", "task_events", "submission_revisions", "submission_events", "task_dependencies", "task_template_runs", "notification_reads", "project_members", "activity_teams", "activity_team_members", "project_workspace_events", "activity_team_leaders", "native_bug_file_cleanup_jobs", "project_report_schedules", "project_report_runs", "project_report_artifacts", "team_preparation_sheets", "team_preparation_revisions"] as const;
 
 export type ManagedTableName = (typeof managedTableNames)[number];
 
@@ -48,6 +48,8 @@ const requiredSubmissionColumns: ColumnDefinition[] = [
 ];
 
 const requiredColumnsByTable: Partial<Record<ManagedTableName, string[]>> = {
+  team_preparation_sheets:["team_id","project_id","version","document_json","updated_by","updated_at","mutation_key","request_hash"],
+  team_preparation_revisions:["team_id","project_id","version","document_json","changed_by","changed_at","mutation_key","request_hash"],
   project_report_schedules:["project_id","created_by","enabled","time_zone","lookback_hours","formats_json","audience_mode","delivery_mode","version","created_at"],
   project_report_runs:["project_id","requested_by","schedule_id","idempotency_key","request_fingerprint","status","dry_run","formats_json","audience_mode","time_zone","period_start","period_end","snapshot_at","snapshot_json","snapshot_hash","lease_token","lease_until","heartbeat_at","attempts","error_code","expires_at","created_at"],
   project_report_artifacts:["run_id","format","storage_key","sha256","size_bytes","state","expires_at","created_at"],

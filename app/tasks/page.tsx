@@ -438,6 +438,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             <Stack spacing={1.5}>
               <Typography variant="h5">현재 프로젝트</Typography>
               <Typography variant="h6">{selectedProject.name}</Typography>
+              {selectedProject.projectType==="volunteering"?<Button href={`/projects/${selectedProject.id}/teams`} variant="outlined" sx={{alignSelf:"flex-start"}}>팀 준비표 · 메뉴·활동 준비</Button>:null}
               {scope.leaderTeamIds.length?<Stack direction="row" spacing={1} useFlexGap sx={{flexWrap:"wrap"}}>{teamDirectory.teams.filter(team=>scope.leaderTeamIds.includes(team.id)).map(team=><Chip key={team.id} color="secondary" label={`팀장 · ${team.name}`}/>)}</Stack>:null}
               {selectedTask?<details><summary>프로젝트 목표·성공 기준</summary><Typography sx={{whiteSpace:"pre-wrap",pt:1}}>목표: {selectedProject.goal||"아직 작성하지 않았습니다."}</Typography><Typography sx={{whiteSpace:"pre-wrap"}}>성공 기준: {selectedProject.successCriteria||"아직 작성하지 않았습니다."}</Typography></details>:<><Typography sx={{whiteSpace:"pre-wrap"}}>목표: {selectedProject.goal||"아직 작성하지 않았습니다."}</Typography><Typography sx={{whiteSpace:"pre-wrap"}}>성공 기준: {selectedProject.successCriteria||"아직 작성하지 않았습니다."}</Typography></>}
               <Typography variant="body2" color="text.secondary">

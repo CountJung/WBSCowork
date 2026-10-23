@@ -20,6 +20,26 @@ export const activityTeams = sqliteTable("activity_teams", {
   id: id(), projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   activityKind: text("activity_kind").notNull(), name: text("name").notNull(), createdAt: createdAt(),
 }, t => [uniqueIndex("activity_team_project_unique").on(t.projectId,t.id)]);
+/** One current preparation sheet per team; every committed version is retained separately. */
+export const teamPreparationSheets = sqliteTable("team_preparation_sheets", {
+  teamId:integer("team_id").primaryKey().notNull(),projectId:integer("project_id").notNull(),version:integer("version").notNull(),
+  documentJson:text("document_json").notNull(),updatedBy:integer("updated_by").notNull().references(()=>users.id,{onDelete:"restrict"}),updatedAt:text("updated_at").notNull(),
+  mutationKey:text("mutation_key").notNull(),requestHash:text("request_hash").notNull(),
+},t=>[
+  foreignKey({columns:[t.projectId,t.teamId],foreignColumns:[activityTeams.projectId,activityTeams.id],name:"team_preparation_sheet_team_fk"}).onDelete("restrict"),
+  check("team_preparation_sheet_version_check",sql`${t.version}>=1`),
+  check("team_preparation_sheet_document_check",sql`length(CAST(${t.documentJson} AS BLOB))<=65536`),
+]);
+export const teamPreparationRevisions = sqliteTable("team_preparation_revisions", {
+  teamId:integer("team_id").notNull(),projectId:integer("project_id").notNull(),version:integer("version").notNull(),
+  documentJson:text("document_json").notNull(),changedBy:integer("changed_by").notNull().references(()=>users.id,{onDelete:"restrict"}),changedAt:text("changed_at").notNull(),
+  mutationKey:text("mutation_key").notNull(),requestHash:text("request_hash").notNull(),
+},t=>[
+  primaryKey({columns:[t.teamId,t.version]}),uniqueIndex("team_preparation_revision_mutation_unique").on(t.teamId,t.mutationKey),
+  foreignKey({columns:[t.projectId,t.teamId],foreignColumns:[activityTeams.projectId,activityTeams.id],name:"team_preparation_revision_team_fk"}).onDelete("restrict"),
+  check("team_preparation_revision_version_check",sql`${t.version}>=1`),
+  check("team_preparation_revision_document_check",sql`length(CAST(${t.documentJson} AS BLOB))<=65536`),
+]);
 export const activityTeamMembers = sqliteTable("activity_team_members", {
   projectId: integer("project_id").notNull(), teamId: integer("team_id").notNull(), userId: integer("user_id").notNull(),
   role: text("role").notNull().default("member"), active: integer("active").notNull().default(1),

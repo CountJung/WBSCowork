@@ -438,6 +438,27 @@ public policy revision2·auth_client·env revision11의5keys는 동일하며 실
 
 실제 사용자 기록/파일·권한·예약을 변경하지 않았다. 좁은 viewport는 브라우저 API 조절이 없어 미검증이며 키보드 인수도 완료로 확대하지 않는다. 실제 운영 보고서 생성·다운로드·예약저장·보관, 다른 역할 접근·신규 Google OAuth 교환은 미실행이다. 기존 세션 유지와 신규 로그인을 구분하며 로컬 source/compiled 검증을 이 운영 범위에 합산하지 않는다. RPT-016의 운영 desktop preview는 PASS지만 나머지 게이트는 열어둔다. QLT-028 Native UI와 OPS-033 전체 폭 인수를 Sites desktop 통과로 대신하지 않는다. 이번 문서 동기화에서 root의 docs-canon SKILL 본체 재읽기는 성공했으나 제공된 scripts/check_docs.py 리소스 읽기1회가 failed to read skill resource로 실패해 원본 검사는 실행하지 않았다. 저장소 대체 검사와 내용 검토만 수행하며 추가 설치/외부 탐색은 하지 않는다.
 
+## 활동팀 공통 준비표 구현 검증
+
+PRD-058의 소스·합성 DB·실제 compiled HTTP 인수는 완료했으며 QLT-031의 실제 화면/운영 인수는 남아 있다. 운영은 기존v19이고 이번 기능 게시·운영 DB/계정/사용자 파일·NAS 변경0이다. 구현 담당의 checkpoint 전체 `npm test -- --require-db`는 새 전용 MariaDB에서 action33/unit242/visibility34,309 PASS·skip0이었다. 이후 소규모 model/권한/Origin 보강은 아래 focused/실제 compiled 결과로 구분하며309를 다시 실행했다고 쓰지 않는다. canonical Origin 보완 후 최종 전체 ESLint/typecheck·FSD self-test5/경계0·diff PASS를 확인했다.
+
+| 실제 등록 명령/범위 | 확인된 결과/남은 조건 |
+| --- | --- |
+| `npm run test:team-preparation:schema` | Native v15/D1 0018의2표 additive·기존 migration 보존116 PASS, 기존 migration unit21 PASS는 별도 scope |
+| model 단위 검사 | strict UUID/date/time 길이·trailing newline 보강 후 최종15 PASS·ESLint PASS. 기존 전체309 checkpoint를 새로 실행한 것으로 세지 않음 |
+| `npm run test:team-preparation:workflow` | 최종268 PASS(Native133/D1 135), 각 GET/PUT28요청. `.test-artifacts/team-preparation-workflow`의 result/final-evidence와 새 보존 DB `wbs_team_preparation_mvl29g4m_6c7639_test` 범위. compiled Worker/화면 인수 아님 |
+| `npm run test:team-preparation:http` | 최종 실제 Worker30조건/34 HTTP PASS(200×22/404×9/307×2/409×1), source와 별도 compiled 실행. entry `fe6c722b6cbf54c1a6bffab2a22185bb088277e67558816e5e8af354bcfd1d19`,359files/5,559,504bytes snapshot `e9fd9a95ea40fce2187a9baf2a346a0c9f481cd682e76b8de47b23d10c0b028b` 전후 동일 |
+| `npm run test:team-preparation:native-http` | 최종 실제 Native23 PASS, 새 `wbs_prep_http_mvl2njvo_a4c63b_test`의 SSR/API/저장·재시도409/KST·현재 권한/미등록 identity404/회수404·외부 Origin+변조 XFH403을 확인 |
+| build/브라우저 | 환경 파일 복사0의 별도 Native/Worker 최종 build PASS·Native 기존13 trace 경고 유지. Native Chromium SUID owner 제한에 변경 근거가 없어 재시도/우회0, 실제360px 등 좁은 화면·키보드·취소/오류 조작 인수 미실행 |
+
+identity-change trigger 회귀에서 D1은 actor 이메일 변경 뒤 revision guard0으로 head/revision/email 모두 rollback을 확인했다. Native는 ER_CANT_UPDATE_USED_TABLE_IN_SF_OR_TRG(errno1442)로 DB 자체가 차단하며 원자 보존을 확인한 결과다. 같은0행 guard 기제라고 쓰지 않는다. 별도 GET-only3 PASS(strict ID의 final LF2·미등록 session1)는268과 중복 합산하지 않는다. 페이지는 DB identity가 사라진 오래된 인증의404를 notFound로, 익명401을 sign-in redirect로 처리하며 root focused lint/typecheck0을 확인했다.
+
+실제 Native에서 NextRequest localhost 정규화 때문에 정상127.0.0.1 Origin이403으로 거부되는 RED를 확인했다. 설치된 Next 소스·constructor/HTTP 재현에 근거해 기존 서버 NEXTAUTH_URL.origin을 authority로 사용하고, 미설정 시 request.url fallback을 유지했다. Host/X-Forwarded-Host나 환경 설정을 바꾸지 않았다. canonical Origin focused8 PASS와 최종 Native23·Worker30은 이 보완 후 결과다.
+
+검증 대상 제품 source fingerprint는293files의 `1f40b5f5096ee7680f8ec0b723765ab311e6d4e6365473da126d3a52eae89ab2`이며 runtime bundle fingerprint와 구분한다. Native proof는 `/workspace/wbs-preparation-build/.test-artifacts/team-preparation-native-http/mvl2njqf/`, Worker proof는 `.test-artifacts/team-preparation-http/final-evidence.json`이다. Native runtime798files/40,533,203bytes fingerprint `c494125c22c049f3757828ca0f8c6f055d21a15a402a65cddc1baa36f19b5abf`도 전후 동일하고 server-errors는 빈 배열이다. root의 무시된 증거 사본은 `.test-artifacts/team-preparation-native-http-final/`에 있다. 실제 responsive360/390/768/1280/1440·키보드·취소/뒤로가기·반복클릭·오류 초안 보존 조작은 sandbox 제한으로 미검증이며 HTTP/SSR 통과가 이 UI 인수는 아니다. 새 의존성0이고 실제 사용 전 D1 0018/Native v15 적용이 필요하지만 이번 회차는 둘 다 운영 적용하지 않았다.
+
+권한·고정 소수점 식사량·제한/이력 계약은 [ARCHITECTURE](ARCHITECTURE.md#활동팀-공통-준비표-설계), 구현 경로는 [PROJECT_MAP](PROJECT_MAP.md#활동팀-공통-준비표)에서만 설명한다. 원본 docs-canon SKILL은 읽었으나 scripts/check_docs.py 리소스 읽기1회가 실패해 원본 검사는 미실행이며 저장소 대체 검사·별도 내용 검토만 사용한다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.

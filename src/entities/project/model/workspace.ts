@@ -1,9 +1,9 @@
+import { activityKinds, type ActivityKind } from "@/src/shared/config/activity-kinds";
+export { activityKinds, activityKindLabels, type ActivityKind } from "@/src/shared/config/activity-kinds";
+
 export const projectTypes = ["collaboration", "volunteering"] as const;
 export type ProjectType = (typeof projectTypes)[number];
-export const activityKinds = ["meal", "facility", "senior_care", "child_care", "recreation", "other"] as const;
-export type ActivityKind = (typeof activityKinds)[number];
 export type TeamRole = "member" | "leader";
-export const activityKindLabels: Record<ActivityKind,string> = {meal:"식사준비",facility:"시설보수",senior_care:"어르신 돌봄",child_care:"아동 돌봄",recreation:"레크레이션",other:"기타"};
 export type CompletionMode = "submission_required" | "direct_completion";
 
 /** Admin roster commands; canonical team leadership is checked by task guards. */

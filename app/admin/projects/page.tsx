@@ -99,6 +99,7 @@ function ProjectEditCard({ project,workspace,users,accessPreview }: { project: P
           <Stack spacing={0.5}>
             <Typography variant="h6">{project.name}</Typography>
             <Button component="a" href={`/admin/projects/${project.id}/reports`} size="small" sx={{ alignSelf: "flex-start" }}>활동 보고서</Button>
+            {project.projectType==="volunteering"?<Button component="a" href={`/projects/${project.id}/teams`} size="small" sx={{alignSelf:"flex-start"}}>팀 준비표</Button>:null}
             <Typography variant="body2" color="text.secondary">
               기간 {formatDate(project.startDate)} ~ {formatDate(project.endDate)}
             </Typography>

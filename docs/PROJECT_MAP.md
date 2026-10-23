@@ -189,3 +189,10 @@ D0–D4의 소스·로컬/compiled 인수와 실제 화면/운영 활성화를 �
 - `src/features/project-digest-generate`: session viewer·현재 scope 재검사, 생성/재시도·download/retention·비활성 기본 scheduler use-case. `src/features/project-report-export`: 동일 snapshot의 직접 DOCX/PPTX Buffer 생성.
 - `app/api/projects/[projectId]/reports/{preview,schedules,retention}`·`app/api/project-reports`·`app/api/project-reports/[artifactId]`·`app/api/project-reports/runs/[runId]/retry`는 얇은 HTTP adapter다. machine adapter는 `/api/internal/project-digests/run`이며 기존 cookie를 scheduler 권한으로 쓰지 않는다.
 - `src/shared/server/report-storage`는 private Native/R2 IO·hash/size·symlink/path 검사와 가역 quarantine, `native-migration-v14.ts`/`drizzle/0017_project_report_ledger.sql`은 새 ledger 명세를 소유한다. D5 delivery adapter는 없다.
+
+
+## 활동팀 공통 준비표
+
+`app/projects/[projectId]/teams/page.tsx`는 현재 viewer 허용 팀 요약을100팀/cursor 단위로 표시하고 `[teamId]/preparation/page.tsx`가 준비표 상세를 연다. `/tasks`의 현재 프로젝트와 관리자 team card는 이 경로로 진입한다. `src/widgets/team-preparation`은 종류별 읽기/편집·이력 UI를 조립한다.
+
+`src/entities/team-preparation/model/preparation.ts`·`api/preparation.server.ts`는6종 문서 검증/식사량·현재 scope·CAS/immutable revision을, `src/features/team-preparation/server/http.ts`와 `app/api/projects/[projectId]/teams/[teamId]/preparation/route.ts`는 bounded GET/PUT adapter를 소유한다. 활동 종류 공통 값은 `src/shared/config/activity-kinds.ts`, schema는 `native-migration-v15.ts`/`drizzle/0018_team_preparation_sheets.sql`에 있다. 삭제 endpoint는 없으며 구현/검증/미게시 여부는 [TODO](TODO.md)·[HARNESS_MAP](HARNESS_MAP.md#활동팀-공통-준비표-구현-검증)을 따른다.
