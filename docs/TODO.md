@@ -2,18 +2,18 @@
 
 이 문서는 **지금 어디까지 왔고 다음 무엇을 해야 하는가**를 소유한다. 단계/완료 게이트는 [MASTER_PLAN](MASTER_PLAN.html), 과거 근거는 [COMPLETED_LOG](COMPLETED_LOG.md), 상세 digest 설계는 [계획](PROJECT_DIGEST_REPORT_PLAN.md)에 있다.
 
-최종 검토: 2026-10-23 · 다음 번호: **QLT-032 / RPT-021 / OPS-039 / PRD-059**
+최종 검토: 2026-10-23 · 다음 번호: **QLT-032 / RPT-021 / OPS-040 / PRD-059**
 
 ## 현재 상태
 
 | 구분 | 확인된 상태 | 다음 경계 |
 | --- | --- | --- |
 | 제품 | 기반 WBS/FSD와 팀 업무 P0/P1, 버그/스크린샷 구현 완료 | 실제 다중 Google 계정·운영의 채워진 UI 인수는 로컬 합성 검증과 별개 |
-| Git 소스 | 추가 회귀 포함 mainffda904/sites409f514 푸시·공식 source main409f514 fast-forward와 remote 일치 확인. 운영v19 source409f514와 후속 문서 HEAD 구분 | 이번 소스 검증은 HARNESS_MAP, 운영 반영 여부는 게시 원장으로 구분. main/sites 기본 build 차이 유지 |
+| Git 소스 | 준비표 source main805c1c7/sites69e1fb9와 공식 source main69e1fb9 push·ls-remote 일치 확인. 운영v19 source409f514·저장v20·후속 문서 HEAD 구분 | 이번 소스 검증은 HARNESS_MAP, 운영 반영 여부는 게시 원장으로 구분. main/sites 기본 build 차이 유지 |
 | 운영 게시 | 기존 public Sites version19/source409f514 terminal succeeded·get_site active/latest19와 version/deployment 일치 확인 | [게시 원장](COMPLETED_LOG.md#sites-게시-원장). 새 명시 승인 후 배포1회 재시도로 OPS-038 해소. D1 0017 신규3표 각0행·기존23표 전체행/설정 동일. 별도 허용 Chrome1165×757의 탐색/TXT·보고서 미리보기 부분 PASS. 좁은 화면·새 OAuth/R2 bytes 등은 별도 대기, Native13/14·NAS 미적용 |
 | 최근 검증 | QLT-021 핵심 삭제 오판은 실제 Google 세션의 운영 UI 인수 PASS | [검증 기준선](HARNESS_MAP.md#검증-기준선). 신규 업로드는 통과했으나 추가 첨부·운영 파일 삭제는 미검증이며 QLT-022와 다른 열린 항목 유지 |
 | 선행 로컬 구현 | QLT-016/029와 RPT-015/017은 독립 로컬 검증 완료 이관. QLT-028/020·OPS-032와 RPT-016/018/019의 외부 인수 게이트 유지 | 구현 소스·추가 compiled33·main/sites 푸시와 기존 Sites v19 게시 완료. 최초 거부와 새 승인 후1회 배포·보존 확인은 [승인/게시 이력](HARNESS_MAP.md#version19-승인과-운영-배포)을 따른다. D5 외부 발송·운영 예약 활성화·NAS/실계정/보안/영구 삭제는 제외 |
-| 팀별 공통 준비표 | PRD-058 소스 구현·양 DB·실제 Native/Worker compiled HTTP 인수 완료, QLT-031 실제 화면/운영 인수 미완료 | 기존6종 활동팀·현재 팀장/소속 권한 재사용. main/sites 로컬 합성 검증 후 커밋·푸시, 이번 작업 게시·운영 자료/권한·NAS 변경 없음 |
+| 팀별 공통 준비표 | PRD-058 소스 구현·양 DB·실제 Native/Worker compiled HTTP 인수 완료, QLT-031 실제 화면/운영 인수 미완료 | exact 게시 checkout 재build/compiled30·34HTTP 재검증 후v20 저장 완료. 배포는 자동 승인 검토 거부로 미실행·운영v19/D1 26표 유지. [OPS-039 차단](HARNESS_MAP.md#저장-version20와-배포-거부), 실제 자료/권한·NAS 변경 없음 |
 | 봉사활동 | 확정 정책의 프로젝트/팀 관리·팀장 범위 업무·직접 완료를 구현하고 로컬/합성 인수·version15 게시 완료 | 기존 업무/협업 업무 제출 필수·private 계약과 사용자 자료 표본 보존. 실제 운영 UI·Google 인수와 R2 bytes 대조는 미실행 |
 | UX·프로젝트 바인딩 | 확정된 다중 소속·SU 전역/지정 프로젝트 admin 정책으로 UI·SQL scope 구현·Worker/Native strict UI와 기존 봉사 회귀 완료 | 기존 Sites version16 게시 완료. 계정 role/소속 자동 부여0·기존7표 보존; 확정 admin 관리 축소는 게시 코드 정책으로 적용 |
 | 제출물 첨부 미리보기 | PRD-056/057·QLT-025/026의 Native/Worker371조건·실제 게시 artifact와 version17 게시 확인 완료 | 부모 Work의 상세/버전 텍스트 미리보기와 SU 참여자·담당자·검토자 후보 제외 부분 PASS. 탐색 React418/초기 표시는 QLT-027 운영 재인수 완료; 팀장 후보 UI·새 Google 인증·원본 bytes 대조는 미검증 |
@@ -37,6 +37,7 @@
 | OPS-033 | [!] | 레이아웃 실사이트의 전체6개 너비·관리자/버그 UI 인수. 부모 Chrome의 과거 홈/tasks1188×761 및 v19 탐색/보고서1165×757은 부분 근거이며 전체 폭 인수 아님 | [접속 경계](NAS_UPDATE_GUIDE.md#운영-접속과-테스트-네트워크) |
 | OPS-034 | [!] | 코딩 실행기의 기존 CONNECT403/Domain forbidden·해당 policy rule 부재 경계로 운영 GET/UI 재시도0. 별도 허용 Work 브라우저의 v17 미리보기·v18 QLT-027·v19 읽기 검토 PASS는 별개 경로다. 과거 host 승인/차단과 version13 환경의 CONNECT200·익명 GET 성공을 보존하며 환경별 결과를 구분. 제한 우회 없음 | [최신 경계](HARNESS_MAP.md#version19-허용-chrome-운영-읽기-검토) |
 | OPS-035 | [!] | version12 스크린샷의 실제 운영 UI 인수. 합성Chromium1280/390 결과와 구분하고 운영 제보 생성/삭제를 임의로 하지 않음 | [버그 계약](BUG_REPORTS.md#스크린샷) |
+| OPS-039 | [!] | 저장v20 배포 호출이 자동 승인 검토에서 거부됨. 14:51:59 UTC의 후속 게시 승인이 있었으나 검토는 이전 게시 보류/no later trusted user approval을 이유로 판단했다. deployment_id=null·배포ID 없음, v19 유지. 충돌 해소 전 새 근거 없는 재시도/우회0, D1 0018 미적용·기존26표 전행/설정 보존 | [대상/거부 이유·완료 범위](HARNESS_MAP.md#저장-version20와-배포-거부) |
 | RPT-016 | [!] | D1 manual preview의 소스/compiled 및 v19 허용 Chrome1165×757 운영 desktop 미리보기 PASS. 좁은 viewport·키보드 인수는 미검증이며 Native Chromium sandbox 차단과 구분. 실제 운영 생성·다운로드·예약저장·보관/다른 역할은 미검증. 기간 오류 안내는 QLT-030 | [운영 범위/한계](HARNESS_MAP.md#version19-허용-chrome-운영-읽기-검토) |
 | RPT-018 | [!] | D3 기존 runner의 Native v14/D1 0017 ledger·비활성 기본 scheduler 구현/소스 검증. 로컬 ledger/compiled 인수 완료 후 runtime DDL 거부 실증·운영 조건 확인 대기, 운영 예약 활성화0; QLT-012/RPT-017 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
 | RPT-019 | [!] | D4 인가 download/만료404·가역 quarantine 구현/소스 검증, 소스/compiled 인수 완료 후 실제 NAS 권한/free-space/atomic rename·운영 저장소 인수 대기; RPT-018 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
