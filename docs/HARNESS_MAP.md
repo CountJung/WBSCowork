@@ -209,6 +209,21 @@ Native 절차는 같은 `cdde9e9` 소스의 `node .test-artifacts/volunteer-foll
 
 새5표는 `project_members`/`activity_teams`/`activity_team_members`/`project_workspace_events`/`activity_team_leaders`다. 추가 컬럼과 기존 프로젝트5/업무7의 기본값은 운영 조회로 확인했다. 새 업무 생성 기본값과 무결성 제약의 실행 검증은 동일 소스의 로컬 합성 결과이며 운영에서 새 업무 생성·FK/CHECK/journal 직접 조회는 하지 않았다. 운영에 새 테스트/역할 부여/자료 삭제도 하지 않았다. 기존 사용자 첨부 metadata 보존과 게시 후 R2 inventory·실제 파일 다운로드 검증은 구분한다. 이번 원본 docs-canon 검사는 기존 미가용 경계로 미실행이다. 저장소 문서 검사/self-test·`git diff --check` PASS, 문서30·등록16/핵심7·상대링크203·npm명령115를 확인했고 별도 내용 검토로 게시 terminal 상태·보존 표본·로컬/운영 미검증 경계를 대조했다.
 
+## UX 바인딩 설계 검토와 후속 인수
+
+대상은 main `11178b02a3cf7df90c10161ba0648ac7213d666d`/sites `a84f3a130368a30b3141776e0e39fc7cfcc7a243` 기준의 계획 문서 작업이다. 문서 담당은 TaskCard/TaskSubmissionPanel·project repository·홈/tasks page·task-scope·상태 workflow·검색/개인 큐·알림의 실제 참조를 읽었다. 부모가 직접 연 노트북 PNG의 관측은 전달받았으며 문서 담당이 이미지를 직접 열거나 모바일/키보드를 재현한 증거는 아니다. 실제4:1 CSS grid라는 근거 없이 Stack/flex 구조와 관측된 여백을 구분했다.
+
+부모가 읽은 `web-qa-testing-workflows`의 반응형/접근성 기준과 `creative-visual-production`의 시안 비교 기준을 아래 **설계 수용 조건**에 반영했다. 문서 담당이 두 스킬 원문 전체를 열람하거나 시안 생성·실제 UI QA를 실행했다고 주장하지 않는다. 제공된 docs-canon 본문을 재사용했으며 현재 원본 검사기는 미가용이다. 추가 설치·앱 수정·운영 접속 재시도는 없다.
+
+| QLT-024 후속 검증 | 미실행 완료 조건 |
+| --- | --- |
+| 시안/반응형·접근성 | 360/390/768/1280/1440px별 긴 한국어 제목/파일명·다수 칩·빈 상태·라이트/다크 비교. 기본 메인의 요약/상세 경계·칩 내용 너비/줄바꿈·보조 메뉴·삭제 시작 후 확인을 확인. 페이지 가로 overflow/겹침 없음, 간트 내부 bounded scroll 구분, 키보드 순서/메뉴 Escape·초점 복귀·오류 연결·터치/대비·텍스트 의미 대조 |
+| 필수/완료 조건 | 즉시 필수·완료 전 필요·선택의 외부 레이블/배지와 입력 오류 연결. 빈 산출물/완료 기준 초안 유지. direct done 메모 선택, submission_required done 근거 필수, 모든 mode blocked/reopen 사유 필수와 review 경로 조건을 실제 서버/양 DB·UI에서 비교 |
+| 보호 프로젝트 scope | 합성 projectA/B·userA/B, 겸임/무소속/탈퇴·현재 역할 변경·guest 명단 참여(쓰기 승격 없음)·확정된 관리자/인증 public 예외를 명시. 홈/목록·건수·직접 URL/API/Server Action·첨부/댓글/버전·검색 count/snippet·알림/개인 큐·Gantt/집계의 허용/거부와 비노출을 대조. 해제 전 열린 화면의 다음 보호 요청 거부 및 정책상 본인 과거 private 예외를 별도 검사 |
+| 이행/보존 | MariaDB/D1 fresh/existing 비파괴 이행 미리보기·정책별 접근 영향·관리자 명시 승인 후 활성화 확인. 기존 WBS/선행/leaf 집계·제출 필수/직접 완료·팀장·검토·원문/버전/파일과 단일 영구 삭제의 경고/서버 확인·권한을 보존. 신규 일괄 영구 삭제 인수로 확대하지 않음 |
+
+새5폭은 기존 layout 하네스의1920/1699/1440/1280/1024/390 결과나 과거1280/390 합성 흐름과 다른 미실행 행렬이다. 위 항목은 신규 UX/바인딩 인수가 아니며 구현 이후 검증 계획이다. CONNECT403/운영 UI·Google 미검증 경계는 유지한다. 이번에는 저장소 문서 검사/self-test·MASTER_PLAN HTML 파싱·`git diff --check` PASS를 확인했다(문서30·등록16/핵심7·상대링크219·npm명령115). 별도 내용 검토로 코드와 전달 관측·제안/정책 대기·신규 미실행 인수·현재 운영 상태의 구분을 확인했다. 앱 build·제품/DB/브라우저 테스트와 운영 접속은 실행하지 않았으며 원본 canon 검사 통과로 확대하지 않는다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.
