@@ -9,7 +9,7 @@
 | QLT-016/029·RPT-015/017, 2026-10-23 | 동시 요청 admission과 Miniflare 원 Response GC의 별개 원인을 재현·최소 수정하고 각 회귀를 완료. 현재 schema 기반 snapshot·양 DB collector와 동일 snapshot DOCX/PPTX의 compiled 인수. [완료·한계](#품질-원인-수정과-digest-snapshot-기반), 남은 UI/NAS·운영은 TODO 유지 |
 | OPS-038, 2026-10-23 | 최초 배포 자동 승인 거부는 보존. 사용자 새 직접 승인 뒤 같은 저장v19의 미실행 확인→1회 배포 재시도 terminal succeeded·active/latest19와 D1 추가3표/기존23표·설정 보존 확인. [승인/배포 근거](HARNESS_MAP.md#version19-승인과-운영-배포), 운영 UI/새 OAuth는 별도 |
 | PRD-058, 2026-10-23 | 기존6종 활동팀의 공통 준비표·서버 식사량·현재 팀 권한·CAS/불변 이력·UI 진입 경로와 양 DB additive 저장 구현, 소스/실DB·실제 Native/Worker compiled HTTP 인수 완료. [구현·게시 구분](#활동팀-공통-준비표-소스-구현), 실제 화면/운영 인수는 QLT-031 유지 |
-| OPS-039, 2026-10-23 | 최초 v20 자동 승인 거부를 보존. 새 직접 승인 뒤 같은 저장v20 미실행 확인→배포1회 재시도 succeeded/active/latest20·0018 신규2표·기존 행/설정 보존 확인. [승인/배포 범위](HARNESS_MAP.md#version20-승인과-운영-배포), 실제 화면 인수는 QLT-031 미완료 |
+| OPS-039, 2026-10-23 | 최초 v20 자동 승인 거부를 보존. 새 직접 승인 뒤 같은 저장v20 미실행 확인→배포1회 재시도 succeeded/active/latest20·0018 신규2표·기존 행/설정 보존 확인. [승인/배포 범위](HARNESS_MAP.md#version20-승인과-운영-배포), 후속 envSU 화면 부분 인수 후 QLT-031 잔여 유지 |
 | QLT-001/002, 2026-08 | ESLint 기준선, FSD M0~M5 완료. root app 조립과 public API로 이동하고 components/lib/models 호환층 제거. URL/권한/SQL 변경과 구조 이동을 분리 |
 | QLT-003~007, 2026-09 | private 파생 댓글/첨부 props 유출, ownership 없는 mutation, unscoped 단건, 경로 로그, task route의 project 관리 권한을 수정. SQL viewer/IdScope·상위 관계·작성자/admin·canonical project 경로를 강제 |
 | QLT-008/009 | node --import tsx로 loader 경고 정리, 실제 인가 경로의 node:test visibility fixture 도입. synthetic session은 실제 OAuth가 아님 |
@@ -45,7 +45,7 @@ RPT-015는 현재 업무 상태·프로젝트 scope·revision 모델을 반영�
 
 PRD-058은 팀마다 하나의 날짜 다중행 준비표를 기존 활동 종류에 맞게 제공한다. 식사량은 fixed-point 서버 계산으로 검증하고 현재 팀원 읽기·canonical 팀장/지정 admin/env SU 편집, bounded JSON·CAS/actor-bound 재시도·원자적 현재표/불변 revision을 구현했다. 목록/상세·기존 업무/관리자 팀 진입을 연결했으며 WBS 완료·계정 역할을 바꾸거나 삭제 endpoint를 만들지 않았다. 상세 계약은 ARCHITECTURE가 소유한다.
 
-Native의 정상 Origin403은 NextRequest localhost 정규화 원인을 재현해 기존 서버 canonical origin 기준으로 보완하고 Host/XFH로 허용 범위를 넓히지 않았다. 양 DB/실제 Native·Worker compiled 검증 근거와 제한은 [하네스](HARNESS_MAP.md#활동팀-공통-준비표-구현-검증)를 따른다. 실제 화면·좁은 폭/키보드/오류 조작은 QLT-031 미완료이며 소스 구현 완료와 구분한다. 소스 구현 회차 당시에는 게시·운영 migration·실제 자료/권한·NAS 변경 없이 기존 운영v19를 유지했다. 후속 v20 게시 상태는 [게시 원장](#sites-게시-원장)에서 구분한다.
+Native의 정상 Origin403은 NextRequest localhost 정규화 원인을 재현해 기존 서버 canonical origin 기준으로 보완하고 Host/XFH로 허용 범위를 넓히지 않았다. 양 DB/실제 Native·Worker compiled 검증 근거와 제한은 [하네스](HARNESS_MAP.md#활동팀-공통-준비표-구현-검증)를 따른다. 실제 화면 인수의 범위와 잔여 게이트는 QLT-031로 관리하며 소스 구현 완료와 구분한다. 소스 구현 회차 당시에는 게시·운영 migration·실제 자료/권한·NAS 변경 없이 기존 운영v19를 유지했다. 후속 v20 게시 상태는 [게시 원장](#sites-게시-원장)에서 구분한다.
 
 ## 첨부 미리보기와 SU 불변성 구현
 
@@ -125,7 +125,7 @@ version18 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_be49c221467081
 
 version19 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_4351f6dc1888819190c8d32c0c4f6287`다. 공식 source main `409f514a56dfac47932f0d3f874650f4e8b059bc` fast-forward·원격 일치와 compiled33을 확인해 저장했다. 최초 운영 배포는 자동 승인 검토의 parent review 요구로 거부돼 v18을 유지했으며, 사용자 새 직접 승인 후 같은 저장v19가 미배포임을 확인하고1회 재시도해 terminal succeeded를 받았다. deployment/active/latest19와 D1 0017의 새3표·기존23표/설정 보존을 확인했다. 정확한 승인·거부 이력과 검증/미확인 경계는 [하네스](HARNESS_MAP.md#version19-승인과-운영-배포)가 소유한다. 저장 성공과 실제 운영 배포 성공을 구분하며 후속 문서 HEAD는 게시 source를 바꾸지 않는다. 후속 부모의 기존 로그인 Chrome1165×757에서 탐색·TXT·보고서 desktop 미리보기와 잘못된 기간 차단/정상 복원을 읽기 검토해 통과했다. 상세 범위/미검증과 날짜 오류 UX 후속은 [운영 읽기 기록](HARNESS_MAP.md#version19-허용-chrome-운영-읽기-검토)을 따른다. 이 부분 검증으로 RPT-016 전체·Native UI·좁은 화면·실제 보고서 생성/예약·신규 OAuth를 닫지 않는다.
 
-version20 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_b042a7294da4819193a6382e5e87c421`다. source `69e1fb92a88371d96c95f30078a1ec08d07f7b86` push/원격과 exact 새 build/compiled30·34HTTP를 확인해 저장했다. 최초 자동 검토 거부로 livev19를 유지한 이력은 보존한다. 이후 사용자 새 직접 승인에 따라 deployment_id=null 확인→같은 저장v20 배포1회 재시도해 terminal succeeded·active/latest20을 확인했고 재저장/새 코드·build는 없었다. D1 0018 새2표와 기존 사용자 행/역할·설정을 보존했으며 audit INFO5건 추가는 전후 동일 주장과 구분한다. 정확한 승인/배포·보존/미검증 범위는 [하네스](HARNESS_MAP.md#version20-승인과-운영-배포)를 따르고 OPS-039는 완료 이관했다. QLT-031 실제 화면 인수는 남아 있다.
+version20 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_b042a7294da4819193a6382e5e87c421`다. source `69e1fb92a88371d96c95f30078a1ec08d07f7b86` push/원격과 exact 새 build/compiled30·34HTTP를 확인해 저장했다. 최초 자동 검토 거부로 livev19를 유지한 이력은 보존한다. 이후 사용자 새 직접 승인에 따라 deployment_id=null 확인→같은 저장v20 배포1회 재시도해 terminal succeeded·active/latest20을 확인했고 재저장/새 코드·build는 없었다. D1 0018 새2표와 기존 사용자 행/역할·설정을 보존했으며 audit INFO5건 추가는 전후 동일 주장과 구분한다. 정확한 승인/배포·보존/미검증 범위는 [하네스](HARNESS_MAP.md#version20-승인과-운영-배포)를 따르고 OPS-039는 완료 이관했다. 후속 허용 Chrome1165px/envSU의4종 준비표 부분 인수는 [운영 검토](HARNESS_MAP.md#version20-허용-chrome-운영-준비표-검토)에 기록하며 QLT-031의 모바일/실제 팀장 등 잔여 게이트를 유지한다. 합성 project6/팀1~4/준비표v1은 보존했고 삭제하지 않았다.
 
 
 
