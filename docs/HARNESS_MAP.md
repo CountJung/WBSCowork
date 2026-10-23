@@ -194,6 +194,21 @@ Native 절차는 같은 `cdde9e9` 소스의 `node .test-artifacts/volunteer-foll
 
 기능 구현 회차에는 원본 docs-canon 검사를 기존 리소스/전달 ZIP 미가용 이후 실행하지 않았다. 당시 저장소 문서 검사/self-test·수정한 두 HTML의 HTMLParser·`git diff --check` PASS이며 문서30·등록16/핵심7·상대링크200·npm명령115를 확인했다. 이번 HARNESS 후속도 저장소 문서 검사/self-test·`git diff --check` PASS이며 문서/링크/명령 수는 동일하다. 원본 canon 검사는 이번에도 미실행이다. 별도 내용 검토로 확정 정책/실제 구현/최종 합성 인수와 운영 미실행 경계, 과거 기반 회차와 이번 scope의 구분, 사용자 가이드와 현재 계약의 정합성을 확인했다. 원본 canon 준수 인증으로 확대하지 않는다.
 
+## Version15 게시와 운영 검증 경계
+
+사용자의 운영 게시 승인 후 source `d7550fb783b046738bf7a2d2e22aa412515bf02c`를 기존 사이트에 게시했다. terminal succeeded·정확한 version/source/deployment·active/latest 재조회와 서로 다른 package hash/복구 한계는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)에만 둔다. 이번 문서 갱신은 추가 배포가 아니다.
+
+| 확인 대상 | 실제 결과 | 범위/미확인 |
+| --- | --- | --- |
+| exact 로컬 archive의 build·격리 Worker HTTP/auth·hydrated UI | build PASS, HTTP257/auth18, browser36조건·multipart POST46건 PASS | HTTP 최초 출력 디렉터리 ENOENT 뒤 디렉터리를 준비하고 같은 bundle·새 격리 fixture로 재실행257 PASS. 앱 수정 없음. 운영 UI/자산 GET 인수와 별개 |
+| 운영 D1 overview·0014/0015 | 표시 표18→23, 새5표 모두0행 | projects에3개/tasks에4개 컬럼 추가, 기존 프로젝트5는 collaboration/workspace0/token NULL, 업무7은 submission_required/team·completed metadata NULL. 0015의 baseline INSERT도 DML이지만 당시 새 명단 표가 없어0행이었으며 schema-only 작업으로 표현하지 않음 |
+| 게시 전후 기존6표의 old-column 전체 행 대조 | projects1(id5), tasks1(id7), submissions1(id5), submission_attachments1(id7), users2(ids1/4), submission_revisions1(id5) 모두 동일, truncation 없음 | 비교는 이6표의 기록된 시점/기존 컬럼 범위다. 새 컬럼·audit전체·전체 DB/R2 백업 또는 R2 inventory/파일 bytes의 게시 후 동일성 증명은 아님 |
+| 사이트·환경/공개 범위 | 기존 public/policy revision2·owner/auth_client, env revision11의 entries 동일 | 실제 계정 역할·보안 설정·NAS 변경 없음. env/credential 내용은 기록하지 않음 |
+| 최근10분 errors_only 조회 | 반환 event0 | 운영 요청 표본이 없어 운영 오류 부재·차단된 요청의 Worker 도달을 증명하지 않음 |
+| 현 실행기 운영 연결 | CONNECT403 / Domain forbidden, 해당 policy rule 부재 확인 | 운영 GET·자산 로드·실 Google·운영 UI는 미실행. proxy/policy를 바꾸거나 제한을 우회하지 않음. 별도 인증 브라우저의 실제 인수는 후속 증거가 필요 |
+
+새5표는 `project_members`/`activity_teams`/`activity_team_members`/`project_workspace_events`/`activity_team_leaders`다. 추가 컬럼과 기존 프로젝트5/업무7의 기본값은 운영 조회로 확인했다. 새 업무 생성 기본값과 무결성 제약의 실행 검증은 동일 소스의 로컬 합성 결과이며 운영에서 새 업무 생성·FK/CHECK/journal 직접 조회는 하지 않았다. 운영에 새 테스트/역할 부여/자료 삭제도 하지 않았다. 기존 사용자 첨부 metadata 보존과 게시 후 R2 inventory·실제 파일 다운로드 검증은 구분한다. 이번 원본 docs-canon 검사는 기존 미가용 경계로 미실행이다. 저장소 문서 검사/self-test·`git diff --check` PASS, 문서30·등록16/핵심7·상대링크203·npm명령115를 확인했고 별도 내용 검토로 게시 terminal 상태·보존 표본·로컬/운영 미검증 경계를 대조했다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.
