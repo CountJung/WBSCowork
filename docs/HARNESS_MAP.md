@@ -350,7 +350,17 @@ version17/source7fc8d79의 별도 **허용 Work 브라우저·기존 SU 로그�
 
 게시 전후 env revision11의5entries·public policy revision2·auth_client가 동일하며 값은 출력하지 않았다. D1 schema23표·이번 migration0. 기존7표의 모든 columns/rows를 투영 생략 없이 완전 페이지 대조해 동일함을 확인했다: projects1(id5), tasks1(id7), submissions1(id5), submission_attachments1(id7/metadata25,180bytes), submission_revisions1, users2, project_members0. 실제 R2 bytes·전체 backup은 미검증이며 계정 권한 변경·NAS 배포·코딩 proxy 재시도0이다.
 
-QLT-027의 소스/로컬·게시 확인은 완료했고 같은 허용 Work 브라우저의 version18 재인수는 대기한다. 새 OAuth 교환·전체 운영 UI 인수로 확대하지 않는다. QLT-028 Native 홈과 QLT-029의 최초 간헐 하네스 원인은 미해결이다. 최종 기능 두 SHA의 GitHub combined statuses는 각각0이며 CI PASS가 아니다. 기존 Actions Forbidden을 재시도하지 않았다. 후속 문서 HEAD는 이미 게시한 코드 source와 구분한다. 원본 docs-canon 검사는 미실행이다.
+QLT-027의 소스/로컬·게시 확인과 아래 별도 허용 Work 브라우저의 version18 관측 범위 재인수를 완료했다. 새 OAuth 교환·전체 운영 UI 인수로 확대하지 않는다. QLT-028 Native 홈과 QLT-029의 최초 간헐 하네스 원인은 미해결이다. 최종 기능 두 SHA의 GitHub combined statuses는 각각0이며 CI PASS가 아니다. 기존 Actions Forbidden을 재시도하지 않았다. 후속 문서 HEAD는 이미 게시한 코드 source와 구분한다. 원본 docs-canon 검사는 미실행이다.
+
+### version18 허용 Work 브라우저 재인수
+
+부모가 전달한 닷프로 자체 클라우드 Chrome의 같은 로그인 세션 tab2, 2026-10-23 10:41:30–10:43:06 UTC 관측이다. 문서 담당/코딩 실행기의 운영 재접속이 아니며 기존 CONNECT403 제한을 재시도/우회하지 않았다.
+
+프로젝트 workspace 새로고침→업무 상세→제출 상세, 검색→업무→제출, 제출 상세 직접 새로고침, `/submissions/5` 버전 이력→홈과 현재/이력 텍스트 미리보기 열기·닫기·재열기 PASS였다. 과거 실패 URL `/tasks?projectId=5&taskId=7#task-7`, `/tasks?projectId=5&taskId=7`, `/tasks?projectId=5&taskId=7&submissionId=5#submission-5`에서 신규 React418이 없고 관측 기간 앱 console warning/error0이었다.
+
+최초 관찰부터 실제 자료 시간은 `2026.10.22 오후09:12 KST`로 유지됐고 초기 관리자/로그아웃 UI가 표시되며 Google 로그인 flash가 없었다. 버전 이력의 명시된 `12:12:22 UTC`는 같은 시점이므로 불일치가 아니다. 한글 정상·U+FFFD 없음,1008px 미리보기 폭 안에서 줄바꿈·가로 넘침 없음을 확인했다. 실제 자료·권한·세션 변경은 없었다. v17에서 확인한 SU 참여자/업무 담당자/검토자 후보 제외는 별도 기존 사실로 유지한다.
+
+QLT-027 운영 재인수 대기는 이 관측 범위에서 해소했다. 이미지/HTML/SVG 실제 운영 파일·모바일 운영·신규 Google OAuth 교환·전체 운영 인수로 확대하지 않는다. 게시 sourceccabf81/version18과 기존 미검증 R2 bytes 경계는 유지한다.
 
 ### QLT-028 Native 홈 SSR500
 

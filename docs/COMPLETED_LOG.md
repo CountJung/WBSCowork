@@ -23,6 +23,7 @@
 | PRD-047~050/QLT-023, 2026-10-23 | 확정 정책의 단일 팀장·팀 범위 업무·직접 완료와 UI, 기존 자료/제출 필수/private 보존을 구현하고 로컬/합성 인수. [완료 범위](#봉사활동-팀과-직접-완료-인수), 실측은 [하네스](HARNESS_MAP.md#봉사활동-팀장과-직접-완료-검증). 운영 migration/실 Google/게시 미실행 |
 | PRD-046, 2026-10-23 | 사용자 확정: 팀당 팀장 1명, 신규 봉사 업무는 제출 선택/직접 완료, 현재 담당자·해당 팀장·관리자의 직접 완료. 기존 협업/기존 업무 제출 의무와 private 권한은 유지. [결정 근거](#prd-046-봉사활동-정책-확정) |
 | PRD-056/057·QLT-025/026, 2026-10-23 | 안전한 현재/과거 파일 미리보기와 env SU 유지·신규 배정 제외 구현. Native/실제 Worker artifact의 로컬 인수 및 version17 게시 상태·7표 보존 확인 완료. [구현 범위](#첨부-미리보기와-su-불변성-구현), 팀장 후보 UI·운영 UI/Google 인수는 미확인 |
+| QLT-027, 2026-10-23 | 시간대 미지정의 React418과 별개 초기 인증 flash 수정, 양 runtime/게시 검증 후 같은 허용 Work Chrome의 v18 관측 범위 운영 재인수 완료. [운영 인수 근거](HARNESS_MAP.md#version18-허용-work-브라우저-재인수) |
 | PRD-052/053/055·QLT-024, 2026-10-23 | 프로젝트 요약/선택 상세·폼/위험 확인, SU 다중 소속/전환·지정 admin SQL scope와 비파괴 이행을 구현. 허용오차 없는 Worker/Native 새5폭·기존 봉사 회귀의 로컬 인수 완료. [완료 범위](#ux와-프로젝트-바인딩-구현), 운영 게시/실 Google·운영 UI는 별도 |
 | PRD-051/054, 2026-10-23 | 프로젝트 요약→상세/댓글 IA의 정적 A/B 시안5폭 렌더 후 A를 채택. 사용자 확정 정책은 다중 소속·SU 전역/지정 프로젝트 admin·기존 읽기 유지·제한 프로젝트 탈퇴 후 본인 자료 차단이다. [결정 범위](#ux-시안과-프로젝트-권한-정책-확정), 실제 앱 인수는 아래 별도 완료 근거와 구분 |
 | QLT-019, 2026-10-23 | Node ESM과 bundler의 실제 GoogleProvider default export 형태 차이를 정규화하고 테스트 Google 설정을 합성 값으로 고정. 원인/완료 경계는 [아래](#qlt-019-google-provider-import), 실행 결과는 [하네스](HARNESS_MAP.md#봉사활동-저장-기반과-auth-import-검증) |
@@ -90,7 +91,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 15 · 2026-10-23 04:23:10.491622 | d7550fb783b046738bf7a2d2e22aa412515bf02c | succeeded, appgdep_6adae1242adc8191b7cdd73c54537031; get_site/get_site_version 재조회 active/latest15·source·deployment 일치. 기존 URL/public policy revision2·auth_client·env revision11 entries 유지. 봉사활동과 D1 0014/0015 반영, 운영 UI 인수는 미실행 |
 | 16 · 2026-10-23 08:01:01.751040 | 62b93208e1f32f2b19d58249643d5637242a8b36 | terminal succeeded, appgdep_6adb14287d548191924eba6c6d844aa3; get_site/get_site_version 재조회 active/latest16·source·deployment 일치. public policy2/auth_client/env11 유지, D1 접근 모드 추가·기존7표 전체 기존 컬럼 동일. 실 운영 GET/UI·Google은 미검증 |
 | 17 · 2026-10-23 09:55:21.486616 | 7fc8d79fde1c1ad4f6d90bff9d710d4a7ac5d7a9 | appgdep_6adb2ef69d688191b5bd38ecca262b90 terminal succeeded; active/latest17·exact source/deployment 재조회 일치. public policy2/auth_client/env11 동일·기존7표 전체 동일, schema/migration0. 운영 UI/Google·R2 bytes는 미검증 |
-| 18 · 2026-10-23 10:38:44.852001 | ccabf815e78d4aa43f15b12caf1c8d8a5b1577f7 | appgdep_6adb3920d4c081918b876140930c2be8 terminal succeeded; active/latest18·exact source/deployment 재조회 일치. public policy2/auth_client/env11 동일·기존7표 전체 동일, schema/migration0. 같은 Work 브라우저 재인수 대기 |
+| 18 · 2026-10-23 10:38:44.852001 | ccabf815e78d4aa43f15b12caf1c8d8a5b1577f7 | appgdep_6adb3920d4c081918b876140930c2be8 terminal succeeded; active/latest18·exact source/deployment 재조회 일치. public policy2/auth_client/env11 동일·기존7표 전체 동일, schema/migration0. 후속 같은 Work 브라우저의 QLT-027 관측 범위 재인수 PASS |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -102,7 +103,7 @@ version16 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_91fd504d5de881
 
 version17 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_1655a01b02088191b5bd056cb28dff0e`다. 기능 main `9b07c5e2d93ac47a6256eaccf188073d62a29977` / sites·공식 source main `7fc8d79fde1c1ad4f6d90bff9d710d4a7ac5d7a9` 푸시·원격 HEAD를 확인했다. exact 단일 build의 실제 Worker artifact를 인수해 기존 사이트에 저장·게시했고 후속 조회로 source/version/deployment를 대조했다. 후속 문서 HEAD는 이 게시 코드 SHA와 구분한다. 인수·보존/CI·운영 미확인 경계는 [하네스](HARNESS_MAP.md#version17-게시와-검증-경계)가 소유한다.
 
-version18 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_be49c22146708191b64ec65115bfaa82`다. 기능 main `3d36fa6eb8efea144a111a4efa8ca008c3b30bee` / sites·공식 source `ccabf815e78d4aa43f15b12caf1c8d8a5b1577f7`의 푸시·원격 HEAD와 게시 후 source/version/deployment를 확인했다. 시간대 미지정의 React418과 별개 초기 인증 flash를 명시 KST·서버 초기 세션 전달로 보완하고, 공개 경로 missing-secret 회귀도 null guard로 수정했다. 양 runtime47조건·최종 auth/HTTP와 기존 자료/설정 보존은 [하네스](HARNESS_MAP.md#version18-게시와-검증-경계)가 소유한다. QLT-027은 같은 Work 운영 재인수만 남겼으며 Native 홈500·간헐 응답 소비 오류는 별도 열린 항목이다. 새 OAuth·R2 bytes 인수, 계정 권한 변경·NAS 배포는 수행하지 않았다. 후속 문서 HEAD는 게시 코드 SHA와 구분한다.
+version18 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_be49c22146708191b64ec65115bfaa82`다. 기능 main `3d36fa6eb8efea144a111a4efa8ca008c3b30bee` / sites·공식 source `ccabf815e78d4aa43f15b12caf1c8d8a5b1577f7`의 푸시·원격 HEAD와 게시 후 source/version/deployment를 확인했다. 시간대 미지정의 React418과 별개 초기 인증 flash를 명시 KST·서버 초기 세션 전달로 보완하고, 공개 경로 missing-secret 회귀도 null guard로 수정했다. 양 runtime47조건·최종 auth/HTTP와 기존 자료/설정 보존은 [하네스](HARNESS_MAP.md#version18-게시와-검증-경계)가 소유한다. QLT-027은 부모가 별도 허용 Chrome의 같은 로그인 세션에서 수행한 [v18 운영 재인수](HARNESS_MAP.md#version18-허용-work-브라우저-재인수)를 관측 범위에서 완료했으며 Native 홈500·간헐 응답 소비 오류는 별도 열린 항목이다. 새 OAuth·R2 bytes 인수, 계정 권한 변경·NAS 배포는 수행하지 않았다. 후속 문서 HEAD는 게시 코드 SHA와 구분한다.
 
 
 ### package와 복구 근거
