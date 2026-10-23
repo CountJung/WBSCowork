@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import AppProviders from "@/src/shared/ui/providers";
 import AppShell from "@/src/widgets/app-shell";
+import {getAuthSession} from "@/src/entities/user/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import "../node_modules/frappe-gantt/dist/frappe-gantt.css";
 import "./globals.css";
@@ -21,17 +22,18 @@ export const metadata: Metadata = {
   description: "Task-based WBS collaboration system for weekly planning, deliverables, and review.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const runtimeEnv = getRuntimeEnv();
+  const session=await getAuthSession();
 
   return (
     <html lang="ko" className={roboto.variable} suppressHydrationWarning>
       <body>
-        <AppProviders>
+        <AppProviders session={session}>
           <AppShell appName={runtimeEnv.appName} authProvidersConfigured={runtimeEnv.auth.googleProviderConfigured}>
             {children}
           </AppShell>

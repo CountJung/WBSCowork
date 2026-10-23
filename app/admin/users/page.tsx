@@ -16,6 +16,7 @@ import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import { getUserRoleLabel, manageableUserRoles } from "@/src/entities/user";
 import { updateUserRoleAction } from "./actions";
+import { formatAppDateTime } from "@/src/shared/lib/date";
 
 export const dynamic = "force-dynamic";
 
@@ -35,13 +36,7 @@ function formatDateTime(value: Date | null) {
     return "기록 없음";
   }
 
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(value);
+  return formatAppDateTime(value);
 }
 
 export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {

@@ -69,7 +69,7 @@ export default function AttachmentFile({ fileName, fileMimeType, fileSizeBytes, 
   return <Stack spacing={1} data-testid="attachment-file" sx={{ minWidth: 0, maxWidth: "100%" }}>
     <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap", alignItems: "center", minWidth: 0 }}>
       <Button component="a" href={downloadUrl} download variant="outlined" size="small" sx={{ minWidth: 0, maxWidth: "100%", textAlign: "left", overflowWrap: "anywhere" }}>{fileName}</Button>
-      <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: "anywhere" }}>{fileSizeBytes === null ? "" : `${fileSizeBytes.toLocaleString()} bytes`}</Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: "anywhere" }}>{fileSizeBytes === null ? "" : `${fileSizeBytes.toLocaleString("ko-KR")} bytes`}</Typography>
       {candidate ? <Button size="small" onClick={toggle} aria-expanded={open} aria-controls={id}>{open ? "미리보기 닫기" : "미리보기"}</Button> : <Typography variant="caption" color="text.secondary">미리보기 미지원 · 다운로드</Typography>}
       {deleteForm}
     </Stack>

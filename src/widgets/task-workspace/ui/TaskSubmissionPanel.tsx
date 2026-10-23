@@ -9,6 +9,7 @@ import MarkdownContent from "@/src/shared/ui/markdown-content";
 import SubmitButton from "@/src/shared/ui/submit-button";
 import type { Comment } from "@/src/entities/comment";
 import { AttachmentFile, type SubmissionAttachment, type Submission } from "@/src/entities/submission";
+import { formatAppDateTime as formatDateTime } from "@/src/shared/lib/date";
 
 type ContentAction = (formData: FormData) => Promise<void>;
 
@@ -68,16 +69,6 @@ function useSubmissionUpload(action: ContentAction) {
 function SubmissionOperationFields({revision}:{revision?:number}) {
   const [token]=useState(()=>crypto.randomUUID());
   return <><input type="hidden" name="operationToken" value={token}/>{revision?<input type="hidden" name="expectedRevision" value={revision}/>:null}</>;
-}
-
-function formatDateTime(value: Date) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(value);
 }
 
 function formatFileSize(sizeBytes: number | null) {
