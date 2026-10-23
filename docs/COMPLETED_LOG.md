@@ -8,7 +8,8 @@
 | --- | --- |
 | QLT-016/029·RPT-015/017, 2026-10-23 | 동시 요청 admission과 Miniflare 원 Response GC의 별개 원인을 재현·최소 수정하고 각 회귀를 완료. 현재 schema 기반 snapshot·양 DB collector와 동일 snapshot DOCX/PPTX의 compiled 인수. [완료·한계](#품질-원인-수정과-digest-snapshot-기반), 남은 UI/NAS·운영은 TODO 유지 |
 | OPS-038, 2026-10-23 | 최초 배포 자동 승인 거부는 보존. 사용자 새 직접 승인 뒤 같은 저장v19의 미실행 확인→1회 배포 재시도 terminal succeeded·active/latest19와 D1 추가3표/기존23표·설정 보존 확인. [승인/배포 근거](HARNESS_MAP.md#version19-승인과-운영-배포), 운영 UI/새 OAuth는 별도 |
-| PRD-058, 2026-10-23 | 기존6종 활동팀의 공통 준비표·서버 식사량·현재 팀 권한·CAS/불변 이력·UI 진입 경로와 양 DB additive 저장 구현, 소스/실DB·실제 Native/Worker compiled HTTP 인수 완료. [구현·미게시 경계](#활동팀-공통-준비표-소스-구현), 실제 화면/운영 인수는 QLT-031 유지 |
+| PRD-058, 2026-10-23 | 기존6종 활동팀의 공통 준비표·서버 식사량·현재 팀 권한·CAS/불변 이력·UI 진입 경로와 양 DB additive 저장 구현, 소스/실DB·실제 Native/Worker compiled HTTP 인수 완료. [구현·게시 구분](#활동팀-공통-준비표-소스-구현), 실제 화면/운영 인수는 QLT-031 유지 |
+| OPS-039, 2026-10-23 | 최초 v20 자동 승인 거부를 보존. 새 직접 승인 뒤 같은 저장v20 미실행 확인→배포1회 재시도 succeeded/active/latest20·0018 신규2표·기존 행/설정 보존 확인. [승인/배포 범위](HARNESS_MAP.md#version20-승인과-운영-배포), 실제 화면 인수는 QLT-031 미완료 |
 | QLT-001/002, 2026-08 | ESLint 기준선, FSD M0~M5 완료. root app 조립과 public API로 이동하고 components/lib/models 호환층 제거. URL/권한/SQL 변경과 구조 이동을 분리 |
 | QLT-003~007, 2026-09 | private 파생 댓글/첨부 props 유출, ownership 없는 mutation, unscoped 단건, 경로 로그, task route의 project 관리 권한을 수정. SQL viewer/IdScope·상위 관계·작성자/admin·canonical project 경로를 강제 |
 | QLT-008/009 | node --import tsx로 loader 경고 정리, 실제 인가 경로의 node:test visibility fixture 도입. synthetic session은 실제 OAuth가 아님 |
@@ -44,7 +45,7 @@ RPT-015는 현재 업무 상태·프로젝트 scope·revision 모델을 반영�
 
 PRD-058은 팀마다 하나의 날짜 다중행 준비표를 기존 활동 종류에 맞게 제공한다. 식사량은 fixed-point 서버 계산으로 검증하고 현재 팀원 읽기·canonical 팀장/지정 admin/env SU 편집, bounded JSON·CAS/actor-bound 재시도·원자적 현재표/불변 revision을 구현했다. 목록/상세·기존 업무/관리자 팀 진입을 연결했으며 WBS 완료·계정 역할을 바꾸거나 삭제 endpoint를 만들지 않았다. 상세 계약은 ARCHITECTURE가 소유한다.
 
-Native의 정상 Origin403은 NextRequest localhost 정규화 원인을 재현해 기존 서버 canonical origin 기준으로 보완하고 Host/XFH로 허용 범위를 넓히지 않았다. 양 DB/실제 Native·Worker compiled 검증 근거와 제한은 [하네스](HARNESS_MAP.md#활동팀-공통-준비표-구현-검증)를 따른다. 실제 화면·좁은 폭/키보드/오류 조작은 QLT-031 미완료이며 소스 구현 완료와 구분한다. 이번 회차는 게시·운영 migration·실제 자료/권한·NAS 변경 없이 기존 운영v19를 유지했다.
+Native의 정상 Origin403은 NextRequest localhost 정규화 원인을 재현해 기존 서버 canonical origin 기준으로 보완하고 Host/XFH로 허용 범위를 넓히지 않았다. 양 DB/실제 Native·Worker compiled 검증 근거와 제한은 [하네스](HARNESS_MAP.md#활동팀-공통-준비표-구현-검증)를 따른다. 실제 화면·좁은 폭/키보드/오류 조작은 QLT-031 미완료이며 소스 구현 완료와 구분한다. 소스 구현 회차 당시에는 게시·운영 migration·실제 자료/권한·NAS 변경 없이 기존 운영v19를 유지했다. 후속 v20 게시 상태는 [게시 원장](#sites-게시-원장)에서 구분한다.
 
 ## 첨부 미리보기와 SU 불변성 구현
 
@@ -108,7 +109,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 17 · 2026-10-23 09:55:21.486616 | 7fc8d79fde1c1ad4f6d90bff9d710d4a7ac5d7a9 | appgdep_6adb2ef69d688191b5bd38ecca262b90 terminal succeeded; active/latest17·exact source/deployment 재조회 일치. public policy2/auth_client/env11 동일·기존7표 전체 동일, schema/migration0. 운영 UI/Google·R2 bytes는 미검증 |
 | 18 · 2026-10-23 10:38:44.852001 | ccabf815e78d4aa43f15b12caf1c8d8a5b1577f7 | appgdep_6adb3920d4c081918b876140930c2be8 terminal succeeded; active/latest18·exact source/deployment 재조회 일치. public policy2/auth_client/env11 동일·기존7표 전체 동일, schema/migration0. 후속 같은 Work 브라우저의 QLT-027 관측 범위 재인수 PASS |
 | 19 · 2026-10-23(updated12:39:08.402934) | 409f514a56dfac47932f0d3f874650f4e8b059bc | 최초 자동 승인 거부 후 새 직접 승인에 따른1회 재시도 terminal succeeded, appgdep_6adb555e05908191a189d19e2863f4cf. active/latest19·exact source/deployment 일치·기존23표/설정 동일, 새3표 각0행. 후속 허용 Chrome 운영 읽기/미리보기 부분 PASS |
-| 20 · 저장만/배포 미실행 | 69e1fb92a88371d96c95f30078a1ec08d07f7b86 | 저장/재조회 성공, deploy_site_version은 자동 승인 검토 거부·deployment_id=null/배포ID 없음. livev19·D1 26표 유지, 기존26표289행/설정 동일·0018 미적용. 저장v20≠운영v20 |
+| 20 · 2026-10-23 15:06:43.558919(반환) | 69e1fb92a88371d96c95f30078a1ec08d07f7b86 | 최초 자동 거부 후 새 직접 승인·동일 저장v20 배포1회 재시도 terminal succeeded, appgdep_6adb77f8a28881919ade7c049e008ecd. active/latest20·0018 새2표 각0행, 기존25표 동일·audit 기존279행 보존+INFO5/설정 동일. 실제 브라우저 미검증 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -124,7 +125,7 @@ version18 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_be49c221467081
 
 version19 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_4351f6dc1888819190c8d32c0c4f6287`다. 공식 source main `409f514a56dfac47932f0d3f874650f4e8b059bc` fast-forward·원격 일치와 compiled33을 확인해 저장했다. 최초 운영 배포는 자동 승인 검토의 parent review 요구로 거부돼 v18을 유지했으며, 사용자 새 직접 승인 후 같은 저장v19가 미배포임을 확인하고1회 재시도해 terminal succeeded를 받았다. deployment/active/latest19와 D1 0017의 새3표·기존23표/설정 보존을 확인했다. 정확한 승인·거부 이력과 검증/미확인 경계는 [하네스](HARNESS_MAP.md#version19-승인과-운영-배포)가 소유한다. 저장 성공과 실제 운영 배포 성공을 구분하며 후속 문서 HEAD는 게시 source를 바꾸지 않는다. 후속 부모의 기존 로그인 Chrome1165×757에서 탐색·TXT·보고서 desktop 미리보기와 잘못된 기간 차단/정상 복원을 읽기 검토해 통과했다. 상세 범위/미검증과 날짜 오류 UX 후속은 [운영 읽기 기록](HARNESS_MAP.md#version19-허용-chrome-운영-읽기-검토)을 따른다. 이 부분 검증으로 RPT-016 전체·Native UI·좁은 화면·실제 보고서 생성/예약·신규 OAuth를 닫지 않는다.
 
-저장 version20 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_b042a7294da4819193a6382e5e87c421`다. source `69e1fb92a88371d96c95f30078a1ec08d07f7b86` push/원격과 exact 새 build/compiled30·34HTTP를 확인해 저장했다. 후속 게시 요청이 있었으나 자동 검토는 이전 게시 보류/이후 승인 없음 판단으로 배포 호출을 거부했고 미실행·재시도/우회0이다. livev19·기존26표 전행/역할·환경을 보존했고 D1 0018은 미적용이다. 자세한 승인 충돌·완료/미검증 범위와 운영 팀 자료0의 한계는 [차단 근거](HARNESS_MAP.md#저장-version20와-배포-거부)를 따르며 OPS-039는 열린 상태다.
+version20 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_b042a7294da4819193a6382e5e87c421`다. source `69e1fb92a88371d96c95f30078a1ec08d07f7b86` push/원격과 exact 새 build/compiled30·34HTTP를 확인해 저장했다. 최초 자동 검토 거부로 livev19를 유지한 이력은 보존한다. 이후 사용자 새 직접 승인에 따라 deployment_id=null 확인→같은 저장v20 배포1회 재시도해 terminal succeeded·active/latest20을 확인했고 재저장/새 코드·build는 없었다. D1 0018 새2표와 기존 사용자 행/역할·설정을 보존했으며 audit INFO5건 추가는 전후 동일 주장과 구분한다. 정확한 승인/배포·보존/미검증 범위는 [하네스](HARNESS_MAP.md#version20-승인과-운영-배포)를 따르고 OPS-039는 완료 이관했다. QLT-031 실제 화면 인수는 남아 있다.
 
 
 
