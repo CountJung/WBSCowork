@@ -428,7 +428,15 @@ public policy revision2·auth_client·env revision11의5keys는 동일하며 실
 
 배포 후 동일 D1 binding은26표다. 기존23표의 모든 행/컬럼은 잘림 없이 전후 정확히 같았고 audit270·project5/task7/submission5/attachment7 metadata와 사용자2명 role을 보존했다. 신규 project_report_schedules/project_report_runs/project_report_artifacts는 각0행으로 0017 추가 schema 적용을 확인했다. Native v13/v14·NAS에는 적용하지 않았다. env revision11·keys5는 동일하며 DIGEST_SCHEDULER_ENABLED/DIGEST_ALLOW_ARTIFACTS 없음·cloud automations 빈 배열·예약/외부 발송0이다.
 
-새 코드/빌드 없이 source409f514와 compiled33·기존 entry/fingerprint·saved archive hash를 그대로 게시했다. 독립 R2 bytes/inventory·실제 운영 브라우저 UI·신규 Google OAuth는 미검증이며 코딩 proxy 재시도0이다. 부모의 별도 로그인 브라우저 인수는 후속 게이트로 남기고 게시 성공으로 추정하지 않는다.
+새 코드/빌드 없이 source409f514와 compiled33·기존 entry/fingerprint·saved archive hash를 그대로 게시했다. 게시 직후 독립 R2 bytes/inventory·실제 운영 브라우저 UI·신규 Google OAuth는 미검증이었으며 코딩 proxy 재시도0이다. 이후 부모의 별도 허용 브라우저 읽기 검토는 아래에서 구분한다.
+
+### version19 허용 Chrome 운영 읽기 검토
+
+부모가 전달한 닷프로 클라우드 Chrome의 **기존 탭2·로그인 세션,1165×757**에서 v19를 새로고침한 읽기 검토다. 코딩 실행기/문서 담당이 운영 접속을 재시도한 결과가 아니다. 기존 로그인·SU·KST 표시가 정상이고 홈→프로젝트→업무→제출/댓글, TXT 열기·닫기·재열기/한글, 댓글폼 취소, 검색0건→초기화→상세, 관리자 개요/프로젝트 관리와 복귀·브라우저 뒤로가기가 정상이다. 업무/보고서 미리보기 가로 넘침·새 앱 console warning/error·React418은 없었고 차단 결함을 발견하지 못했다.
+
+프로젝트 관리 카드의 활동 보고서 링크로 `/admin/projects/5/reports`에 진입해 빈 보고서 목록·미리보기 열기/닫기/재실행을 확인했다. 집계 업무1/제출1/댓글0/첨부1과 첨부 본문 미포함(metadata만), 역전기간/31일 초과 차단 및 정상기간 복원 후 재실행 PASS다. 두 잘못된 기간의 안내는 모두 “요청을 처리하지 못했습니다. 입력과 현재 권한을 확인해 주세요.”라는 범용 문구여서 구체 날짜 오류 안내를 QLT-030(P2)으로 남겼다. 거부 동작 자체는 이미 통과했으며 안전한 입력 안내·정상 복원 재시도를 완료 조건으로 구분한다.
+
+실제 사용자 기록/파일·권한·예약을 변경하지 않았다. 좁은 viewport는 브라우저 API 조절이 없어 미검증이며 키보드 인수도 완료로 확대하지 않는다. 실제 운영 보고서 생성·다운로드·예약저장·보관, 다른 역할 접근·신규 Google OAuth 교환은 미실행이다. 기존 세션 유지와 신규 로그인을 구분하며 로컬 source/compiled 검증을 이 운영 범위에 합산하지 않는다. RPT-016의 운영 desktop preview는 PASS지만 나머지 게이트는 열어둔다. QLT-028 Native UI와 OPS-033 전체 폭 인수를 Sites desktop 통과로 대신하지 않는다. 이번 문서 동기화에서 root의 docs-canon SKILL 본체 재읽기는 성공했으나 제공된 scripts/check_docs.py 리소스 읽기1회가 failed to read skill resource로 실패해 원본 검사는 실행하지 않았다. 저장소 대체 검사와 내용 검토만 수행하며 추가 설치/외부 탐색은 하지 않는다.
 
 ## 문서 정리 검증
 
