@@ -331,13 +331,18 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
   const values=[parentTask?.id ?? null,normalizeTitle(input.title),normalizeDescription(input.description),startDate,endDate,assigneeId,
     normalizeWorkGoal(input.deliverable ?? existingTask.deliverable,"기대 산출물"),normalizeWorkGoal(input.definitionOfDone ?? existingTask.definitionOfDone,"완료 기준"),reviewRequired?1:0,reviewerId];
   const setSql="parent_id=?,title=?,description=?,start_date=?,end_date=?,assignee_id=?,deliverable=?,definition_of_done=?,review_required=?,reviewer_id=?";
+  const teamAssignmentGuard = "(activity_team_id IS NULL OR ? IS NULL OR EXISTS(SELECT 1 FROM activity_team_members tm JOIN project_members pm ON pm.project_id=tm.project_id AND pm.user_id=tm.user_id JOIN users target ON target.id=tm.user_id WHERE tm.project_id=tasks.project_id AND tm.team_id=tasks.activity_team_id AND tm.user_id=? AND tm.active=1 AND pm.active=1 AND (target.role IN ('member','admin') OR LOWER(target.email)=?)))";
+  const teamAssignmentParams = [assigneeId,assigneeId,getRuntimeEnv().auth.superuserEmail??''];
   if(input.actor) {
     await commitTaskMutation({id:input.id,actor:input.actor,token:input.token??randomUUID(),version:input.version??existingTask.version,kind:'updated',note:existingTask.status==='done'?'완료 후 작업 내용 변경으로 다시 열림':'',payload,setSql:`${setSql},status=?,workflow_note=?`,setParams:[...values,['done','changes_requested'].includes(existingTask.status)?'in_progress':existingTask.status,existingTask.status==='done'?'작업 내용이 변경되어 다시 확인이 필요합니다.':existingTask.workflowNote],
       invalidateReview:existingTask.reviewRequired?{reason:'작업 정보가 변경되어 이전 검토 대상이 해제되었습니다.'}:undefined,
-      guardSql:"status<>'review_pending' AND (?=1 OR ? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') OR LOWER(target.email)=?))) AND (?=1 OR ? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') OR LOWER(target.email)=?)))",guardParams:[assigneeId===existingTask.assigneeId?1:0,assigneeId,assigneeId,getRuntimeEnv().auth.superuserEmail??'',reviewerId===existingTask.reviewerId?1:0,reviewerId,reviewerId,getRuntimeEnv().auth.superuserEmail??'']});
+      guardSql:`status<>'review_pending' AND (?=1 OR ? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') OR LOWER(target.email)=?))) AND (?=1 OR ? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') OR LOWER(target.email)=?))) AND ${teamAssignmentGuard}`,guardParams:[assigneeId===existingTask.assigneeId?1:0,assigneeId,assigneeId,getRuntimeEnv().auth.superuserEmail??'',reviewerId===existingTask.reviewerId?1:0,reviewerId,reviewerId,getRuntimeEnv().auth.superuserEmail??'',...teamAssignmentParams]});
   } else {
     // Internal fixtures retain the repository API; production actions always supply a freshly resolved actor.
-    await databaseBatch([{sql:`UPDATE tasks SET ${setSql},version=version+1 WHERE id=? AND version=?`,params:[...values,existingTask.id,existingTask.version]}]);
+    const results = await databaseBatch([{sql:`UPDATE tasks SET ${setSql},version=version+1 WHERE id=? AND version=? AND ${teamAssignmentGuard}`,params:[...values,existingTask.id,existingTask.version,...teamAssignmentParams]}]);
+    // This guarded UPDATE always increments version; zero changes is rejection.
+    const result = results[0] as {affectedRows?:number;meta?:{changes:number}};
+    if (Number(result.affectedRows ?? result.meta?.changes ?? 0) < 1) throw new Error("업무 또는 팀 배정이 변경되었습니다. 새로고침해 주세요.");
   }
   await databaseBatch(buildTaskDepthUpdates(await listTasksByProject(existingTask.projectId)));
 

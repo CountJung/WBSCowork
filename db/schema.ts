@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, integer, text, index, uniqueIndex, check, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text, index, uniqueIndex, check, primaryKey, foreignKey, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 
 const id = () => integer("id").primaryKey({ autoIncrement: true });
 const createdAt = () => text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`);
@@ -9,10 +9,35 @@ export const users = sqliteTable("users", {
   lastLoginAt: text("last_login_at"), lastSyncedAt: text("last_synced_at"), createdAt: createdAt(),
 }, (t) => [uniqueIndex("users_email_unique").on(t.email), check("users_role_check", sql`${t.role} IN ('admin','member','guest')`)]);
 export const projects = sqliteTable("projects", {
-  id: id(), name: text("name").notNull(), dependencyVersion: integer("dependency_version").notNull().default(0), dependencyToken: text("dependency_token"), goal: text("goal").notNull().default(""), successCriteria: text("success_criteria").notNull().default(""), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(), createdAt: createdAt(),
-});
+  id: id(), name: text("name").notNull(), projectType: text("project_type").notNull().default("collaboration"), workspaceVersion: integer("workspace_version").notNull().default(0), workspaceToken: text("workspace_token"), dependencyVersion: integer("dependency_version").notNull().default(0), dependencyToken: text("dependency_token"), goal: text("goal").notNull().default(""), successCriteria: text("success_criteria").notNull().default(""), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(), createdAt: createdAt(),
+}, (t) => [check("project_type_check", sql`${t.projectType} IN ('collaboration','volunteering')`)]);
+export const projectMembers = sqliteTable("project_members", {
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  active: integer("active").notNull().default(1), joinedAt: text("joined_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, t => [primaryKey({columns:[t.projectId,t.userId]}), check("project_member_active_check", sql`${t.active} IN (0,1)`)]);
+export const activityTeams = sqliteTable("activity_teams", {
+  id: id(), projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  activityKind: text("activity_kind").notNull(), name: text("name").notNull(), createdAt: createdAt(),
+}, t => [uniqueIndex("activity_team_project_unique").on(t.projectId,t.id)]);
+export const activityTeamMembers = sqliteTable("activity_team_members", {
+  projectId: integer("project_id").notNull(), teamId: integer("team_id").notNull(), userId: integer("user_id").notNull(),
+  role: text("role").notNull().default("member"), active: integer("active").notNull().default(1),
+}, t => [primaryKey({columns:[t.teamId,t.userId]}),
+  foreignKey({columns:[t.projectId,t.userId],foreignColumns:[projectMembers.projectId,projectMembers.userId]}).onDelete("cascade"),
+  foreignKey({columns:[t.projectId,t.teamId],foreignColumns:[activityTeams.projectId,activityTeams.id]}).onDelete("cascade"),
+  check("activity_team_role_check",sql`${t.role} IN ('member','leader')`), check("activity_team_active_check",sql`${t.active} IN (0,1)`),
+]);
+export const projectWorkspaceEvents = sqliteTable("project_workspace_events", {
+  id: id(), projectId: integer("project_id").notNull().references(() => projects.id,{onDelete:"cascade"}),
+  actorId: integer("actor_id").references(() => users.id,{onDelete:"set null"}),
+  operationToken: text("operation_token").notNull(), requestFingerprint: text("request_fingerprint").notNull(), kind:text("kind").notNull(),
+  detail: text("detail").notNull().default(""), workspaceVersion: integer("workspace_version").notNull(), createdAt:createdAt(),
+}, t => [uniqueIndex("project_workspace_operation_unique").on(t.projectId,t.operationToken)]);
 export const tasks = sqliteTable("tasks", {
   id: id(), projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  activityTeamId: integer("activity_team_id").references(() => activityTeams.id, {onDelete:"set null"}),
+  completionMode: text("completion_mode").notNull().default("submission_required"),
   parentId: integer("parent_id").references((): AnySQLiteColumn => tasks.id, { onDelete: "set null" }),
   title: text("title").notNull(), description: text("description"), deliverable: text("deliverable").notNull().default(""), definitionOfDone: text("definition_of_done").notNull().default(""), reviewRequired: integer("review_required").notNull().default(0), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(),
   creationToken: text("creation_token").unique(),
@@ -22,7 +47,7 @@ export const tasks = sqliteTable("tasks", {
   reviewSubmissionId: integer("review_submission_id"), reviewRevisionNumber: integer("review_revision_number"),
   depth: integer("depth").notNull().default(0), orderIndex: integer("order_index").notNull().default(0),
   assigneeId: integer("assignee_id").references(() => users.id, { onDelete: "set null" }), createdAt: createdAt(),
-}, (t) => [index("tasks_project_idx").on(t.projectId), index("tasks_parent_idx").on(t.parentId), index("tasks_assignee_idx").on(t.assigneeId)]);
+}, (t) => [index("tasks_project_idx").on(t.projectId), index("tasks_parent_idx").on(t.parentId), index("tasks_assignee_idx").on(t.assigneeId), check("task_completion_mode_check",sql`${t.completionMode} IN ('submission_required','direct_completion')`)]);
 export const submissions = sqliteTable("submissions", {
   id: id(), taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
   authorId: integer("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),

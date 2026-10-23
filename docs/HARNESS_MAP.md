@@ -51,6 +51,8 @@
 | `npm run test:sites:live` | 익명 GET-only 운영 smoke; 합성 cookie/로그인/쓰기 없음 |
 | `npm run diagnose:sites:network` | 기존 proxy/정책 읽기 전용 CONNECT 진단 |
 | `npm run test:sites:network` | 운영 요청 없는 proxy/guard 합성12 |
+| `npm run test:project:workspace` | 관리자 전용 저장 기반의 격리 D1/MariaDB command·CAS/권한/이력/보존 회귀; 운영 자료를 쓰지 않음 |
+| `npm run test:volunteer:schema` | 양 DB의 봉사 저장 schema fresh/existing additive·복합 FK·default·보존·재실행 검사 |
 
 `node scripts/check-docs.mjs`는 저장소의 문서 등록·역할·상대 링크/anchor·명령·필수 읽기 경로를 검사한다. `--self-test`는 검사기의 유효/무효 fixture를 확인한다. 원본 docs-canon SKILL/점검기가 아닌 로컬 대체 검사이며 원본 준수 인증으로 표시하지 않는다.
 
@@ -134,6 +136,26 @@ version14 부모 운영 재검증에서는 전송 실패 뒤 페이지 유지·�
 | `npm run test:unit` | action8 PASS, unit105/108로 GoogleProvider3 FAIL | 기존 QLT-019 재현이며 전체 unit 통과가 아님 |
 
 이 안정화는 연결 실패를 폼 안에서 처리하도록 바꾼 범위다. 서버 인가·SQL/schema·비공개 다운로드 URL은 변경하지 않았다. 동일 앱 소스의 main82a8777/sites41059c8을 푸시하고 version14 게시 succeeded를 확인했다. 정확한 source/version/deployment/archive 근거는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다. 오류 화면 대신 초안을 보존하는 개선과 사용자 신규 업로드 인수는 통과했지만, 최초 연결 실패 원인은 미확정이다. 남은 운영 추가 첨부 인수와 사용자 자료 보존·삭제 미승인 경계는 위 기록을 따르며 QLT-022를 열린 상태로 유지한다.
+
+## 봉사활동 저장 기반과 auth import 검증
+
+2026-10-23 기준은 main `0b2dab2` + 이번 구현 작업 트리, sites `206157d` + 같은 선별 patch다. 환경은 Node24.19.0/npm11.9.0/MariaDB11.4.13이며 실제 운영 계정/DB·파일·Sites version14/source41059c8은 변경하지 않았다. 명령은 합성 설정과 loopback의 새 `*_test` DB/격리 D1을 사용했다. 명시적 운영 migration·계정 권한 변경·재게시/배포는 실행하지 않았다.
+
+| 명령·대상 | 실제 결과 | 범위/남은 한계 |
+| --- | --- | --- |
+| QLT-019 실패 재현 → import 수정의 configured/unconfigured subprocess | 기존 unit105/108·action8에서 provider 초기화3실패를 재현한 뒤 focused3 PASS | Node ESM Babel CJS의 default 객체/Next·Vite 함수 형태를 실제 provider로 처리. OAuth/PKCE/state 유지. 초기 수정 unit121/action8 PASS는 중간 scope이며 아래 통합 unit에 합산하지 않음 |
+| `npm run test:project:workspace` | D1 43/MariaDB43, 합계86 PASS | 기본값/복수 팀·겸임·교체/비활성·같은 프로젝트·타팀/비참여자·현재 역할 상실/가짜 SU·동시 CAS/반복 receipt·event 실패 rollback·private 보존·팀 업무 담당자 변경 거부. 명단 역할 저장 검증이며 팀장 위임 권한 인수는 아님 |
+| `npm run test:volunteer:schema` | 58 PASS | 양 DB fresh/pre-upgrade additive·기존 행/default/이력 보존·재실행과 관계 무결성. schema 명세 코드와 격리 적용이며 운영 schema 미적용 |
+| `npm run test:native:migrations` | 99 PASS | 별도 Native additive suite. 전용 새 합성 DB를 보존하며 기존 운영 자료/계정 권한 검증은 아님 |
+| native migration/composite FK 단위 검사 | 21 PASS | `node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks --test tests/native-migrations.test.ts tests/volunteer-schema.test.ts`; 아래 전체 unit에 포함되므로 합산하지 않음 |
+| `npm test -- --require-db` | unit131, action8, visibility33 각각 PASS | 저장 command model4·복합 FK6를 기존 unit runner에 포함. 제출 필수/기존 검토 경로 회귀는 포함하나 미구현 직접 완료의 성공 인수는 아님 |
+| `npm run lint`, `npm run check:fsd`, `npm run typecheck` | lint PASS, FSD self-test5/경계오류0, types PASS | 최초 typecheck는 기존 Vinext 생성 route 타입 충돌로 실패했고 표준 Next typegen 후 재실행 PASS. 생성 타입/include 삭제로 우회하지 않음 |
+| `npm run build:native`, `npm run build:sites` | 두 대상 production build PASS | Native 기존 logging NFT2 경고, Vinext proxy 감지/정적 route 분류 경고 유지. 배포 결과가 아님 |
+| `npm run test:sites:http`, `npm run test:sites:auth` | 격리 Worker HTTP257, auth18 각각 PASS | 실제 Worker/합성 session 회귀. 실제 Google 로그인·운영 인수를 뜻하지 않음 |
+
+readiness는 관리표20개와 `schema_migrations`를 구분한다. 이번 구현은 관리자 전용 server repository/모델/schema까지이며 루트 action·사용자 화면·팀장 위임 권한·직접 완료 실행은 아직 없다. 따라서 새 봉사활동 화면의 hydrated desktop/mobile 인수와 직접 완료자/시각·재개 이력 테스트는 미실행이며 PRD-048~050/QLT-023의 남은 게이트다. 모든 신규/기존 업무는 제출 필수 기본값이고 mode 값 표현만으로 직접 완료를 활성화하지 않는다.
+
+문서 전담은 docs-canon 지침에 따라 기존 정본만 동기화했다. 저장소 문서 검사/self-test·MASTER_PLAN HTMLParser·`git diff --check` PASS이며 문서30·등록16/핵심7·상대링크189·npm명령99를 확인했다. 별도 내용 검토로 실제 저장 기반/아직 미구현인 권한·직접 완료·UI, 정책 선택 대기, 과거 결과와 이번 검증의 구분을 확인했다. 원본 검사기는 앞선 리소스 미제공/승인 ZIP 다운로드 실패 기록 이후 이번에 추가 실행하지 않았다. 원본 canon 통과나 기능/운영 인수로 확대하지 않는다.
 
 ## 문서 정리 검증
 
