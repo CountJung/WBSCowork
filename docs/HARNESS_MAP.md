@@ -440,7 +440,7 @@ public policy revision2·auth_client·env revision11의5keys는 동일하며 실
 
 ## 활동팀 공통 준비표 구현 검증
 
-PRD-058의 소스·합성 DB·실제 compiled HTTP 인수는 완료했으며 QLT-031의 실제 화면/운영 인수는 남아 있다. 로컬 인수 당시 운영은 기존v19이고 기능 게시·운영 DB/계정/사용자 파일·NAS 변경0이었다. 이후 실제 게시 결과는 [v20 승인/배포](#version20-승인과-운영-배포)에서 구분한다. 구현 담당의 checkpoint 전체 `npm test -- --require-db`는 새 전용 MariaDB에서 action33/unit242/visibility34,309 PASS·skip0이었다. 이후 소규모 model/권한/Origin 보강은 아래 focused/실제 compiled 결과로 구분하며309를 다시 실행했다고 쓰지 않는다. canonical Origin 보완 후 최종 전체 ESLint/typecheck·FSD self-test5/경계0·diff PASS를 확인했다.
+PRD-058의 소스·합성 DB·실제 compiled HTTP 인수는 완료했다. QLT-031의 후속 운영 envSU 부분 인수와 잔여 범위는 [허용 Chrome 검토](#version20-허용-chrome-운영-준비표-검토)로 구분한다. 로컬 인수 당시 운영은 기존v19이고 기능 게시·운영 DB/계정/사용자 파일·NAS 변경0이었다. 이후 실제 게시 결과는 [v20 승인/배포](#version20-승인과-운영-배포)에서 구분한다. 구현 담당의 checkpoint 전체 `npm test -- --require-db`는 새 전용 MariaDB에서 action33/unit242/visibility34,309 PASS·skip0이었다. 이후 소규모 model/권한/Origin 보강은 아래 focused/실제 compiled 결과로 구분하며309를 다시 실행했다고 쓰지 않는다. canonical Origin 보완 후 최종 전체 ESLint/typecheck·FSD self-test5/경계0·diff PASS를 확인했다.
 
 | 실제 등록 명령/범위 | 확인된 결과/남은 조건 |
 | --- | --- |
@@ -467,15 +467,27 @@ identity-change trigger 회귀에서 D1은 actor 이메일 변경 뒤 revision g
 
 최초 거부 때 D1 0018은2표/index 추가만 준비됐고 실행하지 않았다. 그 시점 before/after 실제26표의289행(audit279·users2·기타8)을 모든 컬럼·행의 잘림 없이 완전 대조해 같았다. 기존 project5/task7/submission5/attachment7 metadata·모든 역할을 보존했으며 신규 표는 없었다. env revision11 entries·public policy revision2·auth_client·cloud automations 빈 배열도 동일하며 값 출력은 없다. 원본 R2 bytes/inventory는 읽거나 보존을 독립 입증하지 않았다.
 
-운영 프로젝트는 collaboration인id5 하나이고 활동팀·팀 소속·팀장·프로젝트 소속은 모두0행이다. 기존 project5에서 신규 봉사팀 경로404는 설계된 비대상 응답이며 결함 재현으로 쓰지 않는다. 승인된 배포 이후의 봉사 프로젝트 업무/관리자 팀 카드→`/projects/{projectId}/teams`→`/{teamId}/preparation` 검토는 실제 팀 자료가 없으면 상세 인수할 수 없다. 운영 합성 팀 생성·사용자 자료 변경은 허용되지 않았고 운영 브라우저 검토도 이번 시도에서 수행하지 않았다. QLT-031 실제 viewport/키보드/UI 인수는 열린 상태다.
+최초 거부/게시 전 보존 대조 시점의 운영 프로젝트는 collaboration인id5 하나이고 활동팀·팀 소속·팀장·프로젝트 소속은 모두0행이었다. 기존 project5에서 신규 봉사팀 경로404는 설계된 비대상 응답이며 결함 재현으로 쓰지 않는다. 승인된 배포 이후의 봉사 프로젝트 업무/관리자 팀 카드→`/projects/{projectId}/teams`→`/{teamId}/preparation` 검토는 실제 팀 자료가 없으면 상세 인수할 수 없다. 이 배포 executor는 운영 합성 팀 생성·사용자 자료 변경·운영 브라우저 검토를 수행하지 않았다. 이후 부모가 수행한 합성 자료 기반 검토는 아래 별도 시점의 관측이며 QLT-031 전체 완료를 뜻하지 않는다.
 
 기존 v19 source409f514·saved version/배포 및 archive를 복귀 참조로 유지했고 자동 DB down/실제 backup 복원을 수행하지 않았다. NAS·운영 계정/환경/예약·외부 발송 변경·직접 운영 GET0이다. 정확한 중단 증거는 `/tmp/wbscowork-v20-saved-denied-evidence.json`이며 문서 갱신이 재시도 승인을 만들지 않는다. 이 최초 거부는 다음 새 승인 전의 이력으로 보존한다.
 
 사용자가 2026-10-23 15:05:46 UTC에 “V20 게시 그대로 하고 검토해줘”라고 새 직접 승인했다. root는 같은 saved version의 deployment_id=null을 확인한 뒤 배포1회 재시도해 terminal succeeded를 받았다(반환시각 `2026-10-23T15:06:43.558919Z`). deployment는 `appgdep_6adb77f8a28881919ade7c049e008ecd`이며 source/version/archive 재저장·변경0이다. getversion의 같은 deployment ID와 getsite active/latest20/public을 재조회했다. OPS-039는 이 승인 충돌 해소·실제 배포 확인 범위에서 완료했다.
 
-D1 0018의 team_preparation_sheets/team_preparation_revisions2표가 각0행으로 추가됐고 각각8컬럼의 정의 일치를 확인했다. 기존26표의 baseline289행은 모두 잘림 없이 보존됐다. **기존25표는 완전히 같지만 audit_logs는279→284행으로 INFO5건이 추가**됐으며 내용은 모두 “Next.js instrumentation registered”다. 기존 audit279행도 모두 보존돼 전체 표가 전후 동일하다는 주장은 하지 않는다. 실제 project5/task7/submission5/attachment7 행/metadata·계정 role은 동일했다. R2 bytes/inventory는 독립 조회하지 않았다.
+배포 직후 보존 대조에서 D1 0018의 team_preparation_sheets/team_preparation_revisions2표가 각0행으로 추가됐고 각각8컬럼의 정의 일치를 확인했다. 기존26표의 baseline289행은 모두 잘림 없이 보존됐다. **기존25표는 완전히 같지만 audit_logs는279→284행으로 INFO5건이 추가**됐으며 내용은 모두 “Next.js instrumentation registered”다. 기존 audit279행도 모두 보존돼 전체 표가 전후 동일하다는 주장은 하지 않는다. 실제 project5/task7/submission5/attachment7 행/metadata·계정 role은 동일했다. R2 bytes/inventory는 독립 조회하지 않았다.
 
-env revision11 entries 전체·public policy revision2·auth_client·cloud automations 빈 배열은 동일하고 private binding 변경0이다. 기존v19 source/saved version/archive를 유지했으며 자동 down·실제 복원·Native/NAS 적용·실제 사용자 기록 생성·계정 역할/예약·외부 발송 변경0이다. 운영 초기 활동팀0·collaboration 프로젝트5 상태도 그대로다. 실제 브라우저 검토는 부모의 별도 허용 Chrome 후속 인수이며 root/문서 담당은 직접 운영 GET·403 경로 재시도하지 않았다. QLT-031의 실제 화면 검증은 아직 미완료다.
+env revision11 entries 전체·public policy revision2·auth_client·cloud automations 빈 배열은 동일하고 private binding 변경0이다. 기존v19 source/saved version/archive를 유지했으며 자동 down·실제 복원·Native/NAS 적용·실제 사용자 기록 생성·계정 역할/예약·외부 발송 변경0이다. 이 배포 직후 대조 시점에는 활동팀0·collaboration 프로젝트5 상태도 그대로였다. 실제 브라우저 검토는 부모의 별도 허용 Chrome에서 수행하며 root/문서 담당은 직접 운영 GET·403 경로를 재시도하지 않았다. 후속 부분 인수와 QLT-031의 잔여 범위는 다음 절에 기록한다.
+
+### version20 허용 Chrome 운영 준비표 검토
+
+2026-10-23 15:17~15:23 UTC, 부모가 별도 허용 클라우드 Chrome의 기존 로그인 envSU 세션·1165px 너비로 운영v20을 검토했다. 이는 부모가 전달한 실제 브라우저 관측이며 root가 직접 브라우저/운영 GET을 실행하거나 신규 Google OAuth 교환을 검증한 결과가 아니다. 기존 실제 project5의 TXT 한글 미리보기 회귀는 정상이고 실제 사용자 자료·계정 권한은 변경하지 않았다.
+
+합성 프로젝트6 `QA-V20-SYNTHETIC-20261023-1517`과 팀1 식사·팀2 보수·팀3 돌봄·팀4 레크를 생성했다. 팀장/참여자 배정 없이 envSU로 각 준비항목1개를 v1에 저장하고 새로고침 재조회했다. 식사는 예상12명×1인 기준150g=1800g을 저장·재조회에서 확인했다. 메뉴 필수값 오류 후에도 수량·단위·메모 초안이 유지됐고 Enter로 항목 추가·Space로 체크가 동작했다. 보수의 자재/도구, 돌봄의 역할/준비물, 레크의 순서1·소요15분을 확인했다. 레크 초안 변경을 취소 확인한 뒤 저장 원본으로 돌아왔다.
+
+관측한 화면에서 새 앱 console 오류와 가로 넘침은 없었다. 이 결과는1165px/envSU와 위 조작 범위에 한정한다. 좁은 viewport, 실제 팀장 역할·팀 범위의 운영 인수 및 미관측 키보드/초점·뒤로가기·반복클릭 등은 검증하지 않았으므로 QLT-031은 부분 충족으로 유지한다. 로컬 권한 회귀나 이 SU 검토로 실제 팀장 운영 인수를 대신하지 않는다.
+
+합성 프로젝트6·팀1~4·각 준비표v1은 보존했다. 관리 UI에서는 '프로젝트 종료 및 영구 파기'만 확인돼 복원 가능한 정리는 확인하지 못했고 삭제하지 않았다. 원격 DB에서도 삭제하지 않는다. 실제 사용자 project5/task7/submission5/attachment7은 합성 정리 대상이 아니다. 부모는15:23에 게시·부분 검토 결과/한계와 테스트 자료 보존을 사용자에게 알렸다.
+
+이번 동기화는 기존 정본3개의 원격 텍스트·참조 앵커/표·내용 정합성만 확인한다. 실행기 종료 상태의 접근을 우회하지 않았고 원본 canon/저장소 CLI 검사기·앱 테스트는 재실행하지 않았으며 로컬 HEAD/작업 트리 동기화는 미완료다. 코드 변경·재게시·테스트 자료 삭제는 없다.
 
 ## 문서 정리 검증
 
