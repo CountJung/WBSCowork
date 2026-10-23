@@ -18,13 +18,18 @@ const check = (value, label) => { assert.ok(value, label); assertions.push(label
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
 async function request(route, cookie, body, headers = {}) {
   const response = await consumeWorkerResponse(await mf.dispatchFetch(origin + route, { ...(body === undefined ? {} : { method: "POST", body: JSON.stringify(body) }), headers: { ...(cookie ? { Cookie: cookie } : {}), ...(body === undefined ? {} : { Origin: origin, "Content-Type": "application/json" }), ...headers }, redirect: "manual" }), { route, method: body === undefined ? "GET" : "POST" });
-  trace.push({ path: new URL(route, origin).pathname, status: response.status, contentType: response.headers.get("content-type"), cacheControl: response.headers.get("cache-control") }); return response;
+  trace.push({ path: new URL(route, origin).pathname, status: response.status, contentType: response.headers.get("content-type"), cacheControl: response.headers.get("cache-control"), location: response.headers.get("location") }); return response;
 }
 function inspect(bytes, format) { const program = "import io,json,sys,zipfile,xml.etree.ElementTree as E\nz=zipfile.ZipFile(io.BytesIO(sys.stdin.buffer.read()));assert z.testzip() is None\nnames=z.namelist();selected=['word/document.xml'] if sys.argv[1]=='docx' else [n for n in names if n.startswith('ppt/slides/slide') and n.endswith('.xml')]\nprint(json.dumps({'text':''.join(e.text or '' for n in selected for e in E.fromstring(z.read(n)).iter() if e.tag.endswith('}t')),'names':names},ensure_ascii=False))"; const result = spawnSync("python3", ["-c", program, format], { input: bytes, encoding: "utf8", maxBuffer: 4 * 1024 * 1024 }); assert.equal(result.status, 0, result.stderr); return JSON.parse(result.stdout); }
+function inspectSsr(html) {
+  const program = `import json,sys\nfrom html.parser import HTMLParser\nclass P(HTMLParser):\n def __init__(self):super().__init__();self.stack=[];self.text=[];self.inputs=[];self.buttons=[];self.links=[]\n def handle_starttag(self,tag,attrs):\n  attrs=dict(attrs)\n  if tag=='input':self.inputs.append(attrs)\n  if tag in ['button','a']:\n   row={'attrs':dict(attrs),'text':[]};(self.buttons if tag=='button' else self.links).append(row);attrs['_row']=row\n  if tag not in ['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']:self.stack.append((tag,attrs))\n def handle_endtag(self,tag):\n  for i in range(len(self.stack)-1,-1,-1):\n   if self.stack[i][0]==tag:self.stack=self.stack[:i];break\n def handle_data(self,data):\n  if any(t in ['script','style'] for t,_ in self.stack):return\n  self.text.append(data)\n  for _,a in self.stack:\n   if '_row' in a:a['_row']['text'].append(data)\np=P();p.feed(sys.stdin.read())\nfor row in p.buttons+p.links:row['text']=' '.join(''.join(row['text']).split())\nprint(json.dumps({'text':' '.join(' '.join(p.text).split()),'inputs':p.inputs,'buttons':p.buttons,'links':p.links},ensure_ascii=False))`;
+  const result = spawnSync("python3", ["-c", program], { input: html, encoding: "utf8", maxBuffer: 4 * 1024 * 1024 }); assert.equal(result.status, 0, result.stderr); return JSON.parse(result.stdout);
+}
+const serializationError = value => /Functions cannot be passed|Only plain objects can be passed|Minified React error|Hydration failed|(?:^|\n)[a-f0-9]+:E\{/m.test(value);
 try {
   const db = await mf.getD1Database("DB"), bucket = await mf.getR2Bucket("ATTACHMENTS");
   for (const file of (await readdir("drizzle")).filter(name => name.endsWith(".sql")).sort()) for (const sql of (await readFile("drizzle/" + file, "utf8")).split("--> statement-breakpoint").map(sql => sql.trim()).filter(Boolean)) await db.prepare(sql).run();
-  await db.prepare("INSERT INTO users(id,email,name,role) VALUES(1,'report-admin@example.test','Synthetic report administrator','admin'),(2,'report-member@example.test','Synthetic report member','member')").run();
+  await db.prepare("INSERT INTO users(id,email,name,role) VALUES(1,'report-admin@example.test','Synthetic report administrator','admin'),(2,'report-member@example.test','Synthetic report member','member'),(3,'report-unbound-admin@example.test','Synthetic unbound administrator','admin')").run();
   await db.prepare("INSERT INTO projects(id,name,access_mode,start_date,end_date) VALUES(1001,'Synthetic compiled report','members_only','2026-10-01','2026-12-01')").run();
   await db.prepare("INSERT INTO project_members(project_id,user_id) VALUES(1001,1),(1001,2)").run();
   await db.prepare("INSERT INTO tasks(id,project_id,title,start_date,end_date,created_at) VALUES(2001,1001,'Synthetic compiled task','2026-10-01','2026-12-01','2026-10-20 01:00:00')").run();
@@ -33,7 +38,33 @@ try {
     await db.prepare("INSERT INTO submission_revisions(submission_id,revision_number,editor_id,content,visibility,created_at) VALUES(?,1,2,?,?,'2026-10-22 01:00:00')").bind(id, content, visibility).run();
   }
   const cookies = {};
-  for (const [id, email] of [[1, "report-admin@example.test"], [2, "report-member@example.test"]]) cookies[id] = `__Secure-next-auth.session-token=${await encode({ secret, token: { email, role: "guest", isSuperuser: false }, maxAge: 3600 })}`;
+  for (const [id, email] of [[1, "report-admin@example.test"], [2, "report-member@example.test"], [3, "report-unbound-admin@example.test"]]) cookies[id] = `__Secure-next-auth.session-token=${await encode({ secret, token: { email, role: "guest", isSuperuser: false }, maxAge: 3600 })}`;
+  const uiPath = "/admin/projects/1001/reports";
+  const anonymousUi = await request(uiPath); await anonymousUi.text();
+  const signIn = new URL(anonymousUi.headers.get("location") ?? "/", origin);
+  check([302, 303, 307, 308].includes(anonymousUi.status) && signIn.pathname === "/api/auth/signin" && signIn.searchParams.get("callbackUrl") === uiPath, "SSR anonymous dashboard redirects to sign-in with scoped return path without following OAuth");
+  for (const [id, name] of [[2, "member"], [3, "unbound administrator"]]) {
+    const response = await request(uiPath, cookies[id]), html = await response.text();
+    check(response.status === 404 && !html.includes("COMPILED_PRIVATE_MUST_NOT_LEAK") && !html.includes('data-testid="project-reports"'), `SSR ${name} dashboard denied404 without project controls/data`);
+  }
+  const dashboard = await request(uiPath, cookies[1]), dashboardHtml = await dashboard.text(), dom = inspectSsr(dashboardHtml);
+  await writeFile(path.join(out, "dashboard-before.html"), dashboardHtml);
+  check(dashboard.status === 200 && dashboardHtml.includes('data-testid="project-reports"'), "compiled assigned-admin dashboard SSR200 with client dashboard boundary");
+  check(["활동 보고서", "기간과 열람 범위", "기간 시작 · UTC", "기간 끝 · UTC", "제출물 범위", "내 보고서 기록"].every(label => dom.text.includes(label)), "SSR dashboard serializes required labels and report sections");
+  const dates = dom.inputs.filter(input => input.type === "datetime-local");
+  check(dates.length === 2 && dates.every(input => Object.hasOwn(input, "required") && /^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(input.value)) && Date.parse(dates[1].value + "Z") - Date.parse(dates[0].value + "Z") === 7 * 86400000, "SSR required date inputs serialize fixed UTC seven-day defaults");
+  check(dom.inputs.some(input => input.value === "Asia/Seoul") && dom.inputs.some(input => input.value === "public_only") && dom.inputs.filter(input => input.type === "checkbox" && Object.hasOwn(input, "checked")).length === 2, "SSR public-only/Seoul/DOCX+PPTX defaults remain serialized");
+  check(dom.buttons.some(button => button.text === "미리보기" && button.attrs.type === "button") && dom.buttons.some(button => button.text === "보고서 생성" && button.attrs.type === "submit" && !Object.hasOwn(button.attrs, "disabled")), "SSR preview and enabled generation buttons have correct form types");
+  check(dom.text.includes("새 설정은 비활성 상태로 저장됩니다.") && dom.buttons.some(button => button.text === "비활성 예약 설정 저장") && dom.inputs.some(input => input.type === "number" && input.value === "168" && input.min === "1" && input.max === "744"), "SSR disabled-schedule preparation and bounded lookback control are present");
+  check(dom.text.includes("격리는 복원 가능한 이동이며 영구 삭제하지 않습니다.") && dom.buttons.some(button => button.text === "만료된 보고서 확인"), "SSR reversible retention explanation and preview control are present");
+  check(!dashboardHtml.includes("COMPILED_PRIVATE_MUST_NOT_LEAK") && !serializationError(dashboardHtml), "SSR emits no private source or known React/RSC serialization error markers");
+  // Vinext requires its cache-busting _rsc query even when no router variant headers exist.
+  // Assert and follow the single same-route canonicalization, without following auth/external redirects.
+  const canonicalRsc = await request(uiPath, cookies[1], undefined, { RSC: "1", Accept: "text/x-component" }); await canonicalRsc.text();
+  check(canonicalRsc.status === 307 && canonicalRsc.headers.get("location") === uiPath + "?_rsc", "RSC request canonicalizes missing cache-busting query to the same protected route");
+  const rsc = await request(uiPath + "?_rsc", cookies[1], undefined, { RSC: "1", Accept: "text/x-component" }), rscText = await rsc.text(); await writeFile(path.join(out, "dashboard.rsc"), rscText);
+  check(rsc.status === 200 && rsc.headers.get("content-type")?.includes("text/x-component") && rscText.includes('"defaultStart":') && rscText.includes('"defaultEnd":') && rscText.includes('"requestId":') && !rscText.includes("COMPILED_PRIVATE_MUST_NOT_LEAK") && !serializationError(rscText), "compiled dashboard RSC serializes string defaults and request identity without error chunks");
+  await writeFile(path.join(out, "dashboard-ssr.json"), JSON.stringify({ status: dashboard.status, parsed: dom, rscStatus: rsc.status, rscContentType: rsc.headers.get("content-type"), limitation: "SSR/RSC only; browser hydration/interactions/focus/responsive/console not executed. Conditional quarantine confirmation requires client interaction and is not verified here." }, null, 2));
   const period = { start: "2026-10-21T00:00:00.000Z", end: "2026-10-23T00:00:00.000Z", timeZone: "Asia/Seoul", audienceMode: "public_only" };
   const previewPath = "/api/projects/1001/reports/preview?" + new URLSearchParams(period);
   check((await request(previewPath)).status === 401, "compiled anonymous preview requires login401");
@@ -62,6 +93,9 @@ try {
     await writeFile(path.join(out, `compiled.${file.format}`), bytes); files.push({ format: file.format, sha256: file.sha256, sizeBytes: file.sizeBytes });
   }
   check(Number((await db.prepare("SELECT COUNT(*) n FROM project_report_runs").first()).n) === 1 && Number((await db.prepare("SELECT COUNT(*) n FROM project_report_artifacts").first()).n) === 2, "compiled replay leaves one run/two artifacts");
-  check(Number((await db.prepare("SELECT COUNT(*) n FROM users").first()).n) === 2 && Number((await db.prepare("SELECT COUNT(*) n FROM tasks").first()).n) === 1 && Number((await db.prepare("SELECT COUNT(*) n FROM submissions").first()).n) === 2, "compiled report generation preserves source users/tasks/submissions");
+  const afterDashboard = await request(uiPath, cookies[1]), afterHtml = await afterDashboard.text(), afterDom = inspectSsr(afterHtml); await writeFile(path.join(out, "dashboard-after.html"), afterHtml);
+  check(afterDashboard.status === 200 && afterDom.text.includes("생성 완료") && body.artifacts.every(file => afterDom.links.some(link => link.attrs.href === file.downloadUrl && link.text === `${file.format.toUpperCase()} 다운로드`)), "SSR reload lists generated run and both authorized download links");
+  check(!afterHtml.includes("COMPILED_PRIVATE_MUST_NOT_LEAK") && !serializationError(afterHtml), "SSR populated report list leaks no private source or serialization error markers");
+  check(Number((await db.prepare("SELECT COUNT(*) n FROM users").first()).n) === 3 && Number((await db.prepare("SELECT COUNT(*) n FROM tasks").first()).n) === 1 && Number((await db.prepare("SELECT COUNT(*) n FROM submissions").first()).n) === 2, "compiled report generation preserves source users/tasks/submissions");
   await writeFile(path.join(out, "result.json"), JSON.stringify({ complete: true, checks: assertions.length, assertions, files, trace, entrySha256: hash(await readFile(entry)), scope: "Exact compiled Worker rendering + real ephemeral D1/R2; no browser/production/cleanup/real users" }, null, 2));
 } finally { await writeFile(path.join(out, "requests.json"), JSON.stringify(trace, null, 2)); await mf.dispose(); const after = await buildSnapshot(["dist/server", "dist/client"]); await writeFile(path.join(out, "build-provenance.json"), JSON.stringify({ before, after, unchanged: JSON.stringify(before) === JSON.stringify(after) }, null, 2)); assert.deepEqual(after, before, "Compiled report artifact changed during smoke"); }
