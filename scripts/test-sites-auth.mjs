@@ -60,8 +60,12 @@ try {
       check(response.status >= 400 && response.status < 600, `${pathname}: missing secret fails closed`);
       check(!(await response.text()).includes('"role":"admin"'), `${pathname}: no privileged identity`);
     }
-    const privacy = await request("/privacy");
-    check(privacy.status === 200, "public privacy page renders in workerd");
+    for (const init of [undefined, { headers: { Cookie: "__Secure-next-auth.session-token=synthetic-invalid-session" } }]) {
+      const privacy = await request("/privacy", init);
+      const content = await privacy.text();
+      check(privacy.status === 200 && content.includes("개인정보 처리지침"), "missing-secret public privacy page renders its actual policy content");
+      check(!content.includes(">로그아웃<") && !privacy.headers.getSetCookie().some(cookie => cookie.startsWith("__Secure-next-auth.session-token=") && !cookie.includes("Max-Age=0")), "missing-secret public shell stays anonymous even with a supplied invalid cookie");
+    }
   });
   await runScenario("secret-only", { NEXTAUTH_SECRET: secret, NEXTAUTH_URL: canonicalOrigin }, async (request) => {
     const providers = await request("/api/auth/providers");
