@@ -42,6 +42,7 @@ export default function DatabaseAdminPanel({
     return refreshDatabaseStatusAction(previous);
   }, baseState);
   const status = activeState.status;
+  const nativeQuarantineReady=!status.managedMigrations&&status.databaseExists&&!status.nativeMigrations?.error&&Boolean(status.nativeMigrations?.appliedVersions.includes(13))&&status.tables.some(table=>table.name==="native_bug_file_cleanup_jobs"&&table.exists&&table.missingColumns.length===0);
 
   return (
     <Stack spacing={3}>
@@ -97,8 +98,14 @@ export default function DatabaseAdminPanel({
             <Typography variant="body2">DDL은 자동 되돌리기가 되지 않습니다. 백업과 적용 범위를 확인한 뒤 실행하세요.</Typography>
           </Stack> : null}
           {status.managedMigrations ? <Typography>저장 파일 정리 대기: {status.pendingCleanupCount ?? 0}개 (진행 중인 업로드 포함)</Typography> : null}
+          {!status.managedMigrations?<Stack spacing={1}>
+            <Typography>버그 스크린샷 격리 대기: {status.pendingCleanupCount??0}개 (진행 중인 업로드 포함)</Typography>
+            <Alert severity="info">미참조 버그 스크린샷만 복원 가능한 격리 사본으로 옮깁니다. 제출물 첨부와 참조된 파일은 정리하지 않으며, 제보나 파일을 영구 삭제하지 않습니다. 복원이 필요하면 운영자가 보존된 원본 위치·크기·SHA-256을 확인하고 수동 복원합니다. 제보 영구 삭제의 기존 차단은 유지됩니다.</Alert>
+            {!nativeQuarantineReady?<Typography variant="body2" color="text.secondary">Native v13 적용 및 필수 정리 테이블 준비를 먼저 확인하세요.</Typography>:null}
+          </Stack>:null}
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             {status.managedMigrations ? <form action={formAction}><input type="hidden" name="intent" value="cleanup" /><DatabaseActionButton>실패한 파일 정리 재시도</DatabaseActionButton></form> : null}
+            {!status.managedMigrations?<form action={formAction}><input type="hidden" name="intent" value="cleanup"/><DatabaseActionButton disabled={!nativeQuarantineReady}>버그 스크린샷 격리 재시도 · 원본 보존</DatabaseActionButton></form>:null}
             {!status.managedMigrations && !status.schemaConfigured ? <Alert severity="info">스키마 변경에는 별도 DB_SCHEMA_USER / DB_SCHEMA_PASSWORD 설정이 필요합니다. 일반 조회는 runtime DB 계정을 사용합니다.</Alert> : null}
             {!status.managedMigrations && <form action={formAction}><input type="hidden" name="intent" value="initialize" />
               <DatabaseActionButton disabled={!status.schemaConfigured}>Native migration 적용</DatabaseActionButton>

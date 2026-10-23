@@ -55,19 +55,28 @@
     "test:superuser:invariants": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-superuser-invariants.ts",
     "test:hydration:timezone:worker": "node scripts/test-hydration-timezone-worker.mjs",
     "test:hydration:timezone:native": "node --import tsx scripts/test-hydration-timezone-native.mjs",
-    "test:native:home": "node --import tsx scripts/test-native-home.mjs"
+    "test:native:home": "node --import tsx scripts/test-native-home.mjs",
+    "test:http:response-lifecycle": "node --expose-gc scripts/test-http-response-lifecycle.mjs",
+    "test:worker:http-concurrency": "node --expose-gc scripts/test-worker-http-concurrency.mjs",
+    "test:native:bug-quarantine": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-native-bug-quarantine.ts",
+    "test:reports:ledger": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-report-ledger.ts",
+    "test:reports:collector": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-report-collector.ts",
+    "test:reports:workflow": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-report-workflow.ts",
+    "test:reports:http": "node scripts/test-project-report-http.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^9.0.0",
     "@mui/material-nextjs": "^9.0.0",
-    "@next/env": "16.2.4",
+    "@next/env": "16.4.2",
+    "docx": "9.6.1",
     "drizzle-orm": "0.45.2",
     "frappe-gantt": "^1.2.2",
-    "mariadb": "^3.5.2",
-    "next": "16.2.4",
-    "next-auth": "^4.24.14",
+    "mariadb": "3.5.4",
+    "next": "16.4.2",
+    "next-auth": "4.24.15",
+    "pptxgenjs": "4.0.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-markdown": "^10.1.0",
@@ -84,16 +93,19 @@
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.26",
     "babel-plugin-react-compiler": "1.0.0",
-    "docx": "^9.6.1",
     "drizzle-kit": "0.31.10",
     "eslint": "^9",
-    "eslint-config-next": "16.2.4",
-    "pptxgenjs": "^4.0.1",
+    "eslint-config-next": "16.4.2",
     "react-server-dom-webpack": "19.2.8",
     "typescript": "^5",
     "vinext": "1.0.0-beta.5",
-    "vite": "8.0.13",
+    "vite": "8.1.6",
     "wrangler": "4.92.0"
   },
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "pptxgenjs": {
+      "image-size": "2.0.4"
+    }
+  }
 }
