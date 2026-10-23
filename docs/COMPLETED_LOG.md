@@ -7,6 +7,7 @@
 | ID/시기 | 원인·결정·완료 범위 |
 | --- | --- |
 | QLT-016/029·RPT-015/017, 2026-10-23 | 동시 요청 admission과 Miniflare 원 Response GC의 별개 원인을 재현·최소 수정하고 각 회귀를 완료. 현재 schema 기반 snapshot·양 DB collector와 동일 snapshot DOCX/PPTX의 compiled 인수. [완료·한계](#품질-원인-수정과-digest-snapshot-기반), 남은 UI/NAS·운영은 TODO 유지 |
+| OPS-038, 2026-10-23 | 최초 배포 자동 승인 거부는 보존. 사용자 새 직접 승인 뒤 같은 저장v19의 미실행 확인→1회 배포 재시도 terminal succeeded·active/latest19와 D1 추가3표/기존23표·설정 보존 확인. [승인/배포 근거](HARNESS_MAP.md#version19-승인과-운영-배포), 운영 UI/새 OAuth는 별도 |
 | QLT-001/002, 2026-08 | ESLint 기준선, FSD M0~M5 완료. root app 조립과 public API로 이동하고 components/lib/models 호환층 제거. URL/권한/SQL 변경과 구조 이동을 분리 |
 | QLT-003~007, 2026-09 | private 파생 댓글/첨부 props 유출, ownership 없는 mutation, unscoped 단건, 경로 로그, task route의 project 관리 권한을 수정. SQL viewer/IdScope·상위 관계·작성자/admin·canonical project 경로를 강제 |
 | QLT-008/009 | node --import tsx로 loader 경고 정리, 실제 인가 경로의 node:test visibility fixture 도입. synthetic session은 실제 OAuth가 아님 |
@@ -36,7 +37,7 @@
 
 QLT-029는 Miniflare wrapper가 공유한 undici 원 Response의 GC 취소를 재현하고 즉시1회 drain·독립 snapshot을 보관하도록 test transport를 수정했다. QLT-016은 작은 동시 form의 과도한 예약503을 재현한 뒤 개수/전체 bytes admission과 실제 초과 거부를 보완했다. eager 큰 요청의 별도 전송 ECONNRESET 경계는 남아 있으며 서버 거부·Retry-After와 첫 파일 보존을 검증한 범위를 넘겨 해결로 주장하지 않는다.
 
-RPT-015는 현재 업무 상태·프로젝트 scope·revision 모델을 반영한 versioned/bounded snapshot·privacy·동일 hash와 양 DB collector 기반을 인수했다. 보고서 ledger/렌더/수직 소스 검증은 별도 범위이며 실제 화면·runtime DDL·NAS/운영 예약을 이 완료로 대신하지 않는다. RPT-017은 동일 snapshot DOCX/PPTX를 직접 생성해 compiled route의 OOXML·bytes/SHA·R2 metadata/현재 권한과 idempotency를 인수했다. Vinext의 chunked framing을 정확한 wire 계약으로 검사했고 시각 OOXML/브라우저·실제 NAS 인수는 별도다. 실제 수치·경고와 남은 게이트는 [하네스](HARNESS_MAP.md#남은-품질과-digest-구현-진행)가 소유한다. 운영은 version18 유지·중간 게시0이며 실제 자료/계정/환경·영구 삭제는 변경하지 않았다. 홈 수정 mainc9003a8/siteseb0adb1, 품질 묶음 main5230bb2/sites67263f3, 보고서 main `bd6f4efea7f78221e4d7a2597a01497ffbfd0acc`/sites `5032410a5b5117daabf709ce17514f63af3eeb99`까지 푸시·remote ls-remote를 확인했다. 공통 소스와 기본 build 차이를 보존했으며 게시 완료나 후속 문서 HEAD로 해석하지 않는다.
+RPT-015는 현재 업무 상태·프로젝트 scope·revision 모델을 반영한 versioned/bounded snapshot·privacy·동일 hash와 양 DB collector 기반을 인수했다. 보고서 ledger/렌더/수직 소스 검증은 별도 범위이며 실제 화면·runtime DDL·NAS/운영 예약을 이 완료로 대신하지 않는다. RPT-017은 동일 snapshot DOCX/PPTX를 직접 생성해 compiled route의 OOXML·bytes/SHA·R2 metadata/현재 권한과 idempotency를 인수했다. Vinext의 chunked framing을 정확한 wire 계약으로 검사했고 시각 OOXML/브라우저·실제 NAS 인수는 별도다. 실제 수치·경고와 남은 게이트는 [하네스](HARNESS_MAP.md#남은-품질과-digest-구현-진행)가 소유한다. 로컬 구현 당시 운영은 version18 유지·중간 게시0이었으며 실제 자료/계정/환경·영구 삭제는 변경하지 않았다. 홈 수정 mainc9003a8/siteseb0adb1, 품질 묶음 main5230bb2/sites67263f3, 보고서 main `bd6f4efea7f78221e4d7a2597a01497ffbfd0acc`/sites `5032410a5b5117daabf709ce17514f63af3eeb99`까지 푸시·remote ls-remote를 확인했다. 공통 소스와 기본 build 차이를 보존했으며 게시 완료나 후속 문서 HEAD로 해석하지 않는다.
 
 ## 첨부 미리보기와 SU 불변성 구현
 
@@ -99,7 +100,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 16 · 2026-10-23 08:01:01.751040 | 62b93208e1f32f2b19d58249643d5637242a8b36 | terminal succeeded, appgdep_6adb14287d548191924eba6c6d844aa3; get_site/get_site_version 재조회 active/latest16·source·deployment 일치. public policy2/auth_client/env11 유지, D1 접근 모드 추가·기존7표 전체 기존 컬럼 동일. 실 운영 GET/UI·Google은 미검증 |
 | 17 · 2026-10-23 09:55:21.486616 | 7fc8d79fde1c1ad4f6d90bff9d710d4a7ac5d7a9 | appgdep_6adb2ef69d688191b5bd38ecca262b90 terminal succeeded; active/latest17·exact source/deployment 재조회 일치. public policy2/auth_client/env11 동일·기존7표 전체 동일, schema/migration0. 운영 UI/Google·R2 bytes는 미검증 |
 | 18 · 2026-10-23 10:38:44.852001 | ccabf815e78d4aa43f15b12caf1c8d8a5b1577f7 | appgdep_6adb3920d4c081918b876140930c2be8 terminal succeeded; active/latest18·exact source/deployment 재조회 일치. public policy2/auth_client/env11 동일·기존7표 전체 동일, schema/migration0. 후속 같은 Work 브라우저의 QLT-027 관측 범위 재인수 PASS |
-| 19 · 저장만/배포 미실행 | 409f514a56dfac47932f0d3f874650f4e8b059bc | version 저장 성공. deploy_site_version은 자동 승인 검토 거부, 재조회 deployment_id=null·배포ID 없음. 운영v18/D1 23표 유지, 기존 전체행/설정 동일. 저장v19≠운영v19 |
+| 19 · 2026-10-23(updated12:39:08.402934) | 409f514a56dfac47932f0d3f874650f4e8b059bc | 최초 자동 승인 거부 후 새 직접 승인에 따른1회 재시도 terminal succeeded, appgdep_6adb555e05908191a189d19e2863f4cf. active/latest19·exact source/deployment 일치·기존23표/설정 동일, 새3표 각0행. 운영 UI는 미검증 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -113,7 +114,7 @@ version17 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_1655a01b020881
 
 version18 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_be49c22146708191b64ec65115bfaa82`다. 기능 main `3d36fa6eb8efea144a111a4efa8ca008c3b30bee` / sites·공식 source `ccabf815e78d4aa43f15b12caf1c8d8a5b1577f7`의 푸시·원격 HEAD와 게시 후 source/version/deployment를 확인했다. 시간대 미지정의 React418과 별개 초기 인증 flash를 명시 KST·서버 초기 세션 전달로 보완하고, 공개 경로 missing-secret 회귀도 null guard로 수정했다. 양 runtime47조건·최종 auth/HTTP와 기존 자료/설정 보존은 [하네스](HARNESS_MAP.md#version18-게시와-검증-경계)가 소유한다. QLT-027은 부모가 별도 허용 Chrome의 같은 로그인 세션에서 수행한 [v18 운영 재인수](HARNESS_MAP.md#version18-허용-work-브라우저-재인수)를 관측 범위에서 완료했으며 Native 홈500·간헐 응답 소비 오류는 별도 열린 항목이다. 새 OAuth·R2 bytes 인수, 계정 권한 변경·NAS 배포는 수행하지 않았다. 후속 문서 HEAD는 게시 코드 SHA와 구분한다.
 
-저장 version19 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_4351f6dc1888819190c8d32c0c4f6287`다. 공식 source main `409f514a56dfac47932f0d3f874650f4e8b059bc` fast-forward와 원격 일치·compiled SSR/RSC/OOXML33을 확인해 저장했다. 운영 배포 호출은 자동 승인 검토에서 parent review와 기존v18 유지 지시를 이유로 거부돼 배포ID가 없고 운영은v18이다. 정확한 거부 문구·완료/보존 범위·재시도0과 승인 충돌 해소 조건은 [하네스](HARNESS_MAP.md#저장-version19와-배포-거부)가 소유한다. 이 저장 이력은 배포 성공이나 D1 0017 적용을 뜻하지 않는다.
+version19 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_4351f6dc1888819190c8d32c0c4f6287`다. 공식 source main `409f514a56dfac47932f0d3f874650f4e8b059bc` fast-forward·원격 일치와 compiled33을 확인해 저장했다. 최초 운영 배포는 자동 승인 검토의 parent review 요구로 거부돼 v18을 유지했으며, 사용자 새 직접 승인 후 같은 저장v19가 미배포임을 확인하고1회 재시도해 terminal succeeded를 받았다. deployment/active/latest19와 D1 0017의 새3표·기존23표/설정 보존을 확인했다. 정확한 승인·거부 이력과 검증/미확인 경계는 [하네스](HARNESS_MAP.md#version19-승인과-운영-배포)가 소유한다. 저장 성공과 실제 운영 배포 성공을 구분하며 후속 문서 HEAD는 게시 source를 바꾸지 않는다.
 
 
 
