@@ -134,6 +134,8 @@ DB cascade는 파일 삭제를 하지 않는다. 삭제 action은 DB 삭제 전 
 - `src/shared/server/logging` 및 `instrumentation.ts`: `LOG_DIR` 롤링 로그와 구조화 action log.
 - action log metadata의 경로성 키(`filePath`, `storedFilePath`, `absolutePath`, `uploadDir`, `path`)는 기록 시 `[redacted]` 또는 `[redacted]:<확장자>`로 축약된다(`REDACTED_METADATA_KEYS`). 비밀값·private content는 애초에 metadata에 담지 않는다.
 
+제출물·댓글·요약과 관리자 사용자 일시는 공통 `formatAppDateTime`의 Asia/Seoul·KST, 첨부 숫자는 ko-KR로 SSR/수화 환경에 관계없이 동일하게 표시한다. UTC 저장/DB 날짜 해석은 유지하며 RootLayout은 인증 secret이 있으면 검증된 세션 또는 null을 초기 provider에 명시 전달하고, secret 미설정이면 null로 공개 경로의 익명 렌더를 유지한다. 인증 route의 설정 누락 시 fail-closed는 유지한다. 이 수정의 runtime·게시 인수 범위는 [QLT-027](HARNESS_MAP.md#qlt-027-운영-관측과-재현)을 따른다.
+
 ### 제출물 첨부 미리보기 확장
 
 제출 상세와 버전 이력은 공통 `AttachmentFile`을 사용해 사용자가 요청한 지원 파일만 미리보기한다. UI 후보 판정은 확장자·MIME allowlist를 사용하고 서버가 저장된 실제 내용을 다시 검사한다. 현재/과거·legacy/다중 첨부에 같은 계약을 적용하며 실제 Worker/게시 인수 범위는 TODO/HARNESS가 소유한다.
