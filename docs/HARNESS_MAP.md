@@ -141,6 +141,8 @@ version14 부모 운영 재검증에서는 전송 실패 뒤 페이지 유지·�
 
 2026-10-22 QLT-021 후속 문서 검증: main ff5e830/sites b249c4d를 기준으로 문서 전담 역할에서 기존 AGENTS/TODO/HARNESS_MAP/COMPLETED_LOG만 로컬 갱신했다. 개인 docs-canon SKILL.md는 읽어 적용했으나 제공된 `scripts/check_docs.py` 리소스 읽기가 실패했고 로컬 경로도 찾지 못해 **원본 형식 검사기는 미실행**이다. 저장소의 `node scripts/check-docs.mjs`는 문서30·등록16/핵심7·상대링크167·npm명령84 PASS, `git diff --check` PASS다. 별도 내용 검토로 version13의 게시 provenance/부모 Chrome 인수 근거, QLT-022의 남은 조건·승인 경계, 과거 로컬 수치와 현재 운영 결과의 분리 및 기존 고유 이력 보존을 확인했다. 이 QLT-021 문서 정리 단계에서는 제품 테스트 재실행·앱 수정·재게시·운영 데이터 변경·커밋·푸시를 수행하지 않았다.
 
+2026-10-23 봉사활동 계획 문서 검증: main a1f244c/sites 9e48312를 기준으로 PRODUCT_SPEC/MASTER_PLAN/ARCHITECTURE/TODO와 이 검증 기록만 갱신했다. `node scripts/check-docs.mjs --self-test`, `node scripts/check-docs.mjs`, `git diff --check` PASS. 문서30·등록16/핵심7은 유지한다. docs-canon SKILL.md는 읽었으나 원본 `scripts/check_docs.py` 리소스가 제공되지 않았고, 승인된 전달 ZIP의 Library materialize 후 로컬 helper 다운로드도 `download failed`로 끝나 원본 검사는 미실행이다(다운로드 실패의 HTTP 원인은 미확인). 별도 내용 검토로 확정 방향/제안 정책, V0–V4의 ID·우선순위·의존성·완료 조건, 기존 계정/자료/검토 계약과 미구현 경계를 확인했다. 문서 전용 게이트를 적용해 앱 build·기능/DB/브라우저 테스트는 실행하지 않았으며 기능·DB·실제 권한·운영 게시를 변경하지 않는다. 검증 성공은 계획된 기능의 구현/인수 완료가 아니다.
+
 ## 환경 메모
 
 AppleDouble `._*`는 별도 사용자 파일을 임의 삭제하지 말고 lint/types exclude와 기존 Turbopack dev cache 옵션을 유지한다. frappe-gantt CSS는 root layout에서 직접 import한다. native CLI의 APP_PORT/환경 우선순위·protected schema 설정은 기존 코드를 따른다. VS Code launch와 dev:debug는 개발 지원이며 운영 검증을 대신하지 않는다. 실측/의존성 상태를 바꾸려는 경우 해당 source와 exact 환경을 다시 확인한다.

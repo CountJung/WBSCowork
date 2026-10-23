@@ -2,7 +2,7 @@
 
 이 문서는 **지금 어디까지 왔고 다음 무엇을 해야 하는가**를 소유한다. 단계/완료 게이트는 [MASTER_PLAN](MASTER_PLAN.html), 과거 근거는 [COMPLETED_LOG](COMPLETED_LOG.md), 상세 digest 설계는 [계획](PROJECT_DIGEST_REPORT_PLAN.md)에 있다.
 
-최종 검토: 2026-10-22 · 다음 번호: **QLT-023 / RPT-021 / OPS-038 / PRD-046**
+최종 검토: 2026-10-23 · 다음 번호: **QLT-024 / RPT-021 / OPS-038 / PRD-051**
 
 ## 현재 상태
 
@@ -13,6 +13,7 @@
 | 운영 게시 | 기존 public Sites version14, source41059c8의 terminal succeeded 확인 | [게시 원장](COMPLETED_LOG.md#sites-게시-원장). 사용자 신규 첨부·새로고침·다운로드 PASS. 운영 수정 시 추가 첨부는 미검증. NAS 배포 없음 |
 | 최근 검증 | QLT-021 핵심 삭제 오판은 실제 Google 세션의 운영 UI 인수 PASS | [검증 기준선](HARNESS_MAP.md#검증-기준선). 신규 업로드는 통과했으나 추가 첨부·운영 파일 삭제는 미검증이며 QLT-022와 다른 열린 항목 유지 |
 | 후속 계획 | digest/report D0–D5 미구현, 실제 NAS 적용/인수 미완료 | D0부터 순서대로 진행, delivery는 별도 동의·승인 |
+| 봉사활동 계획 | 프로젝트 유형·참여자·활동팀·팀장 관리 역할·제출 없이 완료를 구현할 방향 채택 | 기능은 모두 미구현. 기본값/세부 권한 제안 확정부터 아래 단계로 진행; 이번 반영은 문서만 |
 
 ## 열린 항목
 
@@ -38,6 +39,21 @@
 | RPT-018 | [ ] | D3 scheduler token/dry-run/별도 schema/run ledger; QLT-012 완료 계약과 RPT-017 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
 | RPT-019 | [ ] | D4 download-only/retention; RPT-018 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
 | RPT-020 | [!] | D5 recipient consent·visibility/threat model 확정 후 delivery 검토; RPT-019 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
+
+## 봉사활동 확장 작업
+
+모든 항목은 미구현이다. P0는 필수 정책·기능·인수 게이트, P1도 MVP 출시에 필요한 UI 작업이다. 단계/게이트는 [MASTER_PLAN](MASTER_PLAN.html#volunteering), 상세 모델·권한·완료 방식의 단일 정본은 [ARCHITECTURE](ARCHITECTURE.md#봉사활동-확장-계획)이며 아래는 실행 큐다. 실제 자료·계정 권한·운영 migration/배포 변경은 이 계획 기록으로 실행하지 않는다.
+
+| ID | 단계 / 우선순위 | 상태 | 선행 | 남은 일·완료 조건 |
+| --- | --- | --- | --- | --- |
+| PRD-046 | V0 정책 / P0 | [ ] | 없음 | 팀장 임명·해제 및 팀 범위 관리, 복수 팀 참여, 유형 변경, 완료 방식 정책 확정. 팀당 팀장 수·일반 참여자 편집 범위·팀장 상태/검토 관리·탈퇴 시 재배정·직접 완료 허용 주체·봉사 기본값·모드 변경 제약의 제안을 확정값과 구분해 기록하면 완료 |
+| PRD-047 | V1 모델 / P0 | [ ] | PRD-046 | 프로젝트 유형/참여자/활동 종류/활동팀/복수 소속/WBS 팀 연결과 완료 방식 도입. MariaDB·D1 각각 fresh/existing additive migration, 기존 업무 협업/제출 필수 기본값·자료/이력 보존, 같은 프로젝트 관계와 동시 변경 guard를 확인하면 완료 |
+| PRD-048 | V2 팀장 / P0 | [ ] | PRD-047 | 관리자 임명·교체·해제와 해당 팀 업무 생성·배정·진행 관리 구현. 전체 mutation에서 현재 역할/소속 확인, 타팀·타프로젝트·사이트/계정 관리 거부, 팀장 교체·참여 탈퇴·역할 상실·복수 소속·오래된 폼 경합과 타인 private 자동 열람·자체 승인 불가를 검증하면 완료 |
+| PRD-049 | V2 직접 완료 / P0 | [ ] | PRD-048 | submission_required/direct_completion 판정 분리. 확정된 주체별 제출 없는 완료·선택 메모/제출/파일, 완료자/시각·사유 있는 재개 이력, 선행 조건·version/token·모드 변경 제약/기존 기록 보존과 검토 우회 방지를 양쪽 DB에서 검증하면 완료 |
+| PRD-050 | V3 화면 / P1 | [ ] | PRD-048, PRD-049 | 유형 선택 → 기본 활동팀 선택/이름 수정 → 참여자·겸임·팀장 배정 → 기존 WBS 연결 흐름과 팀 필터/권한별 UI/완료 방식 표시 구현. 직접 완료에 제출 UI를 강제하지 않고 개인 큐·검색·알림·완료 집계와 모바일 화면에서 양 경로가 일관되면 완료. 대상자 개인정보·아동 개별정보 입력은 추가하지 않음 |
+| QLT-023 | V4 인수 / P0 | [ ] | PRD-047–PRD-050 | 격리 MariaDB/D1·실제 action/Worker·hydrated desktop/mobile의 합성 회귀. 기존 프로젝트·제출/검토 필수와 새 직접 완료, 계정별/team별 권한·교체/탈퇴·ID 변조·동시 요청/rollback·기록/첨부 보존을 검증하고 구현/로컬/운영 인수 경계를 구분하면 완료. 실제 사용자 인수·게시 필요 여부는 별도 범위로 기록 |
+
+다음 행동은 PRD-046의 제안 정책을 확정하는 것이다. 이번 문서 정리·검사 성공은 위 기능이나 인수 완료를 뜻하지 않는다.
 
 ## ID와 갱신 규칙
 
