@@ -95,9 +95,11 @@ export async function verifyBugHttp({
     [actorCookies.member2, "second member"],
     [actorCookies.admin, "project administrator"],
   ]) {
-    const list = await html("/bugs?q=BUG_PRIVATE_GUEST_ONE", cookie),
-      detail = await request(`/bugs/${id}`, cookie),
-      missing = await request("/bugs/999999", cookie);
+    const list = await html("/bugs?q=BUG_PRIVATE_GUEST_ONE", cookie);
+    const detail = await request(`/bugs/${id}`, cookie);
+    const detailBody = await detail.text();
+    const missing = await request("/bugs/999999", cookie);
+    const missingBody = await missing.text();
     check(
       !list.includes("BUG_PRIVATE_GUEST_ONE</") &&
         !list.includes("Synthetic steps") &&
@@ -107,7 +109,8 @@ export async function verifyBugHttp({
     check(
       detail.status === missing.status &&
         detail.status === 404 &&
-        !(await detail.text()).includes("Actual private result"),
+        !detailBody.includes("Actual private result") &&
+        !missingBody.includes("Actual private result"),
       `${name}: missing and forbidden details share 404`,
     );
     check(
