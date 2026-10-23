@@ -1,3 +1,4 @@
+import { nativeMigrationV10 } from "./native-migration-v10";
 import { nativeMigrationV9 } from "./native-migration-v9";
 import { createHash } from "node:crypto";
 import { nativeMigrationV1 } from "./native-migration-v1";
@@ -13,7 +14,7 @@ export class NativeMigrationError extends Error {}
 
 export type MigrationConnection = { query(sql: string, values?: unknown[]): Promise<unknown> };
 export type MigrationLedgerRow = { version: number; name: string; checksum: string; appliedAt?: string };
-export const nativeMigrationManifest = [nativeMigrationV1, nativeMigrationV2, nativeMigrationV3, nativeMigrationV4, nativeMigrationV5, nativeMigrationV6, nativeMigrationV7, nativeMigrationV8, nativeMigrationV9] as const;
+export const nativeMigrationManifest = [nativeMigrationV1, nativeMigrationV2, nativeMigrationV3, nativeMigrationV4, nativeMigrationV5, nativeMigrationV6, nativeMigrationV7, nativeMigrationV8, nativeMigrationV9, nativeMigrationV10] as const;
 export const migrationChecksum = (specification: unknown) => createHash("sha256").update(JSON.stringify(specification)).digest("hex");
 export function quoteSchemaIdentifier(identifier: string) {
   if (!/^[A-Za-z0-9_]{1,64}$/.test(identifier)) throw new NativeMigrationError("Schema identifier must contain 1–64 letters, numbers or underscores.");
@@ -70,8 +71,8 @@ export async function verifyNativeSchema(connection: MigrationConnection, databa
     const found = new Map((await columns(connection, database, table)).map(row => [row.name, row]));
     const indexes = await rows<{ name: string; uniqueFlag: number; names: string; prefixLength: number }>(connection,
       "SELECT INDEX_NAME AS name, NON_UNIQUE AS uniqueFlag, GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX SEPARATOR ',') AS names, MAX(COALESCE(SUB_PART,0)) AS prefixLength FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? GROUP BY INDEX_NAME, NON_UNIQUE", [database, table]);
-    const foreignKeys = await rows<{ columnName: string; targetSchema: string; targetTable: string; targetColumn: string; deleteRule: string }>(connection,
-      "SELECT k.COLUMN_NAME AS columnName, k.REFERENCED_TABLE_SCHEMA AS targetSchema, k.REFERENCED_TABLE_NAME AS targetTable, k.REFERENCED_COLUMN_NAME AS targetColumn, r.DELETE_RULE AS deleteRule FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE k JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS r ON r.CONSTRAINT_SCHEMA=k.CONSTRAINT_SCHEMA AND r.CONSTRAINT_NAME=k.CONSTRAINT_NAME AND r.TABLE_NAME=k.TABLE_NAME WHERE k.TABLE_SCHEMA=? AND k.TABLE_NAME=? AND k.REFERENCED_TABLE_NAME IS NOT NULL", [database, table]);
+    const foreignKeys = await rows<{ columns: string; targetSchema: string; targetTable: string; targetColumns: string; deleteRule: string }>(connection,
+      "SELECT GROUP_CONCAT(k.COLUMN_NAME ORDER BY k.ORDINAL_POSITION SEPARATOR ',') AS columns, k.REFERENCED_TABLE_SCHEMA AS targetSchema, k.REFERENCED_TABLE_NAME AS targetTable, GROUP_CONCAT(k.REFERENCED_COLUMN_NAME ORDER BY k.ORDINAL_POSITION SEPARATOR ',') AS targetColumns, r.DELETE_RULE AS deleteRule FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE k JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS r ON r.CONSTRAINT_SCHEMA=k.CONSTRAINT_SCHEMA AND r.CONSTRAINT_NAME=k.CONSTRAINT_NAME AND r.TABLE_NAME=k.TABLE_NAME WHERE k.TABLE_SCHEMA=? AND k.TABLE_NAME=? AND k.REFERENCED_TABLE_NAME IS NOT NULL GROUP BY k.CONSTRAINT_NAME,k.REFERENCED_TABLE_SCHEMA,k.REFERENCED_TABLE_NAME,r.DELETE_RULE", [database, table]);
     const checks = await rows<{ name: string; clause: string }>(connection, "SELECT CONSTRAINT_NAME AS name, CHECK_CLAUSE AS clause FROM INFORMATION_SCHEMA.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=? AND TABLE_NAME=?", [database, table]);
     const tableInfo = await rows<{ engine: string; collation: string }>(connection, "SELECT ENGINE AS engine, TABLE_COLLATION AS collation FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?", [database, table]);
     if (tableInfo[0]?.engine.toLowerCase() !== "innodb" || tableInfo[0]?.collation !== "utf8mb4_unicode_ci") throw new NativeMigrationError(`Native schema drift: ${table} must use InnoDB and utf8mb4_unicode_ci.`);
@@ -89,8 +90,8 @@ export async function verifyNativeSchema(connection: MigrationConnection, databa
       }
       const key = entry.match(/^(PRIMARY KEY|UNIQUE KEY \w+|KEY \w+)\s*\(([^)]+)\)/);
       if (key && !indexes.some(index => index.names === columnList(key[2]) && Number(index.prefixLength) === 0 && (!key[1].startsWith("KEY ") ? Number(index.uniqueFlag) === 0 : true))) throw new NativeMigrationError(`Native schema drift: missing index on ${table}(${key[2]}).`);
-      const fk = entry.match(/^CONSTRAINT \w+ FOREIGN KEY\s*\((\w+)\) REFERENCES (\w+)\s*\((\w+)\)(?: ON DELETE (CASCADE|SET NULL|RESTRICT))?/);
-      if (fk && !foreignKeys.some(row => row.columnName === fk[1] && row.targetSchema === database && row.targetTable === fk[2] && row.targetColumn === fk[3] && row.deleteRule === (fk[4] ?? "RESTRICT"))) throw new NativeMigrationError(`Native schema drift: incompatible foreign key ${table}.${fk[1]}.`);
+      const fk = entry.match(/^CONSTRAINT \w+ FOREIGN KEY\s*\(([\w, ]+)\) REFERENCES (\w+)\s*\(([\w, ]+)\)(?: ON DELETE (CASCADE|SET NULL|RESTRICT))?/);
+      if (fk && !foreignKeys.some(row => row.columns === columnList(fk[1]) && row.targetSchema === database && row.targetTable === fk[2] && row.targetColumns === columnList(fk[3]) && row.deleteRule === (fk[4] ?? "RESTRICT"))) throw new NativeMigrationError(`Native schema drift: incompatible foreign key ${table}.${fk[1]}.`);
       const check = entry.match(/^CONSTRAINT (\w+) CHECK\(([\s\S]*)\)$/);
       if (check && !checks.some(row => row.name === check[1] && normalizeCheck(row.clause) === normalizeCheck(check[2]))) throw new NativeMigrationError(`Native schema drift: incompatible CHECK ${table}.${check[1]}.`);
       if (!key && !fk && !check) throw new NativeMigrationError(`Unsupported immutable schema entry in ${table}.`);
@@ -198,6 +199,19 @@ export async function runNativeMigrations(connection: MigrationConnection, datab
       else if (migration.version === 9) {
         for (const addition of nativeMigrationV9.additions) if (!(await columns(connection,database,addition.table)).some(c=>c.name===addition.name)) await connection.query(`ALTER TABLE ${quoteSchemaIdentifier(addition.table)} ADD COLUMN ${addition.definition}`);
         for (const statement of nativeMigrationV9.newTables) await connection.query(statement);
+        await verifyNativeSchema(connection,database,nativeMigrationManifest.filter(m=>m.version<=9).flatMap(m=>[...m.statements]));
+      }
+      else if (migration.version === 10) {
+        for (const addition of nativeMigrationV10.additions) if (!(await columns(connection,database,addition.table)).some(c=>c.name===addition.name)) await connection.query(`ALTER TABLE ${quoteSchemaIdentifier(addition.table)} ADD COLUMN ${addition.definition}`);
+        for (const statement of nativeMigrationV10.newTables) await connection.query(statement);
+        for (const key of nativeMigrationV10.foreignKeys) {
+          const present=await rows(connection,"SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=? AND REFERENCED_TABLE_NAME IS NOT NULL",[database,key.table,key.column]);
+          if (!present.length) await connection.query(`ALTER TABLE ${quoteSchemaIdentifier(key.table)} ADD ${key.definition}`);
+        }
+        for (const check of nativeMigrationV10.checks) {
+          const present=await rows(connection,"SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=? AND TABLE_NAME=? AND CONSTRAINT_NAME=?",[database,check.table,check.name]);
+          if (!present.length) await connection.query(`ALTER TABLE ${quoteSchemaIdentifier(check.table)} ADD ${check.definition}`);
+        }
         await verifyNativeSchema(connection,database);
       }
       else throw new NativeMigrationError("This migration version has no implementation.");

@@ -19,7 +19,7 @@
 
 ## 버전·적용 절차 (QLT-012)
 
-D1은 기존 `drizzle/` 게시 migration을 유지한다. Native MariaDB는 `native-migration-v1.ts`–`native-migration-v8.ts`의 불변 명세와 기존 schema additive upgrade를 `schema_migrations(version,name,checksum,applied_at)`로 추적한다. 이미 적용된 명세는 편집하지 않고 새 버전/handler를 추가한다. v1 checksum은 `8dea300dc59fc6a4d7c0fcb0a54b4a4fdec2db9d2681b303be9c1208d7007092`다.
+D1은 기존 `drizzle/` 게시 migration을 유지한다. Native MariaDB는 `native-migration-v1.ts`–`native-migration-v10.ts`의 불변 명세와 기존 schema additive upgrade를 `schema_migrations(version,name,checksum,applied_at)`로 추적한다. 이미 적용된 명세는 편집하지 않고 새 버전/handler를 추가한다. v1 checksum은 `8dea300dc59fc6a4d7c0fcb0a54b4a4fdec2db9d2681b303be9c1208d7007092`다.
 
 1. 운영자가 앱 쓰기 중지/점검 창과 검증된 백업을 준비한다. 이 문서는 실제 운영 적용 승인을 대신하지 않는다.
 2. `npm run db:migrate -- --status`는 runtime identity로 읽기만 수행한다. ledger 없음/대기/검증 오류를 구분하며 조회가 ledger를 생성하지 않는다.
@@ -70,7 +70,7 @@ v2 실제 검증: exact38602c8에서 migration35, 추가 보존9, migration unit
 
 v3 실제 검증: exact `72a9b39`에서 native48, migration unit13, lint/types/FSD PASS. 서로 다른 token/같은 version의 정상 stale, 같은 token replay, 재배정 후 이전 담당 거부·현재 담당 완료와 이력 일치를 검사했다. 새 합성 DB15개와 이전 DB·파일의 재시작 보존을 확인했다. SQL deadlock은 기존 bounded whole-transaction retry로 처리됐으며 원래 요청을 외부에서 재시도해 통과시킨 결과가 아니다.
 
-## 현재 schema v1–v8 범위
+## schema v1–v8 기준선
 
 | 버전 | 추가 구조와 기존 자료 처리 |
 | --- | --- |
@@ -83,7 +83,7 @@ v3 실제 검증: exact `72a9b39`에서 native48, migration unit13, lint/types/F
 | v7 | 템플릿 적용의 payload/token 중복 방지 `task_template_runs` |
 | v8 | 수신자별 알림 읽음 상태 `notification_reads` |
 
-도메인 관리 표는 총15개이며 `schema_migrations` ledger는 별도다. 기존 migration/checksum을 수정하거나 D1 SQL을 MariaDB에 적용하지 않는다. 새 기능 사용 전 모든 version1–8 적용, pendingVersions 빈 배열, 필수15표/새 컬럼 준비를 확인한다. v3/v4의 baseline은 도입 시점의 자료이며 과거 변경 사건을 재구성하지 않는다. 기존 Google 계정·role·private 원문·파일 bytes를 자동 이전하거나 대체하지 않는다.
+해당 v1–v8 기준선의 도메인 관리 표는 총15개이며 `schema_migrations` ledger는 별도다. 기존 migration/checksum을 수정하거나 D1 SQL을 MariaDB에 적용하지 않는다. 새 기능 사용 전 모든 version1–8 적용, pendingVersions 빈 배열, 필수15표/새 컬럼 준비를 확인한다. v3/v4의 baseline은 도입 시점의 자료이며 과거 변경 사건을 재구성하지 않는다. 기존 Google 계정·role·private 원문·파일 bytes를 자동 이전하거나 대체하지 않는다.
 
 최종 P0 native `d18cef8`의 additive77과 P1 `3b4af81`의 전체 harness99 + 관계 교체/rollback/복원4 PASS는 [P0 인수 기록](COMPLETED_LOG.md#p0p1-인수와-승인된-정리)과 [P1 인수 기록](COMPLETED_LOG.md#p0p1-인수와-승인된-정리)에 있다. P1의 초기 DELETE 권한1142 중단과 이후 새 합성 DB 한 곳/한 표에 한정한 승인 재검증도 구분해 보존한다. 승인된 loopback MariaDB11.4.13 fixture 결과이며, NAS 운영 DB나 main native CLI 수정 후의 실제 DB 실행 결과는 아니다. 남은 native purge/별도 강등 interleaving/차단된 cleanup race는 이 통과에 포함되지 않는다.
 
@@ -92,3 +92,11 @@ v3 실제 검증: exact `72a9b39`에서 native48, migration unit13, lint/types/F
 ## 버그 스크린샷 v9 (2026-10-20)
 
 `native-migration-v9.ts`는 별도 screenshot metadata 표와 bug_reports.creation_fingerprint만 추가한다. 기존 v1~v8 명세/ledger checksum은 보존한다. loopback3307의 보존형 additive 하네스99 PASS. 운영/NAS migration은 미적용이다. 첨부 있는 native 제보의 최종 삭제는 durable 파일 정리 도입까지 fail-closed로 보존한다(QLT-020). Sites는 별도 Drizzle0013/R2 cleanup queue를 사용한다.
+
+## 봉사활동 저장 기반 v10 (PRD-047 부분)
+
+`native-migration-v10.ts`와 별도 `drizzle/0014_volunteer_workspace.sql`은 기존 migration/checksum을 보존하고 프로젝트 유형/workspace CAS, 프로젝트 참여자·활동팀·팀 소속·명단 event, 업무의 팀 연결/완료 모드를 추가한다. 기존 프로젝트는 업무 협업, 신규/기존 업무는 제출 필수·팀 미지정 기본값을 유지하며 계정 역할·원문/private·제출/검토 이력을 재작성하지 않는다. 같은 프로젝트의 팀 소속은 복합 FK로 제한하고 Native postcondition은 독립 단일 FK를 동일한 복합 FK로 오인하지 않는다.
+
+이 버전은 관리자 전용 저장 기반이며 팀장 위임 권한·직접 완료 실행·사용자 action/UI를 제공하지 않는다. 정책 선택과 기능 인수는 [TODO](TODO.md#봉사활동-확장-작업)에 남는다. 새 코드 사용 전 운영자가 백업/쓰기 중지·명시 승인과 기존 schema identity 절차로 적용해야 하며 이번 로컬 작업에서는 운영/NAS/Sites migration을 실행하지 않는다.
+
+새 격리 자료의 fresh/existing additive·재실행·보존·관계 무결성 검증 방법과 실제 결과는 [HARNESS_MAP](HARNESS_MAP.md#봉사활동-저장-기반과-auth-import-검증)이 소유한다. 자동 down이나 과거 명세 변경으로 되돌리지 않는다.
