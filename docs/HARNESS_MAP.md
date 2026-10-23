@@ -317,7 +317,48 @@ Native의 `.test-artifacts/attachment-preview/native/result.json`/`final-evidenc
 
 게시 전후7표의 모든 기존 columns/rows는 동일하고 truncation0이었다: projects1(id5), tasks1(id7), submissions1(id5), submission_attachments1(id7/metadata25,180bytes), submission_revisions1(id5), users2, project_members0. 실제 계정 role/소속 자동 변경·영구 삭제는 없었다. R2 inventory/실 bytes 다운로드는 미검증이며 metadata 보존을 전체 DB/R2 백업·복원으로 확대하지 않는다. 저장 version16을 복구 참조로 유지했고 rollback은 수행하지 않았다.
 
-QLT-025/026은 소스/양 DB·실제 Native/Worker 로컬 및 게시 상태 확인 범위로 완료했다. 팀장 후보 UI 직접 조작은 미검증이며 서버 회귀 통과와 구분한다. 실 Google/운영 UI는 아직 미검증이고 부모의 별도 허용 브라우저 탐색 성공을 가정하지 않는다. 기존 CONNECT403 제한에 대해 운영 GET 재시도/우회0이며 물리 기기·전체 WCAG 인수도 아니다. CI는 이번 두 기능 SHA의 combined statuses0을 확인했고 기존 Actions runs Forbidden을 재시도/대체 조회하지 않았다. CI 통과로 주장하지 않는다. 후속 문서 commit은 이미 게시한7fc8d79의 소스/검증 대상이 아니며 원본 canon 검사기는 미실행이다. 이번 TODO/HARNESS/COMPLETED3개 동기화의 저장소 checker/self-test·`git diff --check`는 PASS(문서30·등록16/핵심7·상대링크249·npm명령125)다. 별도 내용 검토로 실제 release artifact/공급 tar와 service archive·게시 상태/7표 보존·미검증 UI와 CI 경계를 대조했다.
+QLT-025/026은 소스/양 DB·실제 Native/Worker 로컬 및 게시 상태 확인 범위로 완료했다. 팀장 후보 UI 직접 조작은 미검증이며 서버 회귀 통과와 구분한다. 게시 직후 코딩 환경의 실 Google/운영 UI는 미검증이었으며 후속 허용 Work 브라우저의 부분 인수는 아래에서 구분한다. 기존 CONNECT403 제한에 대해 코딩 환경의 운영 GET 재시도/우회0이며 물리 기기·전체 WCAG 인수도 아니다. CI는 이번 두 기능 SHA의 combined statuses0을 확인했고 기존 Actions runs Forbidden을 재시도/대체 조회하지 않았다. CI 통과로 주장하지 않는다. 후속 문서 commit은 이미 게시한7fc8d79의 소스/검증 대상이 아니며 원본 canon 검사기는 미실행이다. 이번 TODO/HARNESS/COMPLETED3개 동기화의 저장소 checker/self-test·`git diff --check`는 PASS(문서30·등록16/핵심7·상대링크249·npm명령125)다. 별도 내용 검토로 실제 release artifact/공급 tar와 service archive·게시 상태/7표 보존·미검증 UI와 CI 경계를 대조했다.
+
+### QLT-027 운영 관측과 재현
+
+version17/source7fc8d79의 별도 **허용 Work 브라우저·기존 SU 로그인 세션**에서 부모가 직접 관측한 결과다. 코딩 환경의 CONNECT403 제한은 그대로이며 그 경로를 재시도하지 않았다. 새 Google 인증 교환이나 아래 항목 외 전체 운영 인수로 확대하지 않는다.
+
+| 실제 운영 관측 | 범위/결과 |
+| --- | --- |
+| 텍스트 미리보기 | project5/task7/submission5/attachment7의 제출 상세에서 열기/닫기/다시 열기, `/submissions/5` 버전 이력에서 열기/닫기 PASS. 한글 정상·U+FFFD0. 관측 PRE는 clientWidth=scrollWidth=1008px, clientHeight480px/scrollHeight6681px로 가로 넘침 없이 세로 bounded scroll·줄바꿈 확인. 모든 화면 폭/형식이나 원본 bytes SHA 대조가 아님 |
+| SU 후보 제외 | 프로젝트 참여자·업무 담당자·검토자 후보에서 현재 SU 제외/일반 관리자 표시를 확인. 선택 저장·권한 변경0. 팀장 후보 UI 직접 검증과는 별개 |
+| React418 탐색 | 홈→`/tasks?projectId=5&taskId=7#task-7`(10:04:15Z), 제출 상세·댓글→`/tasks?projectId=5&taskId=7&submissionId=5#submission-5`(10:04:30Z), 검색 결과→`/tasks?projectId=5&taskId=7`(10:06:23Z)에서 React #418 text hydration mismatch. 앱 오류는 #418로 분류했고 확장 metadata 오류는 별도 |
+| 시간/초기 인증 표시 | 초기 DOM 제출 시간12:12가 hydration 후21:12로9시간 바뀌고 헤더 Google 로그인 표시 뒤 기존 인증 UI로 전환. 실제 계정 role/환경·사용자 자료 변경 없이 관찰 |
+
+기존 v17 artifact의 실제 RED에서 timezone 미지정 Intl이 UTC SSR `오후12:12`를 Seoul `오후09:12`/New York `오전08:12`로 바꾸는 React418 원인을 확인했다. Worker와 Native 각각16건(UTC/en-US0, Seoul/ko-KR1280px5, New York/de-DE1280px6, Seoul390px5)이다. Worker RED42조건 exit0; Native는4case의 시간·인증·미리보기·탐색 재현 뒤 별도 홈 검사에서 아래 SSR500으로 exit1이므로 전체 실행 성공으로 기록하지 않는다. 양쪽 기존 artifact는 전후 불변이다. 로그인 flash는 UTC의 React4180에서도4case 모두 발생해 별개 원인으로 구분했다.
+
+소스는 `formatAppDateTime`에 Asia/Seoul·KST, 첨부 숫자에 ko-KR을 명시하고 RootLayout의 검증된 `Session|null`을 SessionProvider 초기값으로 전달한다. UTC 저장·DB parse·중앙 인증/권한은 바꾸지 않으며 오류 억제/무시는 사용하지 않는다. 순수 시간2·실제 SSR provider4, 최초 기능 소스dbd784f의 `npm test -- --require-db` action33/unit163/MariaDB34 각각 PASS(skip0), lint/typecheck/FSD5 PASS다. 후속 NO_SECRET guard는 SSR4·lint/typecheck와 최종 auth21로 확인했으며 full230을 다시 실행했다고 해석하지 않는다. 결과를 중복 합산하지 않는다.
+
+| 최종 수정 후 확인 | 결과/남은 구분 |
+| --- | --- |
+| `npm run test:hydration:timezone:native` / `npm run test:hydration:timezone:worker` | 최종 실제 Chromium 각47조건 exit0. UTC/en-US·Seoul/ko-KR·New York/de-DE1280px와 Seoul390px4case 모두 SSR=수화 `2026.10.23 오후09:12 KST`, React418/기타 console/pageerror0. desktop 로그인 flash 없음; mobile은 숨겨진 desktop DOM 포함 textContent 안정성을 확인 |
+| 인증/자료 회귀 | 보호 task URL의 signed/anonymous/signed 응답200/307/200·SSR private/no-store 격리, 실제 UTF-8 미리보기/원본 다운로드200, 합성30파일·DB metadata·role 보존. 최초 `/api/auth/session` fetch0이므로 준비한 지연/503 응답은 발생하지 않았고 실패 주입 통과로 확대하지 않음 |
+| 최종 Native build/artifact | build PASS·기존 NFT 경고2 유지. BUILD_ID `3Wu6NBJZ-HvvP8H3QjShM`,554files fingerprint `25ef7cc49c936e1c2eb8b3a4ca7ff311cb1c54a12b5a8a2fb14194fb8e6ba421` 전후 동일 |
+| 최종 Worker build/artifact | build PASS·기존 proxy/static 분류 경고 유지.324files fingerprint `8ea870068a215c238e04378313c7055c48bf91617f891201c43093aa4cfa0273`, entry `20fb900bd24e68860994a0168fc86e1b41ed6b03f0dda8e1b30157c6af6adbd2` 전후 동일 |
+| 설정 누락/부가 회귀 | 중간 missing-secret 공개 privacy NO_SECRET500을 layout의 session=null guard로 보완. 최종 auth21·정식 HTTP266·compiled decoder 모두 exit0 PASS. 공개 privacy 본문200·익명 유지·invalid cookie 권한 없음과 인증 route fail-closed 확인. 중간 HTTP 응답 소비 오류는 아래 QLT-029로 별도 유지 |
+
+중간 Native 소스dbd784f/Worker 소스94be65a의 각47조건과 Native fixture의 파일 크기 보정 이력은 최종 artifact 인수와 구분한다. 실제 운영 재인수는 아래 게시 경계를 따른다.
+
+### version18 게시와 검증 경계
+
+기능 main `3d36fa6eb8efea144a111a4efa8ca008c3b30bee` / sites·공식 source `ccabf815e78d4aa43f15b12caf1c8d8a5b1577f7`의 push·ls-remote를 확인했다. 기존 Sites version18은 terminal succeeded이고 get_site active/latest18·get_site_version의 정확 source/deployment 일치를 재조회했다. 시각·ID·입력 tar와 서비스 정규화 archive는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다. 입력 tar361 regular files의 내용 hash를 검증 checkout과 모두 대조했다.
+
+게시 전후 env revision11의5entries·public policy revision2·auth_client가 동일하며 값은 출력하지 않았다. D1 schema23표·이번 migration0. 기존7표의 모든 columns/rows를 투영 생략 없이 완전 페이지 대조해 동일함을 확인했다: projects1(id5), tasks1(id7), submissions1(id5), submission_attachments1(id7/metadata25,180bytes), submission_revisions1, users2, project_members0. 실제 R2 bytes·전체 backup은 미검증이며 계정 권한 변경·NAS 배포·코딩 proxy 재시도0이다.
+
+QLT-027의 소스/로컬·게시 확인은 완료했고 같은 허용 Work 브라우저의 version18 재인수는 대기한다. 새 OAuth 교환·전체 운영 UI 인수로 확대하지 않는다. QLT-028 Native 홈과 QLT-029의 최초 간헐 하네스 원인은 미해결이다. 최종 기능 두 SHA의 GitHub combined statuses는 각각0이며 CI PASS가 아니다. 기존 Actions Forbidden을 재시도하지 않았다. 후속 문서 HEAD는 이미 게시한 코드 source와 구분한다. 원본 docs-canon 검사는 미실행이다.
+
+### QLT-028 Native 홈 SSR500
+
+기존 v17 Native artifact의 `/`에서 `Functions cannot be passed directly to Client Components` SSR500을 확인했다. 서버 `app/page.tsx`의 Button `component={Link}` 두 곳은 원인 후보이며 이번 시간대 수정에서 고치지 않았다. client WidgetStageOverview 내부 Link를 같은 원인으로 단정하지 않는다. Native GREEN의 인증 cache 회귀는 보호 task URL을 사용해 이 미해결 홈 검사를 대신하거나 숨기지 않으며, Sites 홈 결함으로 확대하지 않는다. 조사·수정·홈 인수는 TODO의 QLT-028로 유지한다.
+
+### QLT-029 HTTP 응답 소비 관측
+
+source94be65a 불변 Worker의 정식 HTTP266 실행1회가 `verify-bug-http.mjs:110`의 `detail.text()`에서 Body already read로 중단됐다. 기존 검증 코드 사본에404 response의 bodyUsed/status 관측만 추가한 진단1회는266 PASS이며 해당 응답들은404/bodyUsed=false였다. 최초 원인은 미확정이고 앱을 추측 수정하지 않았다. 최종 새 build의 정식 HTTP266은 exit0 PASS였으나 최초 오류의 근본 해결로 바꾸지 않는다. QLT-016의 간헐503과 다른 관측으로 QLT-029에서 원인을 추적한다.
 
 ## 문서 정리 검증
 
