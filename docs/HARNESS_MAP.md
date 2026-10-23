@@ -440,7 +440,7 @@ public policy revision2·auth_client·env revision11의5keys는 동일하며 실
 
 ## 활동팀 공통 준비표 구현 검증
 
-PRD-058의 소스·합성 DB·실제 compiled HTTP 인수는 완료했으며 QLT-031의 실제 화면/운영 인수는 남아 있다. 운영은 기존v19이고 이번 기능 게시·운영 DB/계정/사용자 파일·NAS 변경0이다. 구현 담당의 checkpoint 전체 `npm test -- --require-db`는 새 전용 MariaDB에서 action33/unit242/visibility34,309 PASS·skip0이었다. 이후 소규모 model/권한/Origin 보강은 아래 focused/실제 compiled 결과로 구분하며309를 다시 실행했다고 쓰지 않는다. canonical Origin 보완 후 최종 전체 ESLint/typecheck·FSD self-test5/경계0·diff PASS를 확인했다.
+PRD-058의 소스·합성 DB·실제 compiled HTTP 인수는 완료했으며 QLT-031의 실제 화면/운영 인수는 남아 있다. 로컬 인수 당시 운영은 기존v19이고 기능 게시·운영 DB/계정/사용자 파일·NAS 변경0이었다. 이후 실제 게시 결과는 [v20 승인/배포](#version20-승인과-운영-배포)에서 구분한다. 구현 담당의 checkpoint 전체 `npm test -- --require-db`는 새 전용 MariaDB에서 action33/unit242/visibility34,309 PASS·skip0이었다. 이후 소규모 model/권한/Origin 보강은 아래 focused/실제 compiled 결과로 구분하며309를 다시 실행했다고 쓰지 않는다. canonical Origin 보완 후 최종 전체 ESLint/typecheck·FSD self-test5/경계0·diff PASS를 확인했다.
 
 | 실제 등록 명령/범위 | 확인된 결과/남은 조건 |
 | --- | --- |
@@ -459,17 +459,23 @@ identity-change trigger 회귀에서 D1은 actor 이메일 변경 뒤 revision g
 
 권한·고정 소수점 식사량·제한/이력 계약은 [ARCHITECTURE](ARCHITECTURE.md#활동팀-공통-준비표-설계), 구현 경로는 [PROJECT_MAP](PROJECT_MAP.md#활동팀-공통-준비표)에서만 설명한다. 원본 docs-canon SKILL은 읽었으나 scripts/check_docs.py 리소스 읽기1회가 실패해 원본 검사는 미실행이며 저장소 대체 검사·별도 내용 검토만 사용한다.
 
-### 저장 version20와 배포 거부
+### version20 승인과 운영 배포
 
 부모가 전달한 2026-10-23 14:51:59 UTC 사용자 “게시하고 페이지 검토해줘” 요청으로 이번 기능 게시 보류가 해제됐다. 공식 Sites source repository main을 `69e1fb92a88371d96c95f30078a1ec08d07f7b86`로 push하고 ls-remote 일치를 확인했다. helper 설치/skill resource가 미가용이어서 [기존 Sites fallback](NAS_UPDATE_GUIDE.md#sites-게시)의 ordinary Git·hidden stdin credential·exact archive/native save 흐름을 사용했다. 정확한 source checkout Worker build와 실제 compiled30조건/34HTTP를 새 게시 artifact에서 다시 통과했다. 앞선 artifact 지문을 이 새 build의 지문으로 대체하거나 실제 브라우저 인수로 확대하지 않는다.
 
-version20 저장과 후속 조회는 성공했지만 `deploy_site_version`은 **자동 승인 검토 거부로 미실행**이다. 검토 사유는 “This deploys version20 to production…”, “active user request explicitly said not publish…”, “no later trusted user approval”라는 이전 게시 보류 판단이었다. 전달된 후속 명시 승인과 검토 판단의 충돌을 기록하며 재시도/우회0으로 배포 작업을 중단했다. saved version20 재조회 deployment_id=null·배포ID 없음이며 운영 URL의 live는 version19다. latest saved20은 live20을 뜻하지 않는다. version/archive 식별자는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다.
+최초 시도에서는 version20 저장/조회는 성공했지만 `deploy_site_version`은 **자동 승인 검토 거부로 미실행**이었다. 검토 사유는 “This deploys version20 to production…”, “active user request explicitly said not publish…”, “no later trusted user approval”라는 이전 게시 보류 판단이었다. 전달된 후속 명시 승인과 검토 판단의 충돌을 기록하며 재시도/우회0으로 배포 작업을 중단했다. 당시 saved version20 재조회는 deployment_id=null·배포ID 없음이고 live는 version19였다. 최초 latest saved20을 live20으로 쓰지 않았다. version/archive 식별자는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다.
 
-D1 0018은2표/index 추가만 준비됐고 배포 거부로 실행하지 않았다. before/after 실제26표의289행(audit279·users2·기타8)을 모든 컬럼·행의 잘림 없이 완전 대조해 같았다. 기존 project5/task7/submission5/attachment7 metadata·모든 역할을 보존했으며 신규 표는 없었다. env revision11 entries·public policy revision2·auth_client·cloud automations 빈 배열도 동일하며 값 출력은 없다. 원본 R2 bytes/inventory는 읽거나 보존을 독립 입증하지 않았다.
+최초 거부 때 D1 0018은2표/index 추가만 준비됐고 실행하지 않았다. 그 시점 before/after 실제26표의289행(audit279·users2·기타8)을 모든 컬럼·행의 잘림 없이 완전 대조해 같았다. 기존 project5/task7/submission5/attachment7 metadata·모든 역할을 보존했으며 신규 표는 없었다. env revision11 entries·public policy revision2·auth_client·cloud automations 빈 배열도 동일하며 값 출력은 없다. 원본 R2 bytes/inventory는 읽거나 보존을 독립 입증하지 않았다.
 
 운영 프로젝트는 collaboration인id5 하나이고 활동팀·팀 소속·팀장·프로젝트 소속은 모두0행이다. 기존 project5에서 신규 봉사팀 경로404는 설계된 비대상 응답이며 결함 재현으로 쓰지 않는다. 승인된 배포 이후의 봉사 프로젝트 업무/관리자 팀 카드→`/projects/{projectId}/teams`→`/{teamId}/preparation` 검토는 실제 팀 자료가 없으면 상세 인수할 수 없다. 운영 합성 팀 생성·사용자 자료 변경은 허용되지 않았고 운영 브라우저 검토도 이번 시도에서 수행하지 않았다. QLT-031 실제 viewport/키보드/UI 인수는 열린 상태다.
 
-기존 v19 source409f514·saved version/배포 및 archive를 복귀 참조로 유지했고 자동 DB down/실제 backup 복원을 수행하지 않았다. NAS·운영 계정/환경/예약·외부 발송 변경·직접 운영 GET0이다. 정확한 중단 증거는 `/tmp/wbscowork-v20-saved-denied-evidence.json`이며 문서 갱신이 재시도 승인을 만들지 않는다. OPS-039는 자동 거부의 승인 충돌 해소를 남긴다.
+기존 v19 source409f514·saved version/배포 및 archive를 복귀 참조로 유지했고 자동 DB down/실제 backup 복원을 수행하지 않았다. NAS·운영 계정/환경/예약·외부 발송 변경·직접 운영 GET0이다. 정확한 중단 증거는 `/tmp/wbscowork-v20-saved-denied-evidence.json`이며 문서 갱신이 재시도 승인을 만들지 않는다. 이 최초 거부는 다음 새 승인 전의 이력으로 보존한다.
+
+사용자가 2026-10-23 15:05:46 UTC에 “V20 게시 그대로 하고 검토해줘”라고 새 직접 승인했다. root는 같은 saved version의 deployment_id=null을 확인한 뒤 배포1회 재시도해 terminal succeeded를 받았다(반환시각 `2026-10-23T15:06:43.558919Z`). deployment는 `appgdep_6adb77f8a28881919ade7c049e008ecd`이며 source/version/archive 재저장·변경0이다. getversion의 같은 deployment ID와 getsite active/latest20/public을 재조회했다. OPS-039는 이 승인 충돌 해소·실제 배포 확인 범위에서 완료했다.
+
+D1 0018의 team_preparation_sheets/team_preparation_revisions2표가 각0행으로 추가됐고 각각8컬럼의 정의 일치를 확인했다. 기존26표의 baseline289행은 모두 잘림 없이 보존됐다. **기존25표는 완전히 같지만 audit_logs는279→284행으로 INFO5건이 추가**됐으며 내용은 모두 “Next.js instrumentation registered”다. 기존 audit279행도 모두 보존돼 전체 표가 전후 동일하다는 주장은 하지 않는다. 실제 project5/task7/submission5/attachment7 행/metadata·계정 role은 동일했다. R2 bytes/inventory는 독립 조회하지 않았다.
+
+env revision11 entries 전체·public policy revision2·auth_client·cloud automations 빈 배열은 동일하고 private binding 변경0이다. 기존v19 source/saved version/archive를 유지했으며 자동 down·실제 복원·Native/NAS 적용·실제 사용자 기록 생성·계정 역할/예약·외부 발송 변경0이다. 운영 초기 활동팀0·collaboration 프로젝트5 상태도 그대로다. 실제 브라우저 검토는 부모의 별도 허용 Chrome 후속 인수이며 root/문서 담당은 직접 운영 GET·403 경로 재시도하지 않았다. QLT-031의 실제 화면 검증은 아직 미완료다.
 
 ## 문서 정리 검증
 
