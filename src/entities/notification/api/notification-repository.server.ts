@@ -1,3 +1,4 @@
+import {projectAccessForCurrentUser,projectManagementForCurrentUser} from "@/src/shared/server/project-scope/index.server";
 import {getDatabasePool} from '@/src/shared/server/database/index.server';
 import {getRuntimeEnv} from '@/src/shared/server/runtime-env/index.server';
 import {isHostedRuntime} from '@/src/shared/server/hosted-runtime/index.server';
@@ -6,17 +7,18 @@ export type NotificationViewer={userId:number;isSuperuser:boolean};
 function relation(viewer:NotificationViewer){
  if(!Number.isSafeInteger(viewer.userId)||viewer.userId<1||typeof viewer.isSuperuser!=='boolean')throw new Error('현재 사용자를 확인할 수 없습니다.');
  const su="(flags.is_superuser=1 AND LOWER(viewer.email)=flags.superuser_email)",writable=`(viewer.role IN ('member','admin') OR ${su})`;
- const visibility=`(viewer.role='admin' OR ${su} OR s.author_id=viewer.id OR (s.visibility='public' AND r.visibility='public'))`;
+ const binding=projectAccessForCurrentUser("t.project_id","viewer.id",su);
+ const visibility=`(${projectManagementForCurrentUser("t.project_id","viewer.id",su)} OR s.author_id=viewer.id OR (s.visibility='public' AND r.visibility='public'))`;
  const viewerJoin='JOIN users viewer ON viewer.id=? CROSS JOIN (SELECT ? AS is_superuser,? AS superuser_email) flags';
  const task=`SELECT 'task' source,e.id source_id,'assigned' kind,t.id task_id,t.project_id,p.name project_name,t.title,NULL submission_id,NULL revision,e.created_at
  FROM task_events e JOIN tasks t ON t.id=e.task_id JOIN projects p ON p.id=t.project_id ${viewerJoin}
- WHERE e.assignee_id=viewer.id AND t.assignee_id=viewer.id AND ${writable} AND t.status<>'done' AND COALESCE(e.actor_id,0)<>viewer.id
+ WHERE ${binding} AND e.assignee_id=viewer.id AND t.assignee_id=viewer.id AND ${writable} AND t.status<>'done' AND COALESCE(e.actor_id,0)<>viewer.id
  AND (e.kind='created' OR (e.kind='updated' AND COALESCE((SELECT prior.assignee_id FROM task_events prior WHERE prior.task_id=t.id AND prior.task_version<e.task_version ORDER BY prior.task_version DESC LIMIT 1),0)<>e.assignee_id))
  AND NOT EXISTS(SELECT 1 FROM task_events later WHERE later.task_id=t.id AND later.task_version>e.task_version AND (later.assignee_id IS NULL OR later.assignee_id<>viewer.id))`;
  const review=`SELECT 'review' source,e.id source_id,e.kind,t.id task_id,t.project_id,p.name project_name,t.title,s.id submission_id,r.revision_number revision,e.created_at
  FROM submission_events e JOIN submissions s ON s.id=e.submission_id JOIN submission_revisions r ON r.submission_id=s.id AND r.revision_number=e.revision_number
  JOIN tasks t ON t.id=s.task_id JOIN projects p ON p.id=t.project_id JOIN task_events paired ON paired.operation_token=e.operation_token AND paired.task_id=t.id ${viewerJoin}
- WHERE e.kind IN ('review_requested','changes_requested','approved') AND COALESCE(e.actor_id,0)<>viewer.id AND ${visibility} AND ${writable}
+ WHERE ${binding} AND e.kind IN ('review_requested','changes_requested','approved') AND COALESCE(e.actor_id,0)<>viewer.id AND ${visibility} AND ${writable}
  AND t.last_operation_token=e.operation_token AND t.review_submission_id=s.id AND t.review_revision_number=r.revision_number AND s.current_revision=r.revision_number
  AND t.review_required=1 AND TRIM(t.deliverable)<>'' AND TRIM(t.definition_of_done)<>'' AND s.author_id=t.assignee_id
  AND ((e.kind='review_requested' AND paired.reviewer_id=viewer.id AND t.reviewer_id=viewer.id AND t.status='review_pending'
@@ -27,7 +29,7 @@ function relation(viewer:NotificationViewer){
  const comment=`SELECT 'comment' source,c.id source_id,'feedback' kind,t.id task_id,t.project_id,p.name project_name,t.title,s.id submission_id,r.revision_number revision,c.created_at
  FROM comments c JOIN submissions s ON s.id=c.submission_id JOIN submission_revisions r ON r.submission_id=s.id AND r.revision_number=COALESCE(c.revision_number,1)
  JOIN tasks t ON t.id=s.task_id JOIN projects p ON p.id=t.project_id ${viewerJoin}
- WHERE s.author_id=viewer.id AND c.author_id<>viewer.id AND ${visibility}`;
+ WHERE ${binding} AND s.author_id=viewer.id AND c.author_id<>viewer.id AND ${visibility}`;
  const values=[viewer.userId,viewer.isSuperuser?1:0,(getRuntimeEnv().auth.superuserEmail??'').toLowerCase()];
  return {sql:[task,review,comment].join(' UNION ALL '),params:[...values,...values,...values]};
 }

@@ -1,11 +1,10 @@
 import { Alert, Chip, Container, Paper, Stack, Typography } from "@mui/material";
 import { redirect } from "next/navigation";
 import { getAdminOverview } from "@/src/features/admin-overview/index.server";
-import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
+import { getAuthSession, getSignInPath, getUserByEmail, isSuperuserEmail } from "@/src/entities/user/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { getAdminRuntimePresentation } from "@/src/shared/config/admin-runtime";
-import { canAccessAdminPanel } from "@/src/entities/user";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +15,9 @@ export default async function AdminPage() {
     redirect(getSignInPath("/admin"));
   }
 
-  if (!canAccessAdminPanel(session.user.role, session.user.isSuperuser)) {
-    redirect("/");
-  }
+  const user=session.user.email?await getUserByEmail(session.user.email).catch(()=>null):null;
+  const isGlobalAdmin=Boolean(user&&session.user.isSuperuser&&isSuperuserEmail(user.email));
+  if (!isGlobalAdmin) redirect(user?.role==="admin"?"/admin/projects":"/");
 
   const runtimeEnv = getRuntimeEnv();
   const presentation = getAdminRuntimePresentation({ hosted: isHostedRuntime(), databaseConfigured: runtimeEnv.database.configured, databaseName: runtimeEnv.database.database });

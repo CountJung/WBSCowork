@@ -10,6 +10,7 @@ export async function verifyPersonalWorkWorkflow({ request, db, actorCookies, fo
   const dates = { startDate: '2026-01-01', endDate: '2026-12-31' };
   await form(route, owner, create, { projectId, title: 'QUEUE_REVIEW_CARD', assigneeId: 2, reviewRequired: '1', deliverable: '결과', definitionOfDone: '동료 확인', ...dates });
   const task = await db.prepare("SELECT * FROM tasks WHERE title='QUEUE_REVIEW_CARD'").first(), taskId = task.id;
+  route=`/tasks?projectId=${projectId}&taskId=${taskId}`;
   const update = renderedAction(await html(route, owner), 'updateTaskAction');
   await form(route, owner, update, { projectId, taskId, title: task.title, assigneeId: 2, reviewerId: 3, ...dates });
   const submit = renderedAction(await html(route, owner), 'createSubmissionAction');

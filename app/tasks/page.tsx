@@ -10,16 +10,19 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { redirect } from "next/navigation";
-import { getAuthSession, getSignInPath, listAllUsers } from "@/src/entities/user/index.server";
+import FieldLabel from "@/src/shared/ui/field-label";
+import ValidatedTextField from "@/src/shared/ui/validated-text-field";
+import { notFound, redirect } from "next/navigation";
+import { getAuthSession, getSignInPath, listProjectUsersForViewer } from "@/src/entities/user/index.server";
 import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import { listCommentsByProject } from "@/src/entities/comment/index.server";
 import { listAttachmentsByProject, listSubmissionsByProject } from "@/src/entities/submission/index.server";
-import { listAllProjects,getProjectTaskTeams } from "@/src/entities/project/index.server";
-import { listTasksByProject, listTaskEventsByProject, getDependencySnapshot,getTaskScope } from "@/src/entities/task/index.server";
+import { listAllProjectsForViewer,getProjectTaskTeams } from "@/src/entities/project/index.server";
+import { listTasksByProjectForViewer, listTaskEventsByProjectForViewer, getDependencySnapshotForViewer,getTaskScope } from "@/src/entities/task/index.server";
 import { getOrderedTasks, getSelectedTask, parsePersonalWorkReturnTo } from "@/src/entities/task";
 import { getSelectedProject } from "@/src/entities/project";
+import {parseTaskTeamFilter} from "@/src/shared/lib/task-context";
 import { formatDate } from "@/src/shared/lib/date";
 import SubmitButton from "@/src/shared/ui/submit-button";
 import TaskTemplatePreview from "@/src/widgets/task-templates";
@@ -27,10 +30,11 @@ import {applyTaskTemplateAction} from "@/src/features/task-templates/index.serve
 import {setTaskPredecessorsAction} from "@/src/features/task-dependencies/index.server";
 import {TaskDependencyPanel,ProjectWorkSummary} from "@/src/widgets/task-dependencies";
 import ProjectGanttChart from "@/src/widgets/project-gantt";
-import { TaskCard, TaskFocusController,TaskAssignmentFields } from "@/src/widgets/task-workspace";
+import { TaskCard, TaskFocusController,TaskAssignmentFields,TaskSummaryCard,TaskDateFields } from "@/src/widgets/task-workspace";
 import type { Comment } from "@/src/entities/comment";
 import type { Project,TaskTeamDirectory } from "@/src/entities/project";
 import type { SubmissionAttachment, Submission } from "@/src/entities/submission";
+import type {SubmissionSummary} from "@/src/widgets/task-workspace";
 import type { Task, TaskEvent, DependencySnapshot } from "@/src/entities/task";
 import { canWriteTaskContent, getUserRoleLabel, canManageAllSubmissions, canAccessAdminPanel } from "@/src/entities/user";
 import {
@@ -57,6 +61,7 @@ type TasksPageProps = {
     taskId?: string | string[];
     returnTo?: string | string[];
     teamId?:string|string[];
+    submissionId?:string|string[];
   }>;
 };
 
@@ -114,30 +119,31 @@ function TaskWritePolicy({ canWrite }: { canWrite: boolean }) {
 function TaskCreateForm({
   orderedTasks,
   project,
-  users, eligibleUserIds, returnTo,teamDirectory,allowUnassignedTeam,
+  users, eligibleUserIds, returnTo,teamId,teamDirectory,allowUnassignedTeam,
 }: {
   returnTo?:string;
+  teamId?:string;
   teamDirectory:TaskTeamDirectory;
   allowUnassignedTeam:boolean;
   eligibleUserIds:number[];
   orderedTasks: Task[];
   project: Project;
-  users: Awaited<ReturnType<typeof listAllUsers>>;
+  users: Awaited<ReturnType<typeof listProjectUsersForViewer>>;
 }) {
   return (
     <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
       <Stack component="form" action={createTaskAction} spacing={2}>
         <input type="hidden" name="operationToken" value={randomUUID()} />
-        <input type="hidden" name="returnTo" value={returnTo??""}/>
+        <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="teamId" value={teamId??""}/>
         <input type="hidden" name="projectId" value={String(project.id)} />
         <Typography variant="h5">새 작업 추가</Typography>
-        <TextField name="title" label="작업 제목" required />
-        <TextField name="description" label="설명" multiline minRows={3} />
-        <TextField name="deliverable" label="기대 산출물·제출 형식" multiline minRows={2} helperText={project.projectType==="volunteering"?"직접 완료에서는 선택 사항입니다. 필요한 활동 기록이나 자료를 적어 주세요.":"예: 조사 자료 링크와 요약 파일. 초안에는 비워 둘 수 있으며 완료 전에 입력합니다."} slotProps={{ htmlInput: { maxLength: 2000 } }} />
-        <TextField name="definitionOfDone" label="완료 기준" multiline minRows={2} helperText="확인 가능한 결과를 적어 주세요." slotProps={{ htmlInput: { maxLength: 2000 } }} />
-        <TaskAssignmentFields key={project.id} isVolunteer={project.projectType==="volunteering"} teams={teamDirectory.teams} memberIdsByTeam={teamDirectory.memberIdsByTeam} projectMemberIds={teamDirectory.projectMemberIds} users={users} eligibleUserIds={eligibleUserIds} allowUnassignedTeam={allowUnassignedTeam}/>
+        <ValidatedTextField name="title" label={<FieldLabel requirement="required">작업 제목</FieldLabel>} required />
+        <TextField name="description" label={<FieldLabel>설명</FieldLabel>} multiline minRows={3} />
+        <TextField name="deliverable" label={<FieldLabel requirement={project.projectType==='volunteering'?'optional':'before_completion'}>기대 산출물·제출 형식</FieldLabel>} multiline minRows={2} helperText={project.projectType==="volunteering"?"직접 완료에서는 선택 사항입니다. 필요한 활동 기록이나 자료를 적어 주세요.":"예: 조사 자료 링크와 요약 파일. 초안에는 비워 둘 수 있으며 완료 전에 입력합니다."} slotProps={{ htmlInput: { maxLength: 2000 } }} />
+        <TextField name="definitionOfDone" label={<FieldLabel requirement="before_completion">완료 기준</FieldLabel>} multiline minRows={2} helperText="확인 가능한 결과를 적어 주세요." slotProps={{ htmlInput: { maxLength: 2000 } }} />
+        <TaskAssignmentFields key={project.id} isVolunteer={project.projectType==="volunteering"} teams={teamDirectory.teams} memberIdsByTeam={teamDirectory.memberIdsByTeam} projectMemberIds={teamDirectory.projectMemberIds} users={users.map(({id,name})=>({id,name}))} eligibleUserIds={eligibleUserIds} allowUnassignedTeam={allowUnassignedTeam}/>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-          <TextField select name="parentId" label="상위 작업" defaultValue="" fullWidth>
+          <TextField select name="parentId" label={<FieldLabel>상위 작업</FieldLabel>} defaultValue="" fullWidth>
             <MenuItem value="">루트 작업</MenuItem>
             {orderedTasks.map((task) => (
               <MenuItem key={task.id} value={String(task.id)}>
@@ -147,10 +153,7 @@ function TaskCreateForm({
           </TextField>
 
         </Stack>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-          <TextField name="startDate" label="시작일" type="date" defaultValue={formatDate(project.startDate)} required fullWidth slotProps={{ inputLabel: { shrink: true } }} />
-          <TextField name="endDate" label="종료일" type="date" defaultValue={formatDate(project.endDate)} required fullWidth slotProps={{ inputLabel: { shrink: true } }} />
-        </Stack>
+        <TaskDateFields startDate={formatDate(project.startDate)} endDate={formatDate(project.endDate)}/>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <SubmitButton pendingLabel="작업 생성 중…" variant="contained">작업 생성</SubmitButton>
         </Stack>
@@ -168,13 +171,16 @@ function TaskList({
   project,
   selectedTaskId,
   submissionsByTaskId,
-  users, currentUserId, eventsByTaskId, eligibleUserIds, returnTo, dependencySnapshot,teamDirectory,scope,
+  users, currentUserId, eventsByTaskId, eligibleUserIds, returnTo, dependencySnapshot,teamDirectory,scope,teamId,selectedSubmissionId,summariesByTaskId,
 }: {
   returnTo?:string;
   teamDirectory:TaskTeamDirectory;
   scope:{canManageAll:boolean;canManageUnassigned:boolean;leaderTeamIds:number[]};
   eligibleUserIds:number[];
   dependencySnapshot:DependencySnapshot;
+  teamId?:string;
+  selectedSubmissionId?:number|null;
+  summariesByTaskId:Map<number,SubmissionSummary[]>;
   currentUserId: number | null;
   eventsByTaskId: Record<number,TaskEvent[]>;
   canWrite: boolean;
@@ -185,7 +191,7 @@ function TaskList({
   project: Project;
   selectedTaskId: number | null;
   submissionsByTaskId: Map<number, Submission[]>;
-  users: Awaited<ReturnType<typeof listAllUsers>>;
+  users: Awaited<ReturnType<typeof listProjectUsersForViewer>>;
 }) {
   if (orderedTasks.length === 0) {
     return (
@@ -199,8 +205,10 @@ function TaskList({
 
   return (
     <Stack spacing={2}>
-      {orderedTasks.map((task) => {
+      {(selectedTaskId?orderedTasks.filter(task=>task.id===selectedTaskId):orderedTasks).map((task) => {
         const isSelectedTask = selectedTaskId === task.id;
+        const context=new URLSearchParams({projectId:String(project.id),taskId:String(task.id),...(teamId?{teamId}:{}),...(returnTo?{returnTo}:{})});
+        if(!selectedTaskId)return <TaskSummaryCard key={task.id} task={task} href={`/tasks?${context.toString()}#task-${task.id}`} submissionCount={summariesByTaskId.get(task.id)?.length??0} childCount={orderedTasks.filter(child=>child.parentId===task.id).length}/>;
         const canManageTask=canWrite&&(scope.canManageAll||(task.activityTeamId!==null&&scope.leaderTeamIds.includes(task.activityTeamId)));
         const canExecuteTask=canWrite&&(canSeeAllSubmissions||task.assigneeId===currentUserId||(task.activityTeamId!==null&&scope.leaderTeamIds.includes(task.activityTeamId)));
 
@@ -217,9 +225,12 @@ function TaskList({
             allowUnassignedTeam={scope.canManageUnassigned}
             dependencyPanel={<TaskDependencyPanel setTaskPredecessorsAction={setTaskPredecessorsAction} task={task} tasks={orderedTasks} snapshot={dependencySnapshot} canWrite={canManageTask}/>}
             returnTo={returnTo}
+            teamId={teamId}
+            selectedSubmissionId={selectedSubmissionId}
+            submissionSummaries={summariesByTaskId.get(task.id)??[]}
             orderedTasks={orderedTasks}
             projectId={project.id}
-            users={users}
+            users={users.map(({id,name})=>({id,name}))}
             eligibleUserIds={eligibleUserIds}
             isSelectedTask={isSelectedTask}
             canWrite={canWrite}
@@ -256,7 +267,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const runtimeEnv = getRuntimeEnv();
   const canWrite = canWriteTaskContent(session.user.role, session.user.isSuperuser);
   const canManageProjects = canAccessAdminPanel(session.user.role, session.user.isSuperuser);
-  const canSeeAllSubmissions = canManageAllSubmissions(session.user.role, session.user.isSuperuser);
+  const hasSubmissionAdminRole = canManageAllSubmissions(session.user.role, session.user.isSuperuser);
   const params = await searchParams;
   const feedbackStatus = getSingleSearchParam(params.status);
   const feedbackMessage = getSingleSearchParam(params.message);
@@ -266,9 +277,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   if (!runtimeEnv.database.configured) {
     return (
-      <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" sx={{ py: { xs: 3, md: 5 }, minWidth:0,overflowWrap:"anywhere",'& .MuiChip-root':{maxWidth:"100%",height:"auto"},'& .MuiChip-label':{whiteSpace:"normal",overflowWrap:"anywhere",py:0.5} }}>
         <Stack spacing={3}>
-          <Typography variant="h3">작업 관리</Typography>
+          <Typography component="h1" variant="h4">프로젝트 작업 공간</Typography>
             {returnTo?<Button href={returnTo} sx={{alignSelf:"flex-start"}}>내 업무로 돌아가기</Button>:null}
           <Alert severity="warning">
             DB env가 완전하지 않아 작업 데이터를 불러올 수 없습니다. 데이터베이스 연결과 배포 migration 상태를 먼저 점검해야 합니다.
@@ -289,9 +300,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const revisionsReady=["submission_revisions","submission_events","submission_attachments","task_dependencies","task_template_runs","project_members","activity_teams","activity_team_members","activity_team_leaders","project_workspace_events"].every(name=>databaseStatus.tables.some(table=>table.name===name&&table.exists&&table.missingColumns.length===0));
   if (!revisionsReady || !taskEventsReady || !projectsTableReady || !tasksTableReady || !submissionsTableReady || !commentsTableReady || !usersTableReady) {
     return (
-      <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
+      <Container component="main" sx={{ py: { xs: 3, md: 5 }, minWidth:0,overflowWrap:"anywhere",'& .MuiChip-root':{maxWidth:"100%",height:"auto"},'& .MuiChip-label':{whiteSpace:"normal",overflowWrap:"anywhere",py:0.5} }}>
         <Stack spacing={3}>
-          <Typography variant="h3">작업 관리</Typography>
+          <Typography component="h1" variant="h4">프로젝트 작업 공간</Typography>
             {returnTo?<Button href={returnTo} sx={{alignSelf:"flex-start"}}>내 업무로 돌아가기</Button>:null}
           <Alert severity="warning">
             작업, 제출물, 댓글 관리에 필요한 기본 테이블 또는 확장 컬럼이 아직 준비되지 않았습니다. 먼저 관리자 DB 페이지에서 DB와 기본 테이블을 초기화해야 합니다.
@@ -304,19 +315,21 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     );
   }
 
-  const [projects, users] = await Promise.all([listAllProjects(), listAllUsers()]);
-  const eligibleUserIds=users.filter(user=>user.role!=="guest"||user.email.toLowerCase()===runtimeEnv.auth.superuserEmail).map(user=>user.id);
-  const selectedProject = getSelectedProject(projects, projectIdParam);
-
-  // 사용자 DB ID 조회 (visibility 필터링에 필요)
   const { getUserByEmail } = await import("@/src/entities/user/index.server");
   const currentDbUser = session.user.email ? await getUserByEmail(session.user.email).catch(() => null) : null;
+  const viewer={userId:currentDbUser?.id??null,email:session.user.email,isSuperuser:!!session.user.isSuperuser};
+  const projects=await listAllProjectsForViewer(viewer);
+  if(projectIdParam&&!projects.some(project=>String(project.id)===projectIdParam))notFound();
+  const selectedProject = getSelectedProject(projects, projectIdParam);
+  const users=selectedProject?await listProjectUsersForViewer(selectedProject.id,viewer):[];
+  const eligibleUserIds=users.filter(user=>user.role!=="guest"||user.email.toLowerCase()===runtimeEnv.auth.superuserEmail).map(user=>user.id);
   const currentDbUserId = currentDbUser?.id ?? null;
   const [scope,teamDirectory] = await Promise.all([
     selectedProject&&currentDbUserId&&canWrite?getTaskScope(selectedProject.id,{userId:currentDbUserId,isAdmin:canManageProjects,isSuperuser:!!session.user.isSuperuser}):Promise.resolve({projectType:selectedProject?.projectType??"collaboration",canManageAll:false,canManageUnassigned:false,leaderTeamIds:[] as number[]}),
     selectedProject?.projectType==="volunteering"&&currentDbUserId?getProjectTaskTeams(selectedProject.id,{userId:currentDbUserId,isSuperuser:!!session.user.isSuperuser}):Promise.resolve({teams:[],memberIdsByTeam:{}} as TaskTeamDirectory),
   ]);
   const canCreateTask=canWrite&&(scope.canManageAll||scope.leaderTeamIds.length>0);
+  const canSeeAllSubmissions=hasSubmissionAdminRole&&scope.canManageAll;
 
   const visibilityFilter = {
     canSeeAll: canSeeAllSubmissions,
@@ -324,7 +337,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   };
 
   const [tasks, submissions] = selectedProject
-    ? await Promise.all([listTasksByProject(selectedProject.id), listSubmissionsByProject(selectedProject.id, visibilityFilter)])
+    ? await Promise.all([listTasksByProjectForViewer(selectedProject.id,viewer), listSubmissionsByProject(selectedProject.id, visibilityFilter)])
     : [[] as Task[], [] as Submission[]];
 
   // 댓글·첨부 metadata는 부모 제출물의 공개 범위를 그대로 따라야 하므로,
@@ -337,27 +350,35 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         listAttachmentsByProject(selectedProject.id, visibleSubmissionScope, visibilityFilter),
       ])
     : [[] as Comment[], [] as SubmissionAttachment[]];
-  const dependencySnapshot=selectedProject?await getDependencySnapshot(selectedProject.id):{version:0,edges:[]};
-  const taskEvents=selectedProject?await listTaskEventsByProject(selectedProject.id):[];
+  const dependencySnapshot=selectedProject?await getDependencySnapshotForViewer(selectedProject.id,viewer):{version:0,edges:[]};
+  const taskEvents=selectedProject&&taskIdParam?await listTaskEventsByProjectForViewer(selectedProject.id,viewer):[];
   const eventsByTaskId:Record<number,TaskEvent[]>={};
   for(const event of taskEvents) { const group=eventsByTaskId[event.task_id]??=[]; if(group.length<10)group.push(event); }
   const orderedTasks = getOrderedTasks(tasks);
-  const teamFilter=getSingleSearchParam(params.teamId);
+  const teamFilter=parseTaskTeamFilter(getSingleSearchParam(params.teamId));
   const visibleTasks=teamFilter?orderedTasks.filter(t=>teamFilter==="unassigned"?t.activityTeamId===null:String(t.activityTeamId)===teamFilter):orderedTasks;
   const selectedTask = getSelectedTask(orderedTasks, taskIdParam);
-  const submissionsByTaskId = groupSubmissionsByTaskId(submissions);
-  const commentsBySubmissionId = groupCommentsBySubmissionId(comments);
-  const attachmentsBySubmissionId = groupAttachmentsBySubmissionId(attachments);
+  if(taskIdParam&&!selectedTask)notFound();
+  const rawSubmissionId=getSingleSearchParam(params.submissionId);
+  const selectedSubmission=rawSubmissionId?submissions.find(submission=>String(submission.id)===rawSubmissionId&&submission.taskId===selectedTask?.id):undefined;
+  if(rawSubmissionId&&!selectedSubmission)notFound();
+  const allComments=groupCommentsBySubmissionId(comments),allAttachments=groupAttachmentsBySubmissionId(attachments);
+  const summariesByTaskId=new Map<number,SubmissionSummary[]>();
+  for(const submission of submissions){const items=summariesByTaskId.get(submission.taskId)??[];items.push({id:submission.id,authorName:submission.authorName,createdAt:submission.createdAt,currentRevision:submission.currentRevision,visibility:submission.visibility,attachmentCount:(allAttachments[submission.id]?.length??0)+(submission.filePath?1:0),commentCount:allComments[submission.id]?.length??0});summariesByTaskId.set(submission.taskId,items);}
+  const submissionsByTaskId=groupSubmissionsByTaskId(selectedSubmission?[selectedSubmission]:[]);
+  const commentsBySubmissionId=selectedSubmission?{[selectedSubmission.id]:allComments[selectedSubmission.id]??[]}:{};
+  const attachmentsBySubmissionId=selectedSubmission?{[selectedSubmission.id]:allAttachments[selectedSubmission.id]??[]}:{};
+  const listQuery=new URLSearchParams({projectId:String(selectedProject?.id??''),...(teamFilter?{teamId:teamFilter}:{}),...(returnTo?{returnTo}:{})});
 
   return (
-    <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
+    <Container component="main" sx={{ py: { xs: 3, md: 5 }, minWidth:0,overflowWrap:"anywhere",'& .MuiChip-root':{maxWidth:"100%",height:"auto"},'& .MuiChip-label':{whiteSpace:"normal",overflowWrap:"anywhere",py:0.5} }}>
       <Stack spacing={3}>
         <Stack direction={{ xs: "column", lg: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
           <Stack spacing={1} sx={{ minWidth: 0 }}>
-            <Typography variant="h3">작업 관리</Typography>
+            <Typography component="h1" variant="h4">{selectedTask?"업무 상세":"프로젝트 작업 공간"}</Typography>
             {returnTo?<Button href={returnTo} sx={{alignSelf:"flex-start"}}>내 업무로 돌아가기</Button>:null}
             <Typography variant="body1" color="text.secondary">
-              프로젝트별 업무와 제출물을 관리합니다. 봉사활동 업무 관리는 관리자와 해당 팀장에게, 직접 완료는 담당자·해당 팀장·관리자에게 허용됩니다.
+              프로젝트의 일정과 업무 요약을 확인하고, 필요한 업무와 제출물을 열어 진행합니다.
             </Typography>
           </Stack>
           <Stack direction="row" spacing={1.5} useFlexGap sx={{ flexWrap: "wrap", flexShrink: 0, alignContent: "flex-start" }}>
@@ -370,16 +391,11 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         </Stack>
 
         {feedbackStatus && feedbackMessage ? (
-          <Alert severity={feedbackStatus === "success" ? "success" : "error"}>{feedbackMessage}</Alert>
+          <Alert id="workspace-result" tabIndex={-1} severity={feedbackStatus === "success" ? "success" : "error"}>{feedbackMessage}</Alert>
         ) : null}
 
-        {selectedTask ? (
-          <Alert severity="info">
-            홈에서 선택한 업무 상세를 아래에 강조 표시했습니다. 현재 선택 업무는 {selectedTask.title}이며, 제출물과 댓글도 같은 카드 안에서 바로 이어서 수정할 수 있습니다.
-          </Alert>
-        ) : null}
-
-        <TaskFocusController taskId={selectedTask?.id ?? null} />
+        {selectedTask?<Button href={`/tasks?${listQuery.toString()}#task-${selectedTask.id}`} sx={{alignSelf:'flex-start'}}>업무 목록으로 돌아가기</Button>:null}
+        <TaskFocusController taskId={selectedTask?.id??null} submissionId={selectedSubmission?.id??null}/>
 
         <TaskWritePolicy canWrite={canWrite} />
 
@@ -389,7 +405,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
                 <Stack spacing={0.5}>
                   <Typography variant="h5">프로젝트 선택</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    프로젝트를 선택하면 해당 프로젝트의 작업을 표시합니다. 프로젝트 생성·수정·삭제는 관리자만 할 수 있습니다.
+                    프로젝트를 선택하면 해당 프로젝트의 작업을 표시합니다. 프로젝트 관리는 배정된 관리자 메뉴에서 진행합니다.
                   </Typography>
                 </Stack>
                 {canManageProjects ? (
@@ -403,7 +419,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
                   projects.map((project) => {
                     const active = selectedProject?.id === project.id;
                     return (
-                      <Button key={project.id} href={`/tasks?projectId=${project.id}`} variant={active ? "contained" : "outlined"} aria-current={active ? "page" : undefined}>
+                      <Button key={project.id} href={`/tasks?${new URLSearchParams({projectId:String(project.id),...(returnTo?{returnTo}:{})})}`} variant={active ? "contained" : "outlined"} aria-current={active ? "page" : undefined}>
                         {project.name}
                       </Button>
                     );
@@ -423,8 +439,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
               <Typography variant="h5">현재 프로젝트</Typography>
               <Typography variant="h6">{selectedProject.name}</Typography>
               {scope.leaderTeamIds.length?<Stack direction="row" spacing={1} useFlexGap sx={{flexWrap:"wrap"}}>{teamDirectory.teams.filter(team=>scope.leaderTeamIds.includes(team.id)).map(team=><Chip key={team.id} color="secondary" label={`팀장 · ${team.name}`}/>)}</Stack>:null}
-              <Typography sx={{ whiteSpace: "pre-wrap" }}>목표: {selectedProject.goal || "아직 작성하지 않았습니다."}</Typography>
-              <Typography sx={{ whiteSpace: "pre-wrap" }}>성공 기준: {selectedProject.successCriteria || "아직 작성하지 않았습니다."}</Typography>
+              {selectedTask?<details><summary>프로젝트 목표·성공 기준</summary><Typography sx={{whiteSpace:"pre-wrap",pt:1}}>목표: {selectedProject.goal||"아직 작성하지 않았습니다."}</Typography><Typography sx={{whiteSpace:"pre-wrap"}}>성공 기준: {selectedProject.successCriteria||"아직 작성하지 않았습니다."}</Typography></details>:<><Typography sx={{whiteSpace:"pre-wrap"}}>목표: {selectedProject.goal||"아직 작성하지 않았습니다."}</Typography><Typography sx={{whiteSpace:"pre-wrap"}}>성공 기준: {selectedProject.successCriteria||"아직 작성하지 않았습니다."}</Typography></>}
               <Typography variant="body2" color="text.secondary">
                 기간 {formatDate(selectedProject.startDate)} ~ {formatDate(selectedProject.endDate)}
               </Typography>
@@ -432,13 +447,13 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           </Paper>
         ) : null}
 
-        {canWrite&&selectedProject&&scope.canManageAll?<TaskTemplatePreview key={selectedProject.id} projectId={selectedProject.id} startDate={formatDate(selectedProject.startDate)} users={users.filter(user=>eligibleUserIds.includes(user.id)).map(({id,name})=>({id,name}))} action={applyTaskTemplateAction}/>:null}
+        {!selectedTask&&canWrite&&selectedProject&&scope.canManageAll?<details><summary>템플릿으로 업무 추가</summary><TaskTemplatePreview key={selectedProject.id} projectId={selectedProject.id} startDate={formatDate(selectedProject.startDate)} users={users.filter(user=>eligibleUserIds.includes(user.id)).map(({id,name})=>({id,name}))} action={applyTaskTemplateAction}/></details>:null}
 
-        {canCreateTask && selectedProject ? <TaskCreateForm teamDirectory={{...teamDirectory,teams:teamDirectory.teams.filter(t=>scope.canManageAll||scope.leaderTeamIds.includes(t.id))}} allowUnassignedTeam={scope.canManageUnassigned} returnTo={returnTo} eligibleUserIds={eligibleUserIds} orderedTasks={orderedTasks.filter(t=>scope.canManageAll||(t.activityTeamId!==null&&scope.leaderTeamIds.includes(t.activityTeamId)))} project={selectedProject} users={users} /> : null}
+        {!selectedTask&&canCreateTask && selectedProject ? <details><summary>새 업무 추가</summary><TaskCreateForm teamDirectory={{...teamDirectory,teams:teamDirectory.teams.filter(t=>scope.canManageAll||scope.leaderTeamIds.includes(t.id))}} allowUnassignedTeam={scope.canManageUnassigned} returnTo={returnTo} teamId={teamFilter} eligibleUserIds={eligibleUserIds} orderedTasks={orderedTasks.filter(t=>scope.canManageAll||(t.activityTeamId!==null&&scope.leaderTeamIds.includes(t.activityTeamId)))} project={selectedProject} users={users} /></details> : null}
 
-        {selectedProject ? <ProjectGanttChart project={selectedProject} tasks={orderedTasks} dependencies={dependencySnapshot.edges} /> : null}
+        {selectedProject ? selectedTask?<details><summary>프로젝트 일정·간트</summary><ProjectGanttChart project={selectedProject} tasks={orderedTasks} dependencies={dependencySnapshot.edges}/></details>:<ProjectGanttChart project={selectedProject} tasks={orderedTasks} dependencies={dependencySnapshot.edges}/> : null}
         {selectedProject?<ProjectWorkSummary tasks={orderedTasks} edges={dependencySnapshot.edges}/>:null}
-        {selectedProject?.projectType==="volunteering"?<Stack direction="row" useFlexGap spacing={1} sx={{flexWrap:"wrap"}} aria-label="활동팀 업무 필터"><Button href={`/tasks?projectId=${selectedProject.id}`} variant={!teamFilter?"contained":"outlined"}>전체 팀</Button>{teamDirectory.teams.map(team=><Button key={team.id} href={`/tasks?projectId=${selectedProject.id}&teamId=${team.id}`} variant={teamFilter===String(team.id)?"contained":"outlined"}>{team.name}</Button>)}<Button href={`/tasks?projectId=${selectedProject.id}&teamId=unassigned`}>공통 업무</Button></Stack>:null}
+        {selectedProject?.projectType==="volunteering"?<Stack direction="row" useFlexGap spacing={1} sx={{flexWrap:"wrap"}} aria-label="활동팀 업무 필터"><Button href={`/tasks?${new URLSearchParams({projectId:String(selectedProject.id),...(returnTo?{returnTo}:{})})}`} variant={!teamFilter?"contained":"outlined"}>전체 팀</Button>{teamDirectory.teams.map(team=><Button key={team.id} href={`/tasks?${new URLSearchParams({projectId:String(selectedProject.id),teamId:String(team.id),...(returnTo?{returnTo}:{})})}`} variant={teamFilter===String(team.id)?"contained":"outlined"}>{team.name}</Button>)}<Button href={`/tasks?${new URLSearchParams({projectId:String(selectedProject.id),teamId:"unassigned",...(returnTo?{returnTo}:{})})}`}>공통 업무</Button></Stack>:null}
 
         {selectedProject ? (
           <TaskList
@@ -453,9 +468,12 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             canSeeAllSubmissions={canSeeAllSubmissions}
             commentsBySubmissionId={commentsBySubmissionId}
             attachmentsBySubmissionId={attachmentsBySubmissionId}
-            orderedTasks={visibleTasks}
+            orderedTasks={selectedTask?orderedTasks:visibleTasks}
             project={selectedProject}
             selectedTaskId={selectedTask?.id ?? null}
+            selectedSubmissionId={selectedSubmission?.id??null}
+            summariesByTaskId={summariesByTaskId}
+            teamId={teamFilter}
             submissionsByTaskId={submissionsByTaskId}
             users={users}
           />

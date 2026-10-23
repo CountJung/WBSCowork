@@ -1,3 +1,4 @@
+import {projectTaskAccessGuard,projectPrivateReadGuard,projectManagementGuard,projectManagementForCurrentUser,projectAccessForCurrentUser} from "@/src/shared/server/project-scope/index.server";
 import { taskAssignmentGuard } from "@/src/shared/server/task-scope/index.server";
 import { lockTaskProject,taskPredecessorsCompleteSql } from "@/src/shared/server/task-dependencies/index.server";
 import { createHash } from "node:crypto";
@@ -14,6 +15,7 @@ const publicReviewNote = "제출물 검토 상태가 변경되었습니다.";
 
 type FreshActor = SubmissionActor & { role: string };
 type ReviewRow = {
+  actor_can_manage:number;
   task_id: number; project_id: number; task_version: number; status: string;
   completion_mode: string; review_required: number; review_submission_id: number | null; review_revision_number: number | null;
   assignee_id: number | null; assignee_eligible: number; deliverable: string; definition_of_done: string;
@@ -47,22 +49,25 @@ function canWrite(actor: FreshActor) {
 }
 
 function actorVisibility(actor: FreshActor) {
+  const binding=projectTaskAccessGuard({userId:actor.userId,isSuperuser:actor.isSuperuser},"s.task_id");
+  const manager=projectPrivateReadGuard({userId:actor.userId,isSuperuser:actor.isSuperuser},"s.task_id");
   return {
-    sql: "(?=1 OR viewer.role='admin' OR s.author_id=viewer.id OR (s.visibility='public' AND r.visibility='public'))",
-    params: [actor.isSuperuser ? 1 : 0],
+    sql: `(s.author_id=viewer.id OR (s.visibility='public' AND r.visibility='public') OR ${manager.sql}) AND ${binding.sql}`,
+    params: [...manager.params,...binding.params],
   };
 }
 
 async function readReviewRow(submissionId: number, revisionNumber: number, actor: FreshActor): Promise<ReviewRow | null> {
   const access = actorVisibility(actor);
+  const manager=projectManagementGuard(actor,"t.project_id");
   const rows = await getDatabasePool().query(
-    `SELECT t.id AS task_id,t.project_id,t.version AS task_version,t.status,t.review_required,t.completion_mode,
+    `SELECT CASE WHEN ${manager.sql} THEN 1 ELSE 0 END AS actor_can_manage,t.id AS task_id,t.project_id,t.version AS task_version,t.status,t.review_required,t.completion_mode,
       CASE WHEN EXISTS(SELECT 1 FROM task_dependencies d JOIN tasks predecessor ON predecessor.id=d.predecessor_id WHERE d.task_id=t.id AND predecessor.status<>'done') THEN 1 ELSE 0 END AS dependency_blocked,
       t.review_submission_id,t.review_revision_number,t.assignee_id,t.deliverable,t.definition_of_done,
       t.reviewer_id,reviewer.name AS reviewer_name,s.author_id,r.editor_id,s.current_revision,r.revision_number,
-      CASE WHEN assignee.role IN ('member','admin') OR LOWER(assignee.email)=? THEN 1 ELSE 0 END AS assignee_eligible,
-      CASE WHEN reviewer.role IN ('member','admin') OR LOWER(reviewer.email)=? THEN 1 ELSE 0 END AS reviewer_eligible,
-      CASE WHEN reviewer.role='admin' OR LOWER(reviewer.email)=? OR s.author_id=reviewer.id OR (s.visibility='public' AND r.visibility='public') THEN 1 ELSE 0 END AS reviewer_can_view,
+      CASE WHEN (assignee.role='member' OR ${projectManagementForCurrentUser('t.project_id','assignee.id','LOWER(assignee.email)=?')}) AND ${projectAccessForCurrentUser('t.project_id','assignee.id','LOWER(assignee.email)=?')} THEN 1 ELSE 0 END AS assignee_eligible,
+      CASE WHEN (reviewer.role='member' OR ${projectManagementForCurrentUser('t.project_id','reviewer.id','LOWER(reviewer.email)=?')}) AND ${projectAccessForCurrentUser('t.project_id','reviewer.id','LOWER(reviewer.email)=?')} THEN 1 ELSE 0 END AS reviewer_eligible,
+      CASE WHEN ${projectManagementForCurrentUser("t.project_id","reviewer.id","LOWER(reviewer.email)=?")} OR s.author_id=reviewer.id OR (s.visibility='public' AND r.visibility='public') THEN 1 ELSE 0 END AS reviewer_can_view,
       CASE WHEN EXISTS(SELECT 1 FROM submission_events rejected WHERE rejected.submission_id=s.id AND rejected.revision_number=r.revision_number AND rejected.kind='changes_requested') THEN 1 ELSE 0 END AS rejected
      FROM submissions s
      JOIN tasks t ON t.id=s.task_id
@@ -71,7 +76,7 @@ async function readReviewRow(submissionId: number, revisionNumber: number, actor
      LEFT JOIN users reviewer ON reviewer.id=t.reviewer_id
      LEFT JOIN users assignee ON assignee.id=t.assignee_id
      WHERE s.id=? AND ${access.sql} LIMIT 1`,
-    [superuserEmail(), superuserEmail(), superuserEmail(), revisionNumber, actor.userId, submissionId, ...access.params],
+    [...manager.params,superuserEmail(),superuserEmail(),superuserEmail(),superuserEmail(),superuserEmail(), revisionNumber, actor.userId, submissionId, ...access.params],
   ) as ReviewRow[];
   return rows[0] ?? null;
 }
@@ -79,12 +84,13 @@ async function readReviewRow(submissionId: number, revisionNumber: number, actor
 function contextFor(row: ReviewRow, submissionId: number, actor: FreshActor): SubmissionReviewContext {
   const selected = Number(row.review_submission_id) === submissionId && Number(row.review_revision_number) === Number(row.revision_number);
   const current = Number(row.current_revision) === Number(row.revision_number);
-  const executor = actor.isAdmin || actor.isSuperuser || Number(row.assignee_id) === actor.userId;
+  const canAct=canWrite(actor)&&(actor.role!=='admin'||actor.isSuperuser||Number(row.actor_can_manage)===1);
+  const executor = canAct&&(Number(row.actor_can_manage)===1 || actor.isSuperuser || Number(row.assignee_id) === actor.userId);
   const selfReview = Number(row.reviewer_id) === Number(row.author_id)
     || Number(row.reviewer_id) === Number(row.assignee_id)
     || (row.editor_id !== null && Number(row.reviewer_id) === Number(row.editor_id));
   let unavailableReason: string | null = null;
-  if (!canWrite(actor)) unavailableReason = "현재 역할에는 검토 처리 권한이 없습니다.";
+  if (!canAct) unavailableReason = "현재 역할에는 검토 처리 권한이 없습니다.";
   else if (row.completion_mode !== "submission_required") unavailableReason = "직접 완료 업무에는 제출물 검토를 요청할 수 없습니다.";
   else if (!Number(row.review_required)) unavailableReason = "검토가 필요하지 않은 작업입니다.";
   else if (!current) unavailableReason = "현재 제출 버전에서 검토를 진행해 주세요.";
@@ -99,7 +105,7 @@ function contextFor(row: ReviewRow, submissionId: number, actor: FreshActor): Su
   const canRequest = ready && executor && !Number(row.rejected)
     && ['planned', 'in_progress', 'blocked', 'changes_requested'].includes(row.status);
   const canDecide = ready && selected && row.status === 'review_pending' && Number(row.reviewer_id) === actor.userId;
-  const canCancelOrReopen = canWrite(actor) && selected && Number(row.review_required) === 1
+  const canCancelOrReopen = canAct && selected && Number(row.review_required) === 1
     && ['review_pending', 'changes_requested', 'done'].includes(row.status)
     && (executor || Number(row.reviewer_id) === actor.userId);
   if (!unavailableReason && !canRequest && !canDecide && !canCancelOrReopen) {
@@ -148,14 +154,16 @@ async function commitReview(input: SubmissionReviewInput, kind: ReviewAction, re
     expectedTaskVersion: version, kind, reason,
   })).digest('hex');
   const access = actorVisibility(actor);
+  const receiptManager=projectManagementGuard(actor,"receipt_task.project_id");
   const findOperation = async () => {
     const rows = await getDatabasePool().query(
       `SELECT e.request_fingerprint FROM submission_events e
        JOIN submissions s ON s.id=e.submission_id
+       JOIN tasks receipt_task ON receipt_task.id=s.task_id
        JOIN submission_revisions r ON r.submission_id=e.submission_id AND r.revision_number=e.revision_number
        JOIN users viewer ON viewer.id=?
-       WHERE e.operation_token=? AND e.actor_id=? AND s.task_id=? AND ${access.sql} LIMIT 1`,
-      [actor.userId, key, actor.userId, input.taskId, ...access.params],
+       WHERE e.operation_token=? AND e.actor_id=? AND s.task_id=? AND (viewer.role='member' OR ${receiptManager.sql}) AND ${access.sql} LIMIT 1`,
+      [actor.userId, key, actor.userId, input.taskId, ...receiptManager.params,...access.params],
     ) as { request_fingerprint: string }[];
     return rows[0];
   };
@@ -186,29 +194,29 @@ async function commitReview(input: SubmissionReviewInput, kind: ReviewAction, re
     JOIN submission_revisions r ON r.submission_id=s.id AND r.revision_number=?
     JOIN users viewer ON viewer.id=?
     WHERE s.id=? AND s.task_id=tasks.id AND s.current_revision=r.revision_number
-      AND (?=1 OR viewer.role IN ('member','admin')) AND ${access.sql}
+      AND (?=1 OR viewer.role='member' OR (viewer.role='admin' AND ${projectManagementForCurrentUser("tasks.project_id","viewer.id","1=0")})) AND ${access.sql}
       ${cancel ? '' : `AND s.author_id=tasks.assignee_id
       AND TRIM(tasks.deliverable)<>'' AND TRIM(tasks.definition_of_done)<>''
-      AND EXISTS(SELECT 1 FROM users assignee WHERE assignee.id=tasks.assignee_id AND (assignee.role IN ('member','admin') OR LOWER(assignee.email)=?))
       AND EXISTS(SELECT 1 FROM users reviewer WHERE reviewer.id=tasks.reviewer_id
-        AND (reviewer.role IN ('member','admin') OR LOWER(reviewer.email)=?)
-        AND (reviewer.role='admin' OR LOWER(reviewer.email)=? OR s.author_id=reviewer.id OR (s.visibility='public' AND r.visibility='public'))
+        AND (reviewer.role='member' OR ${projectManagementForCurrentUser('tasks.project_id','reviewer.id','LOWER(reviewer.email)=?')}) AND ${projectAccessForCurrentUser('tasks.project_id','reviewer.id','LOWER(reviewer.email)=?')}
+        AND (${projectManagementForCurrentUser("tasks.project_id","reviewer.id","LOWER(reviewer.email)=?")} OR s.author_id=reviewer.id OR (s.visibility='public' AND r.visibility='public'))
         AND reviewer.id<>s.author_id AND reviewer.id<>tasks.assignee_id AND (r.editor_id IS NULL OR reviewer.id<>r.editor_id))`}
-  ) AND EXISTS(SELECT 1 FROM projects review_project WHERE review_project.id=tasks.project_id AND (review_project.project_type='collaboration' OR ${assignment.sql}))`;
+  ) AND ${assignment.sql}`;
   const commonParams = [revision, actor.userId, input.submissionId, actor.isSuperuser ? 1 : 0, ...access.params,
     ...(cancel ? [] : [superuserEmail(), superuserEmail(), superuserEmail()]),...assignment.params];
-  const executorGuard = "(?=1 OR tasks.assignee_id=? OR EXISTS(SELECT 1 FROM users administrator WHERE administrator.id=? AND administrator.role='admin'))";
+  const executor=projectManagementGuard(actor,"tasks.project_id");
+  const executorGuard=`(tasks.assignee_id=? OR ${executor.sql})`;
   let transitionGuard: string;
   let transitionParams: unknown[];
   if (kind === 'review_requested') {
     transitionGuard = `tasks.status IN ('planned','in_progress','blocked','changes_requested') AND ${executorGuard}
       AND NOT EXISTS(SELECT 1 FROM submission_events rejected WHERE rejected.submission_id=? AND rejected.revision_number=? AND rejected.kind='changes_requested')`;
-    transitionParams = [actor.isSuperuser ? 1 : 0, actor.userId, actor.userId, input.submissionId, revision];
+    transitionParams = [actor.userId,...executor.params,input.submissionId, revision];
   } else {
     transitionGuard = `tasks.review_submission_id=? AND tasks.review_revision_number=? AND ${cancel
       ? `tasks.status IN ('review_pending','changes_requested','done') AND (${executorGuard} OR tasks.reviewer_id=?)`
       : "tasks.status='review_pending' AND tasks.reviewer_id=?"}`;
-    transitionParams = [input.submissionId, revision, ...(cancel ? [actor.isSuperuser ? 1 : 0, actor.userId, actor.userId, actor.userId] : [actor.userId])];
+    transitionParams = [input.submissionId, revision, ...(cancel ? [actor.userId,...executor.params,actor.userId] : [actor.userId])];
   }
 
   await databaseBatch([

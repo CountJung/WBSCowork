@@ -7,7 +7,7 @@ import { setSession, clearSession } from "./helpers/bootstrap";
 import { allActorNames, sessionFor, testActors, type TestActorName } from "./helpers/session";
 import { ensureSchema, seedFixture, type Fixture } from "./helpers/fixture";
 import { formDataFrom, runAction } from "./helpers/redirect";
-import { closeDatabasePool } from "@/src/shared/server/database/index.server";
+import { getDatabasePool,closeDatabasePool } from "@/src/shared/server/database/index.server";
 import { listCommentsByProject } from "@/src/entities/comment/index.server";
 import {
   getSubmissionByIdForViewer,
@@ -255,7 +255,7 @@ describe("3. 수정·삭제는 author 또는 명시된 관리자만 가능하다
 
     assert.equal(outcome.status, "error");
 
-    const stillPrivate = await getSubmissionByIdForViewer(fixture.submissionB.id, { canSeeAll: true });
+    const stillPrivate = await getSubmissionByIdForViewer(fixture.submissionB.id, { canSeeAll: true,viewerEmail:testActors.superuser.email });
     assert.equal(stillPrivate?.visibility, "private", "visibility 가 덮어쓰기 되면 안 된다");
   });
 
@@ -268,11 +268,11 @@ describe("3. 수정·삭제는 author 또는 명시된 관리자만 가능하다
 
     assert.equal(outcome.status, "success");
 
-    const updated = await getSubmissionByIdForViewer(fixture.submissionB.id, { canSeeAll: true });
+    const updated = await getSubmissionByIdForViewer(fixture.submissionB.id, { canSeeAll: true,viewerEmail:testActors.superuser.email });
     assert.equal(updated?.content, "본인이 수정");
   });
 
-  test("관리자는 타인의 비공개 제출물을 관리한다", async () => {
+  test("지정된 프로젝트의 관리자는 타인의 비공개 제출물을 관리한다", async () => {
     setSession(sessionFor(testActors.admin));
 
     const outcome = await runAction(() =>
@@ -280,6 +280,19 @@ describe("3. 수정·삭제는 author 또는 명시된 관리자만 가능하다
     );
 
     assert.equal(outcome.status, "success");
+  });
+
+  test("소속 해제된 관리자는 legacy 공개 읽기만 유지하고 타인 private 관리·다운로드는 거부된다", async () => {
+    await getDatabasePool().query("UPDATE project_members SET active=0 WHERE project_id=? AND user_id=?",[fixture.projectId,fixture.userIdByActor.admin]);
+    setSession(sessionFor(testActors.admin));
+    const workspace=await loadWorkspaceAs("admin");
+    assert.deepEqual(workspace.submissions.map(row=>row.id),[fixture.submissionA.id]);
+    const outcome=await runAction(()=>updateSubmissionAction(submissionForm(fixture.submissionC.id,{content:"거부돼야 함"})));
+    assert.equal(outcome.status,"error");
+    const response=await getAttachmentByAttachmentId(new Request("http://127.0.0.1/api/submission-attachments/"+fixture.submissionC.attachmentIds[0]),{params:Promise.resolve({attachmentId:String(fixture.submissionC.attachmentIds[0])})});
+    assert.equal(response.status,404);
+    const preserved=await getSubmissionByIdForViewer(fixture.submissionC.id,{canSeeAll:true,viewerEmail:testActors.superuser.email});
+    assert.match(preserved!.content,/C-member2-private/);
   });
 
   test("guest 는 쓰기 경로 자체에서 막힌다", async () => {
@@ -366,7 +379,7 @@ describe("3. 수정·삭제는 author 또는 명시된 관리자만 가능하다
     assert.equal(outcome.status, "error");
     assert.match(outcome.message ?? "", /본인이 작성한 제출물만/);
 
-    const survivor = await getSubmissionByIdForViewer(fixture.submissionA.id, { canSeeAll: true });
+    const survivor = await getSubmissionByIdForViewer(fixture.submissionA.id, { canSeeAll: true,viewerEmail:testActors.superuser.email });
     assert.ok(survivor, "거부된 삭제가 실제로는 수행되면 안 된다");
   });
 
@@ -484,8 +497,8 @@ describe("5. DB query 가 UI 사후 필터가 아니라 bounded viewer filter �
   });
 
   test("unrestricted 범위는 관리 경로에서 전체를 돌려준다", async () => {
-    const comments = await listCommentsByProject(fixture.projectId, { unrestricted: true }, {canSeeAll:true});
-    const attachments = await listAttachmentsByProject(fixture.projectId, { unrestricted: true }, {canSeeAll:true}, {allRevisions:true});
+    const comments = await listCommentsByProject(fixture.projectId, { unrestricted: true }, {canSeeAll:true,viewerEmail:testActors.superuser.email});
+    const attachments = await listAttachmentsByProject(fixture.projectId, { unrestricted: true }, {canSeeAll:true,viewerEmail:testActors.superuser.email}, {allRevisions:true});
 
     assert.equal(comments.length, 3, "파기 경로는 비공개 포함 전체를 봐야 한다");
     assert.equal(attachments.length, 6);

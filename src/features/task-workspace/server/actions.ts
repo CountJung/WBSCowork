@@ -23,7 +23,7 @@ import {
   type StoredSubmissionAttachment,
 } from "@/src/entities/submission/index.server";
 import { createComment, deleteComment, getCommentForViewer, updateComment } from "@/src/entities/comment/index.server";
-import { createTask, deleteTask, getTaskById, updateTask, changeTaskStatus,assertTaskScope } from "@/src/entities/task/index.server";
+import { createTask, deleteTask, getTaskByIdForViewer, updateTask, changeTaskStatus,assertTaskScope } from "@/src/entities/task/index.server";
 import { canManageAllSubmissions, canWriteTaskContent } from "@/src/entities/user";
 import type { Submission, SubmissionVisibility } from "@/src/entities/submission";
 import { taskVersion, workOperationToken, parsePersonalWorkReturnTo, type TaskStatus } from "@/src/entities/task";
@@ -40,7 +40,7 @@ function validateUploadBatch(files: File[]) {
 function buildTasksPath(
   status: "success" | "error",
   message: string,
-  options?: { projectId?: number; taskId?: number },
+  options?: { projectId?: number; taskId?: number; submissionId?: number },
 ) {
   const searchParams = new URLSearchParams({
     status,
@@ -54,16 +54,24 @@ function buildTasksPath(
   if (options?.taskId) {
     searchParams.set("taskId", String(options.taskId));
   }
+  if (options?.taskId && options.submissionId) {
+    searchParams.set("submissionId", String(options.submissionId));
+  }
 
   return `/tasks?${searchParams.toString()}`;
 }
 
-function preserveQueueContext(path: string, formData: FormData) {
+function preserveQueueContext(path: string, formData: FormData, options: { submissionDeleted?: boolean } = {}) {
   const returnTo = parsePersonalWorkReturnTo(formData.get("returnTo"));
-  if (!returnTo) return path;
   const query = new URL(path, "https://local.invalid");
   if (query.pathname !== "/tasks") return path;
-  query.searchParams.set("returnTo", returnTo);
+  if (returnTo) query.searchParams.set("returnTo", returnTo);
+  const teamId = Number(formData.get("teamId"));
+  if (Number.isSafeInteger(teamId) && teamId > 0) query.searchParams.set("teamId", String(teamId));
+  const submissionId = Number(formData.get("submissionId"));
+  if (!options.submissionDeleted && query.searchParams.has("taskId") && !query.searchParams.has("submissionId") && Number.isSafeInteger(submissionId) && submissionId > 0) {
+    query.searchParams.set("submissionId", String(submissionId));
+  }
   return query.pathname + query.search;
 }
 
@@ -146,22 +154,29 @@ async function resolvePersistedUser(session: WritableSession): Promise<User> {
   if (!user) {
     throw new Error("쓰기 기능을 사용하려면 현재 로그인 사용자가 DB 사용자 테이블에 존재해야 합니다.");
   }
+  const isCurrentSuperuser = !!session.user.isSuperuser && user.email.toLowerCase() === getRuntimeEnv().auth.superuserEmail;
+  if (!canWriteTaskContent(user.role, isCurrentSuperuser)) {
+    throw new Error("현재 계정의 쓰기 권한이 변경되었습니다.");
+  }
 
   return user;
 }
 
 async function requirePersistedUser(projectId?: number) {
   const session = await requireWritableSession(projectId);
-
-  return {
-    session,
-    user: await resolvePersistedUser(session),
-  };
+  let user: User;
+  try {
+    user = await resolvePersistedUser(session);
+  } catch {
+    redirect(buildTasksPath("error", "현재 사용자의 쓰기 권한을 확인할 수 없습니다. 계정 권한을 확인해 주세요.", { projectId }));
+  }
+  return { session, user };
 }
 
 /** 폼이 주장한 project → task 관계를 서버에서 다시 확인한다. */
-async function requireProjectTask(projectId: number, taskId: number) {
-  const task = await getTaskById(taskId);
+async function requireProjectTask(projectId: number, taskId: number, session: WritableSession) {
+  const user = await resolvePersistedUser(session);
+  const task = await getTaskByIdForViewer(taskId, { userId: user.id, email: user.email, isSuperuser: !!session.user.isSuperuser });
 
   if (!task || task.projectId !== projectId) {
     throw new Error("대상 작업을 찾을 수 없습니다.");
@@ -180,7 +195,7 @@ async function requireVisibleSubmission(
   options: { projectId: number; taskId: number; submissionId: number },
 ): Promise<{ submission: Submission; user: User; canManageAll: boolean }> {
   const user = await resolvePersistedUser(session);
-  const canManageAll = canManageAllSubmissions(session.user.role, session.user.isSuperuser);
+  const canManageAll = canManageAllSubmissions(user.role, !!session.user.isSuperuser && user.email.toLowerCase() === getRuntimeEnv().auth.superuserEmail);
   const submission = await getSubmissionByIdForViewer(options.submissionId, {
     canSeeAll: canManageAll,
     viewerUserId: user.id,
@@ -190,7 +205,7 @@ async function requireVisibleSubmission(
     throw new Error("대상 제출물을 찾을 수 없습니다.");
   }
 
-  await requireProjectTask(options.projectId, submission.taskId);
+  await requireProjectTask(options.projectId, submission.taskId, session);
 
   return { submission, user, canManageAll };
 }
@@ -307,7 +322,7 @@ export async function updateTaskAction(formData: FormData) {
 
   try {
     const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
-    await requireProjectTask(projectId, taskId);
+    await requireProjectTask(projectId, taskId, session);
     const startDate = parseRequiredDate(formData.get("startDate"), "작업 시작일");
     const endDate = parseRequiredDate(formData.get("endDate"), "작업 종료일");
 
@@ -379,7 +394,7 @@ export async function deleteTaskAction(formData: FormData) {
   try {
     const taskId = parseRequiredPositiveInteger(formData.get("taskId"), "작업");
 
-    await requireProjectTask(projectId, taskId);
+    await requireProjectTask(projectId, taskId, session);
 
     // 삭제 전에 해당 작업의 제출물과 첨부파일 목록 조회 (DB CASCADE 이전)
     const actorUser=await resolvePersistedUser(session);
@@ -387,7 +402,7 @@ export async function deleteTaskAction(formData: FormData) {
     await assertTaskScope(taskId,actor);
     const [submissionsToClean, attachmentsToClean, revisionFilesToClean] = await Promise.all([
       // 작업 삭제도 하위 저장 파일 전체를 정리해야 한다.
-      listSubmissionsByTask(taskId, { canSeeAll: true }),
+      listSubmissionsByTask(taskId, { canSeeAll: true,viewerUserId:actorUser.id,viewerEmail:actorUser.email }),
       listAttachmentsByTask(taskId, {allRevisions:true}),
       listRevisionFilePathsByTask(taskId),
     ]);
@@ -487,7 +502,7 @@ export async function createSubmissionAction(formData: FormData) {
   let redirectPath: string;
 
   try {
-    await requireProjectTask(projectId, taskId);
+    await requireProjectTask(projectId, taskId, session);
 
     const uploadedFiles = (formData.getAll("attachments") as (File | string)[]).filter(
       (v): v is File => v instanceof File && v.size > 0,
@@ -519,7 +534,7 @@ export async function createSubmissionAction(formData: FormData) {
       },
     });
 
-    redirectPath = buildTasksPath("success", "제출물을 등록했습니다.", { projectId, taskId });
+    redirectPath = buildTasksPath("success", "제출물을 등록했습니다.", { projectId, taskId, submissionId });
   } catch (error) {
     for (const saved of metadataCommitted ? [] : savedAttachments) {
       await deleteStoredSubmissionAttachment(saved.filePath).catch(() => undefined);
@@ -745,7 +760,7 @@ export async function deleteSubmissionAction(formData: FormData) {
     );
   }
 
-  redirect(preserveQueueContext(redirectPath, formData));
+  redirect(preserveQueueContext(redirectPath, formData, { submissionDeleted: metadataDeleted }));
 }
 
 /** Removal creates a new version; old metadata and bytes remain available in history. */
@@ -780,6 +795,7 @@ export async function createCommentAction(formData: FormData) {
     if(!await getSubmissionRevisionForViewer(submissionId,revisionNumber,{canSeeAll:canManageAllSubmissions(user.role,session.user.isSuperuser),viewerUserId:user.id}))throw new Error("제출 버전을 찾을 수 없습니다.");
 
     const comment = await createComment({
+      actor: {userId:user.id,isSuperuser:!!session.user.isSuperuser},
       revisionNumber,
       submissionId,
       authorId: user.id,
@@ -837,9 +853,10 @@ export async function updateCommentAction(formData: FormData) {
   try {
     const commentId = parseRequiredPositiveInteger(formData.get("commentId"), "댓글");
 
-    await requireOwnedComment(session, { projectId, taskId, submissionId, commentId });
+    const {user} = await requireOwnedComment(session, { projectId, taskId, submissionId, commentId });
 
     const comment = await updateComment({
+      actor: {userId:user.id,isSuperuser:!!session.user.isSuperuser},
       id: commentId,
       content: getSingleValue(formData.get("content")),
     });
@@ -894,14 +911,14 @@ export async function deleteCommentAction(formData: FormData) {
 
   try {
     const commentId = parseRequiredPositiveInteger(formData.get("commentId"), "댓글");
-    const { comment: existingComment } = await requireOwnedComment(session, {
+    const { comment: existingComment, user } = await requireOwnedComment(session, {
       projectId,
       taskId,
       submissionId,
       commentId,
     });
 
-    const comment = await deleteComment(commentId);
+    const comment = await deleteComment(commentId, {userId:user.id,isSuperuser:!!session.user.isSuperuser});
 
     revalidatePath("/");
     revalidatePath("/tasks");
@@ -946,17 +963,17 @@ export async function deleteCommentAction(formData: FormData) {
 
 export async function changeTaskStatusAction(formData:FormData) {
   const projectId=parseRequiredPositiveInteger(formData.get("projectId"),"프로젝트");
+  const taskId=parseRequiredPositiveInteger(formData.get("taskId"),"작업");
   const session=await requireWritableSession(projectId);
   let path:string;
   try {
-    const taskId=parseRequiredPositiveInteger(formData.get("taskId"),"작업");
-    await requireProjectTask(projectId,taskId);
+    await requireProjectTask(projectId,taskId,session);
     const user=await resolvePersistedUser(session);
     await changeTaskStatus({id:taskId,actor:{userId:user.id,isAdmin:canManageAllSubmissions(user.role,session.user.isSuperuser),isSuperuser:!!session.user.isSuperuser},version:taskVersion(formData.get("version")),token:workOperationToken(formData.get("operationToken")),status:getSingleValue(formData.get("taskStatus")) as TaskStatus,note:getSingleValue(formData.get("note"))});
     revalidatePath("/tasks");
     revalidatePath("/my-work");revalidatePath("/");revalidatePath("/my-work");
     await logUserAction("tasks",{actorEmail:session.user.email??null,action:'task.status',entityType:'task',entityId:taskId,projectId,taskId});
     path=buildTasksPath('success','작업 상태를 저장했습니다.',{projectId,taskId});
-  }catch(error){path=buildTasksPath('error',error instanceof Error?error.message:'작업 상태를 저장하지 못했습니다.',{projectId});}
+  }catch(error){path=buildTasksPath('error',error instanceof Error?error.message:'작업 상태를 저장하지 못했습니다.',{projectId,taskId});}
   redirect(preserveQueueContext(path, formData));
 }

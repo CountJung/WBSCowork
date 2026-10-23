@@ -60,7 +60,7 @@ const requiredColumnsByTable: Partial<Record<ManagedTableName, string[]>> = {
   activity_team_leaders: ["team_id","project_id","user_id"],
   activity_team_members: ["project_id","team_id","user_id","role","active"],
   project_workspace_events: ["project_id","actor_id","operation_token","request_fingerprint","kind","detail","workspace_version","created_at"],
-  projects: ["project_type", "workspace_version", "workspace_token", "goal", "success_criteria", "dependency_version", "dependency_token"],
+  projects: ["access_mode", "project_type", "workspace_version", "workspace_token", "goal", "success_criteria", "dependency_version", "dependency_token"],
   tasks: ["completed_by", "completed_at", "activity_team_id", "completion_mode", "review_submission_id", "review_revision_number", "deliverable", "definition_of_done", "review_required", "status", "version", "workflow_note", "reviewer_id", "last_operation_token", "creation_token"],
   task_events: ["task_id", "actor_id", "operation_token", "request_fingerprint", "kind", "status", "assignee_id", "reviewer_id", "note", "task_version"],
   submissions: [...requiredSubmissionColumns.map((column) => column.name),"creation_token","current_revision","version","last_operation_token","material_url"],

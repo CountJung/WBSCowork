@@ -1,3 +1,4 @@
+import { projectAccessGuard, type ProjectViewer } from "@/src/shared/server/project-scope/index.server";
 import { taskManagementGuard, taskAssignmentGuard } from "@/src/shared/server/task-scope/index.server";
 import { assertTaskScope } from "./task-permissions.server";
 import { lockTaskProject } from "@/src/shared/server/task-dependencies/index.server";
@@ -65,8 +66,8 @@ function normalizeDescription(description?: string) {
 }
 
 async function ensureProjectExists(projectId: number) {
-  const rows = (await getDatabasePool().query("SELECT id,project_type FROM projects WHERE id = ? LIMIT 1", [projectId])) as Array<{
-    id: number; project_type: "collaboration" | "volunteering";
+  const rows = (await getDatabasePool().query("SELECT id,project_type,access_mode FROM projects WHERE id = ? LIMIT 1", [projectId])) as Array<{
+    id: number; project_type: "collaboration" | "volunteering";access_mode:"legacy_authenticated"|"members_only";
   }>;
   const project = rows[0];
 
@@ -194,7 +195,8 @@ function buildTaskDepthUpdates(tasks: Task[]) {
   return statements;
 }
 
-export async function getTaskById(id: number): Promise<Task | null> {
+export async function getTaskById(id: number, viewer?:ProjectViewer): Promise<Task | null> {
+  const access=viewer?projectAccessGuard(viewer):{sql:"1=1",params:[]};
   const rows = (await getDatabasePool().query(
     `SELECT
       tasks.id,
@@ -219,9 +221,9 @@ export async function getTaskById(id: number): Promise<Task | null> {
     LEFT JOIN activity_teams activity_team ON activity_team.id=tasks.activity_team_id AND activity_team.project_id=tasks.project_id
     LEFT JOIN users ON users.id = tasks.assignee_id
     LEFT JOIN users reviewer ON reviewer.id = tasks.reviewer_id
-    WHERE tasks.id = ?
+    WHERE tasks.id = ? AND ${access.sql}
     LIMIT 1`,
-    [getRuntimeEnv().auth.superuserEmail??"",id],
+    [getRuntimeEnv().auth.superuserEmail??"",id,...access.params],
   )) as TaskRow[];
 
   const row = rows[0];
@@ -229,7 +231,8 @@ export async function getTaskById(id: number): Promise<Task | null> {
   return row ? mapTaskRow(row) : null;
 }
 
-export async function listTasksByProject(projectId: number): Promise<Task[]> {
+export async function listTasksByProject(projectId: number, viewer?:ProjectViewer): Promise<Task[]> {
+  const access=viewer?projectAccessGuard(viewer):{sql:"1=1",params:[]};
   const rows = (await getDatabasePool().query(
     `SELECT
       tasks.id,
@@ -254,9 +257,9 @@ export async function listTasksByProject(projectId: number): Promise<Task[]> {
     LEFT JOIN activity_teams activity_team ON activity_team.id=tasks.activity_team_id AND activity_team.project_id=tasks.project_id
     LEFT JOIN users ON users.id = tasks.assignee_id
     LEFT JOIN users reviewer ON reviewer.id = tasks.reviewer_id
-    WHERE tasks.project_id = ?
+    WHERE tasks.project_id = ? AND ${access.sql}
     ORDER BY tasks.order_index ASC, tasks.created_at ASC, tasks.id ASC`,
-    [getRuntimeEnv().auth.superuserEmail??"",projectId],
+    [getRuntimeEnv().auth.superuserEmail??"",projectId,...access.params],
   )) as TaskRow[];
 
   return rows.map(mapTaskRow);
@@ -265,7 +268,7 @@ export async function listTasksByProject(projectId: number): Promise<Task[]> {
 export async function createTask(input: CreateTaskInput): Promise<Task> {
   const { startDate, endDate } = validateDateRange(input.startDate, input.endDate);
   const project = await ensureProjectExists(input.projectId);
-  if (project.project_type === "volunteering" && !input.actor) throw new Error("봉사활동 업무에는 현재 관리자·팀장 확인이 필요합니다.");
+  if ((project.project_type === "volunteering" || project.access_mode==='members_only') && !input.actor) throw new Error("봉사활동 업무에는 현재 관리자·팀장 확인이 필요합니다.");
   const [parentTask, assigneeId, orderIndex] = await Promise.all([
     ensureParentTask(input.projectId, input.parentId ?? null), ensureEligibleTaskUser(input.assigneeId ?? null), getNextOrderIndex(input.projectId),
   ]);
@@ -299,7 +302,8 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
       params:[...values,key,key,completionMode,teamId,assigneeId,input.projectId,project.project_type,teamId,assigneeId,...scope.params,...assignment.params,...(parentTask?[parentTask.id,...parentScope.params]:[])]},
     {sql:`INSERT INTO task_events(task_id,actor_id,operation_token,request_fingerprint,kind,status,assignee_id,reviewer_id,note,task_version) SELECT id,?,?,?,'created',status,assignee_id,reviewer_id,'',version FROM tasks WHERE creation_token=?${eventDuplicate}`,params:[input.actor?.userId??null,key,fingerprint,key]},
   ]);
-  const created=await getDatabasePool().query('SELECT t.id,e.request_fingerprint FROM tasks t JOIN task_events e ON e.task_id=t.id AND e.operation_token=? WHERE t.creation_token=?',[key,key]) as {id:number;request_fingerprint:string}[];
+  const receiptScope=input.actor?taskManagementGuard(input.actor,"t.project_id","t.activity_team_id"):{sql:"1=1",params:[]};
+  const created=await getDatabasePool().query(`SELECT t.id,e.request_fingerprint FROM tasks t JOIN task_events e ON e.task_id=t.id AND e.operation_token=? WHERE t.creation_token=? AND ${receiptScope.sql}`,[key,key,...receiptScope.params]) as {id:number;request_fingerprint:string}[];
   if(!created[0]||created[0].request_fingerprint!==fingerprint)throw new Error("저장된 요청과 내용이 다르거나 현재 팀 관리·배정 권한이 없습니다. 화면을 새로고침해 주세요.");
   await databaseBatch(buildTaskDepthUpdates(await listTasksByProject(input.projectId)));
   const task=await getTaskById(Number(created[0].id));
@@ -316,7 +320,7 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
   }
 
   const project = await ensureProjectExists(existingTask.projectId);
-  if(project.project_type === "volunteering" && !input.actor) throw new Error("봉사활동 업무에는 현재 팀 관리 권한 확인이 필요합니다.");
+  if((project.project_type === "volunteering" || project.access_mode==='members_only') && !input.actor) throw new Error("봉사활동 업무에는 현재 팀 관리 권한 확인이 필요합니다.");
   if(input.actor) await assertTaskScope(existingTask.id,input.actor);
   const payload={...input,actor:undefined,token:undefined};
   if(input.actor) {
@@ -405,7 +409,7 @@ export async function deleteTask(taskId: number, actor?: TaskActor) {
 
   const project = await ensureProjectExists(existingTask.projectId);
   if(actor) { await assertTaskActor(actor); await assertTaskScope(taskId,actor); }
-  else if(project.project_type === "volunteering") throw new Error("봉사활동 업무 삭제에는 현재 팀 관리 권한 확인이 필요합니다.");
+  else if(project.project_type === "volunteering" || project.access_mode==='members_only') throw new Error("봉사활동 업무 삭제에는 현재 팀 관리 권한 확인이 필요합니다.");
   const scope=actor?taskManagementGuard(actor):{sql:"EXISTS(SELECT 1 FROM projects p WHERE p.id=tasks.project_id AND p.project_type='collaboration')",params:[]};
   const manageAll=actor?taskManagementGuard(actor,"tasks.project_id","NULL"):{sql:"1=1",params:[]};
   const childSafety=`(${manageAll.sql} OR NOT EXISTS(SELECT 1 FROM tasks child WHERE child.parent_id=tasks.id))`;
@@ -427,3 +431,7 @@ export async function deleteTask(taskId: number, actor?: TaskActor) {
   if(await getTaskById(taskId))throw new Error("선행 관계가 변경되었습니다. 관계를 먼저 해제해 주세요.");
   return existingTask;
 }
+
+/** Unfiltered variants above remain for already-authorized internal mutations only. */
+export function getTaskByIdForViewer(id:number,viewer:ProjectViewer){return getTaskById(id,viewer);}
+export function listTasksByProjectForViewer(projectId:number,viewer:ProjectViewer){return listTasksByProject(projectId,viewer);}

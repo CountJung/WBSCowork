@@ -1,7 +1,7 @@
 import {Alert,Button,Chip,Container,MenuItem,Paper,Stack,TextField,Typography} from '@mui/material';
 import {redirect} from 'next/navigation';
 import {getAuthSession,getSignInPath,getUserByEmail,listUserNames} from '@/src/entities/user/index.server';
-import {listAllProjects} from '@/src/entities/project/index.server';
+import {listAllProjectsForViewer} from '@/src/entities/project/index.server';
 import {searchWork} from '@/src/entities/task/index.server';
 import {parseWorkSearchFilters,workSearchPath,taskStatusLabels,type WorkSearchParams,type WorkSearchFilters} from '@/src/entities/task';
 import {getDatabaseAdminStatus} from '@/src/shared/server/database-admin/index.server';
@@ -13,7 +13,7 @@ export default async function WorkSearchPage({searchParams}:{searchParams:WorkSe
  if(!getRuntimeEnv().database.configured)return unavailable;
  const database=await getDatabaseAdminStatus();if(!['users','projects','tasks','submissions','submission_revisions','submission_attachments'].every(name=>database.tables.some(t=>t.name===name&&t.exists&&!t.missingColumns.length)))return unavailable;
  const user=await getUserByEmail(session.user.email??'');if(!user)return unavailable;
- const [result,projects,users]=await Promise.all([searchWork({viewerUserId:user.id,isSuperuser:session.user.isSuperuser},filters),listAllProjects(),listUserNames()]);
+ const [result,projects,users]=await Promise.all([searchWork({viewerUserId:user.id,isSuperuser:session.user.isSuperuser},filters),listAllProjectsForViewer({userId:user.id,email:user.email,isSuperuser:session.user.isSuperuser}),listUserNames()]);
  const current={...filters,page:result.page};
  return <Container component="main" sx={{py:{xs:4,md:6}}}><Stack spacing={3}>
  <Typography variant="h4">업무·산출물 검색</Typography><Typography color="text.secondary">업무 제목·설명과 제출 본문·파일명·작성자 이름에서 찾습니다. 파일 내용이나 외부 링크는 가져오지 않습니다.</Typography>

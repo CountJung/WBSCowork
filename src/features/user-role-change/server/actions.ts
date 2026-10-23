@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getAuthSession, getSignInPath, updateUserRole } from "@/src/entities/user/index.server";
+import { getAuthSession, getSignInPath, getUserByEmail, isSuperuserEmail, updateUserRole } from "@/src/entities/user/index.server";
 import { logUserAction, logUserActionFailure } from "@/src/shared/server/logging/index.server";
-import { canAccessAdminPanel, adminAssignableRoles, manageableUserRoles, type ManageableUserRole } from "@/src/entities/user";
+import { manageableUserRoles, type ManageableUserRole } from "@/src/entities/user";
 
 function buildRedirectPath(status: "success" | "error", message: string) {
   const searchParams = new URLSearchParams({
@@ -22,9 +22,12 @@ function getSingleValue(value: FormDataEntryValue | null) {
 export async function updateUserRoleAction(formData: FormData) {
   const session = await getAuthSession();
 
-  if (!session?.user || !canAccessAdminPanel(session.user.role, session.user.isSuperuser)) {
+  if (!session?.user?.email) {
     redirect(getSignInPath("/admin/users"));
   }
+
+  const actor=await getUserByEmail(session.user.email).catch(()=>null);
+  if(!actor||!session.user.isSuperuser||!isSuperuserEmail(actor.email)) redirect(buildRedirectPath("error","사용자 권한 변경은 슈퍼관리자만 할 수 있습니다."));
 
   const userIdValue = Number(getSingleValue(formData.get("userId")));
   const roleValue = getSingleValue(formData.get("role"));
@@ -33,21 +36,14 @@ export async function updateUserRoleAction(formData: FormData) {
     redirect(buildRedirectPath("error", "올바른 사용자 식별자가 전달되지 않았습니다."));
   }
 
-  // 슈퍼관리자는 admin 포함 전체 역할 부여 가능, 관리자는 guest/member만 부여 가능
-  const isSuperuserActor = session.user.isSuperuser;
-  const allowedRoles = isSuperuserActor ? manageableUserRoles : adminAssignableRoles;
-
-  if (!(allowedRoles as readonly string[]).includes(roleValue)) {
-    const msg = isSuperuserActor
-      ? "변경 가능한 권한은 관리자, 일반사용자, 게스트뿐입니다."
-      : "관리자는 일반사용자 또는 게스트로만 권한을 변경할 수 있습니다.";
-    redirect(buildRedirectPath("error", msg));
+  if (!(manageableUserRoles as readonly string[]).includes(roleValue)) {
+    redirect(buildRedirectPath("error", "변경 가능한 권한은 관리자, 일반사용자, 게스트뿐입니다."));
   }
 
   let redirectPath: string;
 
   try {
-    const updatedUser = await updateUserRole(userIdValue, roleValue as ManageableUserRole);
+    const updatedUser = await updateUserRole(userIdValue, roleValue as ManageableUserRole,{userId:actor.id,email:actor.email,isSuperuser:session.user.isSuperuser});
 
     revalidatePath("/admin");
     revalidatePath("/admin/users");

@@ -1,3 +1,4 @@
+import {projectAccessGuard,projectTaskAccessGuard,type ProjectViewer} from "@/src/shared/server/project-scope/index.server";
 import { taskManagementGuard, taskExecutionGuard, taskAssignmentGuard } from "@/src/shared/server/task-scope/index.server";
 import { assertTaskScope } from "./task-permissions.server";
 import { lockTaskProject,taskPredecessorsCompleteSql } from "@/src/shared/server/task-dependencies/index.server";
@@ -20,7 +21,8 @@ export async function hasTaskMutation(input:{id:number;actor:TaskActor;token:str
   await assertTaskActor(input.actor);
   const key=`${input.actor.userId}:${input.kind}:${input.id}:${workOperationToken(input.token)}`;
   const fingerprint=createHash("sha256").update(JSON.stringify(input.payload)).digest("hex");
-  const prior=(await getDatabasePool().query("SELECT request_fingerprint FROM task_events WHERE task_id=? AND actor_id=? AND operation_token=?",[input.id,input.actor.userId,key]) as {request_fingerprint:string}[])[0];
+  const binding=projectTaskAccessGuard(input.actor,"task_events.task_id");
+  const prior=(await getDatabasePool().query(`SELECT request_fingerprint FROM task_events WHERE task_id=? AND actor_id=? AND operation_token=? AND ${binding.sql}`,[input.id,input.actor.userId,key,...binding.params]) as {request_fingerprint:string}[])[0];
   if(prior&&prior.request_fingerprint!==fingerprint)throw new Error("같은 요청 식별자를 다른 내용에 사용할 수 없습니다.");
   return Boolean(prior);
 }
@@ -34,7 +36,8 @@ export async function commitTaskMutation(input: {
   const token=workOperationToken(input.token), version=taskVersion(input.version);
   const key=`${actor.userId}:${input.kind}:${input.id}:${token}`;
   const fingerprint=createHash("sha256").update(JSON.stringify(input.payload)).digest("hex");
-  const find=async()=> (await getDatabasePool().query("SELECT request_fingerprint FROM task_events WHERE task_id=? AND actor_id=? AND operation_token=?",[input.id,actor.userId,key]) as {request_fingerprint:string}[])[0];
+  const receiptScope=input.permission==='execute'?taskExecutionGuard(actor,"receipt_task.project_id","receipt_task.activity_team_id","receipt_task.assignee_id"):taskManagementGuard(actor,"receipt_task.project_id","receipt_task.activity_team_id");
+  const find=async()=> (await getDatabasePool().query(`SELECT task_events.request_fingerprint FROM task_events JOIN tasks receipt_task ON receipt_task.id=task_events.task_id WHERE task_events.task_id=? AND task_events.actor_id=? AND task_events.operation_token=? AND ${receiptScope.sql}`,[input.id,actor.userId,key,...receiptScope.params]) as {request_fingerprint:string}[])[0];
   const prior=await find();
   if(prior) { if(prior.request_fingerprint!==fingerprint)throw new Error("같은 요청 식별자를 다른 내용에 사용할 수 없습니다."); return; }
   const scope=input.permission === "execute" ? taskExecutionGuard(actor) : taskManagementGuard(actor);
@@ -116,4 +119,13 @@ export async function changeTaskStatus(input:{id:number;actor:TaskActor;token:st
 
 export async function listTaskEventsByProject(projectId:number):Promise<TaskEvent[]> {
   return await getDatabasePool().query(`SELECT e.id,e.task_id,e.actor_id,a.name AS actor_name,e.kind,e.status,e.assignee_id,u.name AS assignee_name,e.reviewer_id,r.name AS reviewer_name,e.note,e.task_version,e.created_at FROM task_events e JOIN tasks t ON t.id=e.task_id LEFT JOIN users a ON a.id=e.actor_id LEFT JOIN users u ON u.id=e.assignee_id LEFT JOIN users r ON r.id=e.reviewer_id WHERE t.project_id=? ORDER BY e.id DESC LIMIT 1000`,[projectId]) as TaskEvent[];
+}
+
+export async function listTaskEventsForViewer(taskId:number,viewer:ProjectViewer):Promise<TaskEvent[]> {
+  const binding=projectTaskAccessGuard(viewer,"e.task_id");
+  return await getDatabasePool().query(`SELECT e.id,e.task_id,e.actor_id,a.name AS actor_name,e.kind,e.status,e.assignee_id,u.name AS assignee_name,e.reviewer_id,r.name AS reviewer_name,e.note,e.task_version,e.created_at FROM task_events e LEFT JOIN users a ON a.id=e.actor_id LEFT JOIN users u ON u.id=e.assignee_id LEFT JOIN users r ON r.id=e.reviewer_id WHERE e.task_id=? AND ${binding.sql} ORDER BY e.id DESC LIMIT 30`,[taskId,...binding.params]) as TaskEvent[];
+}
+export async function listTaskEventsByProjectForViewer(projectId:number,viewer:ProjectViewer):Promise<TaskEvent[]> {
+  const binding=projectAccessGuard(viewer,"t.project_id");
+  return await getDatabasePool().query(`SELECT e.id,e.task_id,e.actor_id,a.name AS actor_name,e.kind,e.status,e.assignee_id,u.name AS assignee_name,e.reviewer_id,r.name AS reviewer_name,e.note,e.task_version,e.created_at FROM task_events e JOIN tasks t ON t.id=e.task_id LEFT JOIN users a ON a.id=e.actor_id LEFT JOIN users u ON u.id=e.assignee_id LEFT JOIN users r ON r.id=e.reviewer_id WHERE t.project_id=? AND ${binding.sql} ORDER BY e.id DESC LIMIT 1000`,[projectId,...binding.params]) as TaskEvent[];
 }

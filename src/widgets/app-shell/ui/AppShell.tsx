@@ -53,12 +53,9 @@ const superuserAdminNavItems: NavItem[] = [
   { href: "/admin/database", label: "DB 관리" },
 ];
 
-// 관리자(admin 역할) 메뉴 — 로그·세팅·DB 관리 제외, 관리 개요·사용자 관리만 허용
+// 일반 관리자는 배정된 프로젝트만 관리합니다. 전역 운영은 슈퍼관리자 전용입니다.
 const adminRoleNavItems: NavItem[] = [
-  { href: "/admin", label: "관리 개요" },
   { href: "/admin/projects", label: "프로젝트 관리" },
-  { href: "/admin/bugs", label: "버그 리뷰" },
-  { href: "/admin/users", label: "사용자 관리" },
 ];
 
 function isActivePath(currentPath: string, href: string) {

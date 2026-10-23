@@ -1,7 +1,13 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { Button, Checkbox, FormControlLabel, Chip, Divider, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Button, Chip, Divider, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
+import FieldLabel from "@/src/shared/ui/field-label";
+import DeleteConfirmation from "./DeleteConfirmation";
+import TaskStatusForm from "./TaskStatusForm";
+import TaskDateFields from "./TaskDateFields";
+import ValidatedTextField from "@/src/shared/ui/validated-text-field";
+import type {SubmissionSummary} from "./TaskSubmissionPanel";
 import MarkdownContent from "@/src/shared/ui/markdown-content";
 import SubmitButton from "@/src/shared/ui/submit-button";
 import TaskSubmissionPanel from "./TaskSubmissionPanel";
@@ -25,13 +31,16 @@ type TaskCardProps = {
   allowUnassignedTeam?:boolean;
   dependencyPanel?:ReactNode;
   returnTo?: string;
+  teamId?: string;
+  selectedSubmissionId?:number|null;
+  submissionSummaries?:SubmissionSummary[];
   task: Task;
   currentUserId:number|null;
   events:TaskEvent[];
   changeTaskStatusAction:ContentAction;
   orderedTasks: Task[];
   projectId: number;
-  users: User[];
+  users: Pick<User,"id"|"name">[];
   eligibleUserIds:number[];
   isSelectedTask: boolean;
   canWrite: boolean;
@@ -52,7 +61,7 @@ type TaskCardProps = {
 
 export default function TaskCard({
   canManageTask,canExecuteTask,isVolunteer=false,activityTeams=[],memberIdsByTeam={},projectMemberIds=[],allowUnassignedTeam=true,
-  task, currentUserId, events, changeTaskStatusAction, returnTo, dependencyPanel,
+  task, currentUserId, events, changeTaskStatusAction, returnTo, dependencyPanel,teamId,selectedSubmissionId,submissionSummaries=[],
   orderedTasks,
   projectId,
   users, eligibleUserIds,
@@ -73,21 +82,26 @@ export default function TaskCard({
   updateSubmissionAction,
 }: TaskCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const editForm=useRef<HTMLFormElement>(null);
+  const editButton=useRef<HTMLButtonElement>(null);
+  useEffect(()=>{if(isEditing)editForm.current?.querySelector<HTMLInputElement>('[name="title"]')?.focus();},[isEditing]);
+  const closeEdit=()=>{setIsEditing(false);requestAnimationFrame(()=>editButton.current?.focus());};
   const [operationToken] = useState(()=>crypto.randomUUID());
-  const [statusToken] = useState(()=>crypto.randomUUID());
   const canExecute=canExecuteTask??(canWrite&&(canSeeAllSubmissions||task.assigneeId===currentUserId));
   const canManage=canManageTask??canWrite;
 
   return (
     <Paper
       id={`task-${task.id}`}
+      tabIndex={-1}
+      data-testid={`task-detail-${task.id}`}
       elevation={0}
       sx={{
         p: 3,
         borderRadius: 4,
         borderLeft: "4px solid",
         borderColor: isSelectedTask ? "secondary.main" : "primary.main",
-        ml: { xs: 0, md: task.depth * 3 },
+        minWidth: 0, overflowWrap: "anywhere",
         scrollMarginTop: 110,
         background: isSelectedTask ? "var(--task-focus-card-background)" : "var(--mui-palette-background-paper)",
         boxShadow: isSelectedTask ? "var(--task-focus-card-shadow, 0 18px 34px rgba(183, 121, 31, 0.12))" : undefined,
@@ -95,68 +109,26 @@ export default function TaskCard({
       }}
     >
       <Stack spacing={2}>
-        {/* 헤더 행: 작업 정보(좌) + 액션 버튼(우) */}
-        <Stack
-          direction={{ xs: "column", lg: "row" }}
-          spacing={2}
-          sx={{ justifyContent: "space-between", alignItems: { lg: "flex-start" } }}
-        >
-          <Stack spacing={1} sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="h6">{task.title}</Typography>
-            <Chip label={taskStatusLabels[task.status]} color={task.status==="done"?"success":"default"} />
-            {task.activityTeamName?<Chip label={`활동팀 ${task.activityTeamName}`} variant="outlined"/>:null}
-            <Chip label={task.completionMode==="direct_completion"?"직접 완료 · 제출물 선택":"제출 필수"} size="small"/>
-            {task.completedAt?<Typography variant="body2">완료자: {users.find(u=>u.id===task.completedBy)?.name??"계정 삭제됨"} · 완료 시각: {new Date(task.completedAt).toISOString()}</Typography>:null}
-            {task.assigneeId&&!task.assigneeEligible?<Typography color="warning.main">현재 담당자는 업무 작성 권한이 없어 재배정이 필요합니다.</Typography>:null}
-            <Typography variant="body2">검토자: {task.reviewerName??"미지정"}</Typography>
-            {task.workflowNote?<Typography sx={{whiteSpace:"pre-wrap"}}>상태 근거: {task.workflowNote}</Typography>:null}
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ flexWrap: "wrap" }}>
-              {isSelectedTask ? <Chip label="선택된 업무" color="secondary" /> : null}
-              <Chip label={`기간 ${formatDate(task.startDate)} ~ ${formatDate(task.endDate)}`} variant="outlined" />
-              <Chip label={`깊이 ${task.depth}`} />
-              <Chip
-                label={task.assigneeName ? `담당자 ${task.assigneeName}` : "담당자 미지정"}
-                color={task.assigneeName ? "primary" : "default"}
-                variant={task.assigneeName ? "filled" : "outlined"}
-              />
-            </Stack>
-            <Typography sx={{ whiteSpace: "pre-wrap" }}>기대 산출물: {task.deliverable || (task.completionMode==="direct_completion"?"선택 사항":"완료 전에 작성해 주세요.")}</Typography>
-            <Typography sx={{ whiteSpace: "pre-wrap" }}>완료 기준: {task.definitionOfDone || "완료 전에 작성해 주세요."}</Typography>
-            <Chip label={task.reviewRequired ? "검토자 승인 필요" : "담당자 완료"} size="small" variant="outlined" />
-            {task.description ? (
-              <MarkdownContent content={task.description} />
-            ) : (
-              <Typography variant="body2" color="text.secondary">
-                설명이 아직 입력되지 않았습니다.
-              </Typography>
-            )}
+        <Stack spacing={1.5} sx={{minWidth:0}}>
+          <Typography component="h2" variant="h5">{task.title}</Typography>
+          <Stack direction="row" spacing={0.75} useFlexGap sx={{flexWrap:"wrap",alignItems:"flex-start",'& .MuiChip-root':{maxWidth:'100%',height:'auto'},'& .MuiChip-label':{whiteSpace:'normal',overflowWrap:'anywhere',py:0.5}}}>
+            <Chip size="small" label={taskStatusLabels[task.status]} color={task.status==='done'?'success':'default'}/>
+            {task.activityTeamName?<Chip size="small" label={task.activityTeamName} variant="outlined"/>:null}
+            <Chip size="small" label={task.completionMode==='direct_completion'?'제출 선택':'제출 필수'} variant="outlined"/>
+            {task.reviewRequired?<Chip size="small" label="검토 승인 필요" color="warning" variant="outlined"/>:null}
           </Stack>
-
-          {/* 수정/삭제 버튼 — 수정 폼이 열려 있을 때는 숨김 */}
-          {canManage && !isEditing ? (
-            <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-              <Button size="small" variant="outlined" onClick={() => setIsEditing(true)}>
-                수정
-              </Button>
-              <Stack component="form" action={deleteTaskAction}>
-                <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
-                <input type="hidden" name="taskId" value={String(task.id)} />
-                <FormControlLabel control={<Checkbox name="confirmRevisionDeletion" value="yes" required/>} label="작업·모든 제출 버전 삭제 확인"/>
-                <Button type="submit" color="error" size="small" variant="outlined">
-                  작업 삭제
-                </Button>
-              </Stack>
-            </Stack>
-          ) : null}
+          <Typography variant="body2" color="text.secondary">담당 {task.assigneeName??'미지정'} · {formatDate(task.startDate)} ~ {formatDate(task.endDate)}</Typography>
+          {task.completedAt?<Typography variant="body2">완료자: {users.find(u=>u.id===task.completedBy)?.name??"계정 삭제됨"} · 완료 시각: {new Date(task.completedAt).toISOString()}</Typography>:null}
+          {task.assigneeId&&!task.assigneeEligible?<Typography color="warning.main">현재 담당자는 업무 작성 권한이 없어 재배정이 필요합니다.</Typography>:null}
+          <Typography id={`task-criteria-${task.id}`} sx={{whiteSpace:'pre-wrap'}}>완료 기준: {task.definitionOfDone||'완료 전에 작성해 주세요.'}</Typography>
+          <Typography sx={{whiteSpace:'pre-wrap'}}>기대 산출물: {task.deliverable||(task.completionMode==='direct_completion'?'선택 사항':'완료 전에 작성해 주세요.')}</Typography>
+          <Typography variant="body2" color="text.secondary">검토자: {task.reviewerName??'미지정'}</Typography>
+          {task.description?<MarkdownContent content={task.description}/>:<Typography variant="body2" color="text.secondary">설명이 아직 없습니다.</Typography>}
+          {task.workflowNote?<Typography sx={{whiteSpace:'pre-wrap'}}>상태 근거: {task.workflowNote}</Typography>:null}
         </Stack>
-
-        {dependencyPanel}
-        {canExecute ? <Stack component="form" action={changeTaskStatusAction} spacing={1.5}>
-          <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={projectId}/><input type="hidden" name="taskId" value={task.id}/><input type="hidden" name="version" value={task.version}/><input type="hidden" name="operationToken" value={statusToken}/>
-          <Stack direction={{xs:"column",sm:"row"}} spacing={1.5}><TextField select name="taskStatus" label="진행 상태" defaultValue={['planned','in_progress','blocked','done'].includes(task.status)?task.status:'in_progress'} fullWidth><MenuItem value="planned">예정</MenuItem><MenuItem value="in_progress">진행 중</MenuItem><MenuItem value="blocked">차단됨</MenuItem>{!task.reviewRequired?<MenuItem value="done">완료</MenuItem>:null}</TextField><SubmitButton pendingLabel="상태 저장 중…" variant="outlined">상태 저장</SubmitButton></Stack>
-          <TextField name="note" label={task.completionMode==="direct_completion"?"상태 메모 · 차단/재개 시 필요, 직접 완료 시 선택":"상태 변경 근거 · 차단/완료/재개 시 필요"} helperText="모든 인증 사용자에게 보이는 업무 기록입니다. 비공개 제출물 내용은 적지 마세요." multiline slotProps={{htmlInput:{maxLength:2000}}}/>
-        </Stack>:null}
-        {events.length?<Stack spacing={0.5}><Typography variant="subtitle2">업무 변경 이력 (최근 {events.length}건)</Typography>{events.map(event=><Typography key={event.id} variant="body2">v{event.task_version} · {event.kind==="baseline"?"이력 도입 시점":event.actor_name??"계정 삭제됨"} · {taskStatusLabels[event.status]} · {new Date(event.created_at).toISOString()} · 담당 {event.assignee_name??"미지정"} · 검토 {event.reviewer_name??"미지정"}{event.note?` · ${event.note}`:''}</Typography>)}</Stack>:null}
+        {canExecute?<TaskStatusForm key={`${task.id}:${task.version}`} task={task} projectId={projectId} returnTo={returnTo} teamId={teamId} action={changeTaskStatusAction}/>:null}
+        {dependencyPanel?<details><summary>선후행 업무 확인·관리</summary><div style={{paddingTop:12}}>{dependencyPanel}</div></details>:null}
+        {events.length?<details><summary>업무 변경 이력 · {events.length}건</summary><Stack spacing={0.75} sx={{pt:1.5}}>{events.map(event=><Typography key={event.id} variant="body2">v{event.task_version} · {event.actor_name??'계정 삭제됨'} · {taskStatusLabels[event.status]} · {new Date(event.created_at).toISOString()}{event.note?` · ${event.note}`:''}</Typography>)}</Stack></details>:null}
 
         {/* 수정 폼 — 헤더 아래 전체 너비로 배치 */}
         {canManage && isEditing ? (
@@ -164,23 +136,24 @@ export default function TaskCard({
             <Divider />
             <Stack
               component="form"
+              ref={editForm}
               action={async (formData: FormData) => {
                 await updateTaskAction(formData);
                 setIsEditing(false);
               }}
               spacing={2}
             >
-              <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="projectId" value={String(projectId)} />
+              <input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="teamId" value={teamId??""}/><input type="hidden" name="projectId" value={String(projectId)} />
               <input type="hidden" name="taskId" value={String(task.id)} />
               <input type="hidden" name="version" value={task.version} />
               <input type="hidden" name="operationToken" value={operationToken} />
-              <TextField name="title" label="작업 제목" defaultValue={task.title} required />
-              <TextField name="description" label="설명" defaultValue={task.description} multiline minRows={3} />
-              <TextField name="deliverable" label="기대 산출물·제출 형식" defaultValue={task.deliverable} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
-              <TextField name="definitionOfDone" label="완료 기준" defaultValue={task.definitionOfDone} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
+              <ValidatedTextField name="title" label={<FieldLabel requirement="required">작업 제목</FieldLabel>} defaultValue={task.title} required />
+              <TextField name="description" label={<FieldLabel>설명</FieldLabel>} defaultValue={task.description} multiline minRows={3} />
+              <TextField name="deliverable" label={<FieldLabel requirement={task.completionMode==='direct_completion'?'optional':'before_completion'}>기대 산출물·제출 형식</FieldLabel>} defaultValue={task.deliverable} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
+              <TextField name="definitionOfDone" label={<FieldLabel requirement="before_completion">완료 기준</FieldLabel>} defaultValue={task.definitionOfDone} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
               <TaskAssignmentFields isVolunteer={isVolunteer} teams={activityTeams} memberIdsByTeam={memberIdsByTeam} projectMemberIds={projectMemberIds} users={users} eligibleUserIds={eligibleUserIds} defaultTeamId={task.activityTeamId} defaultAssigneeId={task.assigneeId} defaultReviewerId={task.reviewerId} defaultMode={task.completionMode} defaultReviewRequired={task.reviewRequired} canChangeMode={task.status==='planned'} includeReviewer allowUnassignedTeam={allowUnassignedTeam}/>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                <TextField select name="parentId" label="상위 작업" defaultValue={String(task.parentId ?? "")} fullWidth>
+                <TextField select name="parentId" label={<FieldLabel>상위 작업</FieldLabel>} defaultValue={String(task.parentId ?? "")} fullWidth>
                   <MenuItem value="">루트 작업</MenuItem>
                   {orderedTasks
                     .filter((candidateTask) => candidateTask.id !== task.id)
@@ -192,31 +165,12 @@ export default function TaskCard({
                 </TextField>
 
               </Stack>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                <TextField
-                  name="startDate"
-                  label="시작일"
-                  type="date"
-                  defaultValue={formatDate(task.startDate)}
-                  required
-                  fullWidth
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-                <TextField
-                  name="endDate"
-                  label="종료일"
-                  type="date"
-                  defaultValue={formatDate(task.endDate)}
-                  required
-                  fullWidth
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-              </Stack>
+              <TaskDateFields startDate={formatDate(task.startDate)} endDate={formatDate(task.endDate)}/>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                 <SubmitButton pendingLabel="작업 저장 중…" variant="contained">
                   저장
                 </SubmitButton>
-                <Button type="button" variant="text" onClick={() => setIsEditing(false)}>
+                <Button type="button" variant="text" onClick={closeEdit}>
                   취소
                 </Button>
               </Stack>
@@ -226,6 +180,9 @@ export default function TaskCard({
 
         <TaskSubmissionPanel
           returnTo={returnTo}
+          teamId={teamId}
+          selectedSubmissionId={selectedSubmissionId}
+          summaries={submissionSummaries}
           currentUserId={currentUserId}
           canWrite={canWrite}
           canSeeAllSubmissions={canSeeAllSubmissions}
@@ -243,6 +200,7 @@ export default function TaskCard({
           updateCommentAction={updateCommentAction}
           updateSubmissionAction={updateSubmissionAction}
         />
+        {canManage&&!isEditing?<Stack direction="row" useFlexGap spacing={1} sx={{flexWrap:'wrap',pt:1,borderTop:'1px solid',borderColor:'divider'}}><Button ref={editButton} size="small" variant="outlined" onClick={()=>setIsEditing(true)}>수정</Button><DeleteConfirmation id={`task-delete-confirm-${task.id}`} triggerLabel="작업 삭제…" warning="이 작업과 연결된 모든 제출 버전·댓글·파일을 영구 삭제합니다. 되돌릴 수 없습니다. 필요한 자료를 보관했는지 확인하세요." fields={{projectId:String(projectId),taskId:String(task.id),returnTo:returnTo??'',teamId:teamId??''}} action={deleteTaskAction}/></Stack>:null}
       </Stack>
     </Paper>
   );

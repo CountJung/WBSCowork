@@ -12,6 +12,8 @@ output=Path('.test-artifacts/volunteer-browser');output.mkdir(parents=True,exist
 checks=0
 cases=[]
 console_messages=[]
+http_errors=[]
+expected_denial_targets=[]
 admin_spa=os.environ.get('WBS_QA_ADMIN_SPA')=='1'
 
 def check(value,label):
@@ -74,12 +76,22 @@ with sync_playwright() as p:
                 request.continue_()
             context.route('**/*',route)
             page=context.new_page()
-            page.on('pageerror',lambda error:errors.append(str(error)))
+            def page_error(error):
+                errors.append(str(error))
+                output.joinpath('errors.json').write_text(json.dumps(errors,indent=2))
+                print('BROWSER_PAGE_ERROR '+str(error),flush=True)
+            page.on('pageerror',page_error)
             def console(message):
                 if message.type in ['error','warning']:
-                    console_messages.append({'width':width,'type':message.type,'text':message.text[:1500]})
-                if message.type=='error':errors.append('console: '+message.text[:1500])
+                    console_messages.append({'width':width,'type':message.type,'text':message.text[:1500],'location':message.location,'pagePath':urlparse(page.url).path})
+                    output.joinpath('console.json').write_text(json.dumps(console_messages,indent=2))
+                    print('BROWSER_CONSOLE '+json.dumps(console_messages[-1]),flush=True)
             page.on('console',console)
+            def http_response(response):
+                if response.status>=400:
+                    http_errors.append({'url':response.url,'status':response.status,'method':response.request.method})
+                    output.joinpath('http-errors.json').write_text(json.dumps(http_errors,indent=2))
+            page.on('response',http_response)
             page.on('requestfailed',lambda request:failed_requests.append({'path':urlparse(request.url).path,'failure':request.failure}))
             return context,page
 
@@ -93,7 +105,7 @@ with sync_playwright() as p:
         submit(create,'프로젝트 생성')
         project_card=admin.locator('[data-testid^="project-card-"]').filter(has_text=f'Volunteer browser {width}')
         project_id=int(project_card.get_attribute('data-testid').split('-')[-1])
-        check(project_card.get_by_text('봉사활동 팀과 참여자',exact=True).count()==1,f'{width}: create volunteer project through actual UI')
+        check(project_card.get_by_text('프로젝트 소속과 활동팀',exact=True).count()==1,f'{width}: create volunteer project through actual UI')
         for user in [2,3,4,5]:
             form=workspace_form(project_card,'project_member').filter(has=admin.get_by_role('button',name='참여자 추가',exact=True))
             choose(form,'userId',user)
@@ -116,6 +128,7 @@ with sync_playwright() as p:
 
         leader_context,leader=session(2)
         leader.goto(root+f'/tasks?projectId={project_id}',wait_until='networkidle')
+        leader.locator('summary').filter(has_text='새 업무 추가').click()
         create_task=leader.locator('form:has([name="title"]):has([name="projectId"]):not(:has([name="taskId"]))')
         create_task.locator('[name="title"]').fill(f'QA direct {width}')
         choose(create_task,'activityTeamId',team_id)
@@ -131,8 +144,11 @@ with sync_playwright() as p:
         member.goto(task_url,wait_until='networkidle')
         task=member.locator(f'#task-{task_id}')
         status=task.locator('form:has([name="taskStatus"])')
-        status.locator('[name="projectId"]').evaluate('(element)=>element.value="1"')
+        expected_denial_targets.append({'projectId':'1','taskId':str(task_id)})
         choose(status,'taskStatus','done')
+        # Mutate after the controlled select rerender, then verify the actual serialized form.
+        status.locator('[name="projectId"]').evaluate('(element)=>element.value="1"')
+        assert status.evaluate('(form)=>new FormData(form).get("projectId")')=='1'
         submit(status,'상태 저장',success=False)
         check(True,f'{width}: tampered cross-project status form is denied')
         member.goto(task_url,wait_until='networkidle')
@@ -165,6 +181,7 @@ with sync_playwright() as p:
 
         member.goto(task_url,wait_until='networkidle')
         task=member.locator(f'#task-{task_id}')
+        task.get_by_role('button',name='제출물 등록…',exact=True).click()
         submission=task.locator('form').filter(has=member.get_by_role('button',name='제출 등록',exact=True))
         submission.locator('[name="content"]').fill(f'QA PRIVATE OPTIONAL {width}')
         submission.locator('input[name="visibility"][value="private"]').check()
@@ -196,7 +213,16 @@ with sync_playwright() as p:
         check(member.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),f'{width}: task workspace has no horizontal overflow')
         admin.goto(root+'/admin/projects',wait_until='networkidle')
         check(admin.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),f'{width}: project/team admin has no horizontal overflow')
-        check(not errors,f'{width}: no uncaught browser page errors')
+        for message in console_messages:
+            target=message.get('location',{}).get('url','')
+            query=parse_qs(urlparse(target).query)
+            explicitly_tested=urlparse(target).path=='/tasks' and query.get('status')==['error'] and any(query.get('projectId')==[item['projectId']] and query.get('taskId')==[item['taskId']] for item in expected_denial_targets)
+            actual_404=any(item['url']==target and item['method']=='GET' and item['status']==404 for item in http_errors)
+            message['expectedDenial']=message['type']=='error' and message['text']=='Failed to load resource: the server responded with a status of 404 (Not Found)' and explicitly_tested and actual_404
+        output.joinpath('console.json').write_text(json.dumps(console_messages,indent=2))
+        output.joinpath('errors.json').write_text(json.dumps(errors,indent=2))
+        output.joinpath('failed-requests.json').write_text(json.dumps(failed_requests,indent=2))
+        check(not errors and not [item for item in console_messages if not item.get('expectedDenial')],f'{width}: no uncaught browser page errors or unexpected console messages')
         check(not [request for request in failed_requests if request['failure']!='net::ERR_ABORTED'],f'{width}: no failed browser requests except navigation cancellation')
         member.screenshot(path=str(output/f'task-{width}.png'),full_page=True)
         admin.screenshot(path=str(output/f'admin-{width}.png'),full_page=True)

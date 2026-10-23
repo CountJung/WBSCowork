@@ -26,9 +26,9 @@
 ## 항상 지킬 경계
 
 1. `.env*`·실제 credential을 AI 컨텍스트로 열거나 출력하지 않는다. 사용자 데이터·계정·권한·보안 설정·운영 migration/삭제·배포는 현재 요청의 명시 범위를 따른다.
-2. 페이지 노출과 별개로 모든 action/handler가 세션·현재 DB 역할·상위 project/task/submission 관계와 ownership을 재검사한다. public 제출물은 인증 사용자, private는 작성자/admin/SU만 조회한다. 담당자/검토자 지정은 조회권을 늘리지 않는다.
+2. 페이지 노출과 별개로 모든 action/handler가 세션·현재 DB 역할·상위 project/task/submission 관계와 ownership을 재검사한다. 조회는 현재 역할 ∩ 프로젝트 접근 scope ∩ 자원 visibility/ownership을 검사한다. private 관리 예외는 SU 또는 해당 프로젝트에 지정된 admin이며 소속/담당/검토자 지정만으로 열람권을 늘리지 않는다. 상세는 [권한 정책](docs/ARCHITECTURE.md#권한-정책)을 따른다.
 3. 제출물 목록은 `SubmissionVisibilityFilter`, 파생 댓글/첨부는 필수 `IdScope`와 viewer filter, 단건은 viewer-aware API를 사용한다. 현재와 버전 당시 가시성을 SQL에서 함께 검사하고 unauthorized/missing은 같은 404로 처리한다.
-4. `canAccessAdminPanel`/`canManageAllSubmissions`/`canWriteTaskContent`를 재사용한다. `/admin/database`, `/admin/logs`, `/admin/settings`는 SU 전용; admin은 `/admin/users`에서 guest/member만 부여한다. 모든 기존 역할의 본인 버그 제보 권한은 업무 쓰기 권한과 별개다.
+4. 역할 helper는 후보 판정이며 서버의 현재 프로젝트 scope를 생략하지 않는다. 프로젝트 생성·소속/접근 정책, 전역 사용자/역할·버그 검토, DB/log/settings는 SU 전용이고 admin 관리는 지정 프로젝트로 제한한다. 모든 기존 역할의 본인 버그 제보 권한은 업무 쓰기 권한과 별개다.
 5. `app → widgets → features → entities → shared`와 slice public API를 지킨다. 루트 app을 옮기지 않고 구조 이동과 기능 변경을 분리한다. src 변경은 `check:fsd`, 가시성/권한 변경은 `npm test`를 포함해 HARNESS_MAP 게이트를 실행한다.
 6. 원문·버전·검토는 transaction 안의 version/token/bytes fingerprint로 보존한다. 첨부 제외는 새 버전이며 과거 파일 삭제가 아니다. project 종료일 자동 파기는 없고 공유 계정은 별도 수명주기다. 실패/불확정/커밋 후 후속 오류를 성공과 구분한다.
 7. main은 NAS/native, sites는 Worker/D1/R2다. 기본 build 차이를 보존하고 공통 patch를 선별 반영한다. 사용자에게 이번 작업의 게시 요청이 명시된 경우에만 Sites 게시를 수행한다. 브랜치 ref 정리는 배포가 아니다.

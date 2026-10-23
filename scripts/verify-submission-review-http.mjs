@@ -8,6 +8,7 @@ export async function verifySubmissionReviewWorkflow({ request, db, actorCookies
   const dates = { startDate: '2026-01-01', endDate: '2026-12-31' };
   await form(route, owner, createTask, { projectId, title: 'REVIEW_TEAM_CARD', deliverable: '문서 파일과 자료 링크', definitionOfDone: '정확한 결과와 출처를 동료가 확인', reviewRequired: '1', assigneeId: 2, ...dates });
   const task = await db.prepare("SELECT * FROM tasks WHERE title='REVIEW_TEAM_CARD'").first();
+  route=`/tasks?projectId=${projectId}&taskId=${task.id}`;
   const taskId = task.id, readTask = () => db.prepare('SELECT * FROM tasks WHERE id=?').bind(taskId).first();
   const updateTask = renderedAction(await html(route, owner), 'updateTaskAction');
   const taskFields = { projectId, taskId, title: task.title, deliverable: task.deliverable, definitionOfDone: task.definition_of_done, reviewRequired: '1', assigneeId: 2, reviewerId: 3, ...dates };
@@ -15,6 +16,7 @@ export async function verifySubmissionReviewWorkflow({ request, db, actorCookies
   const createSubmission = renderedAction(await html(route, owner), 'createSubmissionAction');
   await form(route, owner, createSubmission, { projectId, taskId, content: 'TEAM_REVIEW_V1', visibility: 'public', materialUrl: 'https://example.com/team' }, [{ name: 'team.txt', bytes: 'first output' }]);
   const submission = await db.prepare("SELECT * FROM submissions WHERE content='TEAM_REVIEW_V1'").first();
+  route=`/tasks?projectId=${projectId}&taskId=${taskId}&submissionId=${submission.id}`;
   const submissionId = submission.id, history = `/submissions/${submissionId}`, readSubmission = () => db.prepare('SELECT * FROM submissions WHERE id=?').bind(submissionId).first();
   const eventCount = () => db.prepare('SELECT COUNT(*) AS n FROM submission_events WHERE submission_id=?').bind(submissionId).first();
   const requestAction = renderedAction(await html(history, owner), 'requestSubmissionReviewAction');

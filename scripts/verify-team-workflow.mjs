@@ -16,18 +16,18 @@ export async function verifyTeamWorkflow(argumentsContext) {
       check(response.status===200,`workflow: ${role} can select project${projectId}`);
       check(html.includes('href="/tasks?projectId=1"')&&html.includes('href="/tasks?projectId=2"'),`workflow: ${role} has both project navigation links`);
       check(html.includes('href="/admin/projects"')===['admin','superuser'].includes(role),`workflow: ${role} project-management navigation boundary`);
-      if(projectId===1)check(html.includes('Synthetic task')&&html.includes('PUBLIC_ONLY_83827'),`workflow: ${role} project1 task/content present on return`);
+      if(projectId===1)check(html.includes('Synthetic task')&&!html.includes('PUBLIC_ONLY_83827'),`workflow: ${role} project1 summary returns without submission body`);
       check(html.includes('WORKFLOW_SECOND_TASK')===(projectId===2),`workflow: ${role} selected project matches task content`);
       if(projectId===2)check(!html.includes('PUBLIC_ONLY_83827')&&!html.includes('PRIVATE_OWNER1_83827')&&!html.includes('PRIVATE_OWNER2_83827'),`workflow: ${role} other project submissions absent`);
     }
     const direct=await(await request('/tasks?projectId=1&taskId=1',actorCookies[role])).text();
-    check(direct.includes('홈에서 선택한 업무 상세')&&direct.includes('선택된 업무'),`workflow: ${role} matching direct link visibly selects a task`);
-    const wrongScope=await(await request('/tasks?projectId=2&taskId=1',actorCookies[role])).text();
-    check(!wrongScope.includes('홈에서 선택한 업무 상세')&&!wrongScope.includes('선택된 업무'),`workflow: ${role} cross-project task link does not focus another task`);
+    check(direct.includes('task-detail-1')&&direct.includes('업무 목록으로 돌아가기')&&!direct.includes('PUBLIC_ONLY_83827'),`workflow: ${role} matching direct link selects a task without submission body`);
+    const wrongScope=await request('/tasks?projectId=2&taskId=1',actorCookies[role]);
+    check(wrongScope.status===404,`workflow: ${role} cross-project task link is indistinguishable from missing`);
   }
   const anonymous=await request('/tasks?projectId=2');
   check(anonymous.status>=300&&anonymous.status<400, 'workflow: anonymous project selection still requires login');
-  const admin=actorCookies.admin, member=actorCookies.member1;
+  const admin=actorCookies.admin, superuser=actorCookies.superuser, member=actorCookies.member1;
   const renderedAction=(html,name)=> {
     const direct=[...html.matchAll(/name="(\$ACTION_ID_[^"]+)"/g)].map(m=>m[1]).find(id=>id.endsWith(`#${name}`));
     const ref=html.match(new RegExp(`([a-f0-9]+)#${name}[^A-Za-z]`))?.[1];
@@ -48,19 +48,22 @@ export async function verifyTeamWorkflow(argumentsContext) {
     if(response.status!==303)console.error('Synthetic Worker form failure',JSON.stringify({action:id.split('#').at(-1),path:new URL(route,'https://fixture.invalid').pathname,status:response.status,contentType:response.headers.get('content-type'),body:responseBody.slice(0,1200)}));
     check(response.status===303,`workflow: form response ${response.status}`);return response;
   }
-  const adminHtml=await(await request('/admin/projects',admin)).text();
+  const adminHtml=await(await request('/admin/projects',superuser)).text();
   const createProject=renderedAction(adminHtml,'createProjectAdminAction');
   const dates={startDate:'2026-01-01',endDate:'2026-12-31'};
-  await form('/admin/projects',admin,createProject,{name:'WORKFLOW_GOALS',goal:'주제 목표',successCriteria:'성공 기준',...dates});
+  await form('/admin/projects',superuser,createProject,{name:'WORKFLOW_GOALS',goal:'주제 목표',successCriteria:'성공 기준',...dates});
   const goals=await db.prepare("SELECT * FROM projects WHERE name='WORKFLOW_GOALS'").first();
+  await db.prepare('INSERT INTO project_members(project_id,user_id,active) VALUES(?,4,1)').bind(goals.id).run();
   check(goals.goal==='주제 목표'&&goals.success_criteria==='성공 기준','workflow: project goals persist');
   const updateProject=renderedAction(await(await request('/admin/projects',admin)).text(),'updateProjectAdminAction');
   await form('/admin/projects',admin,updateProject,{projectId:goals.id,name:'WORKFLOW_GOALS',...dates});
   check((await db.prepare('SELECT goal,success_criteria FROM projects WHERE id=?').bind(goals.id).first()).goal==='주제 목표','workflow: omitted project goal fields preserve populated values');
-  const route=`/tasks?projectId=${goals.id}`;
+  const projectRoute=`/tasks?projectId=${goals.id}`;
+  let route=projectRoute;
   const createTask=renderedAction(await(await request(route,member)).text(),'createTaskAction');
   await form(route,member,createTask,{projectId:goals.id,title:'GOAL_CARD',deliverable:'파일과 링크',definitionOfDone:'두 자료를 확인',reviewRequired:'1',...dates});
   const card=await db.prepare("SELECT * FROM tasks WHERE title='GOAL_CARD'").first();
+  route=`${projectRoute}&taskId=${card.id}`;
   check(card.deliverable==='파일과 링크'&&card.definition_of_done==='두 자료를 확인'&&card.review_required===1,'workflow: card expected result, done criteria and review choice persist');
   const view=await(await request(route,actorCookies.guest)).text();
   check(view.includes('주제 목표')&&view.includes('성공 기준')&&view.includes('파일과 링크')&&view.includes('두 자료를 확인'),'workflow: guest can read permitted goal fields');
@@ -133,8 +136,8 @@ export async function verifyTeamWorkflow(argumentsContext) {
   await form(route,member,createTask,{projectId:goals.id,title:'WORKFLOW_ROLLBACK',...dates});
   check(!(await db.prepare("SELECT id FROM tasks WHERE title='WORKFLOW_ROLLBACK'").first()),'workflow: history failure rolls back task creation atomically');
   await verifySubmissionRevisionWorkflow({...argumentsContext,form,renderedAction,route,projectId:goals.id,taskId:card.id});
-  await verifySubmissionReviewWorkflow({...argumentsContext,form,renderedAction,route,projectId:goals.id});
-  await verifyPersonalWorkWorkflow({...argumentsContext,form,renderedAction,route,projectId:goals.id});
-  await verifyP1Http({...argumentsContext,form,renderedAction,route,projectId:goals.id});
+  await verifySubmissionReviewWorkflow({...argumentsContext,form,renderedAction,route:projectRoute,projectId:goals.id});
+  await verifyPersonalWorkWorkflow({...argumentsContext,form,renderedAction,route:projectRoute,projectId:goals.id});
+  await verifyP1Http({...argumentsContext,form,renderedAction,route:projectRoute,projectId:goals.id});
 
 }

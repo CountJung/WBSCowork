@@ -2,7 +2,7 @@ import { seedSubmissionRevisionFixtures } from "./seed-submission-revision-fixtu
 import { randomUUID } from "node:crypto";
 /** QLT-011: isolated synthetic writes/reads; never invokes delete, purge, DROP or TRUNCATE. */
 export async function verifySitesQuality({ request, db, bucket, actorCookies, actionOrigin, check }) {
-  const admin = actorCookies.admin, member = actorCookies.member1;
+  const admin = actorCookies.admin, superuser = actorCookies.superuser, member = actorCookies.member1;
   const page = async (route, cookie=member) => (await request(route, cookie)).text();
   const action = (markup, name) => {
     const rendered = [...markup.matchAll(/name="(\$ACTION_ID_[^"]+)"/g)].map(m => m[1]).find(id => id.endsWith(`#${name}`));
@@ -25,22 +25,24 @@ export async function verifySitesQuality({ request, db, bucket, actorCookies, ac
     return response;
   }
   const dates={startDate:'2026-01-01',endDate:'2026-12-31'};
-  let markup=await page('/admin/projects',admin);
+  let markup=await page('/admin/projects',superuser);
   const createProject=action(markup,'createProjectAdminAction'), updateProject=action(markup,'updateProjectAdminAction');
   for (const [startDate,endDate] of [['2026-03-02','2026-03-01'],['2026-02-29','2026-12-31'],['0000-invalid','2026-12-31'],['2026-04-31','2026-12-31']]) {
-    const rejected = await submit('/admin/projects',admin,createProject,{name:'QUALITY_INVALID_PROJECT',startDate,endDate});
+    const rejected = await submit('/admin/projects',superuser,createProject,{name:'QUALITY_INVALID_PROJECT',startDate,endDate});
     check((rejected.headers.get('location') ?? rejected.headers.get('x-action-redirect') ?? '').includes('status=error'),'quality: invalid project reports validation error');
     check(!(await db.prepare("SELECT id FROM projects WHERE name='QUALITY_INVALID_PROJECT'").first()),`quality: bad project dates ${startDate} rejected`);
   }
-  await submit('/admin/projects',admin,createProject,{name:'QUALITY_PROJECT',startDate:'2024-02-29',endDate:'2024-02-29'});
+  await submit('/admin/projects',superuser,createProject,{name:'QUALITY_PROJECT',startDate:'2024-02-29',endDate:'2024-02-29'});
   const project=await db.prepare("SELECT * FROM projects WHERE name='QUALITY_PROJECT'").first();
   check(project?.start_date==='2024-02-29'&&project.end_date==='2024-02-29','quality: same-day leap project accepted');
+  await db.prepare('INSERT INTO project_members(project_id,user_id,active) VALUES(?,4,1)').bind(project.id).run();
   const invalidEdit = await submit('/admin/projects',admin,updateProject,{projectId:project.id,name:'INVALID_EDIT',startDate:'2026-02-30',endDate:'2026-12-31'});
   check((invalidEdit.headers.get('location') ?? invalidEdit.headers.get('x-action-redirect') ?? '').includes('status=error'),'quality: invalid project edit reports validation error');
   check((await db.prepare('SELECT name FROM projects WHERE id=?').bind(project.id).first()).name==='QUALITY_PROJECT','quality: invalid project update leaves original intact');
   await submit('/admin/projects',admin,updateProject,{projectId:project.id,name:'QUALITY_PROJECT_EDITED',...dates});
   check((await db.prepare('SELECT name FROM projects WHERE id=?').bind(project.id).first()).name==='QUALITY_PROJECT_EDITED','quality: valid project update persists through canonical action');
-  const projectId=project.id, route=`/tasks?projectId=${projectId}`;
+  const projectId=project.id, projectRoute=`/tasks?projectId=${projectId}`;
+  let route=projectRoute;
   markup=await page(route); const createTask=action(markup,'createTaskAction');
   for(const [title,parentId]of[['ROOT',''],['CHILD','ROOT'],['GRANDCHILD','CHILD'],['OTHER','']]) {
     const parent=parentId?await db.prepare('SELECT id FROM tasks WHERE project_id=? AND title=?').bind(projectId,parentId).first():null;
@@ -50,6 +52,7 @@ export async function verifySitesQuality({ request, db, bucket, actorCookies, ac
   const root=await task('ROOT'),child=await task('CHILD'),grand=await task('GRANDCHILD'),other=await task('OTHER');
   check(root.depth===0&&child.depth===1&&grand.depth===2,'quality: three-level hierarchy depths');
   check(root.order_index<child.order_index&&child.order_index<grand.order_index&&grand.order_index<other.order_index,'quality: sequential order allocation');
+  route=`${projectRoute}&taskId=${root.id}`;
   markup=await page(route);const updateTask=action(markup,'updateTaskAction');
   for(const parentId of [root.id,grand.id,1]) {
     await submit(route,member,updateTask,{projectId,taskId:root.id,title:'ROOT',parentId,...dates});
@@ -82,6 +85,7 @@ export async function verifySitesQuality({ request, db, bucket, actorCookies, ac
   check(Boolean(accepted)&&(await db.prepare('SELECT COUNT(*) AS n FROM submission_attachments sa JOIN submissions s ON s.id=sa.submission_id WHERE sa.submission_id=? AND sa.revision_number=s.current_revision').bind(accepted.id).first()).n===20,'quality: 20 small attachments accepted');
   await submit(route,member,createSubmission,{...scope,content:'QUALITY_MAX_FILE'},[{name:'max.bin',bytes:Buffer.alloc(20*1024*1024)}]);
   check((await db.prepare("SELECT sa.file_size_bytes AS n FROM submission_attachments sa JOIN submissions s ON sa.submission_id=s.id WHERE s.content='QUALITY_MAX_FILE'").first())?.n===20*1024*1024,'quality: exact 20MiB accepted');
+  route=`${projectRoute}&taskId=${root.id}&submissionId=${accepted.id}`;
   const updateSubmission=action(await page(route),'updateSubmissionAction');
   await submit(route,member,updateSubmission,{...scope,submissionId:accepted.id,content:'QUALITY_20_FILES_EDITED'},[{name:'edit.txt',bytes:'edited'}]);
   check((await db.prepare('SELECT content FROM submissions WHERE id=?').bind(accepted.id).first()).content==='QUALITY_20_FILES_EDITED'&&(await db.prepare('SELECT COUNT(*) AS n FROM submission_attachments sa JOIN submissions s ON s.id=sa.submission_id WHERE sa.submission_id=? AND sa.revision_number=s.current_revision').bind(accepted.id).first()).n===21,'quality: valid submission edit adds a file and preserves earlier attachments');
@@ -107,18 +111,19 @@ export async function verifySitesQuality({ request, db, bucket, actorCookies, ac
       }
     }
   }
-  const roleAction=action(await page('/admin/users',admin),'updateUserRoleAction');
+  const roleAction=action(await page('/admin/users',superuser),'updateUserRoleAction');
   await db.prepare("INSERT INTO users(id,email,name,role) VALUES(100,'quality-role@example.test','Synthetic target','guest')").run();
   const role=async (id=100)=>(await db.prepare('SELECT role FROM users WHERE id=?').bind(id).first())?.role;
   for(const actor of [undefined,actorCookies.guest,member]) {
     await submit('/admin/users',actor,roleAction,{userId:100,role:'member'});
     check(await role()==='guest','quality: anonymous/guest/member role mutation denied');
   }
-  for(const next of ['member','guest']) {await submit('/admin/users',admin,roleAction,{userId:100,role:next});check(await role()===next,`quality: admin assigns ${next}`);}
+  for(const next of ['member','guest']) {await submit('/admin/users',admin,roleAction,{userId:100,role:next});check(await role()==='guest',`quality: administrator cannot assign ${next} without SU authority`);}
   for(const next of ['admin','owner','']) {await submit('/admin/users',admin,roleAction,{userId:100,role:next});check(await role()==='guest',`quality: admin rejects forged role ${next}`);}
+  for(const next of ['owner','']) {await submit('/admin/users',superuser,roleAction,{userId:100,role:next});check(await role()==='guest',`quality: SU rejects invalid role ${next}`);}
   for(const next of ['admin','member','guest']) {await submit('/admin/users',actorCookies.superuser,roleAction,{userId:100,role:next});check(await role()===next,`quality: superuser assigns ${next} to synthetic target`);}
   for(const id of ['-1','invalid','999999','5']) {
-    await submit('/admin/users',admin,roleAction,{userId:id,role:'guest'});
+    await submit('/admin/users',superuser,roleAction,{userId:id,role:'guest'});
     check(await role()==='guest'&&await role(5)==='admin',`quality: invalid/missing/protected user ${id} unchanged`);
   }
 }

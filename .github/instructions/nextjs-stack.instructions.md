@@ -57,8 +57,6 @@ Apply the repository-wide guidance from ../copilot-instructions.md to all applic
 
 ## Role and Visibility Rules
 
-- Use `canAccessAdminPanel(role, isSuperuser)` from `src/entities/user` to guard admin pages; add a narrower superuser check for `/admin/database`, `/admin/logs`, and `/admin/settings`.
-- Use `canManageAllSubmissions(role, isSuperuser)` to determine if a user can see private submissions.
-- Pass `SubmissionVisibilityFilter` from `src/entities/submission` when listing submissions.
-- `/admin/users` allows admin and superuser sessions, but an admin may assign only `guest`/`member`; `/admin/database`, `/admin/logs`, and `/admin/settings` remain superuser-only.
+- Follow [AGENTS](../../AGENTS.md#항상-지킬-경계) and the canonical [authorization contract](../../docs/ARCHITECTURE.md#권한-정책). Role helpers are candidates; each server path must also resolve the current DB identity/project scope and resource visibility/ownership.
+- Pass `SubmissionVisibilityFilter` with the current viewer identity when listing submissions. Project membership never promotes a global role or grants private access by itself.
 - All sub-documents live under `/docs/`. `docs/PROJECT_MAP.md` maps the code; `docs/HARNESS_MAP.md` holds the command harness.

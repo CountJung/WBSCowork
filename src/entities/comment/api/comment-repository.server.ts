@@ -1,3 +1,5 @@
+import {getRuntimeEnv} from "@/src/shared/server/runtime-env/index.server";
+import {projectTaskAccessGuard,projectVisibilityViewer,projectPrivateReadGuard,type ProjectViewer} from "@/src/shared/server/project-scope/index.server";
 import { getDatabasePool } from "@/src/shared/server/database/index.server";
 import { buildIdScopeClause, isEmptyIdScope, splitIdScope, type IdScope } from "@/src/shared/server/query-scope/index.server";
 import { mapCommentRow, type Comment, type CommentRow } from "../model/comment";
@@ -11,6 +13,7 @@ export type CommentVisibilityFilter = {
 
 export type CreateCommentInput = {
   submissionId: number;
+  actor?:ProjectViewer;
   authorId: number;
   content: string;
   /** The current revision selected by the action; a stale revision is rejected. */
@@ -19,6 +22,7 @@ export type CreateCommentInput = {
 
 export type UpdateCommentInput = {
   id: number;
+  actor?:ProjectViewer;
   content: string;
 };
 
@@ -26,6 +30,16 @@ export type CommentRevisionPageOptions = {
   limit?: number;
   offset?: number;
 };
+
+
+function commentWriteGuard(actor:ProjectViewer|undefined,authorExpression:string,create=false){
+  if(!actor)return {sql:'1=1',params:[] as unknown[]};
+  if(!Number.isSafeInteger(actor.userId)||Number(actor.userId)<1)throw new Error('현재 사용자를 확인할 수 없습니다.');
+  const manager=projectPrivateReadGuard(actor,"comment_override.task_id");
+  const privileged=`EXISTS(SELECT 1 FROM submissions comment_override WHERE comment_override.id=comments.submission_id AND ${manager.sql})`;
+  return {sql:`EXISTS(SELECT 1 FROM users writer WHERE writer.id=? AND (writer.role IN ('member','admin') OR (?=1 AND LOWER(writer.email)=?))${create?'':` AND (${authorExpression}=writer.id OR ${privileged})`})`,
+    params:[actor.userId,actor.isSuperuser?1:0,getRuntimeEnv().auth.superuserEmail??'',...(create?[]:manager.params)]};
+}
 
 function normalizeContent(content: string) {
   const normalizedContent = content.trim();
@@ -58,7 +72,7 @@ const commentVisibilityJoins = `
     AND revision.revision_number = COALESCE(comments.revision_number, 1)`;
 
 function buildCommentVisibilityWhere(filter: CommentVisibilityFilter): { clause: string; params: unknown[] } {
-  if (filter.canSeeAll) return { clause: "", params: [] };
+  const binding=projectTaskAccessGuard(projectVisibilityViewer(filter),"submissions.task_id");
   const ownerConditions: string[] = [];
   const params: unknown[] = [];
   if (filter.viewerUserId) {
@@ -71,9 +85,10 @@ function buildCommentVisibilityWhere(filter: CommentVisibilityFilter): { clause:
     params.push(viewerEmail);
   }
   const publicVersions = "(submissions.visibility = 'public' AND revision.visibility = 'public')";
+  if(filter.canSeeAll){const administrator=projectPrivateReadGuard(projectVisibilityViewer(filter),"submissions.task_id");ownerConditions.push(administrator.sql);params.push(...administrator.params);}
   return {
-    clause: `AND (${[publicVersions, ...ownerConditions].join(" OR ")})`,
-    params,
+    clause: `AND (${[publicVersions, ...ownerConditions].join(" OR ")}) AND ${binding.sql}`,
+    params:[...params,...binding.params],
   };
 }
 
@@ -171,11 +186,14 @@ export async function listCommentsBySubmissionRevision(
 export async function createComment(input: CreateCommentInput): Promise<Comment> {
   if (input.revisionNumber !== undefined) validateRevisionNumber(input.revisionNumber);
   await ensureAuthorExists(input.authorId);
+  if(input.actor&&input.actor.userId!==input.authorId)throw new Error("댓글 작성자와 현재 사용자가 일치하지 않습니다.");
+  const writer=commentWriteGuard(input.actor,"",true);
+  const binding=projectTaskAccessGuard(input.actor??{},"submissions.task_id");
   const result = (await getDatabasePool().query(
     `INSERT INTO comments (submission_id, revision_number, author_id, content)
      SELECT id, current_revision, ?, ? FROM submissions
-     WHERE id = ? ${input.revisionNumber === undefined ? "" : "AND current_revision = ?"}`,
-    [input.authorId, normalizeContent(input.content), input.submissionId,
+     WHERE id = ? AND ${binding.sql} AND ${writer.sql} ${input.revisionNumber === undefined ? "" : "AND current_revision = ?"}`,
+    [input.authorId, normalizeContent(input.content), input.submissionId,...binding.params,...writer.params,
       ...(input.revisionNumber === undefined ? [] : [input.revisionNumber])],
   )) as { insertId: number; affectedRows: number };
   if (Number(result.affectedRows) !== 1) {
@@ -189,15 +207,21 @@ export async function createComment(input: CreateCommentInput): Promise<Comment>
 export async function updateComment(input: UpdateCommentInput): Promise<Comment> {
   const existingComment = await getCommentById(input.id);
   if (!existingComment) throw new Error("수정할 댓글을 찾을 수 없습니다.");
-  await getDatabasePool().query("UPDATE comments SET content = ? WHERE id = ?", [normalizeContent(input.content), input.id]);
+  const binding=projectTaskAccessGuard(input.actor??{},"write_parent.task_id");
+  const writer=commentWriteGuard(input.actor,"comments.author_id");
+  const result=await getDatabasePool().query(`UPDATE comments SET content=? WHERE id=? AND ${writer.sql} AND EXISTS(SELECT 1 FROM submissions write_parent WHERE write_parent.id=comments.submission_id AND ${binding.sql})`,[normalizeContent(input.content),input.id,...writer.params,...binding.params]) as {affectedRows:number};
+  if(Number(result.affectedRows)!==1)throw new Error("댓글이 없거나 접근 권한이 변경되었습니다.");
   const updatedComment = await getCommentById(input.id);
   if (!updatedComment) throw new Error("댓글을 수정했지만 결과를 다시 불러오지 못했습니다.");
   return updatedComment;
 }
 
-export async function deleteComment(commentId: number): Promise<Comment> {
+export async function deleteComment(commentId: number,actor?:ProjectViewer): Promise<Comment> {
   const existingComment = await getCommentById(commentId);
   if (!existingComment) throw new Error("삭제할 댓글을 찾을 수 없습니다.");
-  await getDatabasePool().query("DELETE FROM comments WHERE id = ?", [commentId]);
+  const binding=projectTaskAccessGuard(actor??{},"write_parent.task_id");
+  const writer=commentWriteGuard(actor,"comments.author_id");
+  const result=await getDatabasePool().query(`DELETE FROM comments WHERE id=? AND ${writer.sql} AND EXISTS(SELECT 1 FROM submissions write_parent WHERE write_parent.id=comments.submission_id AND ${binding.sql})`,[commentId,...writer.params,...binding.params]) as {affectedRows:number};
+  if(Number(result.affectedRows)!==1)throw new Error("댓글이 없거나 접근 권한이 변경되었습니다.");
   return existingComment;
 }

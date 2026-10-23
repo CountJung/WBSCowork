@@ -37,7 +37,7 @@ export async function verifyBugLifecycleHttp({
   const active = `/bugs/${id}`,
     trash = `/admin/bugs/trash/${id}`;
   const lifecycle = findAction(
-    await html(active, admin),
+    await html(active, su),
     "changeBugLifecycleAction",
   );
   check(
@@ -55,6 +55,7 @@ export async function verifyBugLifecycleHttp({
   });
   for (const [name, cookie] of [
     ["guest", guest],
+    ["project admin", admin],
     ["member", actorCookies.member1],
     ["anonymous", undefined],
   ]) {
@@ -64,36 +65,36 @@ export async function verifyBugLifecycleHttp({
       `${name}: direct lifecycle action denied despite forged privilege fields`,
     );
   }
-  await submit(active, admin, lifecycle, {
+  await submit(active, su, lifecycle, {
     ...fields(),
     lifecycleAction: "purge",
   });
   check((await row()).version === 3, "invalid lifecycle operation rejected");
-  await submit(active, admin, lifecycle, {
+  await submit(active, su, lifecycle, {
     ...fields(),
     body: "x".repeat(4001),
   });
   check((await row()).version === 3, "overlong verification note rejected");
   await submit(
     active,
-    admin,
+    su,
     lifecycle,
     fields(),
     "https://cross-origin.invalid",
   );
   check((await row()).version === 3, "cross-origin verification rejected");
   const verifyFields = fields();
-  await submit(active, admin, lifecycle, verifyFields);
-  await submit(active, admin, lifecycle, verifyFields);
+  await submit(active, su, lifecycle, verifyFields);
+  await submit(active, su, lifecycle, verifyFields);
   check(
     (await row()).version === 4 && Boolean((await row()).verified_at),
-    "normal admin verifies once with idempotent repeat",
+    "superuser verifies once with idempotent repeat",
   );
   check(
     (await html(active, guest)).includes("Synthetic verification"),
     "author sees preserved verification result",
   );
-  await submit(active, admin, lifecycle, {
+  await submit(active, su, lifecycle, {
     ...fields(),
     version: 4,
     lifecycleAction: "trash",
@@ -101,7 +102,7 @@ export async function verifyBugLifecycleHttp({
   });
   check(
     (await row()).version === 5 && Boolean((await row()).trashed_at),
-    "normal admin moves verified report to recoverable trash",
+    "superuser moves verified report to recoverable trash",
   );
   for (const [name, cookie] of [
     ["guest", guest],
@@ -126,18 +127,18 @@ export async function verifyBugLifecycleHttp({
     "anonymous trash route requires login",
   );
   check(
-    !(await html("/admin/bugs?q=BUG_PRIVATE_GUEST_ONE", admin)).includes(
+    !(await html("/admin/bugs?q=BUG_PRIVATE_GUEST_ONE", su)).includes(
       "BUG_PRIVATE_GUEST_ONE</",
     ),
-    "admin active queue excludes trash",
+    "superuser active queue excludes trash",
   );
   const adminTrash = await html(trash, admin),
     suTrash = await html(trash, su),
     purge = findAction(suTrash, "purgeBugReportAction");
   check(
-    adminTrash.includes("Actual private result") &&
+    !adminTrash.includes("Actual private result") &&
       !findAction(adminTrash, "purgeBugReportAction"),
-    "normal admin can inspect/restore trash but receives no purge action form",
+    "ordinary project admin cannot inspect trash or receive purge controls",
   );
   check(
     Boolean(purge) && suTrash.includes("앱에서 복구할 수 없습니다"),
@@ -189,7 +190,7 @@ export async function verifyBugLifecycleHttp({
     "same admin cookie cannot restore after role downgrade",
   );
   await db.prepare("UPDATE users SET role='admin' WHERE id=4").run();
-  await submit(trash, admin, lifecycle, {
+  await submit(trash, su, lifecycle, {
     ...fields(),
     version: 5,
     lifecycleAction: "restore",
@@ -199,14 +200,14 @@ export async function verifyBugLifecycleHttp({
     (await row()).version === 6 &&
       (await row()).trashed_at === null &&
       (await html(active, guest)).includes("Synthetic restore"),
-    "admin restore returns unchanged original and preserved history to author",
+    "superuser restore returns unchanged original and preserved history to author",
   );
   await submit(trash, su, purge, purgeFields);
   check(
     (await row()).version === 6,
     "pre-restore purge confirmation cannot delete restored record",
   );
-  await submit(active, admin, lifecycle, {
+  await submit(active, su, lifecycle, {
     ...fields(),
     version: 6,
     lifecycleAction: "trash",

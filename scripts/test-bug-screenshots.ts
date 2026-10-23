@@ -12,14 +12,14 @@ import { validateScreenshotBytes, validateScreenshotSelection } from "../src/ent
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jf9sAAAAASUVORK5CYII=","base64");
 const file = (name="합성.png")=>new File([png],name,{type:"image/png"});
 const input={title:"Synthetic screenshot report", reproduction:"steps",expected:"expected",actual:"actual",page_path:"/bugs"};
-const own={userId:1,canReview:false}, other={userId:2,canReview:false}, admin={userId:3,canReview:true};
+const own={userId:1,canReview:false}, other={userId:2,canReview:false}, superuser={userId:3,canReview:true};
 const mf = new Miniflare({cf:false,modules:true,script:"export default {fetch(){return new Response('test')}}",compatibilityDate:"2026-05-15",d1Databases:{DB:"bug-screenshots-test"},r2Buckets:{ATTACHMENTS:"bug-screenshots-files"}});
 let checks=0;
 function check(ok:unknown,message:string){assert.ok(ok,message);checks++;console.log(`PASS ${message}`);}
 try {
  const db=await mf.getD1Database("DB"),bucket=await mf.getR2Bucket("ATTACHMENTS");
  for(const name of (await readdir("drizzle")).filter(f=>f.endsWith(".sql")).sort()) for(const sql of (await readFile(`drizzle/${name}`,"utf8")).split("--> statement-breakpoint").map(s=>s.trim()).filter(Boolean))await db.prepare(sql).run();
- await db.prepare("INSERT INTO users(id,email,name,role) VALUES(1,'guest@example.test','guest','guest'),(2,'member@example.test','member','member'),(3,'admin@example.test','admin','admin')").run();
+ await db.prepare("INSERT INTO users(id,email,name,role) VALUES(1,'guest@example.test','guest','guest'),(2,'member@example.test','member','member'),(3,'superuser@example.test','superuser','admin')").run();
  const bindings={DB:db as unknown as D1Database,ATTACHMENTS:bucket as unknown as R2Bucket};
  await runWithHostedBindings(bindings,async()=>{
   await validateScreenshotBytes([file()]);checks++;
@@ -35,7 +35,7 @@ try {
   const screenshots=await listBugScreenshots(id,own);
   check(screenshots.length===3&&Boolean(await getBugReport(id,own)),"report text and three screenshots commit together");
   check((await listBugScreenshots(id,other)).length===0&&(await getBugScreenshot(screenshots[0].id,other))===null,"other user's metadata and bytes lookup denied");
-  check((await listBugScreenshots(id,admin)).length===3&&Boolean(await getBugScreenshot(screenshots[0].id,admin)),"administrator retains authorized screenshot access");
+  check((await listBugScreenshots(id,superuser)).length===3&&Boolean(await getBugScreenshot(screenshots[0].id,superuser)),"superuser retains authorized screenshot access");
   check((await listBugScreenshots(id,own)).length===3&&Boolean(await bucket.head(stored[0].filePath)),"fresh database read retains screenshot metadata and R2 bytes");
   await assert.rejects(deleteUnreferencedObject(stored[0].filePath));checks++;
   const replay=await storeBugScreenshots([file(),file("second.png"),file("third.png")],own);
@@ -46,7 +46,7 @@ try {
   check((await getBugReport(id,own))?.title===input.title,"conflicting replay preserves immutable original");
   await db.prepare("UPDATE bug_reports SET trashed_at=CURRENT_TIMESTAMP WHERE id=?").bind(id).run();
   check((await getBugScreenshot(screenshots[0].id,own))===null&&(await listBugScreenshots(id,own)).length===0,"trash hides attachments from reporter");
-  check(Boolean(await getBugScreenshot(screenshots[0].id,admin))&&(await listBugScreenshots(id,admin,true)).length===3,"reviewer can inspect screenshots in trash");
+  check(Boolean(await getBugScreenshot(screenshots[0].id,superuser))&&(await listBugScreenshots(id,superuser,true)).length===3,"reviewer can inspect screenshots in trash");
   await db.prepare("UPDATE bug_reports SET trashed_at=NULL WHERE id=?").bind(id).run();
   const rollbackToken=randomUUID(),rollbackFiles=await storeBugScreenshots([file()],own);
   await db.prepare("CREATE TRIGGER synthetic_bug_event_failure BEFORE INSERT ON bug_report_events BEGIN SELECT RAISE(ABORT,'synthetic rollback'); END").run();

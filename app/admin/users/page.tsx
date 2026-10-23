@@ -11,10 +11,10 @@ import {
   Typography,
 } from "@mui/material";
 import { redirect } from "next/navigation";
-import { getAuthSession, getSignInPath, isSuperuserEmail, listAllUsers } from "@/src/entities/user/index.server";
+import { getAuthSession, getSignInPath, getUserByEmail, isSuperuserEmail, listAllUsers } from "@/src/entities/user/index.server";
 import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
-import { canAccessAdminPanel, getUserRoleLabel, manageableUserRoles, adminAssignableRoles } from "@/src/entities/user";
+import { getUserRoleLabel, manageableUserRoles } from "@/src/entities/user";
 import { updateUserRoleAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -51,9 +51,8 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
     redirect(getSignInPath("/admin/users"));
   }
 
-  if (!canAccessAdminPanel(session.user.role, session.user.isSuperuser)) {
-    redirect("/");
-  }
+  const actor=session.user.email?await getUserByEmail(session.user.email).catch(()=>null):null;
+  if (!actor||!session.user.isSuperuser||!isSuperuserEmail(actor.email)) redirect("/");
 
   const runtimeEnv = getRuntimeEnv();
   const params = await searchParams;
@@ -96,8 +95,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   }
 
   const users = await listAllUsers();
-  const actorIsSuperuser = session.user.isSuperuser;
-  const assignableRoles = actorIsSuperuser ? manageableUserRoles : adminAssignableRoles;
+  const assignableRoles = manageableUserRoles;
   const superuserCount = users.filter((user) => isSuperuserEmail(user.email)).length;
   const googleLinkedCount = users.filter((user) => Boolean(user.googleId)).length;
   const loggedInCount = users.filter((user) => Boolean(user.lastLoginAt)).length;
@@ -112,9 +110,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
           <Stack spacing={1}>
             <Typography variant="h3">사용자 관리</Typography>
             <Typography variant="body1" color="text.secondary">
-              {actorIsSuperuser
-                ? "Google 로그인으로 동기화된 사용자 목록을 확인하고 관리자/일반사용자/게스트 권한을 제어할 수 있습니다."
-                : "사용자 목록을 확인하고 일반사용자 이하 권한(일반사용자/게스트)을 부여할 수 있습니다. 관리자 권한 부여는 슈퍼관리자만 가능합니다."}
+              Google 로그인으로 동기화된 사용자 목록을 확인하고 관리자/일반사용자/게스트 권한을 제어할 수 있습니다.
             </Typography>
           </Stack>
         </Stack>
@@ -132,7 +128,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
               env에 설정된 SUPERUSER_EMAIL 계정은 슈퍼관리자로 고정되며, 새 Google 로그인 사용자는 기본적으로 게스트로 등록됩니다. 로그인 시 Google 식별자, 프로필 이미지, 최근 로그인 시각도 함께 동기화합니다.
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              관리자(admin)는 관리 개요·프로젝트·사용자 관리와 모든 비공개 제출물에 접근할 수 있습니다. 로그·세팅·DB 관리는 슈퍼관리자 전용입니다. 일반사용자는 공개 및 본인 비공개 제출물을 조회하고 작성할 수 있으며, 게스트는 조회만 가능합니다.
+              관리자(admin)는 명시적으로 배정된 프로젝트를 관리합니다. 전역 사용자 역할·운영 설정·버그 리뷰는 슈퍼관리자만 관리하며, 프로젝트 참여와 비공개 제출물의 조회 권한은 각각의 접근 규칙을 따릅니다.
             </Typography>
             <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
               <Chip label={`전체 사용자 ${users.length}`} color="primary" />
@@ -153,10 +149,10 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
               const roleDescription = isSuperuser
                 ? "env 기반 슈퍼관리자 계정입니다. 관리자 전용 페이지와 시스템 설정에 접근할 수 있습니다."
                 : user.role === "admin"
-                  ? "관리 개요와 사용자 관리에 접근하고 모든 비공개 제출물을 확인할 수 있는 관리자입니다. 일반사용자 이하 권한 부여가 가능합니다."
+                  ? "슈퍼관리자가 명시적으로 배정한 프로젝트를 관리합니다. 전역 사용자 역할과 운영 설정은 변경할 수 없습니다."
                   : user.role === "member"
-                    ? "공개 제출물 읽기와 작성이 가능한 일반사용자입니다."
-                    : "공개 제출물만 읽을 수 있는 권한 대기 상태의 게스트입니다.";
+                    ? "접근이 허용된 프로젝트에서 업무와 제출물을 작성할 수 있는 일반사용자입니다."
+                    : "접근이 허용된 프로젝트를 읽을 수 있는 권한 대기 상태의 게스트입니다.";
 
               return (
                 <Paper key={user.id} elevation={0} sx={{ p: 3, borderRadius: 4 }}>

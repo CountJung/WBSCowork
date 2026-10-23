@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAuthSession, getUserByEmail, getSignInPath } from "@/src/entities/user/index.server";
 import { parsePersonalWorkReturnTo } from "@/src/entities/task";
+import { parseTaskTeamFilter } from "@/src/shared/lib/task-context";
 import { canWriteTaskContent } from "@/src/entities/user";
 import { requestSubmissionReview, decideSubmissionReview, cancelOrReopenSubmissionReview } from "@/src/entities/submission/index.server";
 
@@ -50,6 +51,8 @@ async function changeReview(form: FormData, action: "request" | "decide" | "canc
   const query = new URLSearchParams({revision:String(revision),review:saved?"saved":"error"});
   const returnTo=parsePersonalWorkReturnTo(form.get("returnTo"));
   if(returnTo)query.set("returnTo",returnTo);
+  const teamId=parseTaskTeamFilter(form.get("teamId"));
+  if(teamId)query.set("teamId",teamId);
   redirect(id ? `/submissions/${id}?${query}` : "/tasks?status=error&message=검토%20요청을%20확인해%20주세요.");
 }
 

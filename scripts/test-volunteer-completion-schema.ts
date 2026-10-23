@@ -49,13 +49,14 @@ async function verify(query:Query,label:string,seededLeader:boolean){
 }
 const files=(await readdir('drizzle')).filter(file=>file.endsWith('.sql')).sort();
 const statements=await Promise.all(files.map(async file=>(await readFile(`drizzle/${file}`,'utf8')).split('--> statement-breakpoint').map(sql=>sql.trim()).filter(Boolean)));
-const upgrade=statements.at(-1)!;
-check(files.at(-1)!.startsWith('0015_')&&!upgrade.some(sql=>/DROP TABLE|DELETE FROM|foreign_keys=OFF/i.test(sql)),'0015 is additive without old-table replacement or FK disabling');
+const completionIndex=files.findIndex(file=>file.startsWith('0015_'));
+const upgrade=statements[completionIndex]!;
+check(completionIndex>=0&&!upgrade.some(sql=>/DROP TABLE|DELETE FROM|foreign_keys=OFF/i.test(sql)),'0015 is additive without old-table replacement or FK disabling');
 async function d1(){
   const mf=new Miniflare({host:'127.0.0.1',cf:false,modules:true,script:"export default {fetch(){return new Response('synthetic')}}",compatibilityDate:'2026-05-15',d1Databases:{EXISTING:'v11-existing-test',FRESH:'v11-fresh-test',DUPLICATE:'v11-duplicate-test'}});
   try{for(const scenario of ['EXISTING','FRESH','DUPLICATE'] as const){
     const db=await mf.getD1Database(scenario);const query:Query=async(sql,params=[])=>{const result=await db.prepare(sql).bind(...params).all<Row>();return result.results;};
-    for(const entries of scenario==='FRESH'?statements:statements.slice(0,-1))for(const sql of entries)await db.prepare(sql).run();
+    for(const entries of scenario==='FRESH'?statements:statements.slice(0,completionIndex))for(const sql of entries)await db.prepare(sql).run();
     await seed(query,scenario==='DUPLICATE');const before=await snapshot(query);
     if(scenario==='DUPLICATE'){
       await assert.rejects(db.batch(upgrade.map(sql=>db.prepare(sql))));checks++;

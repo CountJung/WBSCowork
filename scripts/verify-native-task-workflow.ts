@@ -16,6 +16,7 @@ export async function verifyNativeTaskWorkflow(database:string,check:(value:unkn
   try {
     await db.query("INSERT INTO users(id,email,name,role) VALUES(1,'guest@workflow.test','guest','guest'),(2,'owner@workflow.test','owner','member'),(3,'other@workflow.test','other','member'),(4,'admin@workflow.test','admin','admin')");
     await db.query("INSERT INTO projects(id,name,start_date,end_date) VALUES(1,'Synthetic execution','2026-01-01','2026-12-31')");
+    await db.query("INSERT INTO project_members(project_id,user_id) VALUES(1,4)");
     const input={projectId:1,title:'Synthetic card',startDate:'2026-01-01',endDate:'2026-12-31',assigneeId:2,deliverable:'문서',definitionOfDone:'내용 확인',actor:owner,token:randomUUID()};
     const [first,replay]=await Promise.all([createTask(input),createTask(input)]);
     check(first.id===replay.id&&(await listTaskEvents(first.id)).length===1,'native task creation replay has one parent and history');

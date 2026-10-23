@@ -34,7 +34,7 @@ Synology scheduler/cron
   → deliveryMode=none (v1)
   → run ledger + redacted structured log
 
-admin/superuser UI
+현재 프로젝트 범위의 admin/SU UI(미구현)
   → root app page에서 동일 use-case 직접 호출(내부 HTTP 호출 금지)
   → 권한 검사 후 artifact download route
 ```
@@ -84,12 +84,12 @@ FSD 구현은 `docs/ARCHITECTURE.md#fsd-의존-경계`의 `shared → entities �
 
 ## 5. visibility·권한 계약
 
-- manual preview/export, schedule CRUD, 전체 run history는 `canAccessAdminPanel(role,isSuperuser)`의 admin/superuser만 허용한다.
+- 이 절은 미구현 digest의 후보 계약이며 [현재 권한 정책](ARCHITECTURE.md#권한-정책)을 완화하지 않는다. manual preview/export·schedule/run 조회의 역할 helper는 후보 판정일 뿐이며 SU 전역/현재 지정 프로젝트 admin scope와 자원 가시성을 SQL에서 교차해야 한다.
 - machine route는 NextAuth cookie를 쓰지 않는다. `DIGEST_SCHEDULER_TOKEN` 미설정/빈 값이면 503으로 비활성화하고, bearer token은 길이 차이를 안전하게 처리한 constant-time 비교 후 불일치는 401이다.
 - `public_only`: public submission 및 그 submission에 속한 댓글/첨부 metadata만 포함한다.
-- `owner_scope`라는 이름은 project owner가 없는 현재 모델에서 오해를 부르므로 목표 값은 `requester_scope`로 한다. schedule의 `created_by`를 기존 `SubmissionVisibilityFilter`의 viewer로 사용해 public + 본인 private를 포함하며, admin/superuser의 `canManageAllSubmissions` 규칙도 그대로 적용한다.
-- `requester_scope` artifact는 생성 요청자와 `canManageAllSubmissions` 사용자만 다운로드한다. `public_only`도 인증된 admin/superuser report UI 범위로 시작하며 공개 URL로 노출하지 않는다.
-- 첨부 binary는 embed하지 않는다. audience query를 통과한 첨부의 허용 metadata만 표시한다. 기존 attachment repository의 project 단위 조회는 visibility filter를 받지 않으므로 그대로 재사용하지 말고 submission visibility와 join한 전용 bounded query를 구현/테스트한다.
+- `owner_scope`라는 이름은 project owner가 없는 현재 모델에서 오해를 부르므로 목표 값은 `requester_scope`로 한다. schedule의 `created_by`를 기존 `SubmissionVisibilityFilter`의 viewer로 사용해 public + 본인 private를 포함하며, 관리자 예외는 현재 지정 프로젝트 admin 또는 SU만 적용한다. `canManageAllSubmissions`만으로 전역 private 범위를 만들지 않는다.
+- artifact는 요청자/역할 helper만으로 다운로드를 허용하지 않는다. 현재 project scope·원본 가시성 재인가와 소속 해제 후 과거 자료 차단 계약을 D0에서 반영한 뒤 활성화한다. `public_only`도 익명 공개나 전역 admin 예외를 만들지 않는다.
+- 첨부 binary는 embed하지 않는다. audience query를 통과한 첨부의 허용 metadata만 표시한다. 기존 attachment repository의 `IdScope`와 현재 viewer/project guard를 확인하고 digest에서도 submission visibility와 교차하는 bounded query를 구현/테스트한다.
 - token, private body, recipient 원문을 로그/error_message에 남기지 않는다. `storage_key`는 DB 값도 신뢰하지 않고 `REPORT_DIR` resolve/prefix 검사 후 사용한다.
 
 ## 6. idempotency·상태·복구 계약
@@ -160,7 +160,7 @@ project/timezone/formats/audience는 enabled schedule row에서 읽어 payload �
 - **검증**: schema validation, `[start,end)` 경계, UTC/DATE/DST fixture, `public_only`에 private 본문/댓글/첨부가 0건, 현재 없는 지표가 schema에 없음.
 
 ### D1 — manual JSON preview
-- admin/superuser preview만 구현하며 파일/schedule/delivery는 없다.
+- 현재 project scope 안의 관리자/SU preview만 구현하며 파일/schedule/delivery는 없다.
 - **검증**: 역할×audience matrix, bounded query/row cap, attachment visibility join, representative `EXPLAIN`, lint/build.
 
 ### D2 — DOCX/PPTX export/download

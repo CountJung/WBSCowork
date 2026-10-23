@@ -18,8 +18,8 @@ function Submit({ children, name, value }: { children: string; name?: string; va
   const { pending } = useFormStatus();
   return <Button type="submit" name={name} value={value} disabled={pending} variant="contained">{pending ? "저장 중…" : children}</Button>;
 }
-export default function SubmissionReviewPanel({ context, submissionId, revisionNumber, result, returnTo, requestAction, decideAction, cancelAction }: { context: Context; submissionId: number; revisionNumber: number; result?: string; returnTo?:string } & ReviewActions) {
-  const fields = <><OperationFields context={context} submissionId={submissionId} revisionNumber={revisionNumber}/><input type="hidden" name="returnTo" value={returnTo??""}/></>;
+export default function SubmissionReviewPanel({ context, submissionId, revisionNumber, result, returnTo, teamId, requestAction, decideAction, cancelAction }: { context: Context; submissionId: number; revisionNumber: number; result?: string; returnTo?:string;teamId?:string } & ReviewActions) {
+  const fields = <><OperationFields context={context} submissionId={submissionId} revisionNumber={revisionNumber}/><input type="hidden" name="returnTo" value={returnTo??""}/><input type="hidden" name="teamId" value={teamId??""}/></>;
   return <Paper sx={{ p: 3 }}><Stack spacing={2}>
     <Typography variant="h6">이 버전의 업무 검토</Typography>
     {result === "saved" ? <Alert severity="success">검토 상태와 이력을 저장했습니다.</Alert> : null}

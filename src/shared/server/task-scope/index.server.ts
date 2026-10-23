@@ -1,3 +1,4 @@
+import { projectAccessForCurrentUser,projectManagementForCurrentUser } from "@/src/shared/server/project-scope/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 
 export type ScopeActor = { userId: number; isSuperuser: boolean };
@@ -19,31 +20,36 @@ export function currentTeamLeaderSql(project: string, team: string, user: string
 
 /** Project/team-qualified task management; collaboration keeps its existing member policy. */
 export function taskManagementGuard(actor: ScopeActor, project = "tasks.project_id", team = "tasks.activity_team_id"): SqlGuard {
+  const binding=projectAccessForCurrentUser(project,"scope_actor.id","(?=1 AND LOWER(scope_actor.email)=?)");
+  const management=projectManagementForCurrentUser(project,"scope_actor.id","(?=1 AND LOWER(scope_actor.email)=?)");
   return {sql:`EXISTS(SELECT 1 FROM projects scope_project JOIN users scope_actor ON scope_actor.id=?
-    WHERE scope_project.id=${field(project)} AND (scope_actor.role='admin' OR (?=1 AND LOWER(scope_actor.email)=?)
-    OR (scope_actor.role='member' AND (scope_project.project_type='collaboration' OR (scope_project.project_type='volunteering' AND ${currentTeamLeaderSql(project,team,"scope_actor.id")})))))`,
-    params:[actor.userId,actor.isSuperuser?1:0,superuserEmail()]};
+    WHERE scope_project.id=${field(project)} AND (${management}
+    OR (scope_actor.role='member' AND (scope_project.project_type='collaboration' OR (scope_project.project_type='volunteering' AND ${currentTeamLeaderSql(project,team,"scope_actor.id")})))) AND ${binding})`,
+    params:[actor.userId,actor.isSuperuser?1:0,superuserEmail(),actor.isSuperuser?1:0,superuserEmail()]};
 }
 
 /** Status execution adds the current assignee, but never other collaboration members. */
 export function taskExecutionGuard(actor: ScopeActor, project = "tasks.project_id", team = "tasks.activity_team_id", assignee = "tasks.assignee_id"): SqlGuard {
+  const binding=projectAccessForCurrentUser(project,"scope_actor.id","(?=1 AND LOWER(scope_actor.email)=?)");
+  const management=projectManagementForCurrentUser(project,"scope_actor.id","(?=1 AND LOWER(scope_actor.email)=?)");
   return {sql:`EXISTS(SELECT 1 FROM projects scope_project JOIN users scope_actor ON scope_actor.id=?
-    WHERE scope_project.id=${field(project)} AND (scope_actor.role='admin' OR (?=1 AND LOWER(scope_actor.email)=?)
+    WHERE scope_project.id=${field(project)} AND (${management}
       OR (scope_actor.role='member' AND (
         (scope_project.project_type='volunteering' AND ${currentTeamLeaderSql(project,team,"scope_actor.id")})
         OR (${field(assignee)}=scope_actor.id AND (scope_project.project_type='collaboration' OR (
           EXISTS(SELECT 1 FROM project_members own_pm WHERE own_pm.project_id=${field(project)} AND own_pm.user_id=scope_actor.id AND own_pm.active=1)
           AND (${field(team)} IS NULL OR EXISTS(SELECT 1 FROM activity_team_members own_tm WHERE own_tm.project_id=${field(project)} AND own_tm.team_id=${field(team)} AND own_tm.user_id=scope_actor.id AND own_tm.active=1))
         )))
-      ))))`, params:[actor.userId,actor.isSuperuser?1:0,superuserEmail()]};
+      ))) AND ${binding})`, params:[actor.userId,actor.isSuperuser?1:0,superuserEmail(),actor.isSuperuser?1:0,superuserEmail()]};
 }
 
 /** New volunteer assignments require an active project roster and, when selected, team roster. */
 export function taskAssignmentGuard(project: string, team: string, assignee: string): SqlGuard {
+  const binding=projectAccessForCurrentUser(project,"assigned.id","LOWER(assigned.email)=?");
   return {sql:`(${field(assignee)} IS NULL OR EXISTS(SELECT 1 FROM users assigned JOIN projects assignment_project ON assignment_project.id=${field(project)}
-    WHERE assigned.id=${field(assignee)} AND (assigned.role IN ('member','admin') OR LOWER(assigned.email)=?)
+    WHERE assigned.id=${field(assignee)} AND ${binding} AND (assigned.role='member' OR ${projectManagementForCurrentUser(project,'assigned.id','LOWER(assigned.email)=?')})
       AND (assignment_project.project_type='collaboration' OR (
         EXISTS(SELECT 1 FROM project_members pm WHERE pm.project_id=${field(project)} AND pm.user_id=assigned.id AND pm.active=1)
         AND (${field(team)} IS NULL OR EXISTS(SELECT 1 FROM activity_team_members tm WHERE tm.project_id=${field(project)} AND tm.team_id=${field(team)} AND tm.user_id=assigned.id AND tm.active=1))
-      ))))`,params:[superuserEmail()]};
+      ))))`,params:[superuserEmail(),superuserEmail()]};
 }

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getAuthSession, getUserByEmail, isSuperuserEmail } from "@/src/entities/user/index.server";
-import { canAccessAdminPanel } from "@/src/entities/user";
 import { getBugScreenshot, readBugScreenshot } from "@/src/entities/bug-report/index.server";
 import { attachmentResponseHeaders } from "@/src/shared/lib/attachment-response";
 export async function GET(_request: Request, context: {params:Promise<{screenshotId:string}>}) {
@@ -11,7 +10,7 @@ export async function GET(_request: Request, context: {params:Promise<{screensho
   const user = await getUserByEmail(session.user.email);
   const id = Number((await context.params).screenshotId);
   if (!user || !Number.isSafeInteger(id) || id < 1) return absent();
-  const file = await getBugScreenshot(id,{userId:user.id,canReview:canAccessAdminPanel(user.role,isSuperuserEmail(user.email))});
+  const file = await getBugScreenshot(id,{userId:user.id,canReview:Boolean(session.user.isSuperuser&&isSuperuserEmail(user.email))});
   if (!file) return absent();
   try {
     const stored = await readBugScreenshot(file.file_path);

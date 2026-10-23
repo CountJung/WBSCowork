@@ -43,13 +43,13 @@ try {
       await db.prepare(sql).run();
   await db
     .prepare(
-      "INSERT INTO users(id,email,name,role) VALUES(1,'guest1@example.test','Guest1','guest'),(2,'guest2@example.test','Guest2','guest'),(3,'admin@example.test','Admin','admin')",
+      "INSERT INTO users(id,email,name,role) VALUES(1,'guest1@example.test','Guest1','guest'),(2,'guest2@example.test','Guest2','guest'),(3,'superuser@example.test','Superuser','admin')",
     )
     .run();
   await runWithHostedBindings({ DB: db as unknown as D1Database }, async () => {
     const own = { userId: 1, canReview: false },
       other = { userId: 2, canReview: false },
-      admin = { userId: 3, canReview: true };
+      superuser = { userId: 3, canReview: true };
     const input = {
       title: "PRIVATE_BUG_MARKER",
       reproduction: "Synthetic steps",
@@ -87,8 +87,8 @@ try {
       "detail and history deny cross-user reads",
     );
     check(
-      (await listBugReports(admin)).count === 1,
-      "administrator sees all reports",
+      (await listBugReports(superuser)).count === 1,
+      "superuser sees all reports",
     );
     await assert.rejects(
       appendBugEvent(id, other, randomUUID(), 1, {
@@ -122,7 +122,7 @@ try {
         (await listBugEvents(id, own)).length === 2,
       "repeated note is idempotent and original preserved",
     );
-    await appendBugEvent(id, admin, randomUUID(), 2, {
+    await appendBugEvent(id, superuser, randomUUID(), 2, {
       kind: "review",
       body: "Triaged",
       status: "in_progress",
@@ -133,7 +133,7 @@ try {
     check(
       (await getBugReport(id, own))?.title === input.title &&
         (await getBugReport(id, own))?.reproduction === input.reproduction,
-      "administrator cannot overwrite original report fields",
+      "superuser cannot overwrite original report fields",
     );
     await db
       .prepare(
@@ -141,7 +141,7 @@ try {
       )
       .run();
     await assert.rejects(
-      appendBugEvent(id, admin, randomUUID(), 3, {
+      appendBugEvent(id, superuser, randomUUID(), 3, {
         kind: "review",
         body: "FAIL_HISTORY",
         status: "resolved",
@@ -158,7 +158,7 @@ try {
       "history insertion failure rolls back state atomically",
     );
     const race = await Promise.allSettled([
-      appendBugEvent(id, admin, randomUUID(), 3, {
+      appendBugEvent(id, superuser, randomUUID(), 3, {
         kind: "review",
         body: "first",
         status: "resolved",
@@ -166,7 +166,7 @@ try {
         resolution: "fixed",
         fix_commit: "abcdef1",
       }),
-      appendBugEvent(id, admin, randomUUID(), 3, {
+      appendBugEvent(id, superuser, randomUUID(), 3, {
         kind: "review",
         body: "second",
         status: "closed",
@@ -187,7 +187,7 @@ try {
     const sameToken = randomUUID();
     const beforeSame = (await getBugReport(id, own))!.version;
     await Promise.allSettled([
-      appendBugEvent(id, admin, sameToken, beforeSame, {
+      appendBugEvent(id, superuser, sameToken, beforeSame, {
         kind: "review",
         body: "same token first",
         status: "in_progress",
@@ -195,7 +195,7 @@ try {
         resolution: "",
         fix_commit: "",
       }),
-      appendBugEvent(id, admin, sameToken, beforeSame + 1, {
+      appendBugEvent(id, superuser, sameToken, beforeSame + 1, {
         kind: "review",
         body: "same token second",
         status: "closed",
@@ -247,18 +247,18 @@ try {
       .run();
     await db.prepare("DELETE FROM projects WHERE id=99").run();
     check(
-      Boolean(await getBugReport(id, admin)),
+      Boolean(await getBugReport(id, superuser)),
       "project deletion cannot erase independent bug archive",
     );
     await verifyBugLifecycle(check);
     await db.prepare("DELETE FROM users WHERE id=1").run();
     check(
-      (await getBugReport(id, admin))?.reporter_id === null &&
+      (await getBugReport(id, superuser))?.reporter_id === null &&
         (await getBugReport(id, own)) === null,
       "account removal unlinks reporter and denies orphan author access",
     );
     check(
-      (await listBugEvents(id, admin)).length === 5,
+      (await listBugEvents(id, superuser)).length === 5,
       "history survives account removal without identity cascade",
     );
   });

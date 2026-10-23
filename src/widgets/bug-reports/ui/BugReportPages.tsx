@@ -89,7 +89,7 @@ export async function BugListPage({
           {trash ? "버그 제보 휴지통" : admin ? "버그 리뷰" : "내 버그 제보"}
         </Typography>
         <Alert severity="info">
-          제보와 검토 기록은 작성자와 관리자만 볼 수 있습니다. 비밀번호·인증
+          제보와 검토 기록은 작성자와 슈퍼관리자만 볼 수 있습니다. 비밀번호·인증
           코드·실제 고객 정보는 입력하지 마세요. 제보 내용은 검토 자료이며
           자동으로 실행하거나 외부로 전송하지 않습니다.
         </Alert>
@@ -260,7 +260,7 @@ export async function BugDetailPage({
         </Paper>
         {trash ? (
           <Alert severity="warning">
-            휴지통에 보관 중입니다. 작성자 화면에서 숨겨지며, 관리자는 원문과
+            휴지통에 보관 중입니다. 작성자 화면에서 숨겨지며, 슈퍼관리자는 원문과
             이력을 복원할 수 있습니다.
           </Alert>
         ) : null}
@@ -298,7 +298,7 @@ export async function BugDetailPage({
               <Token />
               <input type="hidden" name="reportId" value={id} />
               <input type="hidden" name="version" value={report.version} />
-              <Typography variant="h5">관리자 검토</Typography>
+              <Typography variant="h5">슈퍼관리자 검토</Typography>
               <Typography>
                 모든 검토 메모와 처리 이력은 제보자에게도 표시됩니다. 추가
                 설명이나 검토를 저장하면 기존 검증 완료 표시는 해제됩니다.
@@ -456,7 +456,7 @@ export async function BugDetailPage({
                   : event.kind === "created"
                     ? "최초 접수"
                     : event.kind === "review"
-                      ? "관리자 검토"
+                      ? "슈퍼관리자 검토"
                       : "추가 설명"}{" "}
                 · 버전 {event.report_version}
               </Typography>

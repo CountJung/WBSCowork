@@ -14,24 +14,24 @@ import {createTask,updateTask,getTaskById,changeTaskStatus,deleteTask,getTaskSco
 import {templatePreview,taskTemplates,type TaskActor,type Task} from "../src/entities/task";
 import type {WorkspaceCommand} from "../src/entities/project";
 import {createSubmission,getSubmissionByIdForViewer,requestSubmissionReview,decideSubmissionReview,cancelOrReopenSubmissionReview} from "../src/entities/submission/index.server";
-import {assertTestDatabaseName,testDatabaseEnv} from "../tests/helpers/test-env";
+import {assertTestDatabaseName,testDatabaseEnv,TEST_SUPERUSER_EMAIL} from "../tests/helpers/test-env";
 const args=process.argv.slice(2);if(args.length>1||args.some(arg=>!['--d1','--maria'].includes(arg)))throw new Error('Use --d1 or --maria.');
 let checks=0;
 function check(ok:unknown,label:string){assert.ok(ok,label);checks++;console.log('PASS '+label);}
 async function denied(action:()=>Promise<unknown>,label:string){await assert.rejects(action);checks++;console.log('PASS denied '+label);}
-const actor=(userId:number):TaskActor=>({userId,isAdmin:userId===4,isSuperuser:false});
+const actor=(userId:number):TaskActor=>({userId,isAdmin:userId===4,isSuperuser:userId===4});
 const dates={startDate:'2026-01-01',endDate:'2026-12-31'};
 async function verify(label:string){
  const db=getDatabasePool();
- for(const [id,role]of [[1,'guest'],[2,'member'],[3,'member'],[4,'admin'],[5,'member'],[6,'member'],[7,'member']] as const)await db.query('INSERT INTO users(id,email,name,role) VALUES(?,?,?,?)',[id,`volunteer-${id}@example.test`,`Synthetic ${id}`,role]);
+ for(const [id,role]of [[1,'guest'],[2,'member'],[3,'member'],[4,'admin'],[5,'member'],[6,'member'],[7,'member']] as const)await db.query('INSERT INTO users(id,email,name,role) VALUES(?,?,?,?)',[id,id===4?TEST_SUPERUSER_EMAIL:`volunteer-${id}@example.test`,`Synthetic ${id}`,role]);
  for(const id of [1,2,3])await db.query("INSERT INTO projects(id,name,start_date,end_date) VALUES(?,?,'2026-01-01','2026-12-31')",[id,`Synthetic project ${id}`]);
- const workspace=async(projectId:number,command:WorkspaceCommand)=>changeProjectWorkspace({projectId,command,actor:{userId:4,isSuperuser:false},version:(await getProjectWorkspace(projectId,{userId:4,isSuperuser:false})).version,token:randomUUID()});
+ const workspace=async(projectId:number,command:WorkspaceCommand)=>changeProjectWorkspace({projectId,command,actor:{userId:4,isSuperuser:true},version:(await getProjectWorkspace(projectId,{userId:4,isSuperuser:true})).version,token:randomUUID()});
  for(const projectId of [1,3])await workspace(projectId,{kind:'project_type',projectType:'volunteering'});
  for(const userId of [2,3,5,7])await workspace(1,{kind:'project_member',userId,active:true});
  await workspace(3,{kind:'project_member',userId:6,active:true});
  for(const name of ['Meal','Repair'])await workspace(1,{kind:'create_team',activityKind:name==='Meal'?'meal':'facility',name});
  await workspace(3,{kind:'create_team',activityKind:'recreation',name:'Foreign'});
- const [meal,repair]=(await getProjectWorkspace(1,{userId:4,isSuperuser:false})).teams,foreign=(await getProjectWorkspace(3,{userId:4,isSuperuser:false})).teams[0];
+ const [meal,repair]=(await getProjectWorkspace(1,{userId:4,isSuperuser:true})).teams,foreign=(await getProjectWorkspace(3,{userId:4,isSuperuser:true})).teams[0];
  for(const [teamId,userId,role]of [[meal.id,2,'leader'],[meal.id,3,'member'],[meal.id,7,'member'],[repair.id,5,'leader']] as const)await workspace(1,{kind:'team_member',teamId,userId,role,active:true});
  await workspace(3,{kind:'team_member',teamId:foreign.id,userId:6,role:'leader',active:true});
  const create=(extra:Partial<Parameters<typeof createTask>[0]>={})=>createTask({projectId:1,title:'Volunteer task',...dates,definitionOfDone:'Checklist complete',actor:actor(2),token:randomUUID(),activityTeamId:meal.id,assigneeId:7,...extra});

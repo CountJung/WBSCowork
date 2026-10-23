@@ -26,10 +26,10 @@
 | --- | --- | --- | --- |
 | `/` | `app/page.tsx` | 비로그인은 안내, 로그인 후 조회 | projects, tasks, Gantt |
 | `/privacy` | `app/privacy/page.tsx` | 공개 | 수집 항목, 보유 기간, 프로젝트 종료·파기 절차 |
-| `/tasks` | `app/tasks/page.tsx` | 로그인 필수; guest read-only, member+ write | 모든 핵심 entity; submission 목록만 viewer filter 적용 |
-| `/admin` | `app/admin/page.tsx` | admin/superuser | 운영 요약 |
-| `/admin/projects` | `app/admin/projects/page.tsx` | admin/superuser | project CRUD |
-| `/admin/users` | `app/admin/users/page.tsx` | admin/superuser | user role 관리 |
+| `/tasks` | `app/tasks/page.tsx` | 로그인 + project scope; guest read-only | viewer 허용 프로젝트/업무·제출·댓글/첨부 |
+| `/admin` | `app/admin/page.tsx` | superuser only | 전역 운영 요약; admin은 `/admin/projects`로 이동 |
+| `/admin/projects` | `app/admin/projects/page.tsx` | 지정 프로젝트 admin/SU | SU 생성·소속/접근 정책, 범위 내 관리 |
+| `/admin/users` | `app/admin/users/page.tsx` | superuser only | 전역 user role 관리 |
 | `/admin/database` | `app/admin/database/page.tsx` | superuser only | schema 상태/초기화 |
 | `/admin/logs` | `app/admin/logs/page.tsx` | superuser only | rolling log tail |
 | `/admin/settings` | `app/admin/settings/page.tsx` | superuser only | env 설정 UI |
@@ -55,7 +55,7 @@
 
 ### 작업 화면 조회
 
-`app/tasks/page.tsx → database readiness → project/user 병렬 조회 → viewer DB id 해석 → task/submission 조회 → 가시 submission id로 comment/attachment 조회 → task UI`
+`app/tasks/page.tsx → database readiness → 현재 viewer DB identity → 허용 project/배정 user 조회 → scoped task/submission 조회 → 가시 submission id+viewer로 comment/attachment 조회 → 요약/선택 상세 UI`
 
 - `submission-repository`의 `SubmissionVisibilityFilter`는 필수 인자다. 단건은 `getSubmissionByIdForViewer`를 쓴다.
 - comment/attachment project 조회는 필수 `IdScope`(`src/shared/server/query-scope`)를 받는다. 화면은 가시 submission id 집합을 넘기므로 비공개 제출물의 파생 데이터가 client props에 실리지 않는다. 파기·삭제 등 관리 경로만 `{ unrestricted: true }`를 명시한다.
@@ -64,7 +64,7 @@
 
 `form → app/**/actions.ts adapter → src/features/* use-case → entity repository/file/log/revalidate → redirect`
 
-`app/tasks/actions.ts`는 `"use server"` adapter이고 실제 task/submission/comment mutation은 `src/features/task-workspace`에 있다. 프로젝트 생성·수정·파기는 `app/admin/projects/actions.ts` → `src/features/project-manage` 한 경로만 사용한다(QLT-010). 사용하지 않던 task-workspace 프로젝트 action 3개를 제거했으며 `/tasks`, `/admin/projects`의 사용자 URL은 유지한다. 프로젝트 파기는 관리자 확인 값과 기존 인가·파일 정리를 거친다.
+`app/tasks/actions.ts`는 `"use server"` adapter이고 실제 task/submission/comment mutation은 `src/features/task-workspace`에 있다. 프로젝트 생성·수정·파기는 `app/admin/projects/actions.ts` → `src/features/project-manage` 한 경로만 사용한다(QLT-010). 사용하지 않던 task-workspace 프로젝트 action 3개를 제거했으며 `/tasks`, `/admin/projects`의 사용자 URL은 유지한다. 프로젝트 파기는 지정 프로젝트 관리자/SU의 확인 값과 현재 scope·파일 정리를 거친다.
 
 ### 프로젝트 종료·파기
 
@@ -143,7 +143,7 @@ Native는 전용 schema 연결의 lock/불변 명세·postcondition 검증과 `s
 
 ### Native migration 진입점 (QLT-012/013)
 
-`npm run db:migrate`(기본 read-only) / SU database action → `database-admin` → 전용 schema connection → `native-migrations.server.ts` lock/ledger/검증 → 불변 `native-migration-v1.ts`–`native-migration-v11.ts`. 일반 runtime readiness는 기존 DB identity를 사용한다. D1 `drizzle/`와 분리되며 봉사 저장 기반은 Native v10/Drizzle0014, 단일 팀장·완료 metadata는 v11/0015에 각각 추가한다. [운영 절차](NATIVE_DATABASE_MIGRATIONS.md).
+`npm run db:migrate`(기본 read-only) / SU database action → `database-admin` → 전용 schema connection → `native-migrations.server.ts` lock/ledger/검증 → 불변 `native-migration-v1.ts`–`native-migration-v12.ts`. 일반 runtime readiness는 기존 DB identity를 사용한다. D1 `drizzle/`와 분리되며 봉사 저장 기반은 Native v10/Drizzle0014, 단일 팀장·완료 metadata는 v11/0015, 프로젝트 읽기 모드는 v12/0016에 추가한다. [운영 절차](NATIVE_DATABASE_MIGRATIONS.md).
 
 P1 의존성: `src/entities/task/api/task-dependencies.server.ts`의 graph CAS와 `src/shared/server/task-dependencies`의 실행 guard, `src/features/task-dependencies` action, `src/widgets/task-dependencies` UI가 WBS와 별도 선후행을 담당한다. 상세 범위는 [P1 계획](ARCHITECTURE.md#팀-업무와-검토-계약).
 
@@ -165,8 +165,16 @@ Native NAS 실행은 `scripts/run-next.ts`와 main의 기본 `build`/`start`를 
 ## 봉사활동 팀과 직접 완료
 
 - `src/entities/project/model/workspace.ts`: 프로젝트 유형·활동 종류·팀 역할/완료 모드 타입과 저장 command 정규화.
-- `src/entities/project/api/project-workspace.server.ts`: 관리자 명단 관리/단일 팀장 교체, `getProjectTaskTeams`의 metadata·범위별 배정 명단 조회, workspace CAS·명단 event. `/admin/projects` → `features/project-manage` → `widgets/project-workspace`가 유형·참여자·팀 관리 UI를 조립한다.
+- `src/entities/project/api/project-workspace.server.ts`: SU 프로젝트 명단/접근 모드·지정 관리자 팀 관리/단일 팀장 교체, `getProjectTaskTeams`의 metadata·범위별 배정 명단 조회, workspace CAS·명단 event. `/admin/projects` → `features/project-manage` → `widgets/project-workspace`가 유형·참여자·팀 관리 UI를 조립한다.
 - `src/shared/server/task-scope`와 `src/entities/task/api/task-permissions.server.ts`: 현재 canonical 팀장·프로젝트/팀 소속·계정 자격의 SQL 관리/실행/배정 guard. task repository/workflow·선후행·템플릿·검토의 각 mutation이 사용한다.
 - `/tasks` → `TaskAssignmentFields`/`TaskCard`: 팀 필터·범위별 생성/편집/담당자·완료 방식·완료자/시각과 event 이력. 기존 제출 UI는 직접 완료에서도 선택적으로 재사용한다.
 - `native-migration-v10.ts`/`native-migration-v11.ts`는 database-admin slice, D1은 `drizzle/0014_volunteer_workspace.sql`/`drizzle/0015_volunteer_team_completion.sql`; readiness는 같은 slice의 실제 관리표/필수 컬럼을 사용한다.
 - `scripts/test-project-workspace.ts`, `scripts/test-volunteer-schema.ts`: 저장 기반 검증. `scripts/test-volunteer-tasks.ts`/`test-volunteer-completion-schema.ts`/`test-volunteer-browser.mjs`·`.py`는 후속 양 DB·단일 팀장/완료 metadata·hydrated UI를 검사한다. 실제 결과는 [하네스](HARNESS_MAP.md#봉사활동-팀장과-직접-완료-검증)가 소유한다.
+
+## 프로젝트 중심 UX와 접근 scope
+
+- `src/shared/server/project-scope`: 현재 DB identity/role·활성 소속·설정된 SU와 `legacy_authenticated`/`members_only` 읽기/관리 SQL guard. `project-repository.server.ts`의 viewer-aware 목록·단건·건수/관리 목록, task/submission/댓글/첨부·검색·알림이 재사용한다.
+- `app/page.tsx`/`app/tasks/page.tsx`: viewer 프로젝트 목록·요약에서 기존 `/tasks` project/task/submission query로 상세 선택. `TaskSummaryCard`·`TaskCard`·`TaskSubmissionPanel`이 요약/선택 상세·댓글을 나눈다.
+- `src/shared/ui/field-label`·`validated-text-field.tsx`, `TaskStatusForm`·`TaskDateFields`·`DeleteConfirmation`: 외부 필수/선택 표시, 상태 조건 메모, 날짜/오류, 명시적으로 연 뒤의 영구 삭제 확인. 별도 일괄 삭제는 아니다.
+- `native-migration-v12.ts`/`drizzle/0016_project_access_mode.sql`: 기존 인증 읽기를 보존하는 additive 접근 모드. `project-workspace.server.ts`의 SU 영향 미리보기/hash·CAS가 실제 전환을 검사한다.
+- `scripts/test-project-binding.ts`, `test-project-ux.mjs`·`.py`·`test-project-ux-native.mjs`: 양 DB scope/로컬 브라우저 진입점. 최신 실행 여부와 실제 결과는 [하네스](HARNESS_MAP.md#ux-바인딩-구현과-회귀-검증)가 소유한다.

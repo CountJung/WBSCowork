@@ -1,3 +1,4 @@
+import {projectAccessForCurrentUser,projectManagementForCurrentUser} from "@/src/shared/server/project-scope/index.server";
 import { getDatabasePool } from "@/src/shared/server/database/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import { toCalendarDate } from "@/src/shared/lib/date";
@@ -11,7 +12,7 @@ import type { TaskStatus } from "../model/workflow";
 export type PersonalWorkViewer = { viewerUserId: number; isSuperuser: boolean };
 
 const superuser = "(viewer_flags.is_superuser=1 AND LOWER(viewer.email)=viewer_flags.superuser_email)";
-const administrator = `(viewer.role='admin' OR ${superuser})`;
+const administrator = projectManagementForCurrentUser("task.project_id","viewer.id",superuser);
 const reviewEligible = `(
   task.reviewer_id=viewer.id AND task.review_required=1 AND task.status='review_pending'
   AND (viewer.role IN ('member','admin') OR ${superuser})
@@ -67,7 +68,7 @@ export async function listPersonalWorkPage(
     throw new Error("현재 로그인 사용자를 확인할 수 없습니다.");
   }
   const filters = parsePersonalWorkFilters({ scope: input.scope, status: input.status, overdue: input.overdue ? "1" : "0", page: String(input.page) });
-  const predicates = [filters.scope === "mine" ? "task.assignee_id=viewer.id" : filters.scope === "contributed" ? contributed : reviewEligible];
+  const predicates = [projectAccessForCurrentUser("task.project_id","viewer.id",superuser),filters.scope === "mine" ? "task.assignee_id=viewer.id" : filters.scope === "contributed" ? contributed : reviewEligible];
   const params: unknown[] = [viewer.viewerUserId, viewer.isSuperuser ? 1 : 0, (getRuntimeEnv().auth.superuserEmail??"").toLowerCase()];
   if (filters.status === "open") predicates.push("task.status<>'done'");
   else if (filters.status !== "all") { predicates.push("task.status=?"); params.push(filters.status); }

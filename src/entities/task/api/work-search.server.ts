@@ -1,3 +1,4 @@
+import {projectAccessGuard,projectManagementForCurrentUser} from "@/src/shared/server/project-scope/index.server";
 import {getDatabasePool} from '@/src/shared/server/database/index.server';
 import {getRuntimeEnv} from '@/src/shared/server/runtime-env/index.server';
 import {toCalendarDate} from '@/src/shared/lib/date';
@@ -10,7 +11,8 @@ export async function searchWork(viewer:WorkSearchViewer,input:WorkSearchFilters
  const branches:string[]=[],params:unknown[]=[];
  for(const kind of ['task','submission'] as const){
   if(filters.kind!=='all'&&filters.kind!==kind)continue;
-  const where:string[]=[],values:unknown[]=[viewer.viewerUserId];
+  const binding=projectAccessGuard({userId:viewer.viewerUserId,isSuperuser:viewer.isSuperuser},'t.project_id');
+  const where:string[]=[binding.sql],values:unknown[]=[viewer.viewerUserId,...binding.params];
   if(filters.projectId!==null){where.push('t.project_id=?');values.push(filters.projectId);}
   if(filters.assigneeId!==null){where.push('t.assignee_id=?');values.push(filters.assigneeId);}
   if(filters.status!=='all'){where.push('t.status=?');values.push(filters.status);}
@@ -19,7 +21,7 @@ export async function searchWork(viewer:WorkSearchViewer,input:WorkSearchFilters
   if(filters.overdue){where.push("t.status<>'done' AND t.end_date<?");values.push(toCalendarDate(today));}
   const approved="t.status='done' AND t.review_required=1 AND t.review_submission_id=s.id AND t.review_revision_number=r.revision_number AND r.revision_number=s.current_revision";
   if(kind==='submission'){
-   where.push("(viewer.role='admin' OR (?=1 AND LOWER(viewer.email)=?) OR s.author_id=viewer.id OR (s.visibility='public' AND r.visibility='public'))");values.push(viewer.isSuperuser?1:0,(getRuntimeEnv().auth.superuserEmail??'').toLowerCase());
+   where.push(`(${projectManagementForCurrentUser("t.project_id","viewer.id","(?=1 AND LOWER(viewer.email)=?)")} OR s.author_id=viewer.id OR (s.visibility='public' AND r.visibility='public'))`);values.push(viewer.isSuperuser?1:0,(getRuntimeEnv().auth.superuserEmail??'').toLowerCase());
    if(filters.versions==='latest')where.push('r.revision_number=s.current_revision');
    if(filters.versions==='approved')where.push(approved);
   }

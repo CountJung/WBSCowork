@@ -1,7 +1,7 @@
 import { getAdminRuntimePresentation } from "@/src/shared/config/admin-runtime";
 import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
-import { listProjects, getProjectCount } from "@/src/entities/project/index.server";
-import { getUserCount, listUsers } from "@/src/entities/user/index.server";
+import { listManagedProjectsForViewer, getManagedProjectCountForViewer } from "@/src/entities/project/index.server";
+import { getUserCount, listUsers,getAuthSession,getUserByEmail,isSuperuserEmail } from "@/src/entities/user/index.server";
 import type { Project } from "@/src/entities/project";
 import type { User } from "@/src/entities/user";
 
@@ -16,6 +16,9 @@ export type AdminOverview = {
 
 export async function getAdminOverview(): Promise<AdminOverview> {
   try {
+    const session=await getAuthSession();
+    const user=session?.user.email?await getUserByEmail(session.user.email):null;
+    if(!user||!session?.user.isSuperuser||!isSuperuserEmail(user.email)) throw new Error("운영 개요는 슈퍼관리자만 조회할 수 있습니다.");
     const databaseStatus = await getDatabaseAdminStatus();
     const presentation = getAdminRuntimePresentation({ hosted: Boolean(databaseStatus.managedMigrations), databaseConfigured: databaseStatus.databaseExists, databaseName: databaseStatus.databaseName });
     const usersReady = databaseStatus.databaseExists && databaseStatus.tables.some((table) => table.name === "users" && table.exists);
@@ -43,11 +46,12 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       };
     }
 
+    const viewer={userId:user?.id,email:user?.email,isSuperuser:session?.user.isSuperuser};
     const [userCount, projectCount, recentUsers, recentProjects] = await Promise.all([
       getUserCount(),
-      getProjectCount(),
+      getManagedProjectCountForViewer(viewer),
       listUsers(5),
-      listProjects(5),
+      listManagedProjectsForViewer(viewer).then(projects=>projects.slice(0,5)),
     ]);
 
     return {

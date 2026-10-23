@@ -56,6 +56,9 @@
 | `npm run test:volunteer:completion-schema` | v11/0015의 단일 팀장 baseline/중복 거부·완료 metadata·기존 자료 보존을 양 DB에서 확인 |
 | `npm run test:volunteer:tasks` | 봉사활동 팀 범위 관리·직접/제출 필수 완료·현재 권한·교체/탈퇴·완료/재개 이력의 격리 양 DB 회귀 |
 | `npm run test:volunteer:browser` | Sites build 후 loopback Worker/D1/R2와 기본 sandbox Chromium의 실제 관리자/팀장/담당자 desktop/mobile UI·multipart 회귀 |
+| `npm run test:project:binding` | SU/지정 admin·legacy/members-only·해제 후 요청·양 DB 기존 schema/자료 보존의 합성 회귀 |
+| `npm run test:project:ux:browser` | Sites build 후 loopback Worker의 새5폭·요약/상세·필수/위험 조작·프로젝트 보호 UI; 실행 결과는 아래 별도 기록 |
+| `npm run test:project:ux:native` | Native build 후 격리 MariaDB/로컬 파일·Next UI의 프로젝트 UX 경로; 운영/.env를 쓰지 않음 |
 
 `node scripts/check-docs.mjs`는 저장소의 문서 등록·역할·상대 링크/anchor·명령·필수 읽기 경로를 검사한다. `--self-test`는 검사기의 유효/무효 fixture를 확인한다. 원본 docs-canon SKILL/점검기가 아닌 로컬 대체 검사이며 원본 준수 인증으로 표시하지 않는다.
 
@@ -211,18 +214,49 @@ Native 절차는 같은 `cdde9e9` 소스의 `node .test-artifacts/volunteer-foll
 
 ## UX 바인딩 설계 검토와 후속 인수
 
-대상은 main `11178b02a3cf7df90c10161ba0648ac7213d666d`/sites `a84f3a130368a30b3141776e0e39fc7cfcc7a243` 기준의 계획 문서 작업이다. 문서 담당은 TaskCard/TaskSubmissionPanel·project repository·홈/tasks page·task-scope·상태 workflow·검색/개인 큐·알림의 실제 참조를 읽었다. 부모가 직접 연 노트북 PNG의 관측은 전달받았으며 문서 담당이 이미지를 직접 열거나 모바일/키보드를 재현한 증거는 아니다. 실제4:1 CSS grid라는 근거 없이 Stack/flex 구조와 관측된 여백을 구분했다.
+이 절의 최초 계획 검토 대상은 main `11178b02a3cf7df90c10161ba0648ac7213d666d`/sites `a84f3a130368a30b3141776e0e39fc7cfcc7a243` 기준의 계획 문서 작업이다. 문서 담당은 TaskCard/TaskSubmissionPanel·project repository·홈/tasks page·task-scope·상태 workflow·검색/개인 큐·알림의 실제 참조를 읽었다. 부모가 직접 연 노트북 PNG의 관측은 전달받았으며 문서 담당이 이미지를 직접 열거나 모바일/키보드를 재현한 증거는 아니다. 실제4:1 CSS grid라는 근거 없이 Stack/flex 구조와 관측된 여백을 구분했다.
 
-부모가 읽은 `web-qa-testing-workflows`의 반응형/접근성 기준과 `creative-visual-production`의 시안 비교 기준을 아래 **설계 수용 조건**에 반영했다. 문서 담당이 두 스킬 원문 전체를 열람하거나 시안 생성·실제 UI QA를 실행했다고 주장하지 않는다. 제공된 docs-canon 본문을 재사용했으며 현재 원본 검사기는 미가용이다. 추가 설치·앱 수정·운영 접속 재시도는 없다.
+부모가 읽은 `web-qa-testing-workflows`의 반응형/접근성 기준과 `creative-visual-production`의 시안 비교 기준을 아래 **설계 수용 조건**에 반영했다. 문서 담당이 두 스킬 원문 전체를 열람하거나 시안 생성·실제 UI QA를 실행했다고 주장하지 않는다. 제공된 docs-canon 본문을 재사용했으며 현재 원본 검사기는 미가용이다. 해당 계획 문서 회차에서는 추가 설치·앱 수정·운영 접속 재시도가 없었다.
 
-| QLT-024 후속 검증 | 미실행 완료 조건 |
+| 당시 QLT-024 후속 계획 | 완료 조건 |
 | --- | --- |
 | 시안/반응형·접근성 | 360/390/768/1280/1440px별 긴 한국어 제목/파일명·다수 칩·빈 상태·라이트/다크 비교. 기본 메인의 요약/상세 경계·칩 내용 너비/줄바꿈·보조 메뉴·삭제 시작 후 확인을 확인. 페이지 가로 overflow/겹침 없음, 간트 내부 bounded scroll 구분, 키보드 순서/메뉴 Escape·초점 복귀·오류 연결·터치/대비·텍스트 의미 대조 |
 | 필수/완료 조건 | 즉시 필수·완료 전 필요·선택의 외부 레이블/배지와 입력 오류 연결. 빈 산출물/완료 기준 초안 유지. direct done 메모 선택, submission_required done 근거 필수, 모든 mode blocked/reopen 사유 필수와 review 경로 조건을 실제 서버/양 DB·UI에서 비교 |
-| 보호 프로젝트 scope | 합성 projectA/B·userA/B, 겸임/무소속/탈퇴·현재 역할 변경·guest 명단 참여(쓰기 승격 없음)·확정된 관리자/인증 public 예외를 명시. 홈/목록·건수·직접 URL/API/Server Action·첨부/댓글/버전·검색 count/snippet·알림/개인 큐·Gantt/집계의 허용/거부와 비노출을 대조. 해제 전 열린 화면의 다음 보호 요청 거부 및 정책상 본인 과거 private 예외를 별도 검사 |
-| 이행/보존 | MariaDB/D1 fresh/existing 비파괴 이행 미리보기·정책별 접근 영향·관리자 명시 승인 후 활성화 확인. 기존 WBS/선행/leaf 집계·제출 필수/직접 완료·팀장·검토·원문/버전/파일과 단일 영구 삭제의 경고/서버 확인·권한을 보존. 신규 일괄 영구 삭제 인수로 확대하지 않음 |
+| 보호 프로젝트 scope | 합성 projectA/B·userA/B, 겸임/무소속/탈퇴·현재 역할 변경·guest 명단 참여(쓰기 승격 없음)·확정된 관리자/인증 public 예외를 명시. 홈/목록·건수·직접 URL/API/Server Action·첨부/댓글/버전·검색 count/snippet·알림/개인 큐·Gantt/집계의 허용/거부와 비노출을 대조. 해제 전 열린 화면의 다음 보호 요청과 제한 프로젝트의 본인 과거 private도 거부되는지 검사 |
+| 이행/보존 | MariaDB/D1 fresh/existing 비파괴 이행 미리보기·정책별 접근 영향·SU 영향 미리보기·최신 hash/version 확인 후 활성화 검사. 기존 WBS/선행/leaf 집계·제출 필수/직접 완료·팀장·검토·원문/버전/파일과 단일 영구 삭제의 경고/서버 확인·권한을 보존. 신규 일괄 영구 삭제 인수로 확대하지 않음 |
 
-새5폭은 기존 layout 하네스의1920/1699/1440/1280/1024/390 결과나 과거1280/390 합성 흐름과 다른 미실행 행렬이다. 위 항목은 신규 UX/바인딩 인수가 아니며 구현 이후 검증 계획이다. CONNECT403/운영 UI·Google 미검증 경계는 유지한다. 이번에는 저장소 문서 검사/self-test·MASTER_PLAN HTML 파싱·`git diff --check` PASS를 확인했다(문서30·등록16/핵심7·상대링크219·npm명령115). 별도 내용 검토로 코드와 전달 관측·제안/정책 대기·신규 미실행 인수·현재 운영 상태의 구분을 확인했다. 앱 build·제품/DB/브라우저 테스트와 운영 접속은 실행하지 않았으며 원본 canon 검사 통과로 확대하지 않는다.
+계획 검토 당시 새5폭은 기존 layout 하네스의1920/1699/1440/1280/1024/390 결과나 과거1280/390 합성 흐름과 다른 미실행 행렬이었다. 위 표는 당시 구현 이후 검증 계획이며 신규 UX/바인딩 인수 결과가 아니다. CONNECT403/운영 UI·Google 미검증 경계는 유지했다. 해당 문서 회차는 저장소 문서 검사/self-test·MASTER_PLAN HTML 파싱·`git diff --check` PASS를 확인했다(문서30·등록16/핵심7·상대링크219·npm명령115). 별도 내용 검토로 코드와 전달 관측·제안/정책 대기·신규 미실행 인수·현재 운영 상태의 구분을 확인했다. 앱 build·제품/DB/브라우저 테스트와 운영 접속은 실행하지 않았으며 원본 canon 검사 통과로 확대하지 않는다.
+
+### UX 바인딩 구현과 회귀 검증
+
+기준은 main `fbe679c`/sites `e92d213`에서 진행한 작업 트리다. 아래는 구현 담당이 실제 격리 환경에서 확인한 결과다. PRD-052/053/055와 QLT-024의 소스·양 DB·Worker/Native 실제 로컬 앱 인수 및 기존 봉사 회귀를 완료했다. 결과는 `.test-artifacts/project-ux/final-qa-manifest.json`과 대조했으며 운영 게시/실 Google 인수는 포함하지 않는다.
+
+| 범위/실행 | 확인된 결과 | 범위와 한계 |
+| --- | --- | --- |
+| PRD-051 비교 시안 | 정적 A/B5폭 render overflow/console0, 부모360px 직접 검토 후 A 채택 | 실제 앱 인수와 별개인 디자인 결정 |
+| `npm test -- --require-db` | action32/unit132/MariaDB visibility34 각각 PASS, skip0 | SU 전역·지정 admin 관리와 미지정 admin의 legacy 읽기/private 거부를 구분 |
+| 양 DB·업무 회귀 | binding151, workspace D1/MariaDB 각42, 봉사 업무 양 DB106, P1 D1 65, native workflow49 PASS | 각 하네스 scope별 결과이며 합산하지 않음. 운영 DB 검증 아님 |
+| 전역 관리/버그 회귀 | SU action7·D1 repository9·MariaDB9·policy7·context6·bug D1 58·screenshots28 PASS | repository9/9 범위는 서로 다르며 통합 suite와 겹침. 본인 제보 작성/열람 보존 |
+| 실제 Worker HTTP/보안 | base266·quality380·workflow474, decoder·auth18·network unit12 PASS | 기존 P1 selector를 집중 상세 탐색으로 test-only 보정하고 assertion 유지. 실 Google·운영 요청 없음 |
+| 최종 정적 검사/빌드 | lint0·typecheck·FSD5 self-test/위반0, Native/Worker build PASS; 최종 하네스 Node5/Python2/ESLint5·diff 모두 exit0 | 기존 native logging/NFT·Worker proxy 환경 감지/dynamic 분류 경고를 숨기지 않음 |
+| `npm run test:project:ux:browser` | 실제 Worker5폭360/390/768/1280/1440 × light/dark670조건 PASS, hydrated RSC multipart15 POST 모두303, console/pageerror/requestfailed0, exit0 | 대비132scenes/4,914 solid 샘플 strict 미달0·허용오차0. enabled contained normal/hover·파괴 text hover 필수50대상 포함, 삭제 실행0 |
+| Worker bundle/응답 | dist323files/4,529,220bytes fingerprint `a8b3786dbb71a0ddb497bc80b33631dc3f9b7d1ebd0dd61e0953ad6c60f95d4d` 전후 동일 | entry `7bd8bb668a028bab07d0800dee6e57cb0d39937a604464432f27e068572cd658`; HTTP40410은 console/실패 요청0과 별도 집계이며 HTTP500은0 |
+| `npm run test:project:ux:native` | 실제 Next+MariaDB11.4.13 loopback 동일5폭×2테마 strict670조건 PASS, NextAction multipart15 POST 모두303, console warning/error/pageerror0, exit0 | 동일132scenes/4,914샘플 strict 미달0·허용오차0. requestfailed1,962건은 전부 ERR_ABORTED이며 비취소 실패0 |
+| Native bundle | `.next`577files/51,471,827bytes fingerprint `aeebf491037be7fcfe60a85392bd7237cdbdf801da1fa998e813fc78972c2063` 전후 동일 | BUILD_ID 파일 hash `3745a1bec3be5c77b2fa21f7b3df1b4f057b7425b39d1603af90b0ba063db959` 유지 |
+| `WBS_QA_ADMIN_SPA=1 node scripts/test-volunteer-browser.mjs` | 기존1280 light/390 dark36조건 PASS, 실제 RSC multipart46 POST 모두303, exit0 | 예상된 forged project1/task3 GET404 console2건만 분리. 예상 외 console·warning/pageerror0, Worker 동일 fingerprint 유지 |
+
+
+Worker/Native 실제 앱은 A/B 프로젝트의 SU 소속 부여·제한 전환·해제·legacy 복구, 지정 admin/guest/private·열린 stale form의 다음 요청 거부를 확인했다. 요약→상세/댓글·조건부 필수·긴 이름/메뉴·위험 확인/복귀를 검사했고 검토 승인 done의 현재 표시/비활성 선택·사유 재개2건은 DB 완료 metadata/event와 대조했다. 빈 초안 double click은 각각 한 건만 생성됐고 합성 원본 WBS 상하위·제출/버전·파일과 계정 role은 보존됐다. 두 runtime의 `.test-artifacts/project-ux/{worker,native}/final-evidence.json`을 보존한다. 부모는 새 UI의360 요약/1440 dark 상세 PNG를 직접 검토했으며 문서 담당은 전달 근거와 JSON을 대조했다. 대비는 단색 배경 text 샘플, 입력은 DOM/키보드/터치 에뮬레이션이며 전체 WCAG 인증·실기기 인수로 확대하지 않는다.
+
+초기 Worker/Native620조건에는 대비 +0.03 허용오차가 있었고 각3,192 solid 샘플 중 dark 파괴 버튼3개×5폭=15샘플의4.492:1이 엄격한4.5:1에 미달했다. palette를 보완하고 허용오차를 제거했으며 최신 양 runtime의 허용오차 없는 결과는 위 표와 같다.
+
+발견한 제품 결함과 수정도 성공 결과와 구분한다. 긴 담당자 option clip은 theme `MuiMenuItem` 줄바꿈으로, 협업 비담당자의 상태 폼 노출은 서버 실행 권한과 같은 UI 조건으로 맞췄다. 최초611 UI조건을 통과했어도 FCL console5와 stale SU form의 올바른 admin 거부303 뒤 `/admin/projects` reload500이 있어 전체 FAIL이었다. 확인 checkbox를 client leaf로 분리하고 검토 승인 done의 빈 선택 표시를 고쳤다. 당시 동결 bundle의 binding-only36/POST11에서 console/GET500 0과 거부 후 SSR200을 확인한 뒤, 이전620조건을 재실행해 기능 검증을 통과했다. 이때 남은 대비 허용오차 문제는 뒤늦게 확인했으므로 이전 통과를 엄격한 인수로 바꾸지 않는다. 초기 실패를 통과로 바꾸거나 서버 권한 거부를 앱 결함으로 기록하지 않는다.
+
+기존 봉사 회귀의 초기 tamper 하네스 렌더 순서 오류와 정상 projectId 전송은 수정한 테스트 조건과 구분한다. 이후 console 실패는 정확한 교차 프로젝트 GET404뿐이고 React 오류0임을 확인해 해당 예상 거부만 좁게 분리했다. 최종36조건 재실행은 위처럼 통과했으며 앱 결함이나 전체 console 무시로 처리하지 않았다.
+
+binding151은 populated D1 0015→0016/Native v11→v12의 기존 행·role·명단·private·revision·file metadata hash 보존과 legacy 기본값, native 재실행을 포함한다. D1 raw DDL 반복은 중복 컬럼으로 fail-closed하므로 완료분은 관리형 migration journal로 건너뛴다. 실제 운영 DB/R2 bytes·백업/복원 검증은 아니다.
+
+실제 사용자 자료/계정 role·명단·환경은 변경하지 않았고 운영은 version15를 유지한다. 현재 운영 host CONNECT403 제한은 재시도/우회하지 않으며 실 Google 미검증이다. docs-canon SKILL.md 재읽기는 성공했으나 원본 `scripts/check_docs.py` 리소스 읽기는 실패해 원본 검사는 미실행이다. 문서 전담의 저장소 checker/self-test·`git diff --check`와 MASTER_PLAN/기존 사용자 HTML의 HTMLParser는 PASS(문서30·등록16/핵심7·상대링크234·npm명령120)다. 별도 내용 검토로 실제 소스 정책/역할·로컬/운영 경계, 과거 실패/엄격한 최종 인수·권한 거부/취소 요청, 완료 이관·게시 대기를 대조했다. 새 문서/보고서는 없으며 원본 canon 형식 검사 통과나 앱 테스트를 문서 담당이 실행한 것으로 주장하지 않는다. 향후 게시 결과는 별도 확인 뒤 추가한다.
 
 ## 문서 정리 검증
 

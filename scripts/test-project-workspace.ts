@@ -11,15 +11,15 @@ import { getDatabasePool } from "../src/shared/server/database/index.server";
 import { runNativeMigrations } from "../src/shared/server/database-admin/native-migrations.server";
 import { changeProjectWorkspace, getProjectWorkspace } from "../src/entities/project/index.server";
 import type { WorkspaceActor, WorkspaceCommand } from "../src/entities/project";
-import { testDatabaseEnv, assertTestDatabaseName } from "../tests/helpers/test-env";
+import { testDatabaseEnv, assertTestDatabaseName, TEST_SUPERUSER_EMAIL } from "../tests/helpers/test-env";
 
 let checks = 0;
 function check(value: unknown, label: string) { assert.ok(value, label); checks++; console.log(`PASS ${label}`); }
-const admin: WorkspaceActor = {userId:4,isSuperuser:false};
+const admin: WorkspaceActor = {userId:4,isSuperuser:true};
 async function verify(mode: "D1" | "MariaDB") {
   const db = getDatabasePool();
   for (const [id,role] of [[1,"guest"],[2,"member"],[3,"member"],[4,"admin"],[5,"member"],[6,"member"]] as const) {
-    await db.query("INSERT INTO users(id,email,name,role) VALUES(?,?,?,?)", [id,`workspace-${id}@example.test`,`Synthetic ${id}`,role]);
+    await db.query("INSERT INTO users(id,email,name,role) VALUES(?,?,?,?)", [id,id === 4 ? TEST_SUPERUSER_EMAIL : `workspace-${id}@example.test`,`Synthetic ${id}`,role]);
   }
   for (const id of [1,2,3]) await db.query("INSERT INTO projects(id,name,start_date,end_date) VALUES(?,?,'2026-01-01','2026-12-31')", [id,`Workspace ${id}`]);
   await db.query("INSERT INTO tasks(id,project_id,title,start_date,end_date,assignee_id,deliverable,definition_of_done) VALUES(1,3,'Legacy task','2026-01-01','2026-12-31',2,'output','check')");
@@ -67,13 +67,17 @@ async function verify(mode: "D1" | "MariaDB") {
   await assert.rejects(change(1,{kind:"team_member",teamId:teams[0].id,userId:2,role:"member",active:false})); checks++;
   await assert.rejects(change(1,{kind:"project_member",userId:2,active:false})); checks++;
   await db.query("UPDATE tasks SET status='done' WHERE id=2");
-  await assert.rejects(change(1,{kind:"team_member",teamId:teams[0].id,userId:2,role:"member",active:false})); checks++;
-  await assert.rejects(change(1,{kind:"project_member",userId:2,active:false})); checks++;
-  check((await getProjectWorkspace(1,admin)).members.find(m=>m.userId===2)?.active, `${mode} completed assignments cannot be left and accidentally revived as inactive`);
+  await change(1,{kind:"team_member",teamId:teams[0].id,userId:2,role:"member",active:false});
+  await change(1,{kind:"project_member",userId:2,active:false});
+  check(!(await getProjectWorkspace(1,admin)).members.find(m=>m.userId===2)?.active && (await getTaskById(2))?.assigneeId === 2 && (await getTaskById(2))?.status === "done", `${mode} completed assignment history survives project and team departure`);
+  await change(1,{kind:"project_member",userId:2,active:true});
+  await change(1,{kind:"team_member",teamId:teams[0].id,userId:2,role:"member",active:true});
   await db.query("UPDATE tasks SET status='planned' WHERE id=2");
   await change(1,{kind:"task_team",taskId:2,taskVersion:2,teamId:null});
   await change(1,{kind:"team_member",teamId:teams[0].id,userId:2,role:"member",active:false});
   check(!(await getProjectWorkspace(1,admin)).teamMembers.find(m => m.teamId === teams[0].id && m.userId === 2)?.active, `${mode} leaving a team deactivates rather than deletes its history`);
+  await assert.rejects(change(1,{kind:"project_member",userId:3,active:false})); checks++;
+  await change(1,{kind:"team_member",teamId:teams[0].id,userId:3,role:"member",active:true});
   await change(1,{kind:"project_member",userId:3,active:false});
   check((await getProjectWorkspace(1,admin)).teamMembers.filter(m => m.userId === 3).every(m => !m.active), `${mode} project departure deactivates all team roles`);
   await assert.rejects(change(1,{kind:"team_member",teamId:teams[0].id,userId:3,role:"leader",active:true})); checks++;
@@ -95,9 +99,9 @@ async function verify(mode: "D1" | "MariaDB") {
   try { await assert.rejects(change(1,{kind:"create_team",activityKind:"other",name:"ROLLBACK"})); checks++; }
   finally { await db.query("DROP TRIGGER workspace_fault"); }
   check(JSON.stringify(await getProjectWorkspace(1,admin)) === JSON.stringify(stateBeforeFault), `${mode} late event failure rolls back version and team together`);
-  await db.query("UPDATE users SET role='member' WHERE id=4");
+  await db.query("UPDATE users SET email='revoked-superuser@example.test' WHERE id=4");
   await assert.rejects(changeProjectWorkspace({...replay,token:randomUUID(),version:conflictVersion+1})); checks++;
-  await db.query("UPDATE users SET role='admin' WHERE id=4");
+  await db.query("UPDATE users SET email=? WHERE id=4", [TEST_SUPERUSER_EMAIL]);
   check((await db.query("SELECT content,visibility FROM submissions WHERE task_id=1") as {content:string;visibility:string}[])[0].content === "PRESERVE PRIVATE", `${mode} private legacy content is preserved`);
   check((await db.query("SELECT role FROM users WHERE id=3") as {role:string}[])[0].role === "member", `${mode} scoped leader never becomes a global admin`);
   const {getSubmissionByIdForViewer} = await import("../src/entities/submission/index.server");

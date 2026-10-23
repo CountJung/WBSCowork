@@ -17,7 +17,7 @@ export async function verifyBugHttp({
     .run();
   const guest2 = `__Secure-next-auth.session-token=${await encode({ secret, token: { email: "guest2@example.test", role: "admin", isSuperuser: true }, maxAge: 3600 })}`;
   const guest = actorCookies.guest,
-    admin = actorCookies.admin;
+    admin = actorCookies.superuser;
   const html = async (route, cookie) => (await request(route, cookie)).text();
   const action = (page, name) => {
     const result = [...page.matchAll(/name="(\$ACTION_ID_[^"]+)"/g)]
@@ -93,6 +93,7 @@ export async function verifyBugHttp({
     [guest2, "other guest"],
     [actorCookies.member1, "other member"],
     [actorCookies.member2, "second member"],
+    [actorCookies.admin, "project administrator"],
   ]) {
     const list = await html("/bugs?q=BUG_PRIVATE_GUEST_ONE", cookie),
       detail = await request(`/bugs/${id}`, cookie),
@@ -124,11 +125,11 @@ export async function verifyBugHttp({
     !(await html("/bugs", guest)).includes("BUG_PRIVATE_GUEST_TWO"),
     "first guest does not receive second guest report",
   );
-  for (const cookie of [admin, actorCookies.superuser])
+  for (const cookie of [actorCookies.superuser])
     check(
       (await html("/admin/bugs", cookie)).includes("BUG_PRIVATE_GUEST_ONE") &&
         (await html("/admin/bugs", cookie)).includes("BUG_PRIVATE_GUEST_TWO"),
-      "admin/superuser can review both reports",
+      "superuser can review both reports",
     );
   const adminDetail = await html(`/bugs/${id}`, admin),
     review = action(adminDetail, "reviewBugReportAction"),
@@ -199,7 +200,7 @@ export async function verifyBugHttp({
     updated.status === "resolved" &&
       updated.version === 3 &&
       updated.reproduction === fields.reproduction,
-    "admin resolves while original report remains immutable",
+    "superuser resolves while original report remains immutable",
   );
   check(
     (await html(`/bugs/${id}`, guest)).includes("Synthetic resolution") &&
@@ -272,10 +273,10 @@ export async function verifyBugHttp({
   );
   await db.prepare("UPDATE users SET role='guest' WHERE id=4").run();
   check(
-    (await request("/admin/bugs", admin)).status === 404,
-    "same admin cookie loses bug-review access immediately after local role downgrade",
+    (await request("/admin/bugs", actorCookies.admin)).status === 404,
+    "ordinary admin remains denied after current role downgrade",
   );
-  await submit(`/bugs/${id}`, admin, review, {
+  await submit(`/bugs/${id}`, actorCookies.admin, review, {
     reportId: id,
     version: 3,
     requestToken: randomUUID(),

@@ -1,11 +1,13 @@
-# 비공개 버그 제보와 관리자 리뷰
+# 비공개 버그 제보와 슈퍼관리자 리뷰
+
+프로젝트 관리자 역할과 버그 전역 검토는 별개다. SU만 전역 검토·검증/휴지통을 관리하고 모든 기존 역할의 본인 제보 작성/열람은 유지한다. 현재 게시/인수 상태는 [TODO](TODO.md#ux-재설계와-프로젝트-바인딩)를 따른다.
 
 ## 사용 흐름
 
 - `/bugs`: 내 제보 목록(20건/페이지), 제목 검색·상태 필터, 제보 작성. guest도 제보할 수 있지만 작업/프로젝트 쓰기 권한은 바뀌지 않는다.
 - `/bugs/[id]`: 불변 원문, 현재 처리 상태·해결 내용·수정 SHA, 추가 설명/정정, 최근 순 처리 이력(30건/페이지).
-- `/admin/bugs`: admin/superuser 전체 검토 목록. 상세 화면에서 검토 메모·상태·우선순위·해결 사유·선택 commit SHA 저장.
-- 모든 본문/이력은 작성자와 관리자만 보며 관리자 메모도 작성자에게 표시한다. 일반 사용자의 다른 제보는 존재하지 않는 ID와 같은 404다.
+- `/admin/bugs`: superuser 전용 전체 검토 목록. 상세 화면에서 검토 메모·상태·우선순위·해결 사유·선택 commit SHA 저장.
+- 모든 본문/이력은 작성자와 슈퍼관리자만 보며 검토 메모도 작성자에게 표시한다. 일반 사용자의 다른 제보는 존재하지 않는 ID와 같은 404다.
 - 제보는 실행 지시가 아니다. 코드를 자동 수정하거나 링크를 자동 조회하지 않는다. 수정 검토는 사용자의 작업 범위 안에서 별도로 진행한다.
 
 ## 보존 및 입력 계약
@@ -31,8 +33,8 @@
 
 ## 검증 휴지통 영구 삭제
 
-- admin/superuser는 해결 또는 종료 상태의 제보에 검증 방법·결과(최대 4,000자)를 남겨 검증 완료로 표시한다. 새 추가 설명 또는 검토 변경은 검증 완료를 원자적으로 해제한다.
-- 검증된 해결/종료 제보만 휴지통으로 옮긴다. `/admin/bugs/trash`, `/admin/bugs/trash/[id]`에서 admin/superuser가 원문·이력을 확인하고 복원한다. 이동/복원도 이력이며 원문을 덮어쓰지 않는다. 일반 목록/검색/건수/상세/이력에서는 관리자에게도 휴지통 기록이 제외되고 일반 사용자는 휴지통 자체에 접근할 수 없다.
+- superuser는 해결 또는 종료 상태의 제보에 검증 방법·결과(최대 4,000자)를 남겨 검증 완료로 표시한다. 새 추가 설명 또는 검토 변경은 검증 완료를 원자적으로 해제한다.
+- 검증된 해결/종료 제보만 휴지통으로 옮긴다. `/admin/bugs/trash`, `/admin/bugs/trash/[id]`에서 superuser가 원문·이력을 확인하고 복원한다. 이동/복원도 이력이며 원문을 덮어쓰지 않는다. 일반 목록/검색/건수/상세/이력에서는 슈퍼관리자에게도 휴지통 기록이 제외되고 일반 사용자는 휴지통 자체에 접근할 수 없다.
 - 영구 삭제는 현재 설정으로 확인된 superuser만 가능하다. 검증된 해결/종료 기록이 휴지통에 있어야 하며 제목을 정확히 다시 입력하고 현재 버전·전체 이력 수·마지막 event ID·내용 지문을 일치시켜야 한다. 1,000건을 넘는 이력은 이 화면에서 영구 삭제하지 않는다.
 - 지문은 원문·상태·검증·전체 순서화된 이력에 대한 SHA-256이다. 계정 파기로 독립적으로 NULL이 될 수 있는 계정 연결 ID는 지문에서 제외한다. 이를 계정 신원에 대한 암호학적 증명으로 사용하지 않는다. UI의 30건 페이지가 아니라 전체 이력을 50건씩 읽는다.
 - 하나의 DB transaction/batch에서 최소 삭제 증빙을 생성하고 해당 이력과 원문을 삭제한다. 실패하면 전체 rollback된다. native MariaDB는 먼저 parent row FOR UPDATE를 잠가 READ COMMITTED에서도 복원과 삭제가 교차하지 않게 한다. Sites D1 batch도 원자적이다. 재시도는 같은 수행자·대상·operation token·지문으로 이미 완료된 삭제만 확인한다.
@@ -48,6 +50,6 @@
 
 서버도 MIME/bytes signature/크기/개수/필드를 검증한다. 기존 private-files/R2 또는 native UPLOAD_DIR를 재사용하고 key는 `bugs/<actor>/...`로 프로젝트 정리와 분리한다. 본문+파일 이름/MIME/크기/hash fingerprint로 동일 재시도와 다른 payload를 구분한다. D1 metadata/원문/event는 atomic, lease 만료는 trigger로 거부한다. 업로드/DB 실패의 새 파일은 참조 검사 후 제거하거나 기존 durable cleanup에 남긴다.
 
-`/api/bug-screenshots/[screenshotId]`는 매 요청의 persisted user/현재 역할·부모 제보 권한을 검사한다. 작성자/admin/SU만 조회하고 trash는 admin/SU만 본다. 익명401, 다른 사용자/없는 ID는 같은404다. private no-store/nosniff/sandbox CSP를 사용하고 공개 URL·image optimizer로 전송하지 않는다.
+`/api/bug-screenshots/[screenshotId]`는 매 요청의 persisted user/현재 역할·부모 제보 권한을 검사한다. 작성자/SU만 조회하고 trash는 SU만 본다. 익명401, 다른 사용자/없는 ID는 같은404다. private no-store/nosniff/sandbox CSP를 사용하고 공개 URL·image optimizer로 전송하지 않는다.
 
 Drizzle0013과 native v9는 metadata 표·fingerprint 기본값과 필요한 guard/cleanup만 추가한다. 기존 migration/ledger는 불변이다. Sites의 명시 확인 purge는 metadata cascade/R2 cleanup을 함께 사용한다. **Native 첨부 제보 purge는 durable 파일 정리 도입 전 fail-closed로 원문/파일을 보존한다(QLT-020).** 운영 schema 적용/파기 승인이 코드나 과거 테스트 승인에서 자동 파생되지 않는다.

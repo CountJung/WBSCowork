@@ -1,3 +1,4 @@
+import {projectAccessGuard,type ProjectViewer} from "@/src/shared/server/project-scope/index.server";
 import { taskManagementGuard } from '@/src/shared/server/task-scope/index.server';
 import { assertTaskScope } from './task-permissions.server';
 import { createHash } from 'node:crypto';
@@ -8,9 +9,10 @@ import { workOperationToken,taskVersion,type TaskActor } from '../model/workflow
 import { assertTaskActor } from './task-workflow.server';
 import { getTaskById,listTasksByProject } from './task-repository.server';
 
-export async function getDependencySnapshot(projectId:number):Promise<DependencySnapshot> {
+export async function getDependencySnapshot(projectId:number,viewer?:ProjectViewer):Promise<DependencySnapshot> {
+  const binding=viewer?projectAccessGuard(viewer,"p.id"):{sql:"1=1",params:[]};
   // A joined statement returns a coherent graph/version even during another writer.
-  const rows=await getDatabasePool().query('SELECT p.dependency_version,d.task_id,d.predecessor_id FROM projects p LEFT JOIN task_dependencies d ON d.project_id=p.id WHERE p.id=? ORDER BY d.id',[projectId]) as {dependency_version:number;task_id:number|null;predecessor_id:number|null}[];
+  const rows=await getDatabasePool().query(`SELECT p.dependency_version,d.task_id,d.predecessor_id FROM projects p LEFT JOIN task_dependencies d ON d.project_id=p.id WHERE p.id=? AND ${binding.sql} ORDER BY d.id`,[projectId,...binding.params]) as {dependency_version:number;task_id:number|null;predecessor_id:number|null}[];
   if(!rows.length)throw new Error('프로젝트를 찾을 수 없습니다.');
   return {version:Number(rows[0].dependency_version),edges:rows.filter(row=>row.task_id!==null).map(row=>({taskId:Number(row.task_id),predecessorId:Number(row.predecessor_id)}))};
 }
@@ -23,7 +25,8 @@ export async function setTaskPredecessors(input:{taskId:number;version:number;gr
   if(!Number.isSafeInteger(input.graphVersion)||input.graphVersion<0)throw new Error('선행 관계 버전이 올바르지 않습니다.');
   const key=`${actor.userId}:dependencies:${task.id}:${workOperationToken(input.token)}`;
   const fingerprint=createHash('sha256').update(JSON.stringify({ids,version,graphVersion:input.graphVersion})).digest('hex');
-  const find=async()=> (await getDatabasePool().query('SELECT request_fingerprint FROM task_events WHERE operation_token=? AND actor_id=?',[key,actor.userId]) as {request_fingerprint:string}[])[0];
+  const receiptScope=taskManagementGuard(actor,"receipt_task.project_id","receipt_task.activity_team_id");
+  const find=async()=> (await getDatabasePool().query(`SELECT event.request_fingerprint FROM task_events event JOIN tasks receipt_task ON receipt_task.id=event.task_id WHERE event.operation_token=? AND event.actor_id=? AND ${receiptScope.sql}`,[key,actor.userId,...receiptScope.params]) as {request_fingerprint:string}[])[0];
   const previous=await find();if(previous){if(previous.request_fingerprint!==fingerprint)throw new Error('같은 요청을 다른 내용에 사용할 수 없습니다.');return;}
   if(!['planned','blocked'].includes(task.status))throw new Error('선행 관계는 예정 또는 차단 상태에서만 바꿀 수 있습니다.');
   const [snapshot,tasks]=await Promise.all([getDependencySnapshot(task.projectId),listTasksByProject(task.projectId)]);
@@ -44,3 +47,5 @@ export async function setTaskPredecessors(input:{taskId:number;version:number;gr
   ]);
   const saved=await find();if(saved?.request_fingerprint!==fingerprint)throw new Error('다른 변경이 먼저 저장되었거나 권한이 변경되었습니다. 새로고침해 주세요.');
 }
+
+export function getDependencySnapshotForViewer(projectId:number,viewer:ProjectViewer){return getDependencySnapshot(projectId,viewer);}

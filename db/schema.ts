@@ -9,8 +9,8 @@ export const users = sqliteTable("users", {
   lastLoginAt: text("last_login_at"), lastSyncedAt: text("last_synced_at"), createdAt: createdAt(),
 }, (t) => [uniqueIndex("users_email_unique").on(t.email), check("users_role_check", sql`${t.role} IN ('admin','member','guest')`)]);
 export const projects = sqliteTable("projects", {
-  id: id(), name: text("name").notNull(), projectType: text("project_type").notNull().default("collaboration"), workspaceVersion: integer("workspace_version").notNull().default(0), workspaceToken: text("workspace_token"), dependencyVersion: integer("dependency_version").notNull().default(0), dependencyToken: text("dependency_token"), goal: text("goal").notNull().default(""), successCriteria: text("success_criteria").notNull().default(""), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(), createdAt: createdAt(),
-}, (t) => [check("project_type_check", sql`${t.projectType} IN ('collaboration','volunteering')`)]);
+  id: id(), name: text("name").notNull(), accessMode: text("access_mode").notNull().default("legacy_authenticated"), projectType: text("project_type").notNull().default("collaboration"), workspaceVersion: integer("workspace_version").notNull().default(0), workspaceToken: text("workspace_token"), dependencyVersion: integer("dependency_version").notNull().default(0), dependencyToken: text("dependency_token"), goal: text("goal").notNull().default(""), successCriteria: text("success_criteria").notNull().default(""), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(), createdAt: createdAt(),
+}, (t) => [check("project_type_check", sql`${t.projectType} IN ('collaboration','volunteering')`), check("project_access_mode_check", sql`${t.accessMode} IN ('legacy_authenticated','members_only')`)]);
 export const projectMembers = sqliteTable("project_members", {
   projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
