@@ -6,6 +6,7 @@ import { queueObjectCleanup, deleteUnreferencedObject, validateObjectKey } from 
 import { getRuntimeEnv } from "../runtime-env/index.server";
 
 export type StoredPrivateFile = { contentHash: string; absolutePath: string; filePath: string; fileMimeType: string; fileName: string; fileSizeBytes: number };
+export type NativePrivateFileStaging = {beforeWrite:(key:string,size:number,hash:string)=>Promise<void>;onWriteFailure:(key:string)=>Promise<void>};
 export function privateUploadRoot() {
   return path.resolve(getRuntimeEnv().uploadDir);
 }
@@ -15,7 +16,7 @@ export function privateFilePath(key: string) {
   if (!target.startsWith(root + path.sep)) throw new Error("Invalid private file path.");
   return target;
 }
-export async function storePrivateFile(file: File, directory: string): Promise<StoredPrivateFile> {
+export async function storePrivateFile(file: File, directory: string, nativeStaging?:NativePrivateFileStaging): Promise<StoredPrivateFile> {
   validateObjectKey(directory);
   const safe = path.basename(file.name).replace(/[^A-Za-z0-9._-]+/g, "_").slice(0,120) || "attachment";
   const filePath = `${directory}/${randomUUID()}-${safe}`;
@@ -30,9 +31,16 @@ export async function storePrivateFile(file: File, directory: string): Promise<S
     } catch (error) { await deleteUnreferencedObject(filePath).catch(() => undefined); throw error; }
   } else {
     const target = privateFilePath(filePath);
-    await mkdir(path.dirname(target), {recursive:true});
-    try { await writeFile(target, Buffer.from(await file.arrayBuffer())); }
-    catch (error) { await rm(target, {force:true}).catch(()=>undefined); throw error; }
+    await nativeStaging?.beforeWrite(filePath,file.size,contentHash);
+    try { await mkdir(path.dirname(target), {recursive:true});await writeFile(target, Buffer.from(await file.arrayBuffer())); }
+    catch (error) {
+      if(nativeStaging){
+        // The precommitted ledger survives a second failure here; preserve partial
+        // bytes for review rather than removing a file whose outcome is uncertain.
+        await nativeStaging.onWriteFailure(filePath).catch(()=>undefined);
+      }else await rm(target, {force:true}).catch(()=>undefined);
+      throw error;
+    }
   }
   return {contentHash, filePath, absolutePath:isHostedRuntime()?filePath:privateFilePath(filePath), fileName, fileMimeType:file.type || "application/octet-stream", fileSizeBytes:file.size};
 }

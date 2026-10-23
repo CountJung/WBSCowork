@@ -1,26 +1,26 @@
-import { rm } from "node:fs/promises";
 import { getDatabasePool } from "@/src/shared/server/database/index.server";
 import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server";
 import { deleteUnreferencedObject } from "@/src/shared/server/object-cleanup/index.server";
-import { storePrivateFile, readPrivateFile, privateFilePath, type StoredPrivateFile } from "@/src/shared/server/private-files/index.server";
+import {stageNativeBugFile,queueNativeBugFileCleanup,quarantineNativeBugFile,NativeBugCleanupError} from "@/src/shared/server/native-bug-cleanup/index.server";
+import { storePrivateFile, readPrivateFile, type StoredPrivateFile } from "@/src/shared/server/private-files/index.server";
 import { validateScreenshotBytes, type BugScreenshot } from "../model/screenshots";
 import type { BugViewer } from "../model/bug-report";
 export type StoredBugScreenshot = StoredPrivateFile;
 export async function discardBugScreenshot(filePath: string) {
   if (!filePath.startsWith("bugs/")) throw new Error("Invalid screenshot key.");
   if (isHostedRuntime()) return deleteUnreferencedObject(filePath);
-  const rows = await getDatabasePool().query("SELECT COUNT(*) AS n FROM bug_report_screenshots WHERE file_path=?",[filePath]) as {n:number}[];
-  if (!rows[0] || Number(rows[0].n)) throw new Error("Screenshot is referenced.");
-  await rm(privateFilePath(filePath), {force:true});
+  await queueNativeBugFileCleanup(filePath);
+  if((await quarantineNativeBugFile(filePath)).state==="referenced")throw new NativeBugCleanupError("referenced");
 }
 export async function storeBugScreenshots(files: File[], viewer: BugViewer) {
   await validateScreenshotBytes(files);
   const stored: StoredBugScreenshot[] = [];
   try {
-    for (const file of files) stored.push(await storePrivateFile(file, `bugs/${viewer.userId}`));
+    for (const file of files) stored.push(await storePrivateFile(file, `bugs/${viewer.userId}`,isHostedRuntime()?undefined:{beforeWrite:stageNativeBugFile,onWriteFailure:discardBugScreenshot}));
     return stored;
   } catch (error) {
-    // Hosted failures remain in the durable cleanup queue if immediate cleanup fails.
+    // Hosted cleanup and native reversible quarantine both retain their durable
+    // staging rows if immediate recovery fails. No native file is unlinked here.
     for (const file of stored) await discardBugScreenshot(file.filePath).catch(()=>undefined);
     throw error;
   }

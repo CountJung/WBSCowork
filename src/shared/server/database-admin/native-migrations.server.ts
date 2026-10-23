@@ -1,3 +1,5 @@
+import { nativeMigrationV14 } from "./native-migration-v14";
+import { nativeMigrationV13 } from "./native-migration-v13";
 import { nativeMigrationV12 } from "./native-migration-v12";
 import { nativeMigrationV11 } from "./native-migration-v11";
 import { nativeMigrationV10 } from "./native-migration-v10";
@@ -16,7 +18,7 @@ export class NativeMigrationError extends Error {}
 
 export type MigrationConnection = { query(sql: string, values?: unknown[]): Promise<unknown> };
 export type MigrationLedgerRow = { version: number; name: string; checksum: string; appliedAt?: string };
-export const nativeMigrationManifest = [nativeMigrationV1, nativeMigrationV2, nativeMigrationV3, nativeMigrationV4, nativeMigrationV5, nativeMigrationV6, nativeMigrationV7, nativeMigrationV8, nativeMigrationV9, nativeMigrationV10, nativeMigrationV11, nativeMigrationV12] as const;
+export const nativeMigrationManifest = [nativeMigrationV1, nativeMigrationV2, nativeMigrationV3, nativeMigrationV4, nativeMigrationV5, nativeMigrationV6, nativeMigrationV7, nativeMigrationV8, nativeMigrationV9, nativeMigrationV10, nativeMigrationV11, nativeMigrationV12, nativeMigrationV13, nativeMigrationV14] as const;
 export const migrationChecksum = (specification: unknown) => createHash("sha256").update(JSON.stringify(specification)).digest("hex");
 export function quoteSchemaIdentifier(identifier: string) {
   if (!/^[A-Za-z0-9_]{1,64}$/.test(identifier)) throw new NativeMigrationError("Schema identifier must contain 1–64 letters, numbers or underscores.");
@@ -79,7 +81,7 @@ export async function verifyNativeSchema(connection: MigrationConnection, databa
     const tableInfo = await rows<{ engine: string; collation: string }>(connection, "SELECT ENGINE AS engine, TABLE_COLLATION AS collation FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?", [database, table]);
     if (tableInfo[0]?.engine.toLowerCase() !== "innodb" || tableInfo[0]?.collation !== "utf8mb4_unicode_ci") throw new NativeMigrationError(`Native schema drift: ${table} must use InnoDB and utf8mb4_unicode_ci.`);
     for (const entry of splitSchemaEntries(body)) {
-      const column = entry.match(/^(\w+)\s+(BIGINT|INT|VARCHAR\(\d+\)|CHAR\(\d+\)|DATETIME|DATE|TEXT|ENUM\([^)]*\))([\s\S]*)$/);
+      const column = entry.match(/^(\w+)\s+(BIGINT|INT|VARCHAR\(\d+\)|CHAR\(\d+\)|DATETIME|DATE|MEDIUMTEXT|TEXT|ENUM\([^)]*\))([\s\S]*)$/);
       if (column) {
         const [, name, type, rest] = column, actual = found.get(name);
         const nullable = !/NOT NULL|PRIMARY KEY/.test(rest);
@@ -98,6 +100,15 @@ export async function verifyNativeSchema(connection: MigrationConnection, databa
       if (check && !checks.some(row => row.name === check[1] && normalizeCheck(row.clause) === normalizeCheck(check[2]))) throw new NativeMigrationError(`Native schema drift: incompatible CHECK ${table}.${check[1]}.`);
       if (!key && !fk && !check) throw new NativeMigrationError(`Unsupported immutable schema entry in ${table}.`);
     }
+  }
+  if(specifications.some(sql=>sql.includes("CREATE TABLE IF NOT EXISTS native_bug_file_cleanup_jobs (")))await verifyNativeBugCleanupTriggers(connection,database);
+}
+
+async function verifyNativeBugCleanupTriggers(connection:MigrationConnection,database:string){
+  const found=await rows<{name:string;event:string;timing:string;tableName:string;body:string}>(connection,"SELECT TRIGGER_NAME AS name,EVENT_MANIPULATION AS event,ACTION_TIMING AS timing,EVENT_OBJECT_TABLE AS tableName,ACTION_STATEMENT AS body FROM INFORMATION_SCHEMA.TRIGGERS WHERE TRIGGER_SCHEMA=?",[database]);
+  for(const trigger of nativeMigrationV13.triggers){
+    const actual=found.find(row=>row.name===trigger.name);
+    if(!actual||actual.event!==trigger.event||actual.timing!=="BEFORE"||actual.tableName!=="bug_report_screenshots"||normalizeSqlSyntax(actual.body)!==normalizeSqlSyntax(trigger.body))throw new NativeMigrationError("Native screenshot staging trigger is missing or incompatible.");
   }
 }
 
@@ -233,6 +244,16 @@ export async function runNativeMigrations(connection: MigrationConnection, datab
           const present=await rows(connection,"SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=? AND TABLE_NAME=? AND CONSTRAINT_NAME=?",[database,check.table,check.name]);
           if(!present.length)await connection.query(`ALTER TABLE ${quoteSchemaIdentifier(check.table)} ADD ${check.definition}`);
         }
+        await verifyNativeSchema(connection,database,nativeMigrationManifest.filter(m=>m.version<=12).flatMap(m=>[...m.statements]));
+      }
+      else if(migration.version===13){
+        for(const statement of nativeMigrationV13.newTables)await connection.query(statement);
+        const existing=await rows<{name:string}>(connection,"SELECT TRIGGER_NAME AS name FROM INFORMATION_SCHEMA.TRIGGERS WHERE TRIGGER_SCHEMA=?",[database]);
+        for(const trigger of nativeMigrationV13.triggers)if(!existing.some(row=>row.name===trigger.name))await connection.query(`CREATE TRIGGER ${quoteSchemaIdentifier(trigger.name)} BEFORE ${trigger.event} ON bug_report_screenshots FOR EACH ROW ${trigger.body}`);
+        await verifyNativeSchema(connection,database,nativeMigrationManifest.filter(m=>m.version<=13).flatMap(m=>[...m.statements]));
+      }
+      else if(migration.version===14){
+        for(const statement of nativeMigrationV14.newTables)await connection.query(statement);
         await verifyNativeSchema(connection,database);
       }
       else throw new NativeMigrationError("This migration version has no implementation.");

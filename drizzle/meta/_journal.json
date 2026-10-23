@@ -120,6 +120,13 @@
       "when": 1792735737082,
       "tag": "0016_project_access_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1792755369466,
+      "tag": "0017_project_report_ledger",
+      "breakpoints": true
     }
   ]
 }

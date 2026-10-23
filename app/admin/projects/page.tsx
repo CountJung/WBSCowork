@@ -98,6 +98,7 @@ function ProjectEditCard({ project,workspace,users,accessPreview }: { project: P
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ justifyContent: "space-between", alignItems: { sm: "flex-start" } }}>
           <Stack spacing={0.5}>
             <Typography variant="h6">{project.name}</Typography>
+            <Button component="a" href={`/admin/projects/${project.id}/reports`} size="small" sx={{ alignSelf: "flex-start" }}>활동 보고서</Button>
             <Typography variant="body2" color="text.secondary">
               기간 {formatDate(project.startDate)} ~ {formatDate(project.endDate)}
             </Typography>
