@@ -176,9 +176,23 @@ version14 부모 운영 재검증에서는 전송 실패 뒤 페이지 유지·�
 | `npm run build:native`, `npm run build:sites`, `npm run test:sites:http`, `npm run test:sites:auth` | 최종 소스 양쪽 build·auth18, Worker HTTP257 PASS | 기존 Native logging/NFT·Vinext proxy/static 분류 경고 유지. 최종 UI 안내/명단 scope·선택 state 보정 후 bundle 재빌드와 lint/types/FSD도 PASS, 동일 최종 bundle 브라우저도 아래 별도 scope로 PASS |
 | `WBS_QA_ADMIN_SPA=1 node scripts/test-volunteer-browser.mjs` | 최종 bundle의 1280 light/390 dark 각18, 합계36 조건 PASS; hydrated RSC multipart POST46건 모두303 | 관리자 SPA 프로젝트/참여자/팀장 변경·select 초기화/행 제거, 업무 생성/배정·담당자/팀장 직접 완료/재개·선택 private TXT bytes·완료 metadata/이력·기존 제출 필수 거부. D1/R2 대조와 명시 reload 영속화 PASS, uncaught page error/실패 request/가로 overflow0 |
 
-브라우저 최초 일반 shell launch는 Chromium SUID sandbox misconfigured/SIGABRT로 실패했다. 승인된 실행 경로에서 같은 기본 Chromium sandbox로 실행해 실제 흐름을 통과했으며 `--no-sandbox`나 플랫폼/권한 설정 변경은 없었다. selector/redirect 대기 보정은 QA 동기화 문제였고 앱 실패로 단정하지 않았다. readiness는 관리표21개와 별도 migration ledger를 확인한다. 최종 브라우저 실행 전후 entry SHA256 `c09b51a26cd9ed363ee83c25ded79065169eb3358690a5a100f78e5375bea211`이 동일했다. PRD-047~050/QLT-023의 코드·로컬/합성 게이트를 닫으며 운영 적용·실계정/실사이트 인수와 구분한다. 업무 편집·팀 필터의 브라우저 직접 조작은 이번 흐름에 포함하지 않았으며 서버/DB 회귀나 구현 확인을 클릭 인수로 확대하지 않는다.
+브라우저 최초 일반 shell launch는 Chromium SUID sandbox misconfigured/SIGABRT로 실패했다. 승인된 실행 경로에서 같은 기본 Chromium sandbox로 실행해 실제 흐름을 통과했으며 `--no-sandbox`나 플랫폼/권한 설정 변경은 없었다. selector/redirect 대기 보정은 QA 동기화 문제였고 앱 실패로 단정하지 않았다. readiness는 관리표21개와 별도 migration ledger를 확인한다. 최종 브라우저 실행 전후 entry SHA256 `c09b51a26cd9ed363ee83c25ded79065169eb3358690a5a100f78e5375bea211`이 동일했다. PRD-047~050/QLT-023의 코드·로컬/합성 게이트를 닫으며 운영 적용·실계정/실사이트 인수와 구분한다. 업무 편집·팀 필터의 브라우저 직접 조작은 위 최초36조건 흐름에 포함하지 않았다. 해당 과거 범위를 유지하며 후속 실제 클릭 결과는 아래 별도 scope로 기록한다.
 
-원본 docs-canon 검사는 기존 리소스/전달 ZIP 미가용 이후 이번에 실행하지 않았다. 저장소 문서 검사/self-test·수정한 두 HTML의 HTMLParser·`git diff --check` PASS이며 문서30·등록16/핵심7·상대링크200·npm명령115를 확인했다. 별도 내용 검토로 확정 정책/실제 구현/최종 합성 인수와 운영 미실행 경계, 과거 기반 회차와 이번 scope의 구분, 사용자 가이드와 현재 계약의 정합성을 확인했다. 원본 canon 준수 인증으로 확대하지 않는다.
+
+후속 Worker 실클릭 검증은 main `cdde9e9bfde881a4d09539857ec9be4458dedebd`/sites `b9769b6`의 같은 앱 소스에서 수행했다. `node .test-artifacts/volunteer-followup/worker/focused.mjs`는 Git 미추적 임시 하네스이며 배포/상시 명령 등록이나 새 추적 테스트를 뜻하지 않는다. 기존 entry SHA256은 실행 전후 동일했고 이는 entry 비교이지 전체 bundle hash 비교는 아니다.
+
+| 추가 검증·환경 | 실제 결과 | 범위/한계 |
+| --- | --- | --- |
+| Worker/D1, 기본 sandbox Chromium, 1280 light/390 dark | 실제23조건 PASS, hydrated RSC multipart POST4건 모두303 | 팀장이 자기 팀 업무의 제목·담당자4·planned 완료 방식을 제출 필수로 편집 후 reload/D1 version2 대조. 타팀 편집 UI 미노출·변조 taskId 거부와 타팀 version1 보존. 전체/팀A/팀B/공통 필터의 실제 링크 클릭 후 task ID 집합 대조. console/실패 요청/가로 overflow0 |
+| Native Next/MariaDB11.4.13, loopback3307 새 합성 DB | 실제12 browser 조건 PASS, NextAction multipart POST4건 모두303·text/x-component | 1280에서는 팀장의 편집/필터/private 거부, 390에서는 담당자의 직접 완료/재개·선택 private TXT 업로드/다운로드·layout을 검증. console/page error0, request 실패는 ERR_ABORTED61건/그 외0 |
+
+Native 절차는 같은 `cdde9e9` 소스의 `node .test-artifacts/volunteer-followup/native/run.mjs`와 사후 읽기 전용 `node .test-artifacts/volunteer-followup/native/verify.mjs`다. 기존 `.next`를 연결한 별도 server 디렉터리/합성 환경·JWT로 실제 `.env` 자동 로드를 피하고 기본 Chromium sandbox의 승인 실행 경로를 사용했다. migration11을 적용한 새 `wbs_native_browser_mvkemk84_d4f5de_test`만 사용했다.
+
+최초 Native 임시 SQL 검사는 MariaDB BIGINT와 JS number의 strict 비교 때문에 실패했다. `bigIntAsNumber:true`로 검증 하네스를 보정한 뒤 DB/로컬 파일의 읽기 대조와 저장된 UI 결과 검사가 exit0이었다. UI의4 POST와 owner 다운로드는 다시 요청하지 않았으며 `run.mjs` 전체를 exit0으로 기록하지 않는다. 완료/재개 event의 actor3·시각·재개 사유, 현재 in_progress의 완료자/시각 NULL, private 제출 v1/29bytes 첨부의 DB·실제 파일과 앞서 확인한 owner 다운로드 bytes 일치, 팀장 본문 비노출/API404를 확인했다. launcher는 전용 DB pool 대기 후 자기 PID SIGTERM으로 종료했으며 앱 오류로 분류하지 않았다. `.next/BUILD_ID` 파일 bytes의 SHA256 `aa33b54c2a21f26f1cae9911279267c429991f432b48186b3bf1770d49716b72`는 전체 bundle hash를 뜻하지 않는다.
+
+후속 Worker23/Native12조건은 최초36조건 및 DB/HTTP suite에 합산하지 않는다. 두 viewport에서 서로 다른 Native 흐름을 실행했으므로 동일한 전체 흐름이나 모든 Native 화면 인수로 확대하지 않는다. 앱 결함이나 코드 수정은 없었으며 임시 하네스만 사용했다. 운영 데이터·실제 Google 로그인·운영 migration·게시/배포 결과로 확대하지 않는다. 이번 문서 후속은 기존 검증 정본만 갱신하며 완료 이력/열린 TODO의 상태는 유지한다.
+
+기능 구현 회차에는 원본 docs-canon 검사를 기존 리소스/전달 ZIP 미가용 이후 실행하지 않았다. 당시 저장소 문서 검사/self-test·수정한 두 HTML의 HTMLParser·`git diff --check` PASS이며 문서30·등록16/핵심7·상대링크200·npm명령115를 확인했다. 이번 HARNESS 후속도 저장소 문서 검사/self-test·`git diff --check` PASS이며 문서/링크/명령 수는 동일하다. 원본 canon 검사는 이번에도 미실행이다. 별도 내용 검토로 확정 정책/실제 구현/최종 합성 인수와 운영 미실행 경계, 과거 기반 회차와 이번 scope의 구분, 사용자 가이드와 현재 계약의 정합성을 확인했다. 원본 canon 준수 인증으로 확대하지 않는다.
 
 ## 문서 정리 검증
 
