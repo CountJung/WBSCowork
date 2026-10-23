@@ -28,7 +28,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const runtimeEnv = getRuntimeEnv();
-  const session=await getAuthSession();
+  const session=runtimeEnv.auth.nextAuthSecret?await getAuthSession():null;
 
   return (
     <html lang="ko" className={roboto.variable} suppressHydrationWarning>
