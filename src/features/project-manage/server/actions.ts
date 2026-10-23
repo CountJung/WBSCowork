@@ -1,12 +1,14 @@
 "use server";
 
 import { validateDateRange } from "@/src/shared/lib/date";
+import {getRuntimeEnv} from "@/src/shared/server/runtime-env/index.server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
+import { getAuthSession, getSignInPath, getUserByEmail } from "@/src/entities/user/index.server";
 import { logUserAction, logUserActionFailure } from "@/src/shared/server/logging/index.server";
-import { createProject, deleteProject, updateProject } from "@/src/entities/project/index.server";
+import { createProject, deleteProject, updateProject,changeProjectWorkspace } from "@/src/entities/project/index.server";
+import {projectTypes, type ProjectType,type WorkspaceCommand,type ActivityKind,type TeamRole} from "@/src/entities/project";
 import { listAttachmentsByProject, listRevisionFilePathsByProject, listSubmissionsByProject } from "@/src/entities/submission/index.server";
 import { listTasksByProject } from "@/src/entities/task/index.server";
 import {
@@ -51,6 +53,12 @@ async function requireAdminSession() {
   }
   return session;
 }
+async function requireCurrentAdmin(session:Awaited<ReturnType<typeof requireAdminSession>>) {
+  const user=await getUserByEmail(session.user.email??"");
+  const isSuperuser=!!session.user.isSuperuser&&user?.email.toLowerCase()===getRuntimeEnv().auth.superuserEmail;
+  if(!user||!canAccessAdminPanel(user.role,isSuperuser))throw new Error("프로젝트 관리 권한이 변경되었습니다.");
+  return {user,isSuperuser};
+}
 
 export async function createProjectAdminAction(formData: FormData) {
   const session = await requireAdminSession();
@@ -67,7 +75,10 @@ export async function createProjectAdminAction(formData: FormData) {
 
     validateDateRange(startDate, endDate);
 
-    const project = await createProject({ name, startDate, endDate, goal: getSingleValue(formData.get("goal")), successCriteria: getSingleValue(formData.get("successCriteria")) });
+    const projectType=(getSingleValue(formData.get("projectType"))||"collaboration") as ProjectType;
+    if(!projectTypes.includes(projectType))throw new Error("프로젝트 유형이 올바르지 않습니다.");
+    await requireCurrentAdmin(session);
+    const project = await createProject({ name,projectType, startDate, endDate, goal: getSingleValue(formData.get("goal")), successCriteria: getSingleValue(formData.get("successCriteria")) });
 
     revalidatePath("/admin/projects");
     revalidatePath("/tasks");
@@ -114,6 +125,7 @@ export async function updateProjectAdminAction(formData: FormData) {
 
     validateDateRange(startDate, endDate);
 
+    await requireCurrentAdmin(session);
     const project = await updateProject({ id: projectId, name, startDate, endDate, goal: formData.has("goal") ? getSingleValue(formData.get("goal")) : undefined, successCriteria: formData.has("successCriteria") ? getSingleValue(formData.get("successCriteria")) : undefined });
 
     revalidatePath("/admin/projects");
@@ -154,6 +166,7 @@ export async function deleteProjectAdminAction(formData: FormData) {
     if (getSingleValue(formData.get("confirmDestruction")) !== "yes") {
       throw new Error("프로젝트 종료 및 개인정보 파기에 동의해야 합니다.");
     }
+    await requireCurrentAdmin(session);
 
     const [submissionsToClean, attachmentsToClean, tasksToClean, revisionFilesToClean] = await Promise.all([
       // 파기는 저장 파일 전체를 지워야 하므로 뷰어 범위를 적용하지 않는다.
@@ -241,4 +254,29 @@ export async function deleteProjectAdminAction(formData: FormData) {
   }
 
   redirect(redirectPath);
+}
+
+export async function changeProjectWorkspaceAction(form:FormData) {
+  const session=await requireAdminSession();
+  let status:'success'|'error'='success',message='프로젝트 팀과 참여자를 저장했습니다.';
+  try {
+    const {user,isSuperuser}=await requireCurrentAdmin(session);
+    const projectId=parseRequiredPositiveInteger(form.get('projectId'),'프로젝트');
+    const kind=getSingleValue(form.get('workspaceKind'));
+    const active=()=>{const value=getSingleValue(form.get('active'));if(value!=='0'&&value!=='1')throw new Error('참여 상태가 올바르지 않습니다.');return value==='1';};
+    const userId=()=>parseRequiredPositiveInteger(form.get('userId'),'참여자');
+    const teamId=()=>parseRequiredPositiveInteger(form.get('teamId'),'팀');
+    let command:WorkspaceCommand;
+    switch(kind) {
+      case 'project_type':command={kind,projectType:getSingleValue(form.get('projectType')) as ProjectType};break;
+      case 'project_member':command={kind,userId:userId(),active:active()};break;
+      case 'create_team':command={kind,name:getSingleValue(form.get('teamName')),activityKind:getSingleValue(form.get('activityKind')) as ActivityKind};break;
+      case 'team_member':command={kind,teamId:teamId(),userId:userId(),role:getSingleValue(form.get('role')) as TeamRole,active:active()};break;
+      default:throw new Error('프로젝트 변경 형식이 올바르지 않습니다.');
+    }
+    await changeProjectWorkspace({projectId,actor:{userId:user.id,isSuperuser},version:Number(getSingleValue(form.get('workspaceVersion'))),token:getSingleValue(form.get('operationToken')),command});
+    revalidatePath('/admin/projects');revalidatePath('/tasks');revalidatePath('/my-work');
+    await logUserAction('admin.projects',{actorEmail:session.user.email??null,action:'project.workspace',entityType:'project',entityId:projectId,projectId});
+  }catch(error){status='error';message=error instanceof Error?error.message:'프로젝트 변경을 저장하지 못했습니다.';}
+  redirect(buildProjectsPath(status,message));
 }

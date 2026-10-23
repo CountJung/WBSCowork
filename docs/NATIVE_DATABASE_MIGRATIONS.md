@@ -19,7 +19,7 @@
 
 ## 버전·적용 절차 (QLT-012)
 
-D1은 기존 `drizzle/` 게시 migration을 유지한다. Native MariaDB는 `native-migration-v1.ts`–`native-migration-v10.ts`의 불변 명세와 기존 schema additive upgrade를 `schema_migrations(version,name,checksum,applied_at)`로 추적한다. 이미 적용된 명세는 편집하지 않고 새 버전/handler를 추가한다. v1 checksum은 `8dea300dc59fc6a4d7c0fcb0a54b4a4fdec2db9d2681b303be9c1208d7007092`다.
+D1은 기존 `drizzle/` 게시 migration을 유지한다. Native MariaDB는 `native-migration-v1.ts`–`native-migration-v11.ts`의 불변 명세와 기존 schema additive upgrade를 `schema_migrations(version,name,checksum,applied_at)`로 추적한다. 이미 적용된 명세는 편집하지 않고 새 버전/handler를 추가한다. v1 checksum은 `8dea300dc59fc6a4d7c0fcb0a54b4a4fdec2db9d2681b303be9c1208d7007092`다.
 
 1. 운영자가 앱 쓰기 중지/점검 창과 검증된 백업을 준비한다. 이 문서는 실제 운영 적용 승인을 대신하지 않는다.
 2. `npm run db:migrate -- --status`는 runtime identity로 읽기만 수행한다. ledger 없음/대기/검증 오류를 구분하며 조회가 ledger를 생성하지 않는다.
@@ -93,10 +93,16 @@ v3 실제 검증: exact `72a9b39`에서 native48, migration unit13, lint/types/F
 
 `native-migration-v9.ts`는 별도 screenshot metadata 표와 bug_reports.creation_fingerprint만 추가한다. 기존 v1~v8 명세/ledger checksum은 보존한다. loopback3307의 보존형 additive 하네스99 PASS. 운영/NAS migration은 미적용이다. 첨부 있는 native 제보의 최종 삭제는 durable 파일 정리 도입까지 fail-closed로 보존한다(QLT-020). Sites는 별도 Drizzle0013/R2 cleanup queue를 사용한다.
 
-## 봉사활동 저장 기반 v10 (PRD-047 부분)
+## 봉사활동 저장 기반 v10
 
 `native-migration-v10.ts`와 별도 `drizzle/0014_volunteer_workspace.sql`은 기존 migration/checksum을 보존하고 프로젝트 유형/workspace CAS, 프로젝트 참여자·활동팀·팀 소속·명단 event, 업무의 팀 연결/완료 모드를 추가한다. 기존 프로젝트는 업무 협업, 신규/기존 업무는 제출 필수·팀 미지정 기본값을 유지하며 계정 역할·원문/private·제출/검토 이력을 재작성하지 않는다. 같은 프로젝트의 팀 소속은 복합 FK로 제한하고 Native postcondition은 독립 단일 FK를 동일한 복합 FK로 오인하지 않는다.
 
-이 버전은 관리자 전용 저장 기반이며 팀장 위임 권한·직접 완료 실행·사용자 action/UI를 제공하지 않는다. 정책 선택과 기능 인수는 [TODO](TODO.md#봉사활동-확장-작업)에 남는다. 새 코드 사용 전 운영자가 백업/쓰기 중지·명시 승인과 기존 schema identity 절차로 적용해야 하며 이번 로컬 작업에서는 운영/NAS/Sites migration을 실행하지 않는다.
+v10 도입 시점은 관리자 전용 저장 기반이었다. 후속 v11의 단일 팀장·완료 실행과 해당 기능 인수는 [TODO](TODO.md#봉사활동-확장-작업)에 남는다. 새 코드 사용 전 운영자가 백업/쓰기 중지·명시 승인과 기존 schema identity 절차로 적용해야 하며 이번 로컬 작업에서는 운영/NAS/Sites migration을 실행하지 않는다.
 
 새 격리 자료의 fresh/existing additive·재실행·보존·관계 무결성 검증 방법과 실제 결과는 [HARNESS_MAP](HARNESS_MAP.md#봉사활동-저장-기반과-auth-import-검증)이 소유한다. 자동 down이나 과거 명세 변경으로 되돌리지 않는다.
+
+## 단일 팀장과 완료 기록 v11
+
+`native-migration-v11.ts`와 별도 `drizzle/0015_volunteer_team_completion.sql`은 팀당 한 canonical 팀장 pointer를 갖는 `activity_team_leaders`와 nullable `tasks.completed_by`/`completed_at`을 추가한다. 같은 프로젝트·실제 팀 소속을 FK로 검사하고 이전 명세/checksum과 모든 자료를 보존한다. 기존 활성 팀장이 한 명이면 pointer baseline으로 유지하되 여러 명이면 임의로 고르거나 강등하지 않고 적용을 중단한다. 운영자가 대상 자료와 선택을 명시적으로 확인해야 하며 자동 정리 명령은 제공하지 않는다.
+
+과거 완료 업무의 완료자/시각을 추측해 채우지 않는다. 기존 업무는 제출 필수로 유지하고 새 봉사 업무의 직접 완료 기본값은 애플리케이션 생성 정책으로 적용한다. 완료 mode/팀 변경은 시작 이력 없는 초안에서만 허용하며 제출·검토·이전 완료 event를 지우지 않는다. 현재 관리표·검증 수치·미확인 범위는 [하네스](HARNESS_MAP.md#봉사활동-팀장과-직접-완료-검증)가 소유한다. 운영/NAS/Sites 적용·실제 계정 권한 변경·재게시 승인을 이 구현/로컬 검증으로 대신하지 않는다.

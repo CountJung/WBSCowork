@@ -2,9 +2,11 @@ import { normalizeWorkGoal } from "@/src/shared/lib/work-goals";
 import { validateDateRange } from "@/src/shared/lib/date";
 import { getDatabasePool } from "@/src/shared/server/database/index.server";
 import { mapProjectRow, type Project, type ProjectRow } from "../model/project";
+import {projectTypes,type ProjectType} from "../model/workspace";
 
 export type CreateProjectInput = {
   name: string;
+  projectType?: ProjectType;
   goal?: string;
   successCriteria?: string;
   startDate: Date | string;
@@ -14,7 +16,7 @@ export type CreateProjectInput = {
 
 export async function getProjectById(id: number): Promise<Project | null> {
   const rows = (await getDatabasePool().query(
-    "SELECT id, name, goal, success_criteria, start_date, end_date, created_at FROM projects WHERE id = ? LIMIT 1",
+    "SELECT id, name, project_type, goal, success_criteria, start_date, end_date, created_at FROM projects WHERE id = ? LIMIT 1",
     [id],
   )) as ProjectRow[];
 
@@ -25,7 +27,7 @@ export async function getProjectById(id: number): Promise<Project | null> {
 
 export async function listProjects(limit = 10): Promise<Project[]> {
   const rows = (await getDatabasePool().query(
-    "SELECT id, name, goal, success_criteria, start_date, end_date, created_at FROM projects ORDER BY created_at DESC LIMIT ?",
+    "SELECT id, name, project_type, goal, success_criteria, start_date, end_date, created_at FROM projects ORDER BY created_at DESC LIMIT ?",
     [limit],
   )) as ProjectRow[];
 
@@ -34,7 +36,7 @@ export async function listProjects(limit = 10): Promise<Project[]> {
 
 export async function listAllProjects(): Promise<Project[]> {
   const rows = (await getDatabasePool().query(
-    "SELECT id, name, goal, success_criteria, start_date, end_date, created_at FROM projects ORDER BY created_at DESC, id DESC",
+    "SELECT id, name, project_type, goal, success_criteria, start_date, end_date, created_at FROM projects ORDER BY created_at DESC, id DESC",
   )) as ProjectRow[];
 
   return rows.map(mapProjectRow);
@@ -49,10 +51,12 @@ export async function getProjectCount(): Promise<number> {
 }
 
 export async function createProject(input: CreateProjectInput): Promise<Project> {
+  const projectType = input.projectType ?? "collaboration";
+  if(!projectTypes.includes(projectType))throw new Error("프로젝트 유형이 올바르지 않습니다.");
   const { startDate, endDate } = validateDateRange(input.startDate, input.endDate);
   const result = (await getDatabasePool().query(
-    "INSERT INTO projects (name, goal, success_criteria, start_date, end_date) VALUES (?, ?, ?, ?, ?)",
-    [input.name.trim(), normalizeWorkGoal(input.goal, "프로젝트 목표"), normalizeWorkGoal(input.successCriteria, "성공 기준"), startDate, endDate],
+    "INSERT INTO projects (name, project_type, goal, success_criteria, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?)",
+    [input.name.trim(), projectType, normalizeWorkGoal(input.goal, "프로젝트 목표"), normalizeWorkGoal(input.successCriteria, "성공 기준"), startDate, endDate],
   )) as {
     insertId: number;
   };

@@ -10,12 +10,16 @@ import {
   Stack,
   TextField,
   Typography,
+  MenuItem,
 } from "@mui/material";
 import { redirect } from "next/navigation";
-import { getAuthSession, getSignInPath } from "@/src/entities/user/index.server";
+import { getAuthSession, getSignInPath,getUserByEmail,listAllUsers } from "@/src/entities/user/index.server";
 import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
-import { listAllProjects } from "@/src/entities/project/index.server";
+import { listAllProjects,getProjectWorkspace } from "@/src/entities/project/index.server";
+import {ProjectWorkspaceAdmin} from "@/src/widgets/project-workspace";
+import type {ProjectWorkspace} from "@/src/entities/project";
+import type {User} from "@/src/entities/user";
 import { formatDate } from "@/src/shared/lib/date";
 import { canAccessAdminPanel } from "@/src/entities/user";
 import type { Project } from "@/src/entities/project";
@@ -23,6 +27,7 @@ import {
   createProjectAdminAction,
   deleteProjectAdminAction,
   updateProjectAdminAction,
+  changeProjectWorkspaceAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +58,7 @@ function ProjectCreateForm({
           프로젝트를 생성하면 /tasks 작업 공간에서 해당 프로젝트의 WBS 작업을 관리할 수 있습니다.
         </Typography>
         <TextField name="name" label="프로젝트 이름" required />
+        <TextField select name="projectType" label="프로젝트 유형" defaultValue="collaboration"><MenuItem value="collaboration">업무 협업</MenuItem><MenuItem value="volunteering">봉사활동</MenuItem></TextField>
         <TextField name="goal" label="주제의 목표" multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
         <TextField name="successCriteria" label="프로젝트 성공 기준" multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
@@ -85,9 +91,9 @@ function ProjectCreateForm({
   );
 }
 
-function ProjectEditCard({ project }: { project: Project }) {
+function ProjectEditCard({ project,workspace,users }: { project: Project;workspace:ProjectWorkspace;users:User[] }) {
   return (
-    <Paper elevation={0} sx={{ p: 3, borderRadius: 4, border: "1px solid", borderColor: "divider" }}>
+    <Paper data-testid={`project-card-${project.id}`} elevation={0} sx={{ p: 3, borderRadius: 4, border: "1px solid", borderColor: "divider" }}>
       <Stack spacing={2}>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ justifyContent: "space-between", alignItems: { sm: "flex-start" } }}>
           <Stack spacing={0.5}>
@@ -142,6 +148,7 @@ function ProjectEditCard({ project }: { project: Project }) {
             </Button>
           </Stack>
         </Stack>
+        <ProjectWorkspaceAdmin workspace={workspace} users={users} action={changeProjectWorkspaceAction}/>
       </Stack>
     </Paper>
   );
@@ -183,7 +190,7 @@ export default async function AdminProjectsPage({ searchParams }: AdminProjectsP
   const databaseStatus = await getDatabaseAdminStatus();
   const projectsTableReady =
     databaseStatus.databaseExists &&
-    databaseStatus.tables.some((t) => t.name === "projects" && t.exists && t.missingColumns.length === 0);
+    ["projects","project_members","activity_teams","activity_team_members","activity_team_leaders","project_workspace_events"].every(name=>databaseStatus.tables.some((t) => t.name === name && t.exists && t.missingColumns.length === 0));
 
   if (!projectsTableReady) {
     return (
@@ -198,7 +205,9 @@ export default async function AdminProjectsPage({ searchParams }: AdminProjectsP
     );
   }
 
-  const projects = await listAllProjects();
+  const [projects,users,currentUser] = await Promise.all([listAllProjects(),listAllUsers(),getUserByEmail(session.user.email??"")]);
+  if(!currentUser)redirect(getSignInPath('/admin/projects'));
+  const workspaces=await Promise.all(projects.map(p=>getProjectWorkspace(p.id,{userId:currentUser.id,isSuperuser:!!session.user.isSuperuser})));
 
   return (
     <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
@@ -232,8 +241,8 @@ export default async function AdminProjectsPage({ searchParams }: AdminProjectsP
         ) : (
           <Stack spacing={2}>
             <Typography variant="h5">프로젝트 목록</Typography>
-            {projects.map((project) => (
-              <ProjectEditCard key={project.id} project={project} />
+            {projects.map((project,index) => (
+              <ProjectEditCard key={project.id} project={project} workspace={workspaces[index]} users={users}/>
             ))}
           </Stack>
         )}

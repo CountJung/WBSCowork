@@ -2,6 +2,11 @@ import type { TaskStatus } from "./workflow";
 export type TaskRow = {
   id: number;
   project_id: number;
+  activity_team_id: number | null;
+  activity_team_name: string | null;
+  completion_mode: "submission_required" | "direct_completion";
+  completed_by: number | null;
+  completed_at: Date | string | null;
   parent_id: number | null;
   title: string;
   description: string | null;
@@ -26,6 +31,11 @@ export type TaskRow = {
 export type Task = {
   id: number;
   projectId: number;
+  activityTeamId: number | null;
+  activityTeamName: string | null;
+  completionMode: "submission_required" | "direct_completion";
+  completedBy: number | null;
+  completedAt: Date | null;
   parentId: number | null;
   title: string;
   description: string;
@@ -51,6 +61,11 @@ export function mapTaskRow(row: TaskRow): Task {
   return {
     id: row.id,
     projectId: row.project_id,
+    activityTeamId: row.activity_team_id ?? null,
+    activityTeamName: row.activity_team_name ?? null,
+    completionMode: row.completion_mode ?? "submission_required",
+    completedBy: row.completed_by ?? null,
+    completedAt: row.completed_at ? new Date(row.completed_at) : null,
     parentId: row.parent_id,
     title: row.title,
     description: row.description ?? "",

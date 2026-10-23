@@ -43,7 +43,10 @@
     "test:sites:network": "python3 -m unittest discover -s tests -p test_site_network.py -v",
     "test:sites:submission-upload:browser": "node scripts/test-submission-upload-browser.mjs",
     "test:project:workspace": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-workspace.ts",
-    "test:volunteer:schema": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-volunteer-schema.ts"
+    "test:volunteer:schema": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-volunteer-schema.ts",
+    "test:volunteer:completion-schema": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-volunteer-completion-schema.ts",
+    "test:volunteer:tasks": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-volunteer-tasks.ts",
+    "test:volunteer:browser": "node scripts/test-volunteer-browser.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -23,11 +23,12 @@ import {
   type StoredSubmissionAttachment,
 } from "@/src/entities/submission/index.server";
 import { createComment, deleteComment, getCommentForViewer, updateComment } from "@/src/entities/comment/index.server";
-import { createTask, deleteTask, getTaskById, updateTask, changeTaskStatus } from "@/src/entities/task/index.server";
+import { createTask, deleteTask, getTaskById, updateTask, changeTaskStatus,assertTaskScope } from "@/src/entities/task/index.server";
 import { canManageAllSubmissions, canWriteTaskContent } from "@/src/entities/user";
 import type { Submission, SubmissionVisibility } from "@/src/entities/submission";
 import { taskVersion, workOperationToken, parsePersonalWorkReturnTo, type TaskStatus } from "@/src/entities/task";
 import type { User } from "@/src/entities/user";
+import type {CompletionMode} from "@/src/entities/project";
 
 function validateUploadBatch(files: File[]) {
   const maximum = getRuntimeEnv().uploadMaxFileSizeMb * 1024 * 1024;
@@ -249,6 +250,8 @@ export async function createTaskAction(formData: FormData) {
       actor:{userId:creator.id,isAdmin:canManageAllSubmissions(creator.role,session.user.isSuperuser),isSuperuser:!!session.user.isSuperuser},
       token:workOperationToken(formData.get("operationToken")),
       projectId,
+      activityTeamId:parseOptionalPositiveInteger(formData.get("activityTeamId"),"활동팀"),
+      completionMode:formData.has("completionMode")?getSingleValue(formData.get("completionMode")) as CompletionMode:undefined,
       parentId: parseOptionalPositiveInteger(formData.get("parentId"), "상위 작업"),
       title: getSingleValue(formData.get("title")),
       description: getSingleValue(formData.get("description")),
@@ -317,6 +320,8 @@ export async function updateTaskAction(formData: FormData) {
       token:workOperationToken(formData.get("operationToken")),
       reviewerId:formData.has("reviewerId")?parseOptionalPositiveInteger(formData.get("reviewerId"),"검토자"):undefined,
       id: taskId,
+      activityTeamId:formData.has("activityTeamId")?parseOptionalPositiveInteger(formData.get("activityTeamId"),"활동팀"):undefined,
+      completionMode:formData.has("completionMode")?getSingleValue(formData.get("completionMode")) as CompletionMode:undefined,
       parentId: parseOptionalPositiveInteger(formData.get("parentId"), "상위 작업"),
       title: getSingleValue(formData.get("title")),
       description: getSingleValue(formData.get("description")),
@@ -377,6 +382,9 @@ export async function deleteTaskAction(formData: FormData) {
     await requireProjectTask(projectId, taskId);
 
     // 삭제 전에 해당 작업의 제출물과 첨부파일 목록 조회 (DB CASCADE 이전)
+    const actorUser=await resolvePersistedUser(session);
+    const actor={userId:actorUser.id,isAdmin:canManageAllSubmissions(actorUser.role,session.user.isSuperuser),isSuperuser:!!session.user.isSuperuser};
+    await assertTaskScope(taskId,actor);
     const [submissionsToClean, attachmentsToClean, revisionFilesToClean] = await Promise.all([
       // 작업 삭제도 하위 저장 파일 전체를 정리해야 한다.
       listSubmissionsByTask(taskId, { canSeeAll: true }),
@@ -385,7 +393,7 @@ export async function deleteTaskAction(formData: FormData) {
     ]);
 
     if(getSingleValue(formData.get("confirmRevisionDeletion"))!=="yes")throw new Error("작업과 제출물의 모든 버전 삭제를 확인해야 합니다.");
-    const task = await deleteTask(taskId);
+    const task = await deleteTask(taskId,actor);
     for(const filePath of new Set(revisionFilesToClean))await deleteStoredSubmissionAttachment(filePath).catch(()=>{cleanupFailed=true;});
 
     // 레거시 단일 파일 정리
