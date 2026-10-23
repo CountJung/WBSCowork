@@ -10,10 +10,10 @@
 | --- | --- | --- |
 | 제품 | 기반 WBS/FSD와 팀 업무 P0/P1, 버그/스크린샷 구현 완료 | 실제 다중 Google 계정·채워진 UI 인수는 합성 검증과 별개 |
 | Git 소스 | QLT-019 import 수정·봉사활동 저장 기반에 팀장/직접 완료 기능을 후속 구현 | 이번 소스 검증은 HARNESS_MAP, 운영 반영 여부는 게시 원장으로 구분. main/sites 기본 build 차이 유지 |
-| 운영 게시 | 기존 public Sites version14, source41059c8의 terminal succeeded 확인 | [게시 원장](COMPLETED_LOG.md#sites-게시-원장). 사용자 신규 첨부·새로고침·다운로드 PASS. 운영 수정 시 추가 첨부는 미검증. NAS 배포 없음 |
+| 운영 게시 | 기존 public Sites version15, source d7550fb의 terminal succeeded와 active/latest 일치 확인 | [게시 원장](COMPLETED_LOG.md#sites-게시-원장). 봉사 schema/기능 반영·기존 표본 보존 확인. 현 실행기는 운영 host CONNECT403으로 실 Google/UI·자산 GET 미검증. NAS 배포 없음 |
 | 최근 검증 | QLT-021 핵심 삭제 오판은 실제 Google 세션의 운영 UI 인수 PASS | [검증 기준선](HARNESS_MAP.md#검증-기준선). 신규 업로드는 통과했으나 추가 첨부·운영 파일 삭제는 미검증이며 QLT-022와 다른 열린 항목 유지 |
 | 후속 계획 | digest/report D0–D5 미구현, 실제 NAS 적용/인수 미완료 | D0부터 순서대로 진행, delivery는 별도 동의·승인 |
-| 봉사활동 | 확정 정책의 프로젝트/팀 관리·팀장 범위 업무·직접 완료를 구현하고 로컬/합성 인수 완료 | 기존 업무/협업 업무 제출 필수와 private 계약 유지. 운영 schema/사이트·실 Google 인수는 미반영/미실행 |
+| 봉사활동 | 확정 정책의 프로젝트/팀 관리·팀장 범위 업무·직접 완료를 구현하고 로컬/합성 인수·version15 게시 완료 | 기존 업무/협업 업무 제출 필수·private 계약과 사용자 자료 표본 보존. 실제 운영 UI·Google 인수와 R2 bytes 대조는 미실행 |
 
 ## 열린 항목
 
@@ -30,7 +30,7 @@
 | OPS-031 | [!] | Native bug purge 포함 전체 수명주기/두 isolation-level 경합 검증은 별도 승인 대기. 비파괴16조건·Sites 삭제 완료와 구분 | [완료 범위](COMPLETED_LOG.md#실환경-qa와-삭제-승인-경계) |
 | OPS-032 | [ ] | Next/NextAuth/MariaDB 등 남은 dependency advisory를 실제 native/Worker 사용 경로별 검토. 전체 npm audit 해결이나 강제 major override를 주장하지 않음 | [보안 근거](COMPLETED_LOG.md#보안-패치와-활성-decoder) |
 | OPS-033 | [!] | 레이아웃 실사이트의 전체6개 너비·관리자/버그 UI 인수. 부모 Chrome의 홈/tasks1188×761 확인은 부분 근거 | [접속 경계](NAS_UPDATE_GUIDE.md#운영-접속과-테스트-네트워크) |
-| OPS-034 | [!] | 과거 환경의 host 추가 승인·차단 기록 보존. version13 게시 점검 환경은 기존 proxy CONNECT200·익명 GET smoke 통과. 정책 파일/플랫폼 설정 적용 자체는 직접 미확인으로 환경별 결과를 구분 | [접속 기준선](HARNESS_MAP.md#브라우저와-운영-연결) |
+| OPS-034 | [!] | version15 현재 실행기는 CONNECT403/Domain forbidden·해당 policy rule 부재로 운영 GET/UI 미실행. 과거 host 승인/차단과 version13 환경의 CONNECT200·익명 GET 성공을 보존하며 환경별 결과를 구분. 제한 우회 없음 | [최신 경계](HARNESS_MAP.md#version15-게시와-운영-검증-경계) |
 | OPS-035 | [!] | version12 스크린샷의 실제 운영 UI 인수. 합성Chromium1280/390 결과와 구분하고 운영 제보 생성/삭제를 임의로 하지 않음 | [버그 계약](BUG_REPORTS.md#스크린샷) |
 | RPT-015 | [ ] | D0 versioned DigestSnapshot·privacy fixture·stable hash | [D0–D5 계획](PROJECT_DIGEST_REPORT_PLAN.md) |
 | RPT-016 | [ ] | D1 manual JSON preview; RPT-015 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
@@ -43,7 +43,7 @@
 
 PRD-046 정책 확정과 PRD-047~050/QLT-023의 코드·로컬/합성 게이트를 완료해 열린 큐에서 이관했다. 단계/게이트는 [MASTER_PLAN](MASTER_PLAN.html#volunteering), 현재 계약은 [ARCHITECTURE](ARCHITECTURE.md#봉사활동-확장-계획), 고유 완료 근거는 [COMPLETED_LOG](COMPLETED_LOG.md#봉사활동-팀과-직접-완료-인수), 실행 scope는 [HARNESS_MAP](HARNESS_MAP.md#봉사활동-팀장과-직접-완료-검증)가 소유한다.
 
-완료 범위는 양 DB·서버 권한/완료 workflow·실제 로컬 Worker와 hydrated desktop/mobile의 합성 인수다. 운영 migration·실제 계정 권한 변경·Google 로그인·운영 사이트 인수·게시/배포는 포함하지 않으며 기존 열린 운영 항목을 닫지 않는다. 운영의 프로젝트5/작업7·사용자 첨부는 보존한다. QLT-019는 [import 기록](COMPLETED_LOG.md#qlt-019-google-provider-import)을 따른다.
+PRD/QLT 완료 범위는 양 DB·서버 권한/완료 workflow·실제 로컬 Worker와 hydrated desktop/mobile의 합성 인수다. 이후 명시 승인으로 version15 게시와 D1 migration을 확인했지만 실제 계정 역할 부여·Google 로그인·운영 UI 인수는 수행하지 않았으며 기존 열린 운영 항목을 닫지 않는다. 운영 프로젝트5/작업7과 사용자 첨부 metadata의 기존 값 보존을 확인했고 게시 후 R2 bytes 대조는 미실행이다. QLT-019는 [import 기록](COMPLETED_LOG.md#qlt-019-google-provider-import)을 따른다.
 
 ## ID와 갱신 규칙
 
