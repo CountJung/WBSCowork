@@ -256,7 +256,26 @@ Worker/Native 실제 앱은 A/B 프로젝트의 SU 소속 부여·제한 전환�
 
 binding151은 populated D1 0015→0016/Native v11→v12의 기존 행·role·명단·private·revision·file metadata hash 보존과 legacy 기본값, native 재실행을 포함한다. D1 raw DDL 반복은 중복 컬럼으로 fail-closed하므로 완료분은 관리형 migration journal로 건너뛴다. 실제 운영 DB/R2 bytes·백업/복원 검증은 아니다.
 
-실제 사용자 자료/계정 role·명단·환경은 변경하지 않았고 운영은 version15를 유지한다. 현재 운영 host CONNECT403 제한은 재시도/우회하지 않으며 실 Google 미검증이다. docs-canon SKILL.md 재읽기는 성공했으나 원본 `scripts/check_docs.py` 리소스 읽기는 실패해 원본 검사는 미실행이다. 문서 전담의 저장소 checker/self-test·`git diff --check`와 MASTER_PLAN/기존 사용자 HTML의 HTMLParser는 PASS(문서30·등록16/핵심7·상대링크234·npm명령120)다. 별도 내용 검토로 실제 소스 정책/역할·로컬/운영 경계, 과거 실패/엄격한 최종 인수·권한 거부/취소 요청, 완료 이관·게시 대기를 대조했다. 새 문서/보고서는 없으며 원본 canon 형식 검사 통과나 앱 테스트를 문서 담당이 실행한 것으로 주장하지 않는다. 향후 게시 결과는 별도 확인 뒤 추가한다.
+위 로컬 인수 회차는 실제 사용자 자료/계정 role·명단·환경과 당시 운영 version15를 유지했다. 기존 운영 host CONNECT403 제한은 재시도/우회하지 않았고 실 Google도 미검증이다. docs-canon SKILL.md 재읽기는 성공했으나 원본 `scripts/check_docs.py` 리소스 읽기는 실패해 원본 검사는 미실행이다. 문서 전담의 저장소 checker/self-test·`git diff --check`와 MASTER_PLAN/기존 사용자 HTML의 HTMLParser는 PASS(문서30·등록16/핵심7·상대링크234·npm명령120)다. 별도 내용 검토로 실제 소스 정책/역할·로컬/운영 경계, 과거 실패/엄격한 최종 인수·권한 거부/취소 요청, 완료 이관·게시 대기를 대조했다. 새 문서/보고서는 없으며 원본 canon 형식 검사 통과나 앱 테스트를 문서 담당이 실행한 것으로 주장하지 않는다. 후속 version16 게시/실제 release artifact 검증은 아래에서 구분한다.
+
+### version16 게시와 운영 검증 경계
+
+기능 소스 main `b7fe96e386aba05938fd61a8822ce565a83c6551` / sites·공식 source main `62b93208e1f32f2b19d58249643d5637242a8b36`를 푸시하고 원격 HEAD를 확인했다. 별도 clean `/workspace/wbs-sites-publish-20261023`의 exact sites SHA에서 build했다. Vinext BUILD_ID/hashed chunk가 기존 작업 트리 산출물과 달라 아래 **실제 게시 artifact**를 다시 인수했다. 앞선 공통 소스 Native 결과를 새로 실행한 것으로 세지 않으며 실제 NAS 배포/Native v12 운영 적용은 없다.
+
+| 게시 artifact 검증 | 결과/범위 |
+| --- | --- |
+| loopback Worker 새 UI·보호 scope | 5폭×2테마670조건·실제 multipart RSC15 POST 모두303 PASS. strict 대비132scenes/4,914샘플·미달0·허용오차0·enabled/hover 필수50대상. 예상 외 console/pageerror·warning/requestfailed0 |
+| 기존 봉사 UI |36조건·실제 multipart RSC46 POST 모두303 PASS. 예상 deny404 console2건만 별도 분리하고 예상 외 console/pageerror·warning0 |
+| 산출물 동일성 | dist323files/4,530,026bytes fingerprint `c769abd54ab88ad881a9aba1312a8bccd7c94e03a27e6c161155faf8d6574c3b` 전후 동일; entry SHA256 `57b67ae30fa12ee9107d07888c573057def549566f63ccc5c43903b24a0c9646` |
+| 실제 artifact auth/decoder | auth18·compiled decoder PASS, 실제 Google 로그인 미시도 |
+
+문서 담당은 clone의 `.test-artifacts/release-qa/final-evidence.json`을 직접 대조했다. 두 launcher는 격리 D1/R2 합성 원문·계층·불변 revision과 exact 첨부 bytes 보존을 검사했고 운영 요청/자료를 쓰지 않았다. 전체 WCAG 인증·물리 기기/운영 UI 인수로 확대하지 않는다.
+
+공식 게시 도구는 version16 terminal succeeded를 반환했고 후속 get_site/get_site_version이 active/latest16·exact source/deployment 일치를 확인했다. 정확한 시각·ID·archive 반환값은 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다. D1 overview는23표를 유지하며 0016 효과인 `projects.access_mode` 추가와 project5의 `legacy_authenticated`/workspace0을 운영 조회했다. D1 journal 직접 조회나 운영에서 새 프로젝트 생성·CHECK/FK 실행 검증은 아니다.
+
+게시 전후7표의 **모든 기존 컬럼·행은 동일하고 truncation0**이다: projects1(id5), tasks1(id7), submissions1(id5), submission_attachments1(id7), submission_revisions1(id5), users2, project_members0. 계정 role/소속 자동 부여0이며 사용자 파일 metadata는 보존됐다. 실제 R2 inventory/운영 bytes 다운로드는 미검증이다. public policy revision2·auth_client·환경 revision11 entries는 값 노출 없는 대조에서 동일했다. 이7표 대조를 전체 DB/R2 백업이나 복원 검증으로 확대하지 않는다. 저장 version15를 복구 참조로 유지하고 schema down/실제 복원은 하지 않았다.
+
+CI combined status 조회는 두 기능 SHA 각각 statuses0이었다. GitHub Actions runs API 조회는 두 SHA 모두 **Forbidden으로 거부**됐고 재시도·대체 경로 사용0이다. 따라서 CI 통과로 기록하지 않는다. 기존 CONNECT403/Domain forbidden 제한 때문에 운영 GET/자산·실 Google/UI는 재시도/우회0·미검증이다. 게시 상태·운영 schema/보존 조회와 실제 운영 브라우저 인수를 구분한다. 후속 문서 commit SHA를 이미 게시한62b9320의 앱 소스/검증 대상으로 바꾸지 않는다. 원본 canon 검사기는 여전히 미실행이다. 이번 게시 기록은 TODO/HARNESS/COMPLETED3개만 갱신했고 저장소 checker/self-test·HTML 파싱·`git diff --check` PASS(문서30·등록16/핵심7·상대링크238·npm명령120)다. 별도 내용 검토로 게시 source/후속 문서 HEAD·실제 artifact·archive 반환값·7표 보존 범위·CI 거부/운영 미검증을 대조했다.
 
 ## 문서 정리 검증
 
