@@ -178,3 +178,14 @@ Native NAS 실행은 `scripts/run-next.ts`와 main의 기본 `build`/`start`를 
 - `src/shared/ui/field-label`·`validated-text-field.tsx`, `TaskStatusForm`·`TaskDateFields`·`DeleteConfirmation`: 외부 필수/선택 표시, 상태 조건 메모, 날짜/오류, 명시적으로 연 뒤의 영구 삭제 확인. 별도 일괄 삭제는 아니다.
 - `native-migration-v12.ts`/`drizzle/0016_project_access_mode.sql`: 기존 인증 읽기를 보존하는 additive 접근 모드. `project-workspace.server.ts`의 SU 영향 미리보기/hash·CAS가 실제 전환을 검사한다.
 - `scripts/test-project-binding.ts`, `test-project-ux.mjs`·`.py`·`test-project-ux-native.mjs`: 양 DB scope/로컬 브라우저 진입점. 최신 실행 여부와 실제 결과는 [하네스](HARNESS_MAP.md#ux-바인딩-구현과-회귀-검증)가 소유한다.
+
+
+## 프로젝트 보고서 구현 진입점
+
+D0–D4의 소스·로컬/compiled 인수와 실제 화면/운영 활성화를 구분하며 현재 진행/검증은 [TODO](TODO.md)·[HARNESS_MAP](HARNESS_MAP.md#남은-품질과-digest-구현-진행)을 따른다. 경로 존재가 운영 활성화나 외부 발송을 뜻하지 않는다.
+
+- `/admin/projects/[projectId]/reports` → `app/admin/projects/[projectId]/reports/page.tsx` → `src/widgets/project-report-admin`: 현재 프로젝트 관리 scope의 미리보기·생성·내 기록/다운로드 화면.
+- `src/entities/project-report/model/snapshot.ts`와 `api/collector.server.ts`·`ledger.server.ts`: versioned snapshot, bounded/current-viewer 수집, schedule/run/artifact CAS·lease·idempotency.
+- `src/features/project-digest-generate`: session viewer·현재 scope 재검사, 생성/재시도·download/retention·비활성 기본 scheduler use-case. `src/features/project-report-export`: 동일 snapshot의 직접 DOCX/PPTX Buffer 생성.
+- `app/api/projects/[projectId]/reports/{preview,schedules,retention}`·`app/api/project-reports`·`app/api/project-reports/[artifactId]`·`app/api/project-reports/runs/[runId]/retry`는 얇은 HTTP adapter다. machine adapter는 `/api/internal/project-digests/run`이며 기존 cookie를 scheduler 권한으로 쓰지 않는다.
+- `src/shared/server/report-storage`는 private Native/R2 IO·hash/size·symlink/path 검사와 가역 quarantine, `native-migration-v14.ts`/`drizzle/0017_project_report_ledger.sql`은 새 ledger 명세를 소유한다. D5 delivery adapter는 없다.

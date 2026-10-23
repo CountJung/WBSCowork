@@ -109,7 +109,7 @@ Native schema readiness는 현재16개 관리 표와 schema_migrations를 확인
 | P0/P1, 2026-10-09 | P0 Worker412/quality375/native77; P1 unit119 / D1 65/Worker472/quality375/auth18/native99+관계복원4 | 실계정2개 협업/채워진 template browser/native purge·강등 interleaving·storage race는 미확인. 최초503과 좁은 관계 DELETE1142 실패를 성공에 합산하지 않음 |
 | 초기 전환/보안/버그, 2026-10-08 | auth18, storage57, bug lifecycleD158/Worker217; React19.2.8 active decoder fingerprint | 실환경 owner1계정의 승인된 QA는 별도 기록. 전체 dependency audit 완료 아님 |
 
-환경 기준선: 기존 native NFT 동적 logging 경고(회차에 따라1/2), Vinext proxy 감지/route static 분류, Node mock experimental, npm proxy/@esbuild-kit deprecation을 해결됐다고 주장하지 않는다. QLT-015의 차단된 두 cleanup runner 정지/재개는 미실행, QLT-016 동시503 원인은 미확정, QLT-020 native 첨부 purge는 fail-closed다. QLT-021 핵심 삭제 오판은 version13에서 운영 인수를 통과했다. 로컬의 권한·rollback·후속 오류 주입 통과를 운영에서 강제로 확인한 것으로 확대하지 않으며, 별도 첨부 실패 QLT-022는 미완료다.
+환경 기준선: 기존 native NFT 동적 logging 경고(회차에 따라1/2), Vinext proxy 감지/route static 분류, Node mock experimental, npm proxy/@esbuild-kit deprecation을 해결됐다고 주장하지 않는다. QLT-015의 차단된 두 cleanup runner 정지/재개는 미실행, 당시 QLT-016 동시503 원인은 미확정이었고 후속 원인 수정은 [현재 회차](#남은-품질과-digest-구현-진행)에서 구분, QLT-020 native 첨부 purge는 fail-closed다. QLT-021 핵심 삭제 오판은 version13에서 운영 인수를 통과했다. 로컬의 권한·rollback·후속 오류 주입 통과를 운영에서 강제로 확인한 것으로 확대하지 않으며, 별도 첨부 실패 QLT-022는 미완료다.
 
 version13 초기 게시 직후 `npm run test:sites:live -- --url https://wbscowork.cometgnome.chatgpt.site`는 `/`·`/privacy`·`/api/auth/session`의200 및 `/tasks`·`/admin`·`/bugs`의307→`/api/auth/signin`을 확인했다(exit0/live_http_completed=true). 로그인 redirect는 따라가지 않았다. 이는 인증된 삭제 인수가 아니며 위 후속 실계정 운영 결과를 대신하지 않는다.
 
@@ -350,7 +350,7 @@ version17/source7fc8d79의 별도 **허용 Work 브라우저·기존 SU 로그�
 
 게시 전후 env revision11의5entries·public policy revision2·auth_client가 동일하며 값은 출력하지 않았다. D1 schema23표·이번 migration0. 기존7표의 모든 columns/rows를 투영 생략 없이 완전 페이지 대조해 동일함을 확인했다: projects1(id5), tasks1(id7), submissions1(id5), submission_attachments1(id7/metadata25,180bytes), submission_revisions1, users2, project_members0. 실제 R2 bytes·전체 backup은 미검증이며 계정 권한 변경·NAS 배포·코딩 proxy 재시도0이다.
 
-QLT-027의 소스/로컬·게시 확인과 아래 별도 허용 Work 브라우저의 version18 관측 범위 재인수를 완료했다. 새 OAuth 교환·전체 운영 UI 인수로 확대하지 않는다. QLT-028 Native 홈과 QLT-029의 최초 간헐 하네스 원인은 미해결이다. 최종 기능 두 SHA의 GitHub combined statuses는 각각0이며 CI PASS가 아니다. 기존 Actions Forbidden을 재시도하지 않았다. 후속 문서 HEAD는 이미 게시한 코드 source와 구분한다. 원본 docs-canon 검사는 미실행이다.
+QLT-027의 소스/로컬·게시 확인과 아래 별도 허용 Work 브라우저의 version18 관측 범위 재인수를 완료했다. 새 OAuth 교환·전체 운영 UI 인수로 확대하지 않는다. v18 게시 당시 QLT-028 Native 홈과 QLT-029의 최초 간헐 하네스 원인은 미해결이었고 후속 근거는 [현재 회차](#남은-품질과-digest-구현-진행)에서 구분한다. 최종 기능 두 SHA의 GitHub combined statuses는 각각0이며 CI PASS가 아니다. 기존 Actions Forbidden을 재시도하지 않았다. 후속 문서 HEAD는 이미 게시한 코드 source와 구분한다. 원본 docs-canon 검사는 미실행이다.
 
 ### version18 허용 Work 브라우저 재인수
 
@@ -364,11 +364,53 @@ QLT-027 운영 재인수 대기는 이 관측 범위에서 해소했다. 이미�
 
 ### QLT-028 Native 홈 SSR500
 
-기존 v17 Native artifact의 `/`에서 `Functions cannot be passed directly to Client Components` SSR500을 확인했다. 서버 `app/page.tsx`의 Button `component={Link}` 두 곳은 원인 후보이며 이번 시간대 수정에서 고치지 않았다. client WidgetStageOverview 내부 Link를 같은 원인으로 단정하지 않는다. Native GREEN의 인증 cache 회귀는 보호 task URL을 사용해 이 미해결 홈 검사를 대신하거나 숨기지 않으며, Sites 홈 결함으로 확대하지 않는다. 조사·수정·홈 인수는 TODO의 QLT-028로 유지한다.
+기존 v17 Native artifact의 `/`에서 `Functions cannot be passed directly to Client Components` SSR500을 확인했다. 서버 `app/page.tsx`의 Button `component={Link}` 두 곳은 당시 원인 후보였고 시간대 수정에는 포함하지 않았다. 후속 최소 수정·남은 UI 인수는 [현재 회차](#남은-품질과-digest-구현-진행)에서 구분한다. client WidgetStageOverview 내부 Link를 같은 원인으로 단정하지 않는다. Native GREEN의 인증 cache 회귀는 보호 task URL을 사용해 이 미해결 홈 검사를 대신하거나 숨기지 않으며, Sites 홈 결함으로 확대하지 않는다. 조사·수정·홈 인수는 TODO의 QLT-028로 유지한다.
 
 ### QLT-029 HTTP 응답 소비 관측
 
-source94be65a 불변 Worker의 정식 HTTP266 실행1회가 `verify-bug-http.mjs:110`의 `detail.text()`에서 Body already read로 중단됐다. 기존 검증 코드 사본에404 response의 bodyUsed/status 관측만 추가한 진단1회는266 PASS이며 해당 응답들은404/bodyUsed=false였다. 최초 원인은 미확정이고 앱을 추측 수정하지 않았다. 최종 새 build의 정식 HTTP266은 exit0 PASS였으나 최초 오류의 근본 해결로 바꾸지 않는다. QLT-016의 간헐503과 다른 관측으로 QLT-029에서 원인을 추적한다.
+source94be65a 불변 Worker의 정식 HTTP266 실행1회가 `verify-bug-http.mjs:110`의 `detail.text()`에서 Body already read로 중단됐다. 기존 검증 코드 사본에404 response의 bodyUsed/status 관측만 추가한 진단1회는266 PASS이며 해당 응답들은404/bodyUsed=false였다. 당시 최초 원인은 미확정이었고 앱을 추측 수정하지 않았다. 후속 transport GC 재현·helper 수정은 [현재 회차](#남은-품질과-digest-구현-진행)에서 구분한다. 최종 새 build의 정식 HTTP266은 exit0 PASS였으나 최초 오류의 근본 해결로 바꾸지 않는다. QLT-016의 간헐503과 다른 관측으로 QLT-029에서 원인을 추적한다.
+
+## 남은 품질과 digest 구현 진행
+
+이 회차는 로컬 구현·검증을 마쳤고 아래 외부 인수 게이트를 남긴다. 운영 version18·sourceccabf81은 유지하며 중간 게시0이다. 아래는 구현 담당이 전달한 소스/실DB/compiled artifact 근거이며 실제 운영 적용 성공이 아니다. 실제 사용자 project5/task7/submission5/attachment7·계정/환경·NAS와 차단된 운영 네트워크 경계를 유지한다.
+
+| 범위 | 확인된 단계 근거/남은 경계 |
+| --- | --- |
+| QLT-028 | 서버 Home의 Button component NextLink 함수 직렬화 RED500을 href anchor 최소 수정(local main c9003a8, 당시 미push). 별도 secret0 품질 worktree Native build·SSR7 PASS. Python bundled browser ENOENT 뒤 기존 Chromium은 OS sandbox helper FATAL로 실행 차단, UI 미인수. 보안 disable/설정 변경·추가 재시도 없음 |
+| 공개 경로 cache | secret0 build의 privacy static s-maxage31536000과 runtime 유효 member에도 익명 표시를 추가 확인. layout force-dynamic 수정·RED HTTP12와 최종 새 secret0 build HTTP16 PASS |
+| QLT-029 | Miniflare transport가 undici 원 Response를 공유 stream으로 감싼 뒤 원본 GC가 stream을 cancel하는 원인 재현. 즉시1회 drain 후 독립 응답을 보관하는 test transport helper의 명시 GC9와 최종 Worker HTTP18 PASS. 원인 재현/수정 근거로 완료하며 과거 진단266 PASS를 소급 원인 해결로 쓰지 않음 |
+| QLT-016 |608bytes 작은 폼2개의 pause/동시 request에서303/503 재현.4개 상한·전체22MiB 예약·unknown full 예약·declared 초과413의 admission 수정 unit7 PASS. 최종 compiled Worker18조건 PASS. eager second20MiB 전송의 Miniflare/undici write ECONNRESET은 남아 있으나 거부 측 헤더 뒤 대기하면 실제503·Retry-After2 확인, 첫20MiB/R2 객체1개 보존. 이 transport 경계를 수정했다고 주장하지 않음 |
+| QLT-020 | 최종 전체 schema의 격리 MariaDB/파일40 PASS·새 unit9/관련 unit50 PASS. v13 durable lease/trigger·quarantine/retry/restore와 Native SU 관리 경로 구현, 브라우저/운영 인수는 미완료. 실제 영구 삭제0·첨부 bug purge fail-closed·기존 거부 runner0 유지 |
+| OPS-032 | Next/@next/env16.4.2·NextAuth4.24.15·MariaDB3.5.4·eslint-config-next16.4.2·Vite8.1.6 및 nanoid/baseline patch 설치. PPTX 하위 image-size만2.0.4로 scoped override 후 production audit0·전체23(high18/moderate4/low1). Vinext 하위2.0.2는 변경하지 않음. 전체 advisory 해결로 확대하지 않음 |
+| RPT-015~019 | model17·renderer3·collector unit11 각각 PASS, 실제 collector D1/MariaDB 각22·storage11 PASS. staged 보강 후 ledger108·소스 route/service166 PASS. 이전98/158과 중복 합산하지 않으며 compiled Worker 렌더/브라우저 인수가 아니다. 최종 compiled OOXML18 PASS, 실제 화면 인수는 차단 상태로 남는다. runtime DDL 거부 실증·운영 예약 활성화·외부 발송0. 만료 download404·가역 quarantine은 영구 삭제와 구분 |
+
+최종 `TEST_DB_NAME=wbs_final_backlog_20261023_test npm test -- --require-db`는 action33/unit227/MariaDB34, 총294 PASS·fail/skip0이며 Experimental module mock warning만 남았다. 이전292나 focused 결과와 중복 합산하지 않는다. staged/의존성 보강 후 clean secret0 Native(Next16.4.2)·Worker build, Native HTTP16·Worker HTTP18·auth21·decoder·lint/typecheck/FSD5(0위반) PASS다. 양쪽 production source와 package/lock은 동일함을 구현 담당이 대조했다. OOXML compiled smoke 최종18 PASS다. 앞선 Native16의 최초 실패는 privacy 본문의 Google 로그인 설명을 헤더 flash로 오판한 fixture였고 header 한정 검사로 보정했다. `npm run db:check -- --validate-only` PASS는 env parsing 검사이며 실제 DB 연결 검증이 아니다.
+
+| 실제 등록 명령 | 현재 확인 범위 |
+| --- | --- |
+| `npm run test:native:home` | Native SSR7 단계 근거·최종 cache HTTP16 PASS, 브라우저 차단과 분리 |
+| `npm run test:http:response-lifecycle` | 강제 GC9 PASS |
+| `npm run test:native:bug-quarantine` | 격리 Native DB/파일40 PASS, 추가 unit9와 구분 |
+| `npm run test:reports:collector` | 실제 D1/MariaDB 각22 PASS |
+| `npm run test:reports:ledger` | staged 보강 후108 PASS |
+| `npm run test:reports:workflow` | staged 보강 후 소스 route/service166 PASS, compiled/browser 인수 아님 |
+| `npm run test:reports:http` | 최종 compiled route/OOXML18 PASS·브라우저 인수 아님 |
+
+Native 최종 build의13경고는 기존 logging 동적 filesystem11과 새 report storage canonicalPotentialPath/path resolve2의 Turbopack whole-project trace/포장 경고다. 임의 turbopackIgnore/경고 suppression으로 숨기지 않았고 실제 NAS 디렉터리/번들 포장·secret 비포함은 운영 게이트 미확인이다. Worker의 proxy/PLUGIN_TIMINGS·privacy 정적 route 분류 unknown/info는 Vinext 경계로 남긴다. Worker 생성 `.next` types의 기존 Native 충돌은 표준 typegen 재생성 후 tsc PASS이며 소스 오류 해결로 주장하지 않는다.
+
+staged는 저장 전 durable 예약→verified ready CAS이며 불확정 write의 무조건 quarantine/overwrite와 stale tmp/lock 자동 삭제를 하지 않는다. 예약 fingerprint와 재렌더 불일치는 fail-closed, 만료 staged 파일 부재는 실패다. project/user RESTRICT의 별도 보존 정책 전 삭제 차단, 실제 NAS 권한/free-space·runtime DDL·시각 OOXML/브라우저 미인수를 유지한다.
+
+image-size의 공식 GHSA2건과 registry의2.0.4를 구현 담당이 확인한 뒤 `pptxgenjs` 하위만 scoped override했다. renderer3 PASS와 별도 정상 PNG·zero-dimension ICNS/JXL/HEIF의 child process3초 내 throw 검사1 PASS, 새 Native/Worker build PASS를 호환 근거로 둔다. 텍스트 전용 보고서는 addImage/외부 이미지 parser를 사용하지 않으며 compiled OOXML18 PASS도 확인했다.
+
+기존 `wbs_app_test`가 미공개 v14 pre-staged checksum을 보유해 최종 suite가 의도대로 fail-closed한 결과를 성공으로 바꾸지 않는다. checksum 수정·기존 DB 삭제 없이 새 고유 `wbs_final_backlog_20261023_test`에서 최종294 PASS를 확인했다.
+
+Vinext TransformStream은 route가 설정한 Content-Length를 제거하고 chunked로 전송할 수 있다. 최종 compiled 보고서18조건은 wire 길이가 있으면 일치, 없으면 chunked·실제 bytes/SHA·MIME/CSP/nosniff를 대조해 PASS했다. 실제 DOCX/PPTX 모두 wire Content-Length=null/Transfer-Encoding=chunked였다. 처음 길이 헤더 필수 가정 실패는 QA 오판이며 제품 추가 수정은 없었다.
+
+compiled18은 DOCX9,425/PPTX81,094bytes의 OOXML·SHA/ETag/R2 metadata, 현재 권한/공개 필터·201 생성/200 같은 요청 재전송의1run/2files를 대조했다. entry `6f781e9f29e53016491ee353c06bd2b648b6edd65a797052fe67dab15fd9fc68`,351files fingerprint `a06326312d2415b6b42662a447c62c62705e726093d7091de2d2463c4880c0c7`는 전후 불변이다. 실제 Chromium/NAS·시각 OOXML 인수와 구분한다.
+
+구현 source main `bd6f4efea7f78221e4d7a2597a01497ffbfd0acc`/sites `5032410a5b5117daabf709ce17514f63af3eeb99`의 push·remote ls-remote를 확인했다. 공통 source/package/lock 동일·기본 build 차이를 보존한다. combined CI status는 두 SHA 각각 statuses0이며 통과가 아니다. 기존 Actions403을 재시도하지 않았다. 후속 문서 HEAD와 운영 v18 source는 별개다.
+
+새 명령은 현재 package에 등록돼 있음을 문서 담당이 확인했다. 새 보고서나 DDL 사본을 만들지 않고 원본 docs-canon 검사 미가용 경계를 유지한다.
 
 ## 문서 정리 검증
 

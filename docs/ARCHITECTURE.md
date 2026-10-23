@@ -34,7 +34,7 @@ src/widgets/features/entities/shared public API
 
 ## 2. Next.js 렌더링과 조립
 
-- `app/layout.tsx`: global CSS, frappe-gantt CSS, provider와 `AppShell` 조립.
+- `app/layout.tsx`: global CSS, frappe-gantt CSS, provider와 `AppShell` 조립. runtime 인증 상태를 빌드 시 익명 cache로 고정하지 않도록 force-dynamic으로 처리하며 공개 경로의 익명 접근은 유지한다.
 - `app/page.tsx`: 로그인 전 readiness 안내; 로그인 후 선택 프로젝트 Gantt/태스크 요약.
 - `app/privacy/page.tsx`: 로그인 없이 접근 가능한 개인정보 처리·보유·프로젝트 종료 파기 안내.
 - `app/tasks/page.tsx`: `dynamic = "force-dynamic"`; 세션과 DB readiness 확인 후 workspace 조립.
@@ -335,3 +335,10 @@ theme의 Container 기본은 xl(1536px), 긴 글 privacy/bug detail은 md다. Ap
 client 진입점은 `"use client"` 지시문 또는 `*.client.ts(x)` 파일이다. `import type`/`export type`과 `"use server"` 모듈은 client-server 검사에서 제외한다(각각 컴파일 시 소거, 네트워크 경계 대체).
 
 경계 예외를 blanket disable하지 않는다. fixture(`scripts/fixtures/fsd/`)는 허용 방향 1건과 금지 유형 4건을 모두 포함하며, 기본 실행이 self-test를 먼저 통과해야 저장소 검사로 넘어간다. 이 저장소에는 아직 CI 워크플로가 없어 현재는 로컬 게이트다.
+
+
+## 프로젝트 보고서 생성 계약
+
+D0–D4의 소스·양 DB·compiled 인수와 실제 화면/운영 외부 게이트를 구분하며 [계획](PROJECT_DIGEST_REPORT_PLAN.md)은 단계/인수 조건, [지도](PROJECT_MAP.md#프로젝트-보고서-구현-진입점)는 실제 경로를 소유한다. 현재 권한 ∩ 프로젝트 scope ∩ 원본 visibility를 수집·snapshot 저장·render 후 commit·다운로드 전후에 재검사한다. 같은 versioned snapshot만 DOCX/PPTX renderer에 전달하고 renderer는 DB/첨부 bytes를 조회하지 않는다. 외부 이미지/링크를 fetch하거나 embed하지 않는다.
+
+생성은 짧은 CAS/lease·idempotency claim과 별도 파일 IO를 사용하고 불확정 run 상태를 성공으로 바꾸지 않는다. 파일 IO 전에 key/hash/size의 durable staged 예약을 남기고 검증된 저장 성공 뒤 ready로 CAS한다. staged는 다운로드/완료에 포함하지 않으며 쓰기 결과 불명에서 무조건 quarantine하거나 임의 overwrite하지 않는다. private Native/R2 저장은8MiB 상한·size/SHA를 검사하며 download는 만료 즉시404다. retry는 검증된 기존 bytes를 재사용하며 없는 파일의 재렌더가 예약 fingerprint와 다르면 fail-closed다. OOXML 비결정성에 따른 복구 한계를 숨기지 않고 stale Native tmp/lock을 자동 삭제하지 않는다. retention은 staged도 확인 후 가역 quarantine 대상으로 삼되 물리 파일이 없으면 실패로 남기고 영구 삭제하지 않는다. report의 project/user FK는 RESTRICT여서 기록이 있는 대상의 영구 삭제를 별도 보존 정책 전 차단하며 자동 cascade하지 않는다. scheduler/artifact opt-in과 운영 활성화·실제 NAS 디렉터리/DDL 권한 검증 여부는 [TODO](TODO.md)와 [하네스](HARNESS_MAP.md#남은-품질과-digest-구현-진행)를 따른다. 코드 존재나 게시가 자동 예약 활성화·외부 발송 승인이 아니다.

@@ -18,7 +18,7 @@
 | 배포·스키마·브랜치는 어떻게 운영하나 | [NAS_UPDATE_GUIDE](docs/NAS_UPDATE_GUIDE.md) | NAS/Sites 분리, 게시/복구, 네트워크·archive 태그 |
 | Native migration의 세부 계약은 무엇인가 | [NATIVE_DATABASE_MIGRATIONS](docs/NATIVE_DATABASE_MIGRATIONS.md) | 불변 명세·credential·재개/rollback 한계 |
 | 버그 제보·보존·권한 계약은 무엇인가 | [BUG_REPORTS](docs/BUG_REPORTS.md) | 스크린샷을 포함한 하나의 도메인 정본 |
-| 아직 구현하지 않은 digest를 어떻게 설계하나 | [PROJECT_DIGEST_REPORT_PLAN](docs/PROJECT_DIGEST_REPORT_PLAN.md) | D0–D5 설계·선행 조건; 실행 사실 아님 |
+| digest의 설계·선행 조건은 무엇인가 | [PROJECT_DIGEST_REPORT_PLAN](docs/PROJECT_DIGEST_REPORT_PLAN.md) | D0–D5 설계·선행 조건; 실제 진행/검증은 TODO/HARNESS |
 | 팀 업무를 어떻게 사용하나 | [TEAM_WORKFLOW_GUIDE](docs/TEAM_WORKFLOW_GUIDE.md) | 작성·검토·검색·알림 사용 순서 |
 | 사용자 교육 자료는 무엇인가 | [HTML 설명서](docs/manual/USER_MANUAL.html), [빠른 참조](docs/manual/QUICK_REFERENCE.md), [제작 안내](docs/manual/USER_MANUAL.md) | 기존 사용자/발표 자료 보존; 기술 정본 대체 아님 |
 | 과거 T 번호를 어떻게 해석하나 | [TASK_ID_MAP](docs/TASK_ID_MAP.md) | 영구 ID 대응; 현재 다음 번호는 TODO |
@@ -33,14 +33,14 @@
 6. 원문·버전·검토는 transaction 안의 version/token/bytes fingerprint로 보존한다. 첨부 제외는 새 버전이며 과거 파일 삭제가 아니다. project 종료일 자동 파기는 없고 공유 계정은 별도 수명주기다. 실패/불확정/커밋 후 후속 오류를 성공과 구분한다.
 7. main은 NAS/native, sites는 Worker/D1/R2다. 기본 build 차이를 보존하고 공통 patch를 선별 반영한다. 사용자에게 이번 작업의 게시 요청이 명시된 경우에만 Sites 게시를 수행한다. 브랜치 ref 정리는 배포가 아니다.
 8. 합성 브라우저는 loopback만 허용한다. 운영에 합성 session을 보내거나 proxy/NO_PROXY/인증서/플랫폼 정책을 바꾸어 제한을 우회하지 않는다.
-9. digest는 현재 미구현이며 dry-run/download-only 기본, 동일 versioned snapshot, viewer filter·machine token·idempotency ledger 없이 활성화하지 않는다. DOCX는 docx, runtime PPTX는 pptxgenjs 직접 생성이며 외부 발송은 별도 동의/승인이다.
+9. digest D0–D4의 소스·로컬/compiled 인수와 실제 화면/운영 활성화를 구분한다. dry-run/download-only 기본, 동일 versioned snapshot, viewer filter·machine token·idempotency ledger 없이 활성화하지 않는다. DOCX는 docx, runtime PPTX는 pptxgenjs 직접 생성이며 외부 발송은 별도 동의/승인이다.
 10. 경고·오류를 무시하거나 blanket disable로 숨기지 않는다. 미해결 오류는 TODO, 실행 결과/미실행 사유는 HARNESS_MAP, 재발 방지 판단은 ARCHITECTURE 또는 COMPLETED_LOG에 남긴다. 실제 확인하지 않은 Google 로그인·UI·운영 게시를 로컬 성공으로 추정하지 않는다.
 
 ## 문서 운영
 
 - 새 기능마다 새 파일·날짜별 완료 보고서를 만들지 않는다. 바뀐 사실을 소유하는 기존 정본 하나를 고치고 나머지는 링크한다. 새 문서는 질문이 겹치지 않을 때만 이 등록부에 역할·필요성을 추가한다.
 - 계획은 게이트, TODO는 현재 값/열린 작업, ARCHITECTURE는 이유/계약, PROJECT_MAP은 위치, HARNESS_MAP은 방법/기준선, COMPLETED_LOG는 고유 과거 근거를 소유한다. 완료한 항목을 TODO에 반복하지 않는다.
-- 기존 Native 운영·버그 도메인·미구현 digest·ID 호환표·사용자 자료는 위 표에 등록한 예외다. 사용자 가이드는 독자를 위해 절차를 반복할 수 있다. 숨은 설정/기술 규칙의 새 정본으로 쓰지 않는다.
+- 기존 Native 운영·버그 도메인·digest 설계·ID 호환표·사용자 자료는 위 표에 등록한 예외다. 사용자 가이드는 독자를 위해 절차를 반복할 수 있다. 숨은 설정/기술 규칙의 새 정본으로 쓰지 않는다.
 - 삭제 전 고유 근거와 복구 정보를 해당 정본에 통합하고 Git 원본 commit/path를 남긴다. 미추적 사용자 자료는 정리 대상이 아니다. docs 링크·읽기 경로·필수 역할·명령은 `node scripts/check-docs.mjs`로 확인한다.
 - 개인 docs-canon 스킬이 제공되는 환경에서는 해당 SKILL.md를 읽고 구현·검증 담당과 문서 담당의 범위를 나눈다. 원본 형식 검사와 내용 검토를 구분하고, 스킬/검사기 미제공 시 대체 검사만 수행했다고 밝힌다. 앞선 간소화 회차의 원본 미실행 근거는 COMPLETED_LOG가 보존한다. 외부 프로젝트 규칙을 대신 가져오지 않는다.
 

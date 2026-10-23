@@ -19,7 +19,7 @@
 
 ## 버전·적용 절차 (QLT-012)
 
-D1은 기존 `drizzle/` 게시 migration을 유지한다. Native MariaDB는 `native-migration-v1.ts`–`native-migration-v12.ts`의 불변 명세와 기존 schema additive upgrade를 `schema_migrations(version,name,checksum,applied_at)`로 추적한다. 이미 적용된 명세는 편집하지 않고 새 버전/handler를 추가한다. v1 checksum은 `8dea300dc59fc6a4d7c0fcb0a54b4a4fdec2db9d2681b303be9c1208d7007092`다.
+D1은 기존 `drizzle/` 게시 migration을 유지한다. Native MariaDB는 `native-migration-v1.ts`–`native-migration-v14.ts`의 불변 명세와 기존 schema additive upgrade를 `schema_migrations(version,name,checksum,applied_at)`로 추적한다. 이미 적용된 명세는 편집하지 않고 새 버전/handler를 추가한다. v1 checksum은 `8dea300dc59fc6a4d7c0fcb0a54b4a4fdec2db9d2681b303be9c1208d7007092`다.
 
 1. 운영자가 앱 쓰기 중지/점검 창과 검증된 백업을 준비한다. 이 문서는 실제 운영 적용 승인을 대신하지 않는다.
 2. `npm run db:migrate -- --status`는 runtime identity로 읽기만 수행한다. ledger 없음/대기/검증 오류를 구분하며 조회가 ledger를 생성하지 않는다.
@@ -112,3 +112,10 @@ v10 도입 시점은 관리자 전용 저장 기반이었다. 후속 v11의 단�
 `native-migration-v12.ts`와 별도 `drizzle/0016_project_access_mode.sql`은 `projects.access_mode`와 허용 mode CHECK만 추가한다. 기본 `legacy_authenticated`는 기존 인증 읽기를 보존하며 자동 소속/계정 역할 부여나 자료 재작성은 없다. 실제 `members_only` 전환은 SU의 최신 영향 미리보기·확인과 workspace CAS를 거친 별도 작업이다. admin 관리 범위 축소는 애플리케이션 인가 정책으로 적용하며 기존 읽기 보존과 구분한다. 이전 명세/checksum과 원문/버전·파일·완료 이력은 보존한다.
 
 적용·검증 상태는 [TODO](TODO.md#ux-재설계와-프로젝트-바인딩)와 [하네스](HARNESS_MAP.md#ux-바인딩-구현과-회귀-검증)가 소유한다. 이 소스 설명은 운영/NAS migration 실행이나 실제 구성원 소속 변경을 뜻하지 않는다. 운영 적용과 복구는 기존 백업·schema identity·명시 적용 절차를 따르며 소속 제한을 활성화한 뒤 구형 전역 관리자 앱으로 writable rollback하면 새 접근 정책을 우회할 수 있으므로 forward fix를 우선한다.
+
+
+## Native 첨부 격리 v13·보고서 ledger v14 준비
+
+v13은 screenshot staging lease와 참조/만료 검사용 trigger·durable cleanup job을 추가하고, native 파일을 영구 삭제하는 대신 검증된 quarantine/retry/restore 경로를 둔다. 새 버전은 기존 명세/checksum·원문/파일·역할을 보존한다. 이 기반 도입만으로 Native 첨부 bug purge의 fail-closed나 기존 거부된 runner 시험을 해제하지 않는다.
+
+v14는 보고서 schedule/run/artifact ledger3표를 additive로 준비한다. 기존 runner의 별도 schema identity·version/checksum·lock/postcondition을 재사용하며 새 credential 생성/GRANT나 runtime DDL 허용은 하지 않는다. 실제 NAS 적용·운영 예약 활성화는 미실행이며 runtime DDL 거부도 아직 실증하지 않았다. 진행 중 로컬 검증과 최종 인수는 [하네스](HARNESS_MAP.md#남은-품질과-digest-구현-진행)가 소유한다. 운영 적용·자동 down·기존 사용자 자료 정리를 승인하는 문서가 아니다.

@@ -6,6 +6,7 @@
 
 | ID/시기 | 원인·결정·완료 범위 |
 | --- | --- |
+| QLT-016/029·RPT-015/017, 2026-10-23 | 동시 요청 admission과 Miniflare 원 Response GC의 별개 원인을 재현·최소 수정하고 각 회귀를 완료. 현재 schema 기반 snapshot·양 DB collector와 동일 snapshot DOCX/PPTX의 compiled 인수. [완료·한계](#품질-원인-수정과-digest-snapshot-기반), 남은 UI/NAS·운영은 TODO 유지 |
 | QLT-001/002, 2026-08 | ESLint 기준선, FSD M0~M5 완료. root app 조립과 public API로 이동하고 components/lib/models 호환층 제거. URL/권한/SQL 변경과 구조 이동을 분리 |
 | QLT-003~007, 2026-09 | private 파생 댓글/첨부 props 유출, ownership 없는 mutation, unscoped 단건, 경로 로그, task route의 project 관리 권한을 수정. SQL viewer/IdScope·상위 관계·작성자/admin·canonical project 경로를 강제 |
 | QLT-008/009 | node --import tsx로 loader 경고 정리, 실제 인가 경로의 node:test visibility fixture 도입. synthetic session은 실제 OAuth가 아님 |
@@ -29,7 +30,13 @@
 | QLT-019, 2026-10-23 | Node ESM과 bundler의 실제 GoogleProvider default export 형태 차이를 정규화하고 테스트 Google 설정을 합성 값으로 고정. 원인/완료 경계는 [아래](#qlt-019-google-provider-import), 실행 결과는 [하네스](HARNESS_MAP.md#봉사활동-저장-기반과-auth-import-검증) |
 | QLT-021, 2026-10-21 | D1 총 변경 수를 부모 삭제 수로 오인. DELETE RETURNING의 요청 id rowset과 commit 후 followup 분리. main ddcedd6/sites c1c55da, DB109/action8/unit119/visibility33/Worker257, 양쪽 build/lint/types/FSD PASS. 후속 version13의 핵심 삭제 오판 운영 인수는 아래 별도 기록. NAS 적용·첨부 인수는 포함하지 않음 |
 
-과거 네트워크 기록의 제목 QLT-020은 당시 잘못 중복 사용된 표기다. 현재 TODO의 QLT-020은 native 첨부 bug 파일 정리를 뜻하며 번호를 다시 발급하지 않는다. QLT-015/016, OPS-021/031/032/033/034/035는 이 완료 색인으로 닫히지 않는다. QLT-019의 과거 실패는 보존하며 후속 수정은 아래 별도 근거다.
+과거 네트워크 기록의 제목 QLT-020은 당시 잘못 중복 사용된 표기다. 현재 TODO의 QLT-020은 native 첨부 bug 파일 정리를 뜻하며 번호를 다시 발급하지 않는다. QLT-015, OPS-021/031/032/033/034/035는 이 완료 색인으로 닫히지 않는다. QLT-019의 과거 실패는 보존하며 후속 수정은 아래 별도 근거다.
+
+## 품질 원인 수정과 digest snapshot 기반
+
+QLT-029는 Miniflare wrapper가 공유한 undici 원 Response의 GC 취소를 재현하고 즉시1회 drain·독립 snapshot을 보관하도록 test transport를 수정했다. QLT-016은 작은 동시 form의 과도한 예약503을 재현한 뒤 개수/전체 bytes admission과 실제 초과 거부를 보완했다. eager 큰 요청의 별도 전송 ECONNRESET 경계는 남아 있으며 서버 거부·Retry-After와 첫 파일 보존을 검증한 범위를 넘겨 해결로 주장하지 않는다.
+
+RPT-015는 현재 업무 상태·프로젝트 scope·revision 모델을 반영한 versioned/bounded snapshot·privacy·동일 hash와 양 DB collector 기반을 인수했다. 보고서 ledger/렌더/수직 소스 검증은 별도 범위이며 실제 화면·runtime DDL·NAS/운영 예약을 이 완료로 대신하지 않는다. RPT-017은 동일 snapshot DOCX/PPTX를 직접 생성해 compiled route의 OOXML·bytes/SHA·R2 metadata/현재 권한과 idempotency를 인수했다. Vinext의 chunked framing을 정확한 wire 계약으로 검사했고 시각 OOXML/브라우저·실제 NAS 인수는 별도다. 실제 수치·경고와 남은 게이트는 [하네스](HARNESS_MAP.md#남은-품질과-digest-구현-진행)가 소유한다. 운영은 version18 유지·중간 게시0이며 실제 자료/계정/환경·영구 삭제는 변경하지 않았다. 홈 수정 mainc9003a8/siteseb0adb1, 품질 묶음 main5230bb2/sites67263f3, 보고서 main `bd6f4efea7f78221e4d7a2597a01497ffbfd0acc`/sites `5032410a5b5117daabf709ce17514f63af3eeb99`까지 푸시·remote ls-remote를 확인했다. 공통 소스와 기본 build 차이를 보존했으며 게시 완료나 후속 문서 HEAD로 해석하지 않는다.
 
 ## 첨부 미리보기와 SU 불변성 구현
 
