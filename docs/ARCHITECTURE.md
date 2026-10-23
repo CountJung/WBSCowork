@@ -237,6 +237,24 @@ account 파기 기능은 현재 없으며 향후 author cascade 전에 선택 �
 - create/update/delete·선후행·템플릿·상태의 SQL에서 같은 범위를 강제하며 봉사활동의 actor 없는 내부 쓰기도 허용하지 않는다. 팀장이 하위 업무가 있는 카드를 삭제해 다른 팀 업무를 재배치하지 못하도록 해당 삭제는 지정 프로젝트 관리자/SU만 수행한다. 제출물/댓글/첨부·다운로드의 private viewer 계약과 지정 검토자의 승인·자체 승인 배제는 그대로다.
 - 작업 화면용 팀 metadata와 배정 명단은 구분한다. 지정 프로젝트 관리자/SU에게는 프로젝트/팀의 현재 유효 명단을, 팀장에게는 자신이 관리하는 팀의 배정 명단만 제공한다. 명단 조회가 비공개 제출물 조회권을 늘리지 않는다.
 
+### 활동팀 공통 준비표 설계
+
+PRD-058/QLT-031의 **소스 구현 계약**이며 실제 화면 인수/운영 반영을 뜻하지 않는다. 현재 `meal/facility/senior_care/child_care/recreation/other`6종 분류와 실제 활동팀을 재사용한다. 팀당 공통 준비표 하나에 종류별 JSON entry를 저장하고 날짜별 복수행을 지원한다. 전체 최대50행·행당 체크20개·UTF-8 직렬화 JSON64KiB를 서버에서도 제한하며 현재 팀의 kind와 필드를 검증한다. WBS 업무/제출물이나 완료 조건을 대체하지 않는다.
+
+| 종류 | 준비표 항목/처리 |
+| --- | --- |
+| meal | 날짜·끼니·메뉴·예상 인원·1인 기준량·단위·장보기 체크. 준비량은 서버가 인원×1인 기준량을 fixed-point로 계산. UI 수량은 검증된 입력의 미리보기이며 저장 본문의 total 필드는 거부 |
+| facility | 날짜별 작업·자재/도구·진행 상태 |
+| senior_care / child_care | 돌봄 일정·역할·준비 체크. 대상자의 개인정보·어르신/아동 개별정보를 수집하지 않음 |
+| recreation | 프로그램 순서·시간·준비물 |
+| other | 공통 일정/준비 항목을 사용하며 새로운 활동 종류나 권한을 임의 생성하지 않음 |
+
+읽기는 현재 프로젝트 접근과 활성 프로젝트/팀 소속을 갖춘 해당 팀원 또는 지정 프로젝트 admin/검증된 env SU, 편집은 현재 canonical 팀장 또는 지정 프로젝트 admin/검증된 env SU로 제한한다. 매 요청마다 현재 DB 역할·프로젝트 scope·명단/팀장 pointer를 확인하고 타팀/타프로젝트 ID나 소속 회수 후 열린 화면의 재요청을 거부한다. 팀 소속/준비표 역할을 전역 계정 승격이나 비공개 제출물 공유로 해석하지 않는다.
+
+새 준비표 API는 기존 서버 `NEXTAUTH_URL`의 origin을 기준으로 PUT Origin을 비교하며 미설정 시에만 request.url로 fallback한다. 임의 Host/X-Forwarded-Host로 허용 origin을 선택하지 않고 설정을 바꾸지 않는다. Native NextRequest의 localhost 정규화와 실제 공개 origin을 구분해 정상127.0.0.1 요청을 거부하던 문제를 보완했다. JSON 문서는64KiB, version/token envelope를 포함한 요청은66KiB로 bounded read한다.
+
+저장은 version 기반 optimistic CAS와 actor에 결합된 UUID 재시도 token/SHA-256 내용 fingerprint로 원자적 현재값·immutable revision을 남긴다. 같은 요청의 중복 저장과 오래된 편집 덮어쓰기를 막고 과거 이력을 보존한다. 삭제 endpoint는 추가하지 않으며 표에서 행을 제외하는 새 version도 과거 revision을 지우지 않는다. Native v15와 D1 0018은 현재표·revision표2개만 additive로 추가하고 기존 migration/checksum을 보존한다. Native MariaDB/main과 D1/sites의 같은 논리 저장 모델을 지원하되 이번 범위는 로컬 합성 검증·커밋/푸시이며 운영 migration·게시·NAS·실제 자료/계정 권한 변경은 하지 않는다. 현재 진행/완료 조건은 [TODO](TODO.md#열린-항목)가 소유한다.
+
 ### 업무별 완료 방식
 
 - 사용자 확정: **새 봉사활동 업무는 직접 완료·제출물/파일 선택**이며 직접 완료 가능자는 **현재 담당자·현재 해당 팀장·지정 프로젝트 관리자/SU**다. `submission_required`는 담당자 제출·산출물·완료 근거와 선택 검토 계약을 유지한다. 두 경로의 조건 판정을 분리해 기존 업무의 제출 의무를 완화하지 않는다.

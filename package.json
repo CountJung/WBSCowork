@@ -62,7 +62,11 @@
     "test:reports:ledger": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-report-ledger.ts",
     "test:reports:collector": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-report-collector.ts",
     "test:reports:workflow": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-report-workflow.ts",
-    "test:reports:http": "node scripts/test-project-report-http.mjs"
+    "test:reports:http": "node scripts/test-project-report-http.mjs",
+    "test:team-preparation:schema": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-team-preparation-schema.ts",
+    "test:team-preparation:workflow": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-team-preparation-workflow.ts",
+    "test:team-preparation:http": "node scripts/test-team-preparation-http.mjs",
+    "test:team-preparation:native-http": "node --import tsx scripts/test-team-preparation-native-http.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

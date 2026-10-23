@@ -19,7 +19,7 @@
 
 ## 버전·적용 절차 (QLT-012)
 
-D1은 기존 `drizzle/` 게시 migration을 유지한다. Native MariaDB는 `native-migration-v1.ts`–`native-migration-v14.ts`의 불변 명세와 기존 schema additive upgrade를 `schema_migrations(version,name,checksum,applied_at)`로 추적한다. 이미 적용된 명세는 편집하지 않고 새 버전/handler를 추가한다. v1 checksum은 `8dea300dc59fc6a4d7c0fcb0a54b4a4fdec2db9d2681b303be9c1208d7007092`다.
+D1은 기존 `drizzle/` 게시 migration을 유지한다. Native MariaDB는 `native-migration-v1.ts`–`native-migration-v15.ts`의 불변 명세와 기존 schema additive upgrade를 `schema_migrations(version,name,checksum,applied_at)`로 추적한다. 이미 적용된 명세는 편집하지 않고 새 버전/handler를 추가한다. v1 checksum은 `8dea300dc59fc6a4d7c0fcb0a54b4a4fdec2db9d2681b303be9c1208d7007092`다.
 
 1. 운영자가 앱 쓰기 중지/점검 창과 검증된 백업을 준비한다. 이 문서는 실제 운영 적용 승인을 대신하지 않는다.
 2. `npm run db:migrate -- --status`는 runtime identity로 읽기만 수행한다. ledger 없음/대기/검증 오류를 구분하며 조회가 ledger를 생성하지 않는다.
@@ -119,3 +119,8 @@ v10 도입 시점은 관리자 전용 저장 기반이었다. 후속 v11의 단�
 v13은 screenshot staging lease와 참조/만료 검사용 trigger·durable cleanup job을 추가하고, native 파일을 영구 삭제하는 대신 검증된 quarantine/retry/restore 경로를 둔다. 새 버전은 기존 명세/checksum·원문/파일·역할을 보존한다. 이 기반 도입만으로 Native 첨부 bug purge의 fail-closed나 기존 거부된 runner 시험을 해제하지 않는다.
 
 v14는 보고서 schedule/run/artifact ledger3표를 additive로 준비한다. 기존 runner의 별도 schema identity·version/checksum·lock/postcondition을 재사용하며 새 credential 생성/GRANT나 runtime DDL 허용은 하지 않는다. 실제 NAS 적용·운영 예약 활성화는 미실행이며 runtime DDL 거부도 아직 실증하지 않았다. 진행 중 로컬 검증과 최종 인수는 [하네스](HARNESS_MAP.md#남은-품질과-digest-구현-진행)가 소유한다. 운영 적용·자동 down·기존 사용자 자료 정리를 승인하는 문서가 아니다.
+
+
+## 활동팀 공통 준비표 v15 준비
+
+v15와 D1의 별도 `0018_team_preparation_sheets.sql`은 팀별 현재 준비표와 불변 revision2표를 additive로 추가한다. 기존 migration/checksum·팀/소속·업무·원문/파일·role을 재작성하지 않으며 D1 SQL을 Native에 실행하지 않는다. 실제 명세는 코드가 소유하고 문서에 DDL을 복제하지 않는다. 이 작업은 로컬 합성 검증이며 Native/NAS/운영 D1 적용·게시를 하지 않는다. 실제 결과와 남은 인수는 [준비표 검증](HARNESS_MAP.md#활동팀-공통-준비표-구현-검증)을 따른다.

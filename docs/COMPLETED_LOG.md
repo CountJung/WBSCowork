@@ -8,6 +8,7 @@
 | --- | --- |
 | QLT-016/029·RPT-015/017, 2026-10-23 | 동시 요청 admission과 Miniflare 원 Response GC의 별개 원인을 재현·최소 수정하고 각 회귀를 완료. 현재 schema 기반 snapshot·양 DB collector와 동일 snapshot DOCX/PPTX의 compiled 인수. [완료·한계](#품질-원인-수정과-digest-snapshot-기반), 남은 UI/NAS·운영은 TODO 유지 |
 | OPS-038, 2026-10-23 | 최초 배포 자동 승인 거부는 보존. 사용자 새 직접 승인 뒤 같은 저장v19의 미실행 확인→1회 배포 재시도 terminal succeeded·active/latest19와 D1 추가3표/기존23표·설정 보존 확인. [승인/배포 근거](HARNESS_MAP.md#version19-승인과-운영-배포), 운영 UI/새 OAuth는 별도 |
+| PRD-058, 2026-10-23 | 기존6종 활동팀의 공통 준비표·서버 식사량·현재 팀 권한·CAS/불변 이력·UI 진입 경로와 양 DB additive 저장 구현, 소스/실DB·실제 Native/Worker compiled HTTP 인수 완료. [구현·미게시 경계](#활동팀-공통-준비표-소스-구현), 실제 화면/운영 인수는 QLT-031 유지 |
 | QLT-001/002, 2026-08 | ESLint 기준선, FSD M0~M5 완료. root app 조립과 public API로 이동하고 components/lib/models 호환층 제거. URL/권한/SQL 변경과 구조 이동을 분리 |
 | QLT-003~007, 2026-09 | private 파생 댓글/첨부 props 유출, ownership 없는 mutation, unscoped 단건, 경로 로그, task route의 project 관리 권한을 수정. SQL viewer/IdScope·상위 관계·작성자/admin·canonical project 경로를 강제 |
 | QLT-008/009 | node --import tsx로 loader 경고 정리, 실제 인가 경로의 node:test visibility fixture 도입. synthetic session은 실제 OAuth가 아님 |
@@ -38,6 +39,12 @@
 QLT-029는 Miniflare wrapper가 공유한 undici 원 Response의 GC 취소를 재현하고 즉시1회 drain·독립 snapshot을 보관하도록 test transport를 수정했다. QLT-016은 작은 동시 form의 과도한 예약503을 재현한 뒤 개수/전체 bytes admission과 실제 초과 거부를 보완했다. eager 큰 요청의 별도 전송 ECONNRESET 경계는 남아 있으며 서버 거부·Retry-After와 첫 파일 보존을 검증한 범위를 넘겨 해결로 주장하지 않는다.
 
 RPT-015는 현재 업무 상태·프로젝트 scope·revision 모델을 반영한 versioned/bounded snapshot·privacy·동일 hash와 양 DB collector 기반을 인수했다. 보고서 ledger/렌더/수직 소스 검증은 별도 범위이며 실제 화면·runtime DDL·NAS/운영 예약을 이 완료로 대신하지 않는다. RPT-017은 동일 snapshot DOCX/PPTX를 직접 생성해 compiled route의 OOXML·bytes/SHA·R2 metadata/현재 권한과 idempotency를 인수했다. Vinext의 chunked framing을 정확한 wire 계약으로 검사했고 시각 OOXML/브라우저·실제 NAS 인수는 별도다. 실제 수치·경고와 남은 게이트는 [하네스](HARNESS_MAP.md#남은-품질과-digest-구현-진행)가 소유한다. 로컬 구현 당시 운영은 version18 유지·중간 게시0이었으며 실제 자료/계정/환경·영구 삭제는 변경하지 않았다. 홈 수정 mainc9003a8/siteseb0adb1, 품질 묶음 main5230bb2/sites67263f3, 보고서 main `bd6f4efea7f78221e4d7a2597a01497ffbfd0acc`/sites `5032410a5b5117daabf709ce17514f63af3eeb99`까지 푸시·remote ls-remote를 확인했다. 공통 소스와 기본 build 차이를 보존했으며 게시 완료나 후속 문서 HEAD로 해석하지 않는다.
+
+## 활동팀 공통 준비표 소스 구현
+
+PRD-058은 팀마다 하나의 날짜 다중행 준비표를 기존 활동 종류에 맞게 제공한다. 식사량은 fixed-point 서버 계산으로 검증하고 현재 팀원 읽기·canonical 팀장/지정 admin/env SU 편집, bounded JSON·CAS/actor-bound 재시도·원자적 현재표/불변 revision을 구현했다. 목록/상세·기존 업무/관리자 팀 진입을 연결했으며 WBS 완료·계정 역할을 바꾸거나 삭제 endpoint를 만들지 않았다. 상세 계약은 ARCHITECTURE가 소유한다.
+
+Native의 정상 Origin403은 NextRequest localhost 정규화 원인을 재현해 기존 서버 canonical origin 기준으로 보완하고 Host/XFH로 허용 범위를 넓히지 않았다. 양 DB/실제 Native·Worker compiled 검증 근거와 제한은 [하네스](HARNESS_MAP.md#활동팀-공통-준비표-구현-검증)를 따른다. 실제 화면·좁은 폭/키보드/오류 조작은 QLT-031 미완료이며 소스 구현 완료와 구분한다. 이번 회차는 게시·운영 migration·실제 자료/권한·NAS 변경 없이 기존 운영v19를 유지했다.
 
 ## 첨부 미리보기와 SU 불변성 구현
 
