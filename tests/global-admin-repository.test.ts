@@ -23,7 +23,7 @@ mockModuleExports(new URL("../src/shared/server/hosted-runtime/index.server.ts",
 mockModuleExports(new URL("../src/shared/server/database-admin/index.server.ts",import.meta.url).href,{getDatabaseAdminStatus:async()=>{throw new Error("Unexpected schema read");}});
 await db.prepare("CREATE TABLE projects(id INTEGER PRIMARY KEY,access_mode TEXT)").run();
 await db.prepare("CREATE TABLE project_members(project_id INTEGER,user_id INTEGER,active INTEGER)").run();
-const {updateUserRole,listProjectUsersForViewer}=await import("../src/entities/user/api/user-repository.server");
+const {updateUserRole,listProjectUsersForViewer,getUserById,listAllUsers}=await import("../src/entities/user/api/user-repository.server");
 const su={userId:1,email:TEST_SUPERUSER_EMAIL,isSuperuser:true};
 beforeEach(async()=>{
  await db.prepare("DELETE FROM project_members").run();
@@ -55,9 +55,9 @@ test("actor identity revocation immediately before UPDATE preserves target role 
  assert.equal((await db.prepare("SELECT role FROM users WHERE id=3").first<{role:string}>())!.role,"member");
 });
 
-test("legacy selector keeps its authenticated directory but omits authentication metadata",async()=>{
+test("legacy assignment selector omits SU and authentication metadata",async()=>{
  const rows=await listProjectUsersForViewer(1,{userId:3});
- assert.deepEqual(rows.map(row=>Number(row.id)),[1,2,3,4,5]);
+ assert.deepEqual(rows.map(row=>Number(row.id)),[2,3,4,5]);
  assert.deepEqual(Object.keys(rows[0]).sort(),["email","id","name","role"]);
  assert.deepEqual(await listProjectUsersForViewer(1,{}),[]);
 });
@@ -71,4 +71,11 @@ test("unassigned admin, inactive member, false SU and unknown project expose no 
 test("revoked membership immediately removes restricted assignment selector access",async()=>{
  await db.prepare("UPDATE project_members SET active=0 WHERE project_id=2 AND user_id=3").run();
  assert.deepEqual(await listProjectUsersForViewer(2,{userId:3}),[]);
+});
+
+test("configured SU remains effective admin in management lookups after a stored role downgrade",async()=>{
+ await db.prepare("UPDATE users SET role='guest' WHERE id=1").run();
+ const user=await getUserById(1);assert.equal(user?.role,"admin");assert.equal(user?.isSuperuser,true);
+ assert.equal((await listAllUsers()).find(user=>Number(user.id)===1)?.isSuperuser,true);
+ assert.equal((await db.prepare("SELECT role FROM users WHERE id=1").first<{role:string}>())!.role,"guest");
 });

@@ -5,6 +5,8 @@ import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import { projectAccessGuard,type ProjectViewer } from "@/src/shared/server/project-scope/index.server";
 import {
   getDefaultUserRole,
+  getEffectiveUserRole,
+  isConfiguredSuperuser,
   manageableUserRoles,
   mapUserRow,
   type ManageableUserRole,
@@ -56,6 +58,11 @@ function normalizeName(name: string) {
   return trimmedName.length > 0 ? trimmedName : "이름 없음";
 }
 
+function mapServerUserRow(row:UserRow):User {
+  const user=mapUserRow(row),configured=getRuntimeEnv().auth.superuserEmail;
+  return {...user,role:getEffectiveUserRole(user.role,user.email,configured),isSuperuser:isConfiguredSuperuser(user.email,configured)};
+}
+
 export async function getUserByEmail(email: string): Promise<User | null> {
   const rows = (await getDatabasePool().query(
     "SELECT id, email, name, role, google_id, avatar_url, last_login_at, last_synced_at, created_at FROM users WHERE email = ? LIMIT 1",
@@ -64,7 +71,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
   const row = rows[0];
 
-  return row ? mapUserRow(row) : null;
+  return row ? mapServerUserRow(row) : null;
 }
 
 export async function getUserById(id: number): Promise<User | null> {
@@ -75,7 +82,7 @@ export async function getUserById(id: number): Promise<User | null> {
 
   const row = rows[0];
 
-  return row ? mapUserRow(row) : null;
+  return row ? mapServerUserRow(row) : null;
 }
 
 export async function listUsers(limit = 10): Promise<User[]> {
@@ -84,7 +91,7 @@ export async function listUsers(limit = 10): Promise<User[]> {
     [limit],
   )) as UserRow[];
 
-  return rows.map(mapUserRow);
+  return rows.map(mapServerUserRow);
 }
 
 export async function listAllUsers(): Promise<User[]> {
@@ -92,7 +99,7 @@ export async function listAllUsers(): Promise<User[]> {
     "SELECT id, email, name, role, google_id, avatar_url, last_login_at, last_synced_at, created_at FROM users ORDER BY COALESCE(last_login_at, created_at) DESC, id DESC",
   )) as UserRow[];
 
-  return rows.map(mapUserRow);
+  return rows.map(mapServerUserRow);
 }
 
 export async function getUserCount(): Promise<number> {
@@ -257,7 +264,7 @@ export async function listProjectUsersForViewer(projectId:number,viewer:ProjectV
   const access=projectAccessGuard(viewer,"directory_project.id");
   const email=typeof viewer.email==="string"?normalizeEmail(viewer.email):null;
   return await getDatabasePool().query(`SELECT u.id,u.name,u.email,u.role FROM users u JOIN projects directory_project ON directory_project.id=?
-    WHERE ${access.sql} AND EXISTS(SELECT 1 FROM users directory_viewer WHERE directory_viewer.id=? OR (? IS NOT NULL AND LOWER(directory_viewer.email)=?))
+    WHERE LOWER(TRIM(u.email))<>? AND ${access.sql} AND EXISTS(SELECT 1 FROM users directory_viewer WHERE directory_viewer.id=? OR (? IS NOT NULL AND LOWER(directory_viewer.email)=?))
     AND (directory_project.access_mode='legacy_authenticated' OR EXISTS(SELECT 1 FROM project_members directory_member WHERE directory_member.project_id=directory_project.id AND directory_member.user_id=u.id AND directory_member.active=1))
-    ORDER BY u.name,u.id`,[projectId,...access.params,viewer.userId??null,email,email]) as Pick<User,"id"|"name"|"email"|"role">[];
+    ORDER BY u.name,u.id`,[projectId,getRuntimeEnv().auth.superuserEmail??"",...access.params,viewer.userId??null,email,email]) as Pick<User,"id"|"name"|"email"|"role">[];
 }

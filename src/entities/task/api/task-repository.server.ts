@@ -78,18 +78,18 @@ async function ensureProjectExists(projectId: number) {
   return project;
 }
 
-export async function ensureEligibleTaskUser(assigneeId?: number | null) {
+export async function ensureEligibleTaskUser(assigneeId?: number | null,options:{allowExistingSuperuser?:boolean}={}) {
   if (!assigneeId) {
     return null;
   }
 
-  const rows = (await getDatabasePool().query("SELECT id FROM users WHERE id = ? AND (role IN ('member','admin') OR LOWER(email)=?) LIMIT 1", [assigneeId,getRuntimeEnv().auth.superuserEmail??""])) as Array<{
+  const rows = (await getDatabasePool().query("SELECT id FROM users WHERE id = ? AND ((?=1 AND LOWER(TRIM(email))=?) OR (role IN ('member','admin') AND LOWER(TRIM(email))<>?)) LIMIT 1", [assigneeId,options.allowExistingSuperuser?1:0,getRuntimeEnv().auth.superuserEmail??"",getRuntimeEnv().auth.superuserEmail??""])) as Array<{
     id: number;
   }>;
   const assignee = rows[0];
 
   if (!assignee) {
-    throw new Error("담당자·검토자는 현재 업무를 작성할 수 있는 회원 또는 관리자여야 합니다.");
+    throw new Error("담당자·검토자는 슈퍼관리자를 제외한 현재 업무를 작성할 수 있는 회원 또는 관리자여야 합니다.");
   }
 
   return assignee.id;
@@ -200,7 +200,7 @@ export async function getTaskById(id: number, viewer?:ProjectViewer): Promise<Ta
   const rows = (await getDatabasePool().query(
     `SELECT
       tasks.id,
-      tasks.project_id, tasks.activity_team_id, tasks.completion_mode, tasks.completed_by, tasks.completed_at,
+      tasks.project_id, tasks.activity_team_id, tasks.completion_mode, tasks.completed_by, tasks.completed_at, completer.name AS completed_by_name, CASE WHEN LOWER(TRIM(completer.email))=? THEN 1 ELSE 0 END AS completed_by_is_superuser,
       activity_team.name AS activity_team_name,
       tasks.parent_id,
       tasks.title,
@@ -221,9 +221,10 @@ export async function getTaskById(id: number, viewer?:ProjectViewer): Promise<Ta
     LEFT JOIN activity_teams activity_team ON activity_team.id=tasks.activity_team_id AND activity_team.project_id=tasks.project_id
     LEFT JOIN users ON users.id = tasks.assignee_id
     LEFT JOIN users reviewer ON reviewer.id = tasks.reviewer_id
+    LEFT JOIN users completer ON completer.id=tasks.completed_by
     WHERE tasks.id = ? AND ${access.sql}
     LIMIT 1`,
-    [getRuntimeEnv().auth.superuserEmail??"",id,...access.params],
+    [getRuntimeEnv().auth.superuserEmail??"",getRuntimeEnv().auth.superuserEmail??"",id,...access.params],
   )) as TaskRow[];
 
   const row = rows[0];
@@ -236,7 +237,7 @@ export async function listTasksByProject(projectId: number, viewer?:ProjectViewe
   const rows = (await getDatabasePool().query(
     `SELECT
       tasks.id,
-      tasks.project_id, tasks.activity_team_id, tasks.completion_mode, tasks.completed_by, tasks.completed_at,
+      tasks.project_id, tasks.activity_team_id, tasks.completion_mode, tasks.completed_by, tasks.completed_at, completer.name AS completed_by_name, CASE WHEN LOWER(TRIM(completer.email))=? THEN 1 ELSE 0 END AS completed_by_is_superuser,
       activity_team.name AS activity_team_name,
       tasks.parent_id,
       tasks.title,
@@ -257,9 +258,10 @@ export async function listTasksByProject(projectId: number, viewer?:ProjectViewe
     LEFT JOIN activity_teams activity_team ON activity_team.id=tasks.activity_team_id AND activity_team.project_id=tasks.project_id
     LEFT JOIN users ON users.id = tasks.assignee_id
     LEFT JOIN users reviewer ON reviewer.id = tasks.reviewer_id
+    LEFT JOIN users completer ON completer.id=tasks.completed_by
     WHERE tasks.project_id = ? AND ${access.sql}
     ORDER BY tasks.order_index ASC, tasks.created_at ASC, tasks.id ASC`,
-    [getRuntimeEnv().auth.superuserEmail??"",projectId,...access.params],
+    [getRuntimeEnv().auth.superuserEmail??"",getRuntimeEnv().auth.superuserEmail??"",projectId,...access.params],
   )) as TaskRow[];
 
   return rows.map(mapTaskRow);
@@ -371,8 +373,8 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
     LEFT JOIN activity_teams chosen_team ON chosen_team.id=? AND chosen_team.project_id=assignment_project.id
     LEFT JOIN users selected_user ON selected_user.id=?
     WHERE assignment_project.id=tasks.project_id AND (? IS NULL OR chosen_team.id IS NOT NULL)
-      AND ${newScope.sql} AND ((assignment_project.project_type='collaboration' AND ?=1) OR ${assignment.sql}))`;
-  const teamAssignmentParams = [teamId,assigneeId,teamId,...newScope.params,assigneeId===existingTask.assigneeId?1:0,...assignment.params];
+      AND ${newScope.sql} AND ((assignment_project.project_type='collaboration' AND ?=1) OR (?=1 AND LOWER(TRIM(selected_user.email))=?) OR ${assignment.sql}))`;
+  const teamAssignmentParams = [teamId,assigneeId,teamId,...newScope.params,assigneeId===existingTask.assigneeId?1:0,assigneeId===existingTask.assigneeId&&teamId===existingTask.activityTeamId?1:0,getRuntimeEnv().auth.superuserEmail??"",...assignment.params];
   const parentScope=input.actor ? taskManagementGuard(input.actor,"parent_scope.project_id","parent_scope.activity_team_id") : {sql:"1=1",params:[]};
   const parentGuard=parentTask ? ` AND EXISTS(SELECT 1 FROM tasks parent_scope WHERE parent_scope.id=? AND parent_scope.project_id=tasks.project_id AND ${parentScope.sql})` : "";
   const parentGuardParams=parentTask ? [parentTask.id,...parentScope.params] : [];
@@ -381,7 +383,7 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
   if(input.actor) {
     await commitTaskMutation({id:input.id,actor:input.actor,token:input.token??randomUUID(),version:input.version??existingTask.version,kind:'updated',note:existingTask.status==='done'?'완료 후 작업 내용 변경으로 다시 열림':'',payload,setSql:`${setSql},status=?,workflow_note=?,completed_by=NULL,completed_at=NULL`,setParams:[...values,['done','changes_requested'].includes(existingTask.status)?'in_progress':existingTask.status,existingTask.status==='done'?'작업 내용이 변경되어 다시 확인이 필요합니다.':existingTask.workflowNote],
       invalidateReview:existingTask.reviewRequired?{reason:'작업 정보가 변경되어 이전 검토 대상이 해제되었습니다.'}:undefined,
-      guardSql:`status<>'review_pending' AND (?=1 OR ? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') OR LOWER(target.email)=?))) AND (?=1 OR ? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') OR LOWER(target.email)=?))) AND ${teamAssignmentGuard}${configurationGuard}${parentGuard}`,guardParams:[assigneeId===existingTask.assigneeId?1:0,assigneeId,assigneeId,getRuntimeEnv().auth.superuserEmail??'',reviewerId===existingTask.reviewerId?1:0,reviewerId,reviewerId,getRuntimeEnv().auth.superuserEmail??'',...teamAssignmentParams,...parentGuardParams]});
+      guardSql:`status<>'review_pending' AND (?=1 OR ? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') AND LOWER(TRIM(target.email))<>?))) AND (?=1 OR ? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') AND LOWER(TRIM(target.email))<>?))) AND ${teamAssignmentGuard}${configurationGuard}${parentGuard}`,guardParams:[assigneeId===existingTask.assigneeId?1:0,assigneeId,assigneeId,getRuntimeEnv().auth.superuserEmail??'',reviewerId===existingTask.reviewerId?1:0,reviewerId,reviewerId,getRuntimeEnv().auth.superuserEmail??'',...teamAssignmentParams,...parentGuardParams]});
   } else {
     // Internal fixtures retain the repository API; production actions always supply a freshly resolved actor.
     const results = await databaseBatch([{sql:`UPDATE tasks SET ${setSql},version=version+1 WHERE id=? AND version=? AND ${teamAssignmentGuard}${configurationGuard}${parentGuard}`,params:[...values,existingTask.id,existingTask.version,...teamAssignmentParams,...parentGuardParams]}]);

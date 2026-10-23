@@ -8,7 +8,7 @@ import DeleteConfirmation from "./DeleteConfirmation";
 import MarkdownContent from "@/src/shared/ui/markdown-content";
 import SubmitButton from "@/src/shared/ui/submit-button";
 import type { Comment } from "@/src/entities/comment";
-import type { SubmissionAttachment, Submission } from "@/src/entities/submission";
+import { AttachmentFile, type SubmissionAttachment, type Submission } from "@/src/entities/submission";
 
 type ContentAction = (formData: FormData) => Promise<void>;
 
@@ -94,12 +94,6 @@ function formatFileSize(sizeBytes: number | null) {
   }
 
   return `${sizeBytes} B`;
-}
-
-function isPreviewable(mimeType: string | null): boolean {
-  if (!mimeType) return false;
-
-  return mimeType.startsWith("image/") || mimeType === "application/pdf";
 }
 
 function isImageFile(file: File) {
@@ -310,148 +304,6 @@ function AttachmentInput({ helperText }: { helperText: string }) {
   );
 }
 
-function AttachmentPreview({
-  mimeType,
-  previewUrl,
-  fileName,
-}: {
-  mimeType: string;
-  previewUrl: string;
-  fileName: string;
-}) {
-  if (mimeType.startsWith("image/")) {
-    return (
-      <Box
-        component="img"
-        src={previewUrl}
-        alt={fileName}
-        sx={{
-          maxWidth: "100%",
-          maxHeight: 480,
-          borderRadius: 1,
-          display: "block",
-          objectFit: "contain",
-          mt: 1,
-        }}
-      />
-    );
-  }
-
-  if (mimeType === "application/pdf") {
-    return (
-      <Box
-        component="iframe"
-        src={previewUrl}
-        title={fileName}
-        sx={{
-          width: "100%",
-          height: { xs: 300, sm: 480 },
-          border: "none",
-          borderRadius: 1,
-          mt: 1,
-        }}
-      />
-    );
-  }
-
-  return null;
-}
-
-type AttachmentRowProps = {
-  fileName: string;
-  fileMimeType: string | null;
-  fileSizeBytes: number | null;
-  downloadUrl: string;
-  previewUrl: string;
-  previewKey: string;
-  openPreviews: Set<string>;
-  onTogglePreview: (key: string) => void;
-  deleteForm: React.ReactNode | null;
-};
-
-function AttachmentRow({
-  fileName,
-  fileMimeType,
-  fileSizeBytes,
-  downloadUrl,
-  previewUrl,
-  previewKey,
-  openPreviews,
-  onTogglePreview,
-  deleteForm,
-}: AttachmentRowProps) {
-  const formattedSize = formatFileSize(fileSizeBytes);
-  const isImage = fileMimeType?.startsWith("image/") ?? false;
-  const canPreview = isPreviewable(fileMimeType);
-  const isOpen = openPreviews.has(previewKey);
-
-  // 이미지 파일은 썸네일을 자동으로 표시
-  if (isImage) {
-    return (
-      <Stack spacing={0.75}>
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-          {/* 클릭 시 풀 사이즈 토글 */}
-          <Box
-            component="img"
-            src={previewUrl}
-            alt={fileName}
-            onClick={() => onTogglePreview(previewKey)}
-            role="button" tabIndex={0} aria-expanded={isOpen}
-            onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();onTogglePreview(previewKey);}}}
-            sx={{
-              width: { xs: 80, sm: 96 },
-              height: { xs: 80, sm: 96 },
-              borderRadius: 1.5,
-              objectFit: "cover",
-              cursor: "pointer",
-              border: "1px solid",
-              borderColor: isOpen ? "primary.main" : "divider",
-              flexShrink: 0,
-              transition: "border-color 0.15s",
-            }}
-          />
-          <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
-            <Button component="a" href={downloadUrl} variant="text" size="small" download sx={{ justifyContent: "flex-start", px: 0, fontWeight: 500, textAlign: "left", wordBreak: "break-all" }}>
-              {fileName}
-            </Button>
-            <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap" }}>
-              {formattedSize ? <Chip label={formattedSize} size="small" variant="outlined" /> : null}
-              <Button size="small" variant="text" onClick={() => onTogglePreview(previewKey)} sx={{ px: 0.5, minWidth: 0 }}>
-                {isOpen ? "닫기" : "크게 보기"}
-              </Button>
-              {deleteForm}
-            </Stack>
-          </Stack>
-        </Stack>
-        {isOpen && (
-          <AttachmentPreview mimeType={fileMimeType!} previewUrl={previewUrl} fileName={fileName} />
-        )}
-      </Stack>
-    );
-  }
-
-  return (
-    <Stack spacing={0.75}>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "center" }, flexWrap: "wrap" }}>
-        <Button component="a" href={downloadUrl} variant="outlined" size="small" download>
-          {fileName}
-        </Button>
-        {fileMimeType ? <Chip label={fileMimeType} size="small" variant="outlined" /> : null}
-        {formattedSize ? <Chip label={formattedSize} size="small" variant="outlined" /> : null}
-        {canPreview ? (
-          <Button size="small" variant="text" onClick={() => onTogglePreview(previewKey)}>
-            {isOpen ? "미리보기 닫기" : "미리보기"}
-          </Button>
-        ) : null}
-        {deleteForm}
-      </Stack>
-      {isOpen && canPreview && fileMimeType ? (
-        <AttachmentPreview mimeType={fileMimeType} previewUrl={previewUrl} fileName={fileName} />
-      ) : null}
-    </Stack>
-  );
-}
-
 function VisibilityRadio({ defaultValue = "public" }: { defaultValue?: string }) {
   const id=useId();
   return (
@@ -468,7 +320,7 @@ function VisibilityRadio({ defaultValue = "public" }: { defaultValue?: string })
 }
 
 export default function TaskSubmissionPanel({canWrite,currentUserId,canSeeAllSubmissions,commentsBySubmissionId,attachmentsBySubmissionId,createCommentAction,createSubmissionAction,deleteCommentAction,deleteSubmissionAction,deleteAttachmentAction,projectId,submissions,taskId,taskTitle,returnTo,teamId,selectedSubmissionId,summaries=[],updateCommentAction,updateSubmissionAction}:TaskSubmissionPanelProps){
- const [openPreviews,setOpenPreviews]=useState<Set<string>>(new Set()),[editingSubmissionId,setEditingSubmissionId]=useState<number|null>(null),[editingCommentId,setEditingCommentId]=useState<number|null>(null),[showCreate,setShowCreate]=useState(false),[showComment,setShowComment]=useState(false);
+ const [editingSubmissionId,setEditingSubmissionId]=useState<number|null>(null),[editingCommentId,setEditingCommentId]=useState<number|null>(null),[showCreate,setShowCreate]=useState(false),[showComment,setShowComment]=useState(false);
  const createUpload=useSubmissionUpload(createSubmissionAction);
  const editUpload=useSubmissionUpload(async data=>{await updateSubmissionAction(data);setEditingSubmissionId(null);});
  const query=new URLSearchParams({projectId:String(projectId),taskId:String(taskId),...(teamId?{teamId}:{}),...(returnTo?{returnTo}:{})});
@@ -476,7 +328,6 @@ export default function TaskSubmissionPanel({canWrite,currentUserId,canSeeAllSub
  const selected=submissions.find(submission=>submission.id===selectedSubmissionId);
  const fields=(submissionId?:number)=>({projectId:String(projectId),taskId:String(taskId),returnTo:returnTo??'',teamId:teamId??'',...(submissionId?{submissionId:String(submissionId)}:{})});
  const hidden=(submissionId?:number)=>Object.entries(fields(submissionId)).map(([name,value])=><input type="hidden" name={name} value={value} key={name}/>);
- const togglePreview=(key:string)=>setOpenPreviews(previous=>{const next=new Set(previous);if(next.has(key))next.delete(key);else next.add(key);return next;});
  const comments=selected?commentsBySubmissionId[selected.id]??[]:[],attachments=selected?attachmentsBySubmissionId[selected.id]??[]:[];
  const canEdit=!!selected&&canWrite&&(canSeeAllSubmissions||currentUserId===selected.authorId);
  const chips={flexWrap:'wrap',alignItems:'flex-start','& .MuiChip-root':{maxWidth:'100%',height:'auto'},'& .MuiChip-label':{whiteSpace:'normal',overflowWrap:'anywhere',py:0.5}} as const;
@@ -488,8 +339,8 @@ export default function TaskSubmissionPanel({canWrite,currentUserId,canSeeAllSub
  <Stack direction="row" spacing={0.75} useFlexGap sx={chips}><Chip size="small" label={selected.visibility==='private'?'비공개':'공개'} color={selected.visibility==='private'?'warning':'success'} variant="outlined"/><Chip size="small" label={`현재 v${selected.currentRevision}`} variant="outlined"/></Stack>
  {selected.materialUrl?<Button component="a" href={selected.materialUrl} target="_blank" rel="noopener noreferrer" sx={{alignSelf:'flex-start',textAlign:'left',overflowWrap:'anywhere'}}>자료 링크: {selected.materialUrl}</Button>:null}
  <MarkdownContent content={selected.content}/><Divider/><Typography component="h4" variant="subtitle1">첨부파일</Typography>
- {selected.filePath&&selected.fileName?<AttachmentRow fileName={selected.fileName} fileMimeType={selected.fileMimeType} fileSizeBytes={selected.fileSizeBytes} downloadUrl={`/api/submissions/${selected.id}/attachment`} previewUrl={`/api/submissions/${selected.id}/attachment?inline=1`} previewKey={`legacy-${selected.id}`} openPreviews={openPreviews} onTogglePreview={togglePreview} deleteForm={null}/>:null}
- {attachments.map(attachment=><AttachmentRow key={attachment.id} fileName={attachment.fileName} fileMimeType={attachment.fileMimeType} fileSizeBytes={attachment.fileSizeBytes} downloadUrl={`/api/submission-attachments/${attachment.id}`} previewUrl={`/api/submission-attachments/${attachment.id}?inline=1`} previewKey={`attachment-${attachment.id}`} openPreviews={openPreviews} onTogglePreview={togglePreview} deleteForm={canEdit?<DeleteConfirmation id={`attachment-exclude-${attachment.id}`} triggerLabel="첨부 제외…" warning="새 버전에서 이 첨부를 제외합니다. 이전 버전의 파일은 보존됩니다." confirmLabel="현재 버전에서 제외" checkboxLabel="현재 버전에서만 제외함을 확인했습니다" fields={{...fields(selected.id),attachmentId:String(attachment.id)}} action={deleteAttachmentAction}><SubmissionOperationFields revision={selected.currentRevision}/></DeleteConfirmation>:null}/>)}
+ {selected.filePath&&selected.fileName?<AttachmentFile key={`legacy-${selected.id}-${selected.currentRevision}`} fileName={selected.fileName} fileMimeType={selected.fileMimeType} fileSizeBytes={selected.fileSizeBytes} downloadUrl={`/api/submissions/${selected.id}/attachment`} deleteForm={null}/>:null}
+ {attachments.map(attachment=><AttachmentFile key={attachment.id} fileName={attachment.fileName} fileMimeType={attachment.fileMimeType} fileSizeBytes={attachment.fileSizeBytes} downloadUrl={`/api/submission-attachments/${attachment.id}`} deleteForm={canEdit?<DeleteConfirmation id={`attachment-exclude-${attachment.id}`} triggerLabel="첨부 제외…" warning="새 버전에서 이 첨부를 제외합니다. 이전 버전의 파일은 보존됩니다." confirmLabel="현재 버전에서 제외" checkboxLabel="현재 버전에서만 제외함을 확인했습니다" fields={{...fields(selected.id),attachmentId:String(attachment.id)}} action={deleteAttachmentAction}><SubmissionOperationFields revision={selected.currentRevision}/></DeleteConfirmation>:null}/>)}
  {!selected.filePath&&!attachments.length?<Typography variant="body2" color="text.secondary">첨부파일이 없습니다.</Typography>:null}
  <Button href={`/submissions/${selected.id}?${new URLSearchParams({...(returnTo?{returnTo}:{}),...(teamId?{teamId}:{})})}`} sx={{alignSelf:'flex-start'}}>버전·검토 이력</Button>
  <Divider/><Typography component="h4" variant="subtitle1">댓글 · {comments.length}건</Typography>

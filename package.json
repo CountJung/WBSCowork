@@ -49,7 +49,10 @@
     "test:volunteer:browser": "node scripts/test-volunteer-browser.mjs",
     "test:project:binding": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-binding.ts",
     "test:project:ux:browser": "node scripts/test-project-ux.mjs",
-    "test:project:ux:native": "node --import tsx scripts/test-project-ux-native.mjs"
+    "test:project:ux:native": "node --import tsx scripts/test-project-ux-native.mjs",
+    "test:attachment:preview:browser": "node scripts/test-attachment-preview-browser.mjs",
+    "test:attachment:preview:native": "node --import tsx scripts/test-attachment-preview-native.mjs",
+    "test:superuser:invariants": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-superuser-invariants.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

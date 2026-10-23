@@ -97,7 +97,7 @@ export async function changeTaskStatus(input:{id:number;actor:TaskActor;token:st
     if(task.reviewRequired)throw new Error("이 작업은 지정 검토자의 제출물 승인이 필요합니다.");
     if(!task.definitionOfDone.trim())throw new Error("완료 기준을 먼저 작성해 주세요.");
     if(!task.assigneeId)throw new Error("담당자를 먼저 지정해 주세요.");
-    await ensureEligibleTaskUser(task.assigneeId);
+    await ensureEligibleTaskUser(task.assigneeId,{allowExistingSuperuser:true});
     if(task.completionMode==='submission_required') {
       if(!task.deliverable.trim()||!note)throw new Error("기대 산출물·완료 기준과 완료 근거를 먼저 작성해 주세요.");
       const evidence=await getDatabasePool().query('SELECT id FROM submissions WHERE task_id=? AND author_id=? LIMIT 1',[task.id,task.assigneeId]) as {id:number}[];
@@ -105,7 +105,7 @@ export async function changeTaskStatus(input:{id:number;actor:TaskActor;token:st
     }
   }
   const invalidatesReview=task.reviewRequired && (task.status==='done'||task.status==='changes_requested');
-  const assignment=taskAssignmentGuard("tasks.project_id","tasks.activity_team_id","tasks.assignee_id");
+  const assignment=taskAssignmentGuard("tasks.project_id","tasks.activity_team_id","tasks.assignee_id",{allowExistingSuperuser:true});
   const progressGuard=input.status==='in_progress' ? ` AND EXISTS(SELECT 1 FROM projects progress_project WHERE progress_project.id=tasks.project_id AND (progress_project.project_type='collaboration' OR ${assignment.sql}))` : '';
   const doneGuard=input.status==='done' ? ` AND review_required=0 AND TRIM(definition_of_done)<>'' AND assignee_id IS NOT NULL AND ${assignment.sql}
     AND (completion_mode='direct_completion' OR (completion_mode='submission_required' AND TRIM(deliverable)<>'' AND ?<>'' AND EXISTS(SELECT 1 FROM submissions s WHERE s.task_id=tasks.id AND s.author_id=tasks.assignee_id)))` : '';

@@ -218,7 +218,11 @@ function redactMetadata(metadata: Record<string, unknown>) {
 }
 
 function buildUserActionDetails(eventType: "user-action" | "user-action-failure", payload: UserActionLogPayload) {
+  const configured=getRuntimeEnv().auth.superuserEmail;
+  const actorIsSuperuser=Boolean(configured&&payload.actorEmail?.trim().toLowerCase()===configured);
   const details: Record<string, unknown> = {
+    actorIsSuperuser,
+    ...(actorIsSuperuser?{actorRole:"superuser"}:{}),
     eventType,
     actorEmail: payload.actorEmail,
     action: payload.action,

@@ -44,12 +44,12 @@ export function taskExecutionGuard(actor: ScopeActor, project = "tasks.project_i
 }
 
 /** New volunteer assignments require an active project roster and, when selected, team roster. */
-export function taskAssignmentGuard(project: string, team: string, assignee: string): SqlGuard {
+export function taskAssignmentGuard(project: string, team: string, assignee: string,options:{allowExistingSuperuser?:boolean}={}): SqlGuard {
   const binding=projectAccessForCurrentUser(project,"assigned.id","LOWER(assigned.email)=?");
   return {sql:`(${field(assignee)} IS NULL OR EXISTS(SELECT 1 FROM users assigned JOIN projects assignment_project ON assignment_project.id=${field(project)}
-    WHERE assigned.id=${field(assignee)} AND ${binding} AND (assigned.role='member' OR ${projectManagementForCurrentUser(project,'assigned.id','LOWER(assigned.email)=?')})
+    WHERE assigned.id=${field(assignee)} AND (${options.allowExistingSuperuser?"LOWER(TRIM(assigned.email))=? OR ":""}(LOWER(TRIM(assigned.email))<>? AND ${binding} AND (assigned.role='member' OR ${projectManagementForCurrentUser(project,'assigned.id','LOWER(assigned.email)=?')})
       AND (assignment_project.project_type='collaboration' OR (
         EXISTS(SELECT 1 FROM project_members pm WHERE pm.project_id=${field(project)} AND pm.user_id=assigned.id AND pm.active=1)
         AND (${field(team)} IS NULL OR EXISTS(SELECT 1 FROM activity_team_members tm WHERE tm.project_id=${field(project)} AND tm.team_id=${field(team)} AND tm.user_id=assigned.id AND tm.active=1))
-      ))))`,params:[superuserEmail(),superuserEmail()]};
+      ))))))`,params:[...(options.allowExistingSuperuser?[superuserEmail()]:[]),superuserEmail(),superuserEmail(),superuserEmail()]};
 }

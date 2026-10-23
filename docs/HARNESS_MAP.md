@@ -59,6 +59,9 @@
 | `npm run test:project:binding` | SU/지정 admin·legacy/members-only·해제 후 요청·양 DB 기존 schema/자료 보존의 합성 회귀 |
 | `npm run test:project:ux:browser` | Sites build 후 loopback Worker의 새5폭·요약/상세·필수/위험 조작·프로젝트 보호 UI; 실행 결과는 아래 별도 기록 |
 | `npm run test:project:ux:native` | Native build 후 격리 MariaDB/로컬 파일·Next UI의 프로젝트 UX 경로; 운영/.env를 쓰지 않음 |
+| `npm run test:attachment:preview:browser` | Sites build 후 격리 Worker/D1/R2의 실제 파일 미리보기·현재/과거 버전·인가/실패·모바일 회귀 |
+| `npm run test:attachment:preview:native` | Native build 후 loopback MariaDB/로컬 저장의 실제 파일 미리보기 Chromium 회귀 |
+| `npm run test:superuser:invariants` | 합성 SU의 identity/DB role/session/소속 불변성과 신규 배정 제외를 격리 D1/MariaDB에서 확인 |
 
 `node scripts/check-docs.mjs`는 저장소의 문서 등록·역할·상대 링크/anchor·명령·필수 읽기 경로를 검사한다. `--self-test`는 검사기의 유효/무효 fixture를 확인한다. 원본 docs-canon SKILL/점검기가 아닌 로컬 대체 검사이며 원본 준수 인증으로 표시하지 않는다.
 
@@ -276,6 +279,34 @@ binding151은 populated D1 0015→0016/Native v11→v12의 기존 행·role·명
 게시 전후7표의 **모든 기존 컬럼·행은 동일하고 truncation0**이다: projects1(id5), tasks1(id7), submissions1(id5), submission_attachments1(id7), submission_revisions1(id5), users2, project_members0. 계정 role/소속 자동 부여0이며 사용자 파일 metadata는 보존됐다. 실제 R2 inventory/운영 bytes 다운로드는 미검증이다. public policy revision2·auth_client·환경 revision11 entries는 값 노출 없는 대조에서 동일했다. 이7표 대조를 전체 DB/R2 백업이나 복원 검증으로 확대하지 않는다. 저장 version15를 복구 참조로 유지하고 schema down/실제 복원은 하지 않았다.
 
 CI combined status 조회는 두 기능 SHA 각각 statuses0이었다. GitHub Actions runs API 조회는 두 SHA 모두 **Forbidden으로 거부**됐고 재시도·대체 경로 사용0이다. 따라서 CI 통과로 기록하지 않는다. 기존 CONNECT403/Domain forbidden 제한 때문에 운영 GET/자산·실 Google/UI는 재시도/우회0·미검증이다. 게시 상태·운영 schema/보존 조회와 실제 운영 브라우저 인수를 구분한다. 후속 문서 commit SHA를 이미 게시한62b9320의 앱 소스/검증 대상으로 바꾸지 않는다. 원본 canon 검사기는 여전히 미실행이다. 이번 게시 기록은 TODO/HARNESS/COMPLETED3개만 갱신했고 저장소 checker/self-test·HTML 파싱·`git diff --check` PASS(문서30·등록16/핵심7·상대링크238·npm명령120)다. 별도 내용 검토로 게시 source/후속 문서 HEAD·실제 artifact·archive 반환값·7표 보존 범위·CI 거부/운영 미검증을 대조했다.
+
+## 제출물 첨부 미리보기 검증
+
+PRD-056/QLT-025 시작 기준은 main `7ac68ad`/sites `0812648`, 운영 version16/source62b9320/public policy2/env11이다. 시작 시 문서 담당은 기존 이미지/PDF UI 분기·다운로드 링크와 서버 allowlist의 차이를 확인했다. 현재 구현은 제출 상세/버전 이력의 공통 AttachmentFile과 인가된 preview route를 사용한다. 후속 지원 계약은 UTF-8/BOM256KiB prefix·잘림 안내와 signature/MIME 검증 raster8MiB이며 UTF-16/EUC-KR·PDF/audio/video는 다운로드 fallback이다. HTML/SVG/Markdown/코드는 raw text만 허용한다. 아래 소스·Native 인수와 최종 Worker/게시 결과를 구분한다.
+
+| 후속 검증 | 완료 조건/미실행 경계 |
+| --- | --- |
+| 형식/안전한 표시 | 실제 구현에서 확정한 지원/미지원 MIME·이름·내용 조합, 텍스트 인코딩·크기/내용 제한·악성 HTML/스크립트 문자열·binary 오인·빈 파일을 합성 자료로 확인. 실행/외부 전송이나 원본 재작성 없이 안내/다운로드 fallback을 검증 |
+| 현재/과거·인가 | legacy·다중 첨부·현재/이전 revision의 public/private, 지정 admin/SU·작성자·타인·guest·제한 프로젝트/소속 해제 후 요청의 metadata/bytes를 양 runtime에서 대조. 기존 다운로드·불변 원본/파일/검토 이력 보존 |
+| 실제 화면/실패 | Chromium의 실제 파일 미리보기 열기/닫기·로딩/실패·재시도·키보드/초점·좁은 화면/긴 파일명·내용 줄바꿈/내부 스크롤과 새로고침을 확인. 서버 unit/HTTP만으로 실제 화면 인수를 대신하지 않음 |
+| SU 불변성/배정 제외(QLT-026) | 검증된 SU identity+env 설정을 DB role/session flag/소속으로 강등하지 않고 새 담당·팀장·명단 후보/변조 배정에서 제외하는지 검증. 기존 배정/자료 보존과 명시적 전역 관리 조회를 대조. 비로그인/가짜 email·flag는 권한을 얻지 않음. 실제 계정 role·환경 변경 없이 합성 자료만 사용 |
+| 게시/운영 | 검증한 source SHA·실제 게시 artifact·terminal 상태/active version과 기존 자료·public/env 보존을 따로 확인. 운영 CONNECT403·로그인 인계 제한에 새 근거가 없으므로 운영 요청 재시도/우회0, 실 Google/UI 미검증 유지 |
+
+| 확인된 검증 | 결과/남은 구분 |
+| --- | --- |
+| `npm test -- --require-db` | 최종 실행 exit0, action33·unit157·MariaDB34 각각 PASS, skip0. preview server focused21 PASS와 중복 합산하지 않음 |
+| SU 실제 DB/현재 identity | D1/MariaDB 각19, auth4·admin repository10·audit4 PASS. 실제 계정 role/환경 변경 아님 |
+| 정적 검사/Native build | lint0·typecheck·FSD5 PASS, Native build PASS. 기존 logging/NFT1 warning·Node experimental 기준선 유지 |
+| `npm run test:attachment:preview:native` | fresh MariaDB11.4.13·실제 Chromium390/1280px371조건, hydrated POST1→303 PASS. 현재/과거 legacy+multi·5raster 실제 decode·raw text/실행0·권한 회수·합성30파일 SHA 보존 |
+| Native SU·오류 구분 | DB guest/JWT guest·SU false/프로젝트 소속0에서도 effective admin/SU true·신규 후보 제외·기존 배정 보존 확인. 예상 deny console13, 예상 외 console/pageerror/외부 요청0, 취소173·기타 요청 실패0. 팀장 후보 UI는 이 흐름에서 미검증이며 별도 서버 회귀와 구분 |
+| Native artifact | `.next`53,267,483bytes fingerprint `da11003aaf55370ae6e9786cd848cde135d9f7a2910183274b3b6c5bfd67cce0` 전후 동일, BUILD_ID 파일 SHA256 `9f2e0ab0eaae24e13a6d9ec9d86a9731cfd7d218395eda5b330bf3045e954ca2` |
+| Worker·게시 | 최종 source clone build/Worker QA·게시 대기. 운영 version16/source62b9320과 실제 사용자 자료/role·환경 유지 |
+
+최종 full224와 추가 focused 검증은 제품/Native artifact 변경 없는 test-only 회귀다. 전체 suite·각 focused 결과는 중복 합산하지 않는다.
+
+Native의 `.test-artifacts/attachment-preview/native/result.json`/`final-evidence.json`을 문서 담당이 직접 대조했다. 최초 seed에 미완료 담당 업무가 있어 소속 회수가 정책대로 거부됐으며, 합성 담당자/기존 SU 업무를 분리해 fixture를 보정했다. 제품 결함이나 운영 자료 수정으로 처리하지 않는다. 초기 테스트의 SU 포함 기대값은 새 후보 제외 계약에 맞게 수정해 전체 재실행을 통과했다. lint는 생성 진단 파일의 unused2 warning을 발견해 제품 scripts/tests 검사를 유지한 채 generated `.test-artifacts/**`만 제외하고0 warning으로 재검증했다. 증거 파일을 수정/삭제하거나 제품 오류를 blanket disable하지 않았다.
+
+운영 project5/task7/submission5/attachment7은 읽기 테스트용 합성 자료로 바꾸거나 삭제하지 않는다. 이번 원본 docs-canon SKILL.md 읽기는 성공했으나 제공된 `scripts/check_docs.py` 리소스 읽기1회가 실패해 원본 검사 실행은 불가다. 새 문서/보고서 없이 기존 정본과 저장소 대체 검사만 사용한다. 이번 소스/Native 인수 문서의 checker/self-test·`git diff --check`는 PASS(문서30·등록16/핵심7·상대링크249·npm명령124)다. 내용 검토로 현재 지원/SU 계약·Native 실제 결과·미검증 Worker/팀장 후보 UI·v16 운영/보존 경계를 구분했다. Worker 실제 artifact·게시 결과는 별도 근거 수신 후 갱신한다.
 
 ## 문서 정리 검증
 

@@ -7,7 +7,7 @@ import { normalizeWorkspaceCommand, workspaceId, type ActivityKind, type Project
 
 const adminSql = "EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND ((?=1 AND LOWER(actor.email)=?) OR (actor.role='admin' AND EXISTS(SELECT 1 FROM project_members manager WHERE manager.project_id=? AND manager.user_id=actor.id AND manager.active=1))))";
 const superuserSql="EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND ?=1 AND LOWER(actor.email)=?)";
-const eligibleSql = "(u.role IN ('member','admin') OR LOWER(u.email)=?)";
+const eligibleSql = "(u.role IN ('member','admin') AND LOWER(TRIM(u.email))<>?)";
 function adminParams(actor: WorkspaceActor,projectId:number) {
   return [actor.userId, actor.isSuperuser ? 1 : 0, getRuntimeEnv().auth.superuserEmail ?? "",projectId];
 }
@@ -74,8 +74,8 @@ function commandMutation(projectId: number, command: WorkspaceCommand, applied: 
       const upsert = isHostedRuntime() ? " ON CONFLICT(project_id,user_id) DO UPDATE SET active=excluded.active" : " ON DUPLICATE KEY UPDATE active=VALUES(active)";
       // Departure preserves completed history; unfinished assignments, pending
       // reviewers and canonical leadership must be explicitly handed over first.
-      return { guard: command.active ? "EXISTS(SELECT 1 FROM users u WHERE u.id=?)" : "EXISTS(SELECT 1 FROM project_members m WHERE m.project_id=projects.id AND m.user_id=?) AND NOT EXISTS(SELECT 1 FROM tasks t WHERE t.project_id=projects.id AND t.assignee_id=? AND t.status<>'done') AND NOT EXISTS(SELECT 1 FROM tasks review_task WHERE review_task.project_id=projects.id AND review_task.reviewer_id=? AND review_task.status='review_pending') AND NOT EXISTS(SELECT 1 FROM activity_team_leaders current_leader WHERE current_leader.project_id=projects.id AND current_leader.user_id=?)",
-        params: command.active ? [command.userId] : [command.userId, command.userId, command.userId, command.userId],
+      return { guard: command.active ? "EXISTS(SELECT 1 FROM users u WHERE u.id=? AND (LOWER(TRIM(u.email))<>? OR EXISTS(SELECT 1 FROM project_members retained WHERE retained.project_id=projects.id AND retained.user_id=u.id AND retained.active=1)))" : "EXISTS(SELECT 1 FROM project_members m WHERE m.project_id=projects.id AND m.user_id=?) AND NOT EXISTS(SELECT 1 FROM tasks t WHERE t.project_id=projects.id AND t.assignee_id=? AND t.status<>'done') AND NOT EXISTS(SELECT 1 FROM tasks review_task WHERE review_task.project_id=projects.id AND review_task.reviewer_id=? AND review_task.status='review_pending') AND NOT EXISTS(SELECT 1 FROM activity_team_leaders current_leader WHERE current_leader.project_id=projects.id AND current_leader.user_id=?)",
+        params: command.active ? [command.userId,getRuntimeEnv().auth.superuserEmail??""] : [command.userId, command.userId, command.userId, command.userId],
         statements: [
           { ...select("INSERT INTO project_members(project_id,user_id,active) SELECT ?,?,? WHERE 1=1", [projectId, command.userId, command.active ? 1 : 0]),
             sql: select("INSERT INTO project_members(project_id,user_id,active) SELECT ?,?,? WHERE 1=1").sql + upsert },
@@ -88,11 +88,12 @@ function commandMutation(projectId: number, command: WorkspaceCommand, applied: 
         statements: [select("INSERT INTO activity_teams(project_id,activity_kind,name) SELECT ?,?,? WHERE 1=1", [projectId, command.activityKind, command.name])] };
     case "team_member": {
       const upsert = isHostedRuntime() ? " ON CONFLICT(team_id,user_id) DO UPDATE SET role=excluded.role,active=excluded.active" : " ON DUPLICATE KEY UPDATE role=VALUES(role),active=VALUES(active)";
-      const leaderGuard = command.active && command.role === "leader" ? ` AND EXISTS(SELECT 1 FROM users u WHERE u.id=? AND ${eligibleSql})` : "";
+      const candidateGuard=command.active?" AND EXISTS(SELECT 1 FROM users candidate WHERE candidate.id=? AND (LOWER(TRIM(candidate.email))<>? OR EXISTS(SELECT 1 FROM activity_team_members retained WHERE retained.project_id=projects.id AND retained.team_id=? AND retained.user_id=candidate.id AND retained.active=1 AND retained.role=?)))":"";
+      const leaderGuard = command.active && command.role === "leader" ? ` AND EXISTS(SELECT 1 FROM users u WHERE u.id=? AND (${eligibleSql} OR EXISTS(SELECT 1 FROM activity_team_members retained WHERE retained.project_id=projects.id AND retained.team_id=? AND retained.user_id=u.id AND retained.active=1 AND retained.role='leader'))) ` : "";
       const leaveGuard = !command.active ? " AND NOT EXISTS(SELECT 1 FROM tasks t WHERE t.project_id=projects.id AND t.activity_team_id=? AND t.assignee_id=? AND t.status<>'done')" : "";
       const statement = select("INSERT INTO activity_team_members(project_id,team_id,user_id,role,active) SELECT ?,?,?,?,? WHERE 1=1", [projectId, command.teamId, command.userId, command.role, command.active ? 1 : 0]);
-      return { guard: `EXISTS(SELECT 1 FROM activity_teams t WHERE t.id=? AND t.project_id=projects.id) AND EXISTS(SELECT 1 FROM project_members m WHERE m.project_id=projects.id AND m.user_id=? AND m.active=1)${leaderGuard}${leaveGuard}`,
-        params: [command.teamId, command.userId, ...(leaderGuard ? [command.userId, getRuntimeEnv().auth.superuserEmail ?? ""] : []), ...(leaveGuard ? [command.teamId, command.userId] : [])],
+      return { guard: `EXISTS(SELECT 1 FROM activity_teams t WHERE t.id=? AND t.project_id=projects.id) AND EXISTS(SELECT 1 FROM project_members m WHERE m.project_id=projects.id AND m.user_id=? AND m.active=1)${candidateGuard}${leaderGuard}${leaveGuard}`,
+        params: [command.teamId, command.userId, ...(candidateGuard?[command.userId,getRuntimeEnv().auth.superuserEmail??"",command.teamId,command.role]:[]), ...(leaderGuard ? [command.userId, getRuntimeEnv().auth.superuserEmail ?? "",command.teamId] : []), ...(leaveGuard ? [command.teamId, command.userId] : [])],
         statements: [
           ...(command.active && command.role === "leader" ? [select("UPDATE activity_team_members SET role='member' WHERE project_id=? AND team_id=? AND role='leader'",[projectId,command.teamId])] : []),
           { ...statement, sql: statement.sql + upsert },

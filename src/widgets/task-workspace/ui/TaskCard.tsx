@@ -118,7 +118,7 @@ export default function TaskCard({
             {task.reviewRequired?<Chip size="small" label="검토 승인 필요" color="warning" variant="outlined"/>:null}
           </Stack>
           <Typography variant="body2" color="text.secondary">담당 {task.assigneeName??'미지정'} · {formatDate(task.startDate)} ~ {formatDate(task.endDate)}</Typography>
-          {task.completedAt?<Typography variant="body2">완료자: {users.find(u=>u.id===task.completedBy)?.name??"계정 삭제됨"} · 완료 시각: {new Date(task.completedAt).toISOString()}</Typography>:null}
+          {task.completedAt?<Typography variant="body2">완료자: {task.completedByName??users.find(u=>u.id===task.completedBy)?.name??"계정 삭제됨"}{task.completedByIsSuperuser?" · 슈퍼관리자":""} · 완료 시각: {new Date(task.completedAt).toISOString()}</Typography>:null}
           {task.assigneeId&&!task.assigneeEligible?<Typography color="warning.main">현재 담당자는 업무 작성 권한이 없어 재배정이 필요합니다.</Typography>:null}
           <Typography id={`task-criteria-${task.id}`} sx={{whiteSpace:'pre-wrap'}}>완료 기준: {task.definitionOfDone||'완료 전에 작성해 주세요.'}</Typography>
           <Typography sx={{whiteSpace:'pre-wrap'}}>기대 산출물: {task.deliverable||(task.completionMode==='direct_completion'?'선택 사항':'완료 전에 작성해 주세요.')}</Typography>
@@ -151,7 +151,7 @@ export default function TaskCard({
               <TextField name="description" label={<FieldLabel>설명</FieldLabel>} defaultValue={task.description} multiline minRows={3} />
               <TextField name="deliverable" label={<FieldLabel requirement={task.completionMode==='direct_completion'?'optional':'before_completion'}>기대 산출물·제출 형식</FieldLabel>} defaultValue={task.deliverable} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
               <TextField name="definitionOfDone" label={<FieldLabel requirement="before_completion">완료 기준</FieldLabel>} defaultValue={task.definitionOfDone} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
-              <TaskAssignmentFields isVolunteer={isVolunteer} teams={activityTeams} memberIdsByTeam={memberIdsByTeam} projectMemberIds={projectMemberIds} users={users} eligibleUserIds={eligibleUserIds} defaultTeamId={task.activityTeamId} defaultAssigneeId={task.assigneeId} defaultReviewerId={task.reviewerId} defaultMode={task.completionMode} defaultReviewRequired={task.reviewRequired} canChangeMode={task.status==='planned'} includeReviewer allowUnassignedTeam={allowUnassignedTeam}/>
+              <TaskAssignmentFields isVolunteer={isVolunteer} teams={activityTeams} memberIdsByTeam={memberIdsByTeam} projectMemberIds={projectMemberIds} users={users} eligibleUserIds={eligibleUserIds} defaultTeamId={task.activityTeamId} defaultAssigneeId={task.assigneeId} defaultReviewerId={task.reviewerId} retainedAssigneeName={task.assigneeName} retainedReviewerName={task.reviewerName} defaultMode={task.completionMode} defaultReviewRequired={task.reviewRequired} canChangeMode={task.status==='planned'} includeReviewer allowUnassignedTeam={allowUnassignedTeam}/>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                 <TextField select name="parentId" label={<FieldLabel>상위 작업</FieldLabel>} defaultValue={String(task.parentId ?? "")} fullWidth>
                   <MenuItem value="">루트 작업</MenuItem>

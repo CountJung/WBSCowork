@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, writeFile, readFile, stat, rm } from "node:fs/promises";
+import { mkdir, writeFile, readFile, stat, rm, open } from "node:fs/promises";
 import path from "node:path";
 import { getHostedAttachments, isHostedRuntime } from "../hosted-runtime/index.server";
 import { queueObjectCleanup, deleteUnreferencedObject, validateObjectKey } from "../object-cleanup/index.server";
@@ -45,4 +45,33 @@ export async function readPrivateFile(filePath: string) {
   const target = privateFilePath(filePath);
   const [buffer, info] = await Promise.all([readFile(target), stat(target)]);
   return {absolutePath:target, buffer, fileSizeBytes:info.size};
+}
+
+/** Preview-only bounded I/O. Uses storage size, never the DB's advisory file-size metadata. */
+export async function readPrivateFilePrefix(filePath:string,limit:number,rejectOversized=false):Promise<{bytes:Uint8Array;fileSize:number}> {
+  if(!Number.isSafeInteger(limit)||limit<1||limit>8*1024*1024)throw new Error("Invalid private preview read limit.");
+  if(isHostedRuntime()){
+    const object=await getHostedAttachments().get(validateObjectKey(filePath));
+    if(!object)throw new Error("Attachment object not found.");
+    const fileSize=object.size;
+    if(!Number.isSafeInteger(fileSize)||fileSize<0){await object.body.cancel();throw new Error("Invalid attachment size.");}
+    if(rejectOversized&&fileSize>limit){await object.body.cancel();return {bytes:new Uint8Array(),fileSize};}
+    const bytes=new Uint8Array(Math.min(limit,fileSize)),reader=object.body.getReader();
+    let offset=0;
+    try{
+      while(offset<bytes.length){const chunk=await reader.read();if(chunk.done)break;const length=Math.min(chunk.value.byteLength,bytes.length-offset);bytes.set(chunk.value.subarray(0,length),offset);offset+=length;}
+      if(offset!==bytes.length)throw new Error("Attachment stream ended before its stored size.");
+      return {bytes,fileSize};
+    }finally{try{await reader.cancel();}finally{reader.releaseLock();}}
+  }
+  const handle=await open(privateFilePath(filePath),"r");
+  try{
+    const info=await handle.stat(),fileSize=info.size;
+    if(!info.isFile()||!Number.isSafeInteger(fileSize)||fileSize<0)throw new Error("Invalid attachment size.");
+    if(rejectOversized&&fileSize>limit)return {bytes:new Uint8Array(),fileSize};
+    const bytes=new Uint8Array(Math.min(limit,fileSize));let offset=0;
+    while(offset<bytes.length){const read=await handle.read(bytes,offset,bytes.length-offset,offset);if(!read.bytesRead)break;offset+=read.bytesRead;}
+    if(offset!==bytes.length)throw new Error("Attachment file changed during its preview read.");
+    return {bytes,fileSize};
+  }finally{await handle.close();}
 }
