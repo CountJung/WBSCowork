@@ -282,9 +282,9 @@ CI combined status 조회는 두 기능 SHA 각각 statuses0이었다. GitHub Ac
 
 ## 제출물 첨부 미리보기 검증
 
-PRD-056/QLT-025 시작 기준은 main `7ac68ad`/sites `0812648`, 운영 version16/source62b9320/public policy2/env11이다. 시작 시 문서 담당은 기존 이미지/PDF UI 분기·다운로드 링크와 서버 allowlist의 차이를 확인했다. 현재 구현은 제출 상세/버전 이력의 공통 AttachmentFile과 인가된 preview route를 사용한다. 후속 지원 계약은 UTF-8/BOM256KiB prefix·잘림 안내와 signature/MIME 검증 raster8MiB이며 UTF-16/EUC-KR·PDF/audio/video는 다운로드 fallback이다. HTML/SVG/Markdown/코드는 raw text만 허용한다. 아래 소스·Native 인수와 최종 Worker/게시 결과를 구분한다.
+PRD-056/QLT-025 시작 기준은 main `7ac68ad`/sites `0812648`, 운영 version16/source62b9320/public policy2/env11이다. 시작 시 문서 담당은 기존 이미지/PDF UI 분기·다운로드 링크와 서버 allowlist의 차이를 확인했다. 현재 구현은 제출 상세/버전 이력의 공통 AttachmentFile과 인가된 preview route를 사용한다. 후속 지원 계약은 UTF-8/BOM256KiB prefix·잘림 안내와 signature/MIME 검증 raster8MiB이며 UTF-16/EUC-KR·PDF/audio/video는 다운로드 fallback이다. HTML/SVG/Markdown/코드는 raw text만 허용한다. 아래 소스/양 runtime의 로컬 인수·실제 게시 상태와 운영 UI/Google 미검증을 구분한다.
 
-| 후속 검증 | 완료 조건/미실행 경계 |
+| 검증 계약 | 확인 범위/미검증 경계 |
 | --- | --- |
 | 형식/안전한 표시 | 실제 구현에서 확정한 지원/미지원 MIME·이름·내용 조합, 텍스트 인코딩·크기/내용 제한·악성 HTML/스크립트 문자열·binary 오인·빈 파일을 합성 자료로 확인. 실행/외부 전송이나 원본 재작성 없이 안내/다운로드 fallback을 검증 |
 | 현재/과거·인가 | legacy·다중 첨부·현재/이전 revision의 public/private, 지정 admin/SU·작성자·타인·guest·제한 프로젝트/소속 해제 후 요청의 metadata/bytes를 양 runtime에서 대조. 기존 다운로드·불변 원본/파일/검토 이력 보존 |
@@ -295,18 +295,29 @@ PRD-056/QLT-025 시작 기준은 main `7ac68ad`/sites `0812648`, 운영 version1
 | 확인된 검증 | 결과/남은 구분 |
 | --- | --- |
 | `npm test -- --require-db` | 최종 실행 exit0, action33·unit157·MariaDB34 각각 PASS, skip0. preview server focused21 PASS와 중복 합산하지 않음 |
-| SU 실제 DB/현재 identity | D1/MariaDB 각19, auth4·admin repository10·audit4 PASS. 실제 계정 role/환경 변경 아님 |
+| SU 실제 DB/현재 identity | D1/MariaDB 각28, auth JWT/session5·admin repository10·audit4 PASS. SU guest/active0·private 현재/버전·댓글 작성/조회·타인 수정/미지정 admin 거부·보존 확인. 실제 계정 role/환경 변경 아님 |
 | 정적 검사/Native build | lint0·typecheck·FSD5 PASS, Native build PASS. 기존 logging/NFT1 warning·Node experimental 기준선 유지 |
 | `npm run test:attachment:preview:native` | fresh MariaDB11.4.13·실제 Chromium390/1280px371조건, hydrated POST1→303 PASS. 현재/과거 legacy+multi·5raster 실제 decode·raw text/실행0·권한 회수·합성30파일 SHA 보존 |
 | Native SU·오류 구분 | DB guest/JWT guest·SU false/프로젝트 소속0에서도 effective admin/SU true·신규 후보 제외·기존 배정 보존 확인. 예상 deny console13, 예상 외 console/pageerror/외부 요청0, 취소173·기타 요청 실패0. 팀장 후보 UI는 이 흐름에서 미검증이며 별도 서버 회귀와 구분 |
 | Native artifact | `.next`53,267,483bytes fingerprint `da11003aaf55370ae6e9786cd848cde135d9f7a2910183274b3b6c5bfd67cce0` 전후 동일, BUILD_ID 파일 SHA256 `9f2e0ab0eaae24e13a6d9ec9d86a9731cfd7d218395eda5b330bf3045e954ca2` |
-| Worker·게시 | 최종 source clone build/Worker QA·게시 대기. 운영 version16/source62b9320과 실제 사용자 자료/role·환경 유지 |
+| `npm run test:attachment:preview:browser` | exact source clone의 단일 build로 Worker371조건/390·1280px PASS, 실제 hydrated POST1→303. Native와 같은 파일/권한/SU 계약·합성30파일 SHA 보존. 예상 deny console13/예상 외 console·pageerror·외부 요청0, 취소13/기타 실패0 |
+| Worker auth/HTTP/decoder | 실제 게시 artifact auth18·HTTP266·compiled decoder PASS. 실제 Google 로그인이나 운영 요청 인수 아님 |
 
 최종 full224와 추가 focused 검증은 제품/Native artifact 변경 없는 test-only 회귀다. 전체 suite·각 focused 결과는 중복 합산하지 않는다.
 
 Native의 `.test-artifacts/attachment-preview/native/result.json`/`final-evidence.json`을 문서 담당이 직접 대조했다. 최초 seed에 미완료 담당 업무가 있어 소속 회수가 정책대로 거부됐으며, 합성 담당자/기존 SU 업무를 분리해 fixture를 보정했다. 제품 결함이나 운영 자료 수정으로 처리하지 않는다. 초기 테스트의 SU 포함 기대값은 새 후보 제외 계약에 맞게 수정해 전체 재실행을 통과했다. lint는 생성 진단 파일의 unused2 warning을 발견해 제품 scripts/tests 검사를 유지한 채 generated `.test-artifacts/**`만 제외하고0 warning으로 재검증했다. 증거 파일을 수정/삭제하거나 제품 오류를 blanket disable하지 않았다.
 
-운영 project5/task7/submission5/attachment7은 읽기 테스트용 합성 자료로 바꾸거나 삭제하지 않는다. 이번 원본 docs-canon SKILL.md 읽기는 성공했으나 제공된 `scripts/check_docs.py` 리소스 읽기1회가 실패해 원본 검사 실행은 불가다. 새 문서/보고서 없이 기존 정본과 저장소 대체 검사만 사용한다. 이번 소스/Native 인수 문서의 checker/self-test·`git diff --check`는 PASS(문서30·등록16/핵심7·상대링크249·npm명령124)다. 내용 검토로 현재 지원/SU 계약·Native 실제 결과·미검증 Worker/팀장 후보 UI·v16 운영/보존 경계를 구분했다. Worker 실제 artifact·게시 결과는 별도 근거 수신 후 갱신한다.
+운영 project5/task7/submission5/attachment7은 읽기 테스트용 합성 자료로 바꾸거나 삭제하지 않는다. 이번 원본 docs-canon SKILL.md 읽기는 성공했으나 제공된 `scripts/check_docs.py` 리소스 읽기1회가 실패해 원본 검사 실행은 불가다. 새 문서/보고서 없이 기존 정본과 저장소 대체 검사만 사용한다. 이번 소스/Native 인수 문서의 checker/self-test·`git diff --check`는 PASS(문서30·등록16/핵심7·상대링크249·npm명령124)다. 당시 내용 검토로 지원/SU 계약·Native 결과와 Worker/팀장 후보 UI·v16 보존 경계를 구분했다. 이후 exact Worker artifact·version17 결과는 아래에서 별도로 확인했다.
+
+### version17 게시와 검증 경계
+
+기능 main `9b07c5e2d93ac47a6256eaccf188073d62a29977` / sites·공식 source main `7fc8d79fde1c1ad4f6d90bff9d710d4a7ac5d7a9`를 푸시하고 원격 HEAD를 확인했다. 정확 source의 Worker build1회와 Native build1회를 구분하며 게시 clone의 release/worker `final-evidence.json`을 직접 대조했다. Worker fingerprint는325files/4,558,958bytes의 `9885b48a025a0980d09da13175572f11b21a65e858b5757e9411eff5ff69fe9c`, entry는 `9c53230f45b29615d8b57178de5f39be5e3976c22aacb37b4b93e1089a69d1ca`로 실제371조건 실행 전후 동일했다. 전체 공급 bundle 검사와 아래 게시 service의 archive 반환값은 별도 증거다. 입력 tar의362개 regular member SHA를 검증 checkout의 dist/drizzle/hosting bytes와 모두 대조했고 양쪽 hosting manifest의 project_id/DB/ATTACHMENTS도 동일했다. 허용 root만 포함해 원시 source·환경 파일·업로드 디렉터리는 없으며 입력 tar SHA는 유지됐다.
+
+기존 사이트 version17의 terminal succeeded와 후속 get_site/get_site_version의 active/latest17·source/deployment 일치를 확인했다. 정확 시각·version/deployment ID·입력 package와 service archive 값은 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다. public policy revision2·auth_client·환경 revision11 entries는 값 출력 없이 동일함을 대조했다. D1 overview23표 유지·이번 schema/migration0이며 실제 NAS 배포는 없다.
+
+게시 전후7표의 모든 기존 columns/rows는 동일하고 truncation0이었다: projects1(id5), tasks1(id7), submissions1(id5), submission_attachments1(id7/metadata25,180bytes), submission_revisions1(id5), users2, project_members0. 실제 계정 role/소속 자동 변경·영구 삭제는 없었다. R2 inventory/실 bytes 다운로드는 미검증이며 metadata 보존을 전체 DB/R2 백업·복원으로 확대하지 않는다. 저장 version16을 복구 참조로 유지했고 rollback은 수행하지 않았다.
+
+QLT-025/026은 소스/양 DB·실제 Native/Worker 로컬 및 게시 상태 확인 범위로 완료했다. 팀장 후보 UI 직접 조작은 미검증이며 서버 회귀 통과와 구분한다. 실 Google/운영 UI는 아직 미검증이고 부모의 별도 허용 브라우저 탐색 성공을 가정하지 않는다. 기존 CONNECT403 제한에 대해 운영 GET 재시도/우회0이며 물리 기기·전체 WCAG 인수도 아니다. CI는 이번 두 기능 SHA의 combined statuses0을 확인했고 기존 Actions runs Forbidden을 재시도/대체 조회하지 않았다. CI 통과로 주장하지 않는다. 후속 문서 commit은 이미 게시한7fc8d79의 소스/검증 대상이 아니며 원본 canon 검사기는 미실행이다. 이번 TODO/HARNESS/COMPLETED3개 동기화의 저장소 checker/self-test·`git diff --check`는 PASS(문서30·등록16/핵심7·상대링크249·npm명령125)다. 별도 내용 검토로 실제 release artifact/공급 tar와 service archive·게시 상태/7표 보존·미검증 UI와 CI 경계를 대조했다.
 
 ## 문서 정리 검증
 
