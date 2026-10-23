@@ -1,8 +1,8 @@
 # Scheduled Project Digest & Report Export 실행 계획
 
-이 문서는 **아직 구현하지 않은 D0–D5의 설계·선행 조건·인수 계약**을 소유한다. 현재 진행 상태/열린 ID는 [TODO](TODO.md), 현재 코드 구조는 [ARCHITECTURE](ARCHITECTURE.md)를 본다.
+이 문서는 **D0–D5의 설계·선행 조건·인수 계약**을 소유한다. 현재 진행 상태/열린 ID는 [TODO](TODO.md), 현재 코드 구조는 [ARCHITECTURE](ARCHITECTURE.md)를 본다.
 
-> 상태: architecture contract/backlog · **런타임 route, schema, snapshot, renderer, scheduler, delivery는 모두 미구현**
+> 상태: **D0–D4 소스·양 DB·compiled 인수 완료, 실제 화면/운영 외부 게이트 미완료**. D5 외부 전달은 별도 승인 대기다. 코드 존재·로컬 검증·운영 활성화를 구분한다.
 
 > 목표: 외부 Python agent 없이 Next.js Route Handler + MariaDB + 배포 환경 scheduler로 digest를 재실행 가능하게 생성하고, 같은 snapshot에서 DOCX/PPTX를 내보낸다.
 
@@ -10,15 +10,9 @@
 
 채택 패턴은 수집 → 정규화 snapshot → 렌더 → 저장 → 명시적 전달이다. 앱 프로세스 timer를 두지 않고 Synology Task Scheduler/cron이 인증된 HTTP endpoint를 호출한다. preview와 delivery를 분리하며 최초 운영 모드는 `dryRun=true`, `audienceMode=public_only`, `deliveryMode=none`이다.
 
-현재 `src/shared/server/database-admin`의 managed schema에는 `projects`, `tasks`, `submissions`, `submission_attachments`, `comments`, `users`만 있다. task 상태/완료율/수정 시각, project membership/owner, report/run table은 없다. v1이 표현할 수 있는 사실은 다음뿐이다.
+현재 schema에는 task 상태/완료 mode·완료자/시각과 event, 프로젝트 참여자·활동팀·접근 mode, 제출 revision이 있다. `native-migration-v1`부터의 versioned runner와 schema identity 분리도 이미 존재한다. 이를 없는 구조로 가정해 새 runner나 중복 업무 이력을 만들지 않는다. 실제 모델/표는 코드가 소유하고 전체 DDL을 이 문서에 복제하지 않는다.
 
-- 프로젝트 기간, 태스크 수/계층/담당자, 예정 시작/종료
-- 기준 지역 날짜에서 `end_date < localDate`인 **기한 경과 태스크**(미완료/지연 확정 아님)
-- 기간 내 `created_at` 기준 신규 제출물·댓글·첨부
-- 다음 기간에 시작/종료 예정인 태스크
-- 담당자/설명 등 데이터 누락
-
-`완료`, `진척률`, `변경됨`, `지연 확정`은 스키마/감사 이력이 생기기 전 생성하거나 암시하지 않는다.
+D0 snapshot은 기존 사실만 수집한다: 프로젝트/업무 계층·기간·담당자·현재 상태/완료 mode, 인가된 제출/댓글/첨부 metadata와 기간 내 활동이다. 각100행·텍스트512자·최대31일 범위와 잘림/경고를 명시하며 sourceCounts는 포함된 행 수다. 과거 완료 시각/진척률/변경 이력을 추측하거나 기한 경과를 확정 지연으로 해석하지 않는다. 현재 구현/미검증 범위는 TODO와 HARNESS_MAP에서 갱신한다.
 
 ## 2. 목표 흐름과 구현 위치
 
@@ -34,7 +28,7 @@ Synology scheduler/cron
   → deliveryMode=none (v1)
   → run ledger + redacted structured log
 
-현재 프로젝트 범위의 admin/SU UI(미구현)
+현재 프로젝트 범위의 admin/SU UI(구현·통합 인수 중)
   → root app page에서 동일 use-case 직접 호출(내부 HTTP 호출 금지)
   → 권한 검사 후 artifact download route
 ```
@@ -55,22 +49,15 @@ FSD 구현은 `docs/ARCHITECTURE.md#fsd-의존-경계`의 `shared → entities �
 
 ## 3. MariaDB schema·권한 계약
 
-현재는 migration runner가 없고 `src/shared/server/database-admin`이 전체 managed schema를 생성/보정한다. report table을 곧바로 “migration 완료”로 표시하지 않는다. D3에서 먼저 **재실행 가능한 versioned migration script/기록 방식**을 정하고, 기존 DB와 빈 DB 양쪽에서 적용/rollback 절차를 검증한다.
+Native는 기존 불변 migration/lock/checksum/postcondition runner와 별도 schema identity를 재사용한다. 준비 중인 v14와 D1 `drizzle/0017_project_report_ledger.sql`은 `project_report_schedules`, `project_report_runs`, `project_report_artifacts`3표만 additive로 추가한다. 기존 자료·role/private·revision/file을 재작성하지 않으며 D1 SQL을 MariaDB에 적용하지 않는다. 표/인덱스/제약의 명세는 실제 migration이 소유한다. D5 delivery 표·외부 발송은 추가하지 않는다.
 
-### 목표 테이블
-
-- `project_digest_schedules`: `id`, `project_id` FK, `created_by` FK, `enabled`, `timezone` IANA, `cron_expression`, `lookback_hours`, `formats` JSON, `audience_mode`, `delivery_mode`, timestamps
-- `project_digest_runs`: `id`, nullable `schedule_id`, `project_id`, nullable `requested_by`, `trigger_type`, `dry_run`, `scheduled_for`, `period_start`, `period_end`, `snapshot_at`, `schema_version`, `idempotency_key CHAR(64) UNIQUE`, status/error/timestamps, `snapshot_json`
-- `project_report_artifacts`: `id`, `run_id` FK, format, server-generated relative `storage_key`, filename/MIME/size/SHA-256, audience, expiry, timestamp, unique `(run_id, format)`
-- `project_digest_deliveries`: D5에서만 추가. run/channel/recipient hash/attempt/status/provider id/error/timestamps와 중복 방지 unique key
-
-`created_by`는 schedule 생성자이지 현재 스키마에 없는 “project owner”가 아니다. 목표 인덱스 `tasks(project_id,end_date)`, `submissions(task_id,created_at)`, `comments(submission_id,created_at)`는 representative data의 `EXPLAIN`으로 확인한 뒤 별도 migration에서 추가한다.
+Native의 준비/재실행/복구 계약은 [Native 운영](NATIVE_DATABASE_MIGRATIONS.md)을 따른다. 새 schema의 로컬 결과가 실제 NAS/Sites 적용이나 운영 계정 권한 검증을 뜻하지 않는다.
 
 ### DB 계정/GRANT
 
 - 정상 앱/scheduler 런타임 계정: 대상 DB에 `SELECT, INSERT, UPDATE, DELETE`만 부여한다. schema 생성/변경 권한과 전역 권한은 주지 않는다.
 - migration/admin 계정: 승인된 migration 실행 시간에만 대상 schema의 `CREATE, ALTER, INDEX, REFERENCES`(rollback이 필요하면 `DROP`)를 부여한다. `CREATE DATABASE`가 필요한 최초 bootstrap은 별도 관리자 계정으로 제한한다.
-- 현재 `DB_*` 한 세트가 `initializeDatabaseSchema()`와 runtime pool에 함께 쓰이는 구조는 최소권한 분리를 지원하지 않는다. D3 전에 migration credential의 실행 경로를 분리하되 secret 원문을 UI/로그에 노출하지 않는다.
+- 기존 runtime `DB_*`와 명시 migration의 `DB_SCHEMA_*` 분리를 재사용한다. 누락된 schema identity를 runtime으로 대체하지 않으며 secret 원문을 UI/로그에 노출하지 않는다. 실제 runtime DDL 거부는 별도 실증 전 완료로 쓰지 않는다.
 - 검증: runtime 계정으로 CRUD/ledger는 성공하고 `CREATE/ALTER/DROP`은 실패해야 하며, migration 계정은 승인 migration만 성공해야 한다. `SHOW GRANTS` 결과는 비밀값 없이 운영 체크리스트에 기록한다.
 
 ## 4. timezone·기간 계약
@@ -84,8 +71,8 @@ FSD 구현은 `docs/ARCHITECTURE.md#fsd-의존-경계`의 `shared → entities �
 
 ## 5. visibility·권한 계약
 
-- 이 절은 미구현 digest의 후보 계약이며 [현재 권한 정책](ARCHITECTURE.md#권한-정책)을 완화하지 않는다. manual preview/export·schedule/run 조회의 역할 helper는 후보 판정일 뿐이며 SU 전역/현재 지정 프로젝트 admin scope와 자원 가시성을 SQL에서 교차해야 한다.
-- machine route는 NextAuth cookie를 쓰지 않는다. `DIGEST_SCHEDULER_TOKEN` 미설정/빈 값이면 503으로 비활성화하고, bearer token은 길이 차이를 안전하게 처리한 constant-time 비교 후 불일치는 401이다.
+- 이 절은 구현 중인 digest의 인수 계약이며 [현재 권한 정책](ARCHITECTURE.md#권한-정책)을 완화하지 않는다. manual preview/export·schedule/run 조회의 역할 helper는 후보 판정일 뿐이며 SU 전역/현재 지정 프로젝트 admin scope와 자원 가시성을 SQL에서 교차해야 한다.
+- machine route는 NextAuth cookie를 쓰지 않는다. `DIGEST_SCHEDULER_ENABLED=1`과 유효한 `DIGEST_SCHEDULER_TOKEN`이 없으면503으로 비활성화한다. non-dry-run 산출물은 별도 `DIGEST_ALLOW_ARTIFACTS=1` 허용 전 거부하며 운영 설정은 바꾸지 않는다. bearer token은 길이 차이를 안전하게 처리한 constant-time 비교 후 불일치는 401이다.
 - `public_only`: public submission 및 그 submission에 속한 댓글/첨부 metadata만 포함한다.
 - `owner_scope`라는 이름은 project owner가 없는 현재 모델에서 오해를 부르므로 목표 값은 `requester_scope`로 한다. schedule의 `created_by`를 기존 `SubmissionVisibilityFilter`의 viewer로 사용해 public + 본인 private를 포함하며, 관리자 예외는 현재 지정 프로젝트 admin 또는 SU만 적용한다. `canManageAllSubmissions`만으로 전역 private 범위를 만들지 않는다.
 - artifact는 요청자/역할 helper만으로 다운로드를 허용하지 않는다. 현재 project scope·원본 가시성 재인가와 소속 해제 후 과거 자료 차단 계약을 D0에서 반영한 뒤 활성화한다. `public_only`도 익명 공개나 전역 admin 예외를 만들지 않는다.
@@ -100,7 +87,8 @@ FSD 구현은 `docs/ARCHITECTURE.md#fsd-의존-경계`의 `shared → entities �
 - 신규 claim만 `queued → running`으로 CAS 전이한다. 같은 key 재요청은 기존 run/status/artifact를 반환하며 새 렌더/전달을 시작하지 않는다.
 - status는 `queued|running|rendered|failed|skipped`; D5 전에는 `delivered`를 사용하지 않는다. dry-run 성공은 `skipped`가 아니라 artifact 없는 `rendered`와 명시적 `dry_run=true`로 표현한다.
 - `heartbeat_at`/lease 만료를 두고 stale `running`은 별도 recovery가 CAS로 재점유한다. 최대 attempt를 넘으면 `failed`로 종료한다. 이 정책과 cleanup job이 구현되기 전 자동 복구 완료로 표시하지 않는다.
-- format별 artifact unique key로 부분 성공 재시도 시 이미 검증된 파일을 재사용한다. temp 파일은 동일 filesystem의 `REPORT_DIR` 아래 만들고 rename 후 hash/size를 재검증한 다음 DB row를 기록한다.
+- 파일 IO 전에 format별 unique artifact의 key/hash/size를 staged로 예약하고, rename/size/hash 검증 후 ready로 CAS한다. staged 다운로드·run 완료는 거부하며 쓰기 결과 불명에서 무조건 quarantine하거나 임의 덮어쓰지 않는다. 재시도는 verified bytes를 재사용하고 물리 파일이 없어 재렌더한 bytes가 예약 fingerprint와 다르면 fail-closed다. OOXML 비결정성으로 자동 복구가 제한될 수 있고 stale Native tmp/lock을 자동 삭제하지 않는다.
+- 만료 staged도 확인 후 가역 quarantine 대상으로 삼되 파일이 없으면 실패로 남긴다. 보고서 기록의 project/user FK는 RESTRICT로 보호하며 별도 보존 정책 전 해당 원본의 영구 삭제를 차단한다.
 
 ## 7. trigger·output·delivery contract
 
@@ -141,16 +129,17 @@ project/timezone/formats/audience는 enabled schedule row에서 읽어 payload �
 
 - DOCX MIME: `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
 - PPTX MIME: `application/vnd.openxmlformats-officedocument.presentationml.presentation`
-- download는 권한 재검사 후 `Content-Disposition: attachment`의 RFC 5987 안전 filename, 정확한 `Content-Length`, `ETag`(SHA-256 기반), `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`를 설정한다.
+- download는 권한 재검사 후 `Content-Disposition: attachment`의 RFC 5987 안전 filename, 정확한 `Content-Length`(wire에 유지될 경우), `ETag`(SHA-256 기반), `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`를 설정한다.
 - missing/unauthorized는 리소스 열거를 줄이도록 동일 404 정책을 사용하고 expired artifact는 정책을 확정해 404 또는 410 중 하나로 테스트한다.
+- Vinext TransformStream이 길이 헤더를 제거한 wire는 chunked 전송을 허용하되 실제 bytes/size/SHA·보안/MIME 헤더를 검사한다. 원 route의 길이 설정과 플랫폼 framing을 구분한다.
 - D0~D4의 delivery output은 앱 내 artifact metadata/download뿐이다. email/webhook은 recipient/membership/consent, secret 관리, webhook HTTPS allowlist·DNS/IP 재검증·redirect 제한, 재시도/중복 방지 threat model이 별도 승인된 D5에서만 구현한다.
 
 ## 8. DOCX/PPTX skill 재사용 범위
 
 - 구현 전에 `.github/skills/document-skills/docx/SKILL.md`와 `.github/skills/document-skills/pptx/SKILL.md`를 읽어 OOXML 구조, semantic DOCX 구성, PPTX palette/가독성/overflow 원칙을 재사용한다.
-- DOCX runtime은 현재 devDependency인 `docx`의 `Packer.toBuffer()`를 사용한다.
-- PPTX authoring skill의 기본 `html2pptx.js`/Playwright workflow는 브라우저 의존성이므로 runtime에서 호출하지 않는다. palette/layout 원칙만 재사용하고 runtime은 현재 devDependency인 `pptxgenjs` API로 직접 Buffer를 만든다.
-- renderer 구현 시 두 패키지를 production `dependencies`로 옮기고 lockfile 변화를 포함한다. 지금은 renderer가 없으므로 dependency 이동을 완료로 표시하지 않는다.
+- DOCX runtime은 production dependency `docx`9.6.1의 `Packer.toBuffer()`를 사용한다.
+- PPTX authoring skill의 기본 `html2pptx.js`/Playwright workflow는 브라우저 의존성이므로 runtime에서 호출하지 않는다. palette/layout 원칙만 재사용하고 runtime은 production dependency `pptxgenjs`4.0.1 API로 직접 Buffer를 만든다.
+- 두 renderer 패키지는 production `dependencies`와 lockfile에 반영했다. 코드/compiled 인수와 실제 Office 시각 검증·운영 활성화는 별개다.
 - 두 renderer는 동일한 `DigestSnapshot`만 입력받고 DB를 조회하지 않는다. 공통 섹션은 표지, 기간/기준, 사실 기반 수치, 기한 경과(완료 판정 아님), 최근 활동, 다음 일정, 데이터 품질/부록이다.
 
 ## 9. 단계별 backlog와 검증

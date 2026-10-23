@@ -52,4 +52,4 @@
 
 `/api/bug-screenshots/[screenshotId]`는 매 요청의 persisted user/현재 역할·부모 제보 권한을 검사한다. 작성자/SU만 조회하고 trash는 SU만 본다. 익명401, 다른 사용자/없는 ID는 같은404다. private no-store/nosniff/sandbox CSP를 사용하고 공개 URL·image optimizer로 전송하지 않는다.
 
-Drizzle0013과 native v9는 metadata 표·fingerprint 기본값과 필요한 guard/cleanup만 추가한다. 기존 migration/ledger는 불변이다. Sites의 명시 확인 purge는 metadata cascade/R2 cleanup을 함께 사용한다. **Native 첨부 제보 purge는 durable 파일 정리 도입 전 fail-closed로 원문/파일을 보존한다(QLT-020).** 운영 schema 적용/파기 승인이 코드나 과거 테스트 승인에서 자동 파생되지 않는다.
+Drizzle0013과 native v9는 metadata 표·fingerprint 기본값과 필요한 guard/cleanup만 추가한다. 기존 migration/ledger는 불변이다. Sites의 명시 확인 purge는 metadata cascade/R2 cleanup을 함께 사용한다. **Native 첨부 제보 purge는 fail-closed로 원문/파일을 보존한다.** QLT-020의 v13 durable staging/참조 검사·가역 quarantine/retry/restore 기반과 SU 관리 경로는 구현·검증 중이며 영구 삭제 허용이나 기존 거부된 runner 시험 해제를 뜻하지 않는다. 운영 schema 적용/파기 승인이 코드나 과거 테스트 승인에서 자동 파생되지 않는다.
