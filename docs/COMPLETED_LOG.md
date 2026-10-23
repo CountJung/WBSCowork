@@ -22,7 +22,7 @@
 | OPS-036, 2026-10-20 | 아래 archive6개 검증 후5개 임시 remote branch atomic 삭제. main/sites2개, 공통 code/schema/test/document와 기본 build 차이 보존. NAS 배포/Sites 재게시 없음 |
 | PRD-047~050/QLT-023, 2026-10-23 | 확정 정책의 단일 팀장·팀 범위 업무·직접 완료와 UI, 기존 자료/제출 필수/private 보존을 구현하고 로컬/합성 인수. [완료 범위](#봉사활동-팀과-직접-완료-인수), 실측은 [하네스](HARNESS_MAP.md#봉사활동-팀장과-직접-완료-검증). 운영 migration/실 Google/게시 미실행 |
 | PRD-046, 2026-10-23 | 사용자 확정: 팀당 팀장 1명, 신규 봉사 업무는 제출 선택/직접 완료, 현재 담당자·해당 팀장·관리자의 직접 완료. 기존 협업/기존 업무 제출 의무와 private 권한은 유지. [결정 근거](#prd-046-봉사활동-정책-확정) |
-| PRD-056/057, 2026-10-23 | 현재/과거 첨부의 안전한 텍스트/raster 미리보기와 verified env SU 유지·신규 배정 제외 소스 구현 및 Native 실제 인수 완료. [구현 범위](#첨부-미리보기와-su-불변성-구현). 최종 Worker·게시 인수는 QLT-025/026 진행 |
+| PRD-056/057·QLT-025/026, 2026-10-23 | 안전한 현재/과거 파일 미리보기와 env SU 유지·신규 배정 제외 구현. Native/실제 Worker artifact의 로컬 인수 및 version17 게시 상태·7표 보존 확인 완료. [구현 범위](#첨부-미리보기와-su-불변성-구현), 팀장 후보 UI·운영 UI/Google 인수는 미확인 |
 | PRD-052/053/055·QLT-024, 2026-10-23 | 프로젝트 요약/선택 상세·폼/위험 확인, SU 다중 소속/전환·지정 admin SQL scope와 비파괴 이행을 구현. 허용오차 없는 Worker/Native 새5폭·기존 봉사 회귀의 로컬 인수 완료. [완료 범위](#ux와-프로젝트-바인딩-구현), 운영 게시/실 Google·운영 UI는 별도 |
 | PRD-051/054, 2026-10-23 | 프로젝트 요약→상세/댓글 IA의 정적 A/B 시안5폭 렌더 후 A를 채택. 사용자 확정 정책은 다중 소속·SU 전역/지정 프로젝트 admin·기존 읽기 유지·제한 프로젝트 탈퇴 후 본인 자료 차단이다. [결정 범위](#ux-시안과-프로젝트-권한-정책-확정), 실제 앱 인수는 아래 별도 완료 근거와 구분 |
 | QLT-019, 2026-10-23 | Node ESM과 bundler의 실제 GoogleProvider default export 형태 차이를 정규화하고 테스트 Google 설정을 합성 값으로 고정. 원인/완료 경계는 [아래](#qlt-019-google-provider-import), 실행 결과는 [하네스](HARNESS_MAP.md#봉사활동-저장-기반과-auth-import-검증) |
@@ -36,7 +36,7 @@ PRD-056은 기존 저장·인가 경로를 재사용해 제출 상세/버전 이
 
 PRD-057은 검증된 로그인 identity와 현재 env의 SU 이메일로 effective role/SU를 다시 계산해 오래된 DB role·JWT/session flag·소속으로 강등되지 않게 했다. SU를 새 담당자·팀장·명단 후보와 서버 배정에서 제외하되 기존 배정/자료·명시적 전역 관리 조회는 보존한다. 실제 계정 role/소속·환경을 바꾼 것이 아니다.
 
-소스 회귀와 Native의 실제 현재/과거 파일·형식/실패·권한 회수·SU stale guest/소속0·기존 배정 보존을 인수했다. 합성 seed 보정과 기대된 권한 거부는 제품 결함과 구분했으며 정확한 실행 수치·artifact·팀장 후보 UI 미검증은 [하네스](HARNESS_MAP.md#제출물-첨부-미리보기-검증)가 소유한다. 이 기록은 최종 Worker/게시·운영 UI/Google 인수가 아니며 운영 version16과 사용자 자료는 유지했다.
+소스/양 DB와 Native·exact Worker artifact의 실제 현재/과거 파일·형식/실패·권한 회수·SU stale guest/소속0·기존 배정 보존을 인수했다. 합성 seed 보정과 기대된 권한 거부는 제품 결함과 구분했으며 정확한 실행 수치·artifact·팀장 후보 UI 미검증은 [하네스](HARNESS_MAP.md#제출물-첨부-미리보기-검증)가 소유한다. 이후 version17 terminal 성공·active/latest 및 기존7표/설정 보존을 확인했다. 로컬/게시 상태 확인은 팀장 후보 UI 직접 검증·운영 UI/Google·R2 bytes 인수를 뜻하지 않는다.
 
 ## UX 시안과 프로젝트 권한 정책 확정
 
@@ -89,6 +89,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 14 · 10-22 11:59:06.590701 | 41059c82c37d7de718a3e61b414d4ab0331e6c5a | succeeded, appgdep_6ad9fa80e2fc819183a6094e4d07563d; 첨부 transport 오류의 폼 내 안내/초안 보존 안정화. 기존 URL/public access policy revision2/env revision11 유지. 연결 실패 UI 보존 및 사용자 신규 첨부·새로고침·다운로드 PASS. 운영 수정 시 추가 첨부는 미검증 |
 | 15 · 2026-10-23 04:23:10.491622 | d7550fb783b046738bf7a2d2e22aa412515bf02c | succeeded, appgdep_6adae1242adc8191b7cdd73c54537031; get_site/get_site_version 재조회 active/latest15·source·deployment 일치. 기존 URL/public policy revision2·auth_client·env revision11 entries 유지. 봉사활동과 D1 0014/0015 반영, 운영 UI 인수는 미실행 |
 | 16 · 2026-10-23 08:01:01.751040 | 62b93208e1f32f2b19d58249643d5637242a8b36 | terminal succeeded, appgdep_6adb14287d548191924eba6c6d844aa3; get_site/get_site_version 재조회 active/latest16·source·deployment 일치. public policy2/auth_client/env11 유지, D1 접근 모드 추가·기존7표 전체 기존 컬럼 동일. 실 운영 GET/UI·Google은 미검증 |
+| 17 · 2026-10-23 09:55:21.486616 | 7fc8d79fde1c1ad4f6d90bff9d710d4a7ac5d7a9 | appgdep_6adb2ef69d688191b5bd38ecca262b90 terminal succeeded; active/latest17·exact source/deployment 재조회 일치. public policy2/auth_client/env11 동일·기존7표 전체 동일, schema/migration0. 운영 UI/Google·R2 bytes는 미검증 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -97,6 +98,8 @@ version14 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_d5ff1c027aec81
 version15 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_22032f6377f08191bb66b0c9b280ed01`이다. 사용자 명시 승인 후 공식 Sites source repository main을 source41059c8에서 위 exact GitHub sites SHA로 fast-forward push하고 원격 일치를 확인했다. installed/cloud source helper 미가용을 확인해 [기존 게시 fallback](NAS_UPDATE_GUIDE.md#sites-게시)으로 hidden stdin/메모리 credential과 보존한 hosting manifest·dist·drizzle archive를 사용했다. 기존 사이트 ID/owner/public 범위·계정 역할·보안/환경 설정은 변경하지 않았고 NAS 배포도 하지 않았다. local/운영 검증과 보존 범위는 [하네스](HARNESS_MAP.md#version15-게시와-운영-검증-경계)가 소유한다.
 
 version16 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_91fd504d5de88191b2e41191d1d3985b`다. 기능 commit main `b7fe96e386aba05938fd61a8822ce565a83c6551` / GitHub sites `62b93208e1f32f2b19d58249643d5637242a8b36`의 푸시·원격 HEAD를 확인하고 동일 sites SHA를 공식 source main에 반영했다. 별도 clean source clone에서 build한 실제 게시 artifact를 다시 인수해 저장·게시했다. 후속 문서 전용 HEAD는 이 exact 게시 소스와 구분하며 문서 반영 자체가 앱 재게시가 아니다. 실제 artifact QA·7표/설정 대조·운영/CI 제한은 [하네스](HARNESS_MAP.md#version16-게시와-운영-검증-경계)가 소유한다. 기존 사이트 ID/공개 범위·auth_client·환경을 유지했으며 계정 role/소속 자동 부여·NAS 배포는 하지 않았다.
+
+version17 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_1655a01b02088191b5bd056cb28dff0e`다. 기능 main `9b07c5e2d93ac47a6256eaccf188073d62a29977` / sites·공식 source main `7fc8d79fde1c1ad4f6d90bff9d710d4a7ac5d7a9` 푸시·원격 HEAD를 확인했다. exact 단일 build의 실제 Worker artifact를 인수해 기존 사이트에 저장·게시했고 후속 조회로 source/version/deployment를 대조했다. 후속 문서 HEAD는 이 게시 코드 SHA와 구분한다. 인수·보존/CI·운영 미확인 경계는 [하네스](HARNESS_MAP.md#version17-게시와-검증-경계)가 소유한다.
 
 ### package와 복구 근거
 
@@ -107,6 +110,7 @@ version16 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_91fd504d5de881
 - version14 저장 archive는350files/5,273,600bytes, normalized content hash `sha256:46b3b742157c665ff887b4ea18ea61062b9703d6aa3d81cceefe9819f3d2cf32`다. 정상 게시 확인은 운영 첨부 인수나 최초 연결 차단 원인 해결을 증명하지 않으며 [QLT-022 검증 기록](HARNESS_MAP.md#제출물-첨부-운영-오류-qlt-022)의 남은 경계를 유지한다.
 - version15 로컬 tar는5,488,640bytes, bytes SHA256 `26a6de3463ed954e158160390911f6eeedf95e7c46148570daadb3be12d81387`다. native save가 반환한 archive는353files/5,478,400bytes, content hash `956442722b10a37bc981f48e94d51f239b0c83f680e727448b59fa58c9c7449b`이며 각 반환값을 구분해 보존한다.
 - version16 로컬 `wbscowork-ux-binding-62b9320.tar`는360entries/5,990,400bytes, bytes SHA256 `8fd6fd92f3860c9f1fdc1cd3fd325905e9db9b9a01afef2dd912fddc291826d9`다. server 저장 archive 반환값은360files/5,621,760bytes, hash `sha256:79f829d3941880900c5257fab14b3614c2105ac193cdaa745e86595272062f05`이며 두 tar의 bytes/hash가 같다고 해석하지 않는다. 저장된 version15는 복구 참조로 유지했고 schema down/실제 복원은 수행하지 않았다. 소속 제한 활성화 후 구형 전역 관리자 앱으로 writable rollback하는 위험은 기존 운영/권한 정본을 따른다.
+- version17 입력 `wbscowork-preview-7fc8d79.tar`는362entries/6,021,120bytes, SHA256 `ad3171bf1c5ce6f4ce0bbc76010f9524f22d860cf54211eef08052f8420fc466`다. 별도 Sites `archive_storage` 반환값은362files/5,652,480bytes, hash `sha256:12826fb6617c878f4794e7b78af61c2ff69ff84a5a8be96ba85c71b9aabe22ca`, file ID `file_00000000f8c88206983915eaaa5d2e22`다. 입력 tar container와 service 저장 반환 hash/bytes를 동일하다고 주장하지 않는다. 저장된 version16은 복구 참조로 유지했고 rollback은 수행하지 않았다.
 - [Cloudflare의 D1 Time Travel 문서](https://developers.cloudflare.com/d1/reference/time-travel/)는 production backend의 시점 복원을 설명한다. 현재 Sites 도구에는 bookmark/export/restore가 노출되지 않아 이 사이트의 실제 bookmark 확보나 복원은 검증하지 않았다. 메모리의 사전 표본 비교는 전체 DB/R2 백업이 아니다. 새 봉사 기능이 사용된 뒤 version14 앱으로 writable rollback하면 새 팀 범위/완료 계약을 깨뜨릴 수 있으므로 forward fix를 우선하고 자동 down은 하지 않는다.
 - 모든 row 비교는 기록된 표/complete page 범위이며 audit전체/R2 bucket inventory 동일성을 보장한 것이 아니다. additive 이력/선후행 도입 후 구형 writable 앱으로 rollback하면 계약을 깰 수 있어 forward fix가 기본이다.
 
