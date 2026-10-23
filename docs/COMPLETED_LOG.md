@@ -108,6 +108,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 17 · 2026-10-23 09:55:21.486616 | 7fc8d79fde1c1ad4f6d90bff9d710d4a7ac5d7a9 | appgdep_6adb2ef69d688191b5bd38ecca262b90 terminal succeeded; active/latest17·exact source/deployment 재조회 일치. public policy2/auth_client/env11 동일·기존7표 전체 동일, schema/migration0. 운영 UI/Google·R2 bytes는 미검증 |
 | 18 · 2026-10-23 10:38:44.852001 | ccabf815e78d4aa43f15b12caf1c8d8a5b1577f7 | appgdep_6adb3920d4c081918b876140930c2be8 terminal succeeded; active/latest18·exact source/deployment 재조회 일치. public policy2/auth_client/env11 동일·기존7표 전체 동일, schema/migration0. 후속 같은 Work 브라우저의 QLT-027 관측 범위 재인수 PASS |
 | 19 · 2026-10-23(updated12:39:08.402934) | 409f514a56dfac47932f0d3f874650f4e8b059bc | 최초 자동 승인 거부 후 새 직접 승인에 따른1회 재시도 terminal succeeded, appgdep_6adb555e05908191a189d19e2863f4cf. active/latest19·exact source/deployment 일치·기존23표/설정 동일, 새3표 각0행. 후속 허용 Chrome 운영 읽기/미리보기 부분 PASS |
+| 20 · 저장만/배포 미실행 | 69e1fb92a88371d96c95f30078a1ec08d07f7b86 | 저장/재조회 성공, deploy_site_version은 자동 승인 검토 거부·deployment_id=null/배포ID 없음. livev19·D1 26표 유지, 기존26표289행/설정 동일·0018 미적용. 저장v20≠운영v20 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -123,6 +124,9 @@ version18 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_be49c221467081
 
 version19 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_4351f6dc1888819190c8d32c0c4f6287`다. 공식 source main `409f514a56dfac47932f0d3f874650f4e8b059bc` fast-forward·원격 일치와 compiled33을 확인해 저장했다. 최초 운영 배포는 자동 승인 검토의 parent review 요구로 거부돼 v18을 유지했으며, 사용자 새 직접 승인 후 같은 저장v19가 미배포임을 확인하고1회 재시도해 terminal succeeded를 받았다. deployment/active/latest19와 D1 0017의 새3표·기존23표/설정 보존을 확인했다. 정확한 승인·거부 이력과 검증/미확인 경계는 [하네스](HARNESS_MAP.md#version19-승인과-운영-배포)가 소유한다. 저장 성공과 실제 운영 배포 성공을 구분하며 후속 문서 HEAD는 게시 source를 바꾸지 않는다. 후속 부모의 기존 로그인 Chrome1165×757에서 탐색·TXT·보고서 desktop 미리보기와 잘못된 기간 차단/정상 복원을 읽기 검토해 통과했다. 상세 범위/미검증과 날짜 오류 UX 후속은 [운영 읽기 기록](HARNESS_MAP.md#version19-허용-chrome-운영-읽기-검토)을 따른다. 이 부분 검증으로 RPT-016 전체·Native UI·좁은 화면·실제 보고서 생성/예약·신규 OAuth를 닫지 않는다.
 
+저장 version20 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_b042a7294da4819193a6382e5e87c421`다. source `69e1fb92a88371d96c95f30078a1ec08d07f7b86` push/원격과 exact 새 build/compiled30·34HTTP를 확인해 저장했다. 후속 게시 요청이 있었으나 자동 검토는 이전 게시 보류/이후 승인 없음 판단으로 배포 호출을 거부했고 미실행·재시도/우회0이다. livev19·기존26표 전행/역할·환경을 보존했고 D1 0018은 미적용이다. 자세한 승인 충돌·완료/미검증 범위와 운영 팀 자료0의 한계는 [차단 근거](HARNESS_MAP.md#저장-version20와-배포-거부)를 따르며 OPS-039는 열린 상태다.
+
+
 
 
 ### package와 복구 근거
@@ -137,6 +141,7 @@ version19 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_4351f6dc188881
 - version17 입력 `wbscowork-preview-7fc8d79.tar`는362entries/6,021,120bytes, SHA256 `ad3171bf1c5ce6f4ce0bbc76010f9524f22d860cf54211eef08052f8420fc466`다. 별도 Sites `archive_storage` 반환값은362files/5,652,480bytes, hash `sha256:12826fb6617c878f4794e7b78af61c2ff69ff84a5a8be96ba85c71b9aabe22ca`, file ID `file_00000000f8c88206983915eaaa5d2e22`다. 입력 tar container와 service 저장 반환 hash/bytes를 동일하다고 주장하지 않는다. 저장된 version16은 복구 참조로 유지했고 rollback은 수행하지 않았다.
 - version18 입력 `wbscowork-hydration-ccabf81.tar`는361regularfiles/6,021,120bytes, SHA256 `aa7ff43a62a26f0e286b5de298fdd6946a326648274d78d37e41ed61a0757d44`다. 모든 파일의 content hash가 검증 checkout과 일치했다. 별도 서비스 정규화 archive는361files/5,652,480bytes, SHA256 `4188a5fb0c77609a4f14db7cb03f57e12e1d9e32421cd8473f7a19691ae780e6`, file ID `file_000000003a8882068baf4589bb7613f7`다. 입력 tar container와 서비스 반환 archive의 bytes/hash를 동일하다고 주장하지 않는다. schema down/rollback은 수행하지 않았다.
 - 저장 version19의 service archive 반환값은390files/6,696,960bytes, hash `sha256:12391e92fec3e0332c294bc69e63f246742a1c71253238fe95d7fbd417d3f080`이다. 입력 tar bytes와 같다고 추정하지 않는다. 저장v18 archive를 code fallback 참조로 확인했으며 DB backup 복원·자동 down은 실행하지 않았다.
+- 저장 version20 service archive는400files/6,881,280bytes, hash `sha256:ed90df41449273c47a714791f70a069d007d6727087881ff794433cbd6d0c55b`다. 별도 입력 `/tmp/wbscowork-team-preparation-69e1fb9.tar`의 SHA256은 `af20443f27c63a67a6966bed849abb0598fa075a4319e521dbe1560c2f86cb11`이며 두 container의 bytes/hash가 같다고 주장하지 않는다. 기존 v19 archive `/tmp/wbscowork-final-409f514.tar`를 복귀 참조로 유지하고 자동 down/실제 복원은 수행하지 않았다.
 - [Cloudflare의 D1 Time Travel 문서](https://developers.cloudflare.com/d1/reference/time-travel/)는 production backend의 시점 복원을 설명한다. 현재 Sites 도구에는 bookmark/export/restore가 노출되지 않아 이 사이트의 실제 bookmark 확보나 복원은 검증하지 않았다. 메모리의 사전 표본 비교는 전체 DB/R2 백업이 아니다. 새 봉사 기능이 사용된 뒤 version14 앱으로 writable rollback하면 새 팀 범위/완료 계약을 깨뜨릴 수 있으므로 forward fix를 우선하고 자동 down은 하지 않는다.
 - 모든 row 비교는 기록된 표/complete page 범위이며 audit전체/R2 bucket inventory 동일성을 보장한 것이 아니다. additive 이력/선후행 도입 후 구형 writable 앱으로 rollback하면 계약을 깰 수 있어 forward fix가 기본이다.
 

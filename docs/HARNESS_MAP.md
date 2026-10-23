@@ -459,6 +459,18 @@ identity-change trigger 회귀에서 D1은 actor 이메일 변경 뒤 revision g
 
 권한·고정 소수점 식사량·제한/이력 계약은 [ARCHITECTURE](ARCHITECTURE.md#활동팀-공통-준비표-설계), 구현 경로는 [PROJECT_MAP](PROJECT_MAP.md#활동팀-공통-준비표)에서만 설명한다. 원본 docs-canon SKILL은 읽었으나 scripts/check_docs.py 리소스 읽기1회가 실패해 원본 검사는 미실행이며 저장소 대체 검사·별도 내용 검토만 사용한다.
 
+### 저장 version20와 배포 거부
+
+부모가 전달한 2026-10-23 14:51:59 UTC 사용자 “게시하고 페이지 검토해줘” 요청으로 이번 기능 게시 보류가 해제됐다. 공식 Sites source repository main을 `69e1fb92a88371d96c95f30078a1ec08d07f7b86`로 push하고 ls-remote 일치를 확인했다. helper 설치/skill resource가 미가용이어서 [기존 Sites fallback](NAS_UPDATE_GUIDE.md#sites-게시)의 ordinary Git·hidden stdin credential·exact archive/native save 흐름을 사용했다. 정확한 source checkout Worker build와 실제 compiled30조건/34HTTP를 새 게시 artifact에서 다시 통과했다. 앞선 artifact 지문을 이 새 build의 지문으로 대체하거나 실제 브라우저 인수로 확대하지 않는다.
+
+version20 저장과 후속 조회는 성공했지만 `deploy_site_version`은 **자동 승인 검토 거부로 미실행**이다. 검토 사유는 “This deploys version20 to production…”, “active user request explicitly said not publish…”, “no later trusted user approval”라는 이전 게시 보류 판단이었다. 전달된 후속 명시 승인과 검토 판단의 충돌을 기록하며 재시도/우회0으로 배포 작업을 중단했다. saved version20 재조회 deployment_id=null·배포ID 없음이며 운영 URL의 live는 version19다. latest saved20은 live20을 뜻하지 않는다. version/archive 식별자는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다.
+
+D1 0018은2표/index 추가만 준비됐고 배포 거부로 실행하지 않았다. before/after 실제26표의289행(audit279·users2·기타8)을 모든 컬럼·행의 잘림 없이 완전 대조해 같았다. 기존 project5/task7/submission5/attachment7 metadata·모든 역할을 보존했으며 신규 표는 없었다. env revision11 entries·public policy revision2·auth_client·cloud automations 빈 배열도 동일하며 값 출력은 없다. 원본 R2 bytes/inventory는 읽거나 보존을 독립 입증하지 않았다.
+
+운영 프로젝트는 collaboration인id5 하나이고 활동팀·팀 소속·팀장·프로젝트 소속은 모두0행이다. 기존 project5에서 신규 봉사팀 경로404는 설계된 비대상 응답이며 결함 재현으로 쓰지 않는다. 승인된 배포 이후의 봉사 프로젝트 업무/관리자 팀 카드→`/projects/{projectId}/teams`→`/{teamId}/preparation` 검토는 실제 팀 자료가 없으면 상세 인수할 수 없다. 운영 합성 팀 생성·사용자 자료 변경은 허용되지 않았고 운영 브라우저 검토도 이번 시도에서 수행하지 않았다. QLT-031 실제 viewport/키보드/UI 인수는 열린 상태다.
+
+기존 v19 source409f514·saved version/배포 및 archive를 복귀 참조로 유지했고 자동 DB down/실제 backup 복원을 수행하지 않았다. NAS·운영 계정/환경/예약·외부 발송 변경·직접 운영 GET0이다. 정확한 중단 증거는 `/tmp/wbscowork-v20-saved-denied-evidence.json`이며 문서 갱신이 재시도 승인을 만들지 않는다. OPS-039는 자동 거부의 승인 충돌 해소를 남긴다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.
