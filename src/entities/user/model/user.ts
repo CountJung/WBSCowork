@@ -5,8 +5,8 @@ export const manageableUserRoles = ["guest", "member", "admin"] as const;
 
 export type ManageableUserRole = (typeof manageableUserRoles)[number];
 
-// 관리자(admin 역할)가 변경 가능한 역할 목록 — admin 부여는 슈퍼관리자 전용
-export const adminAssignableRoles = ["guest", "member"] as const;
+// 프로젝트 관리자는 전역 계정 역할을 부여하지 않습니다. 호환용 공개 상수입니다.
+export const adminAssignableRoles = [] as const;
 
 export type AdminAssignableRole = (typeof adminAssignableRoles)[number];
 
@@ -40,7 +40,8 @@ export function canWriteTaskContent(role: UserRole, isSuperuser = false) {
 }
 
 /**
- * 관리자 패널 접근 권한: 슈퍼관리자 또는 관리자(admin) 역할
+ * 관리 메뉴 진입 후보: 슈퍼관리자 또는 프로젝트 관리자(admin).
+ * 일반 관리자는 배정된 프로젝트만 관리하며 전역 화면은 별도로 SU를 검증합니다.
  * DB 관리 및 사용자 관리는 슈퍼관리자 전용 (isSuperuser 직접 확인)
  */
 export function canAccessAdminPanel(role: UserRole, isSuperuser = false) {
@@ -48,7 +49,8 @@ export function canAccessAdminPanel(role: UserRole, isSuperuser = false) {
 }
 
 /**
- * 모든 제출물(비공개 포함) 조회 권한: 슈퍼관리자 또는 관리자(admin) 역할
+ * 제출물 관리 후보 역할. 서버는 현재 프로젝트 관리 범위를 추가로 검사합니다.
+ * 이 값만으로 비공개 제출물 조회를 허용하지 않습니다.
  */
 export function canManageAllSubmissions(role: UserRole, isSuperuser = false) {
   return isSuperuser || role === "admin";

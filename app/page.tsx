@@ -1,15 +1,16 @@
 import Link from "next/link";
-import { Alert, Chip, Container, Paper, Stack, Typography } from "@mui/material";
-import { getAuthSession } from "@/src/entities/user/index.server";
+import { Alert, Button, Chip, Container, Paper, Stack, Typography } from "@mui/material";
+import { getAuthSession, getUserByEmail } from "@/src/entities/user/index.server";
 import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
-import { listAllProjects } from "@/src/entities/project/index.server";
-import { listTasksByProject } from "@/src/entities/task/index.server";
+import { listAllProjectsForViewer } from "@/src/entities/project/index.server";
+import { listTasksByProjectForViewer } from "@/src/entities/task/index.server";
 import { getOrderedTasks } from "@/src/entities/task";
 import { getSelectedProject } from "@/src/entities/project";
 import { formatDate } from "@/src/shared/lib/date";
 import ProjectGanttChart from "@/src/widgets/project-gantt";
-import MarkdownContent from "@/src/shared/ui/markdown-content";
+import {TaskSummaryCard} from "@/src/widgets/task-workspace";
+import {notFound} from "next/navigation";
 import { getUserRoleLabel } from "@/src/entities/user";
 
 type HomePageProps = {
@@ -89,110 +90,27 @@ export default async function Home({ searchParams }: HomePageProps) {
 
   const params = await searchParams;
   const projectIdParam = getSingleSearchParam(params.projectId);
-  const projects = await listAllProjects();
+  const currentUser=session.user.email?await getUserByEmail(session.user.email):null;
+  const viewer={userId:currentUser?.id??null,email:session.user.email,isSuperuser:!!session.user.isSuperuser};
+  const projects = await listAllProjectsForViewer(viewer);
+  if(projectIdParam&&!projects.some(project=>String(project.id)===projectIdParam))notFound();
   const selectedProject = getSelectedProject(projects, projectIdParam);
-  const tasks = selectedProject ? await listTasksByProject(selectedProject.id) : [];
+  const tasks = selectedProject ? await listTasksByProjectForViewer(selectedProject.id,viewer) : [];
   const orderedTasks = getOrderedTasks(tasks);
 
-  return (
-    <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
-      <Stack spacing={3}>
-        <Stack direction={{ xs: "column", lg: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
-          <Stack spacing={1}>
-            <Typography variant="h3">홈</Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
-              현재 프로젝트의 간트 차트와 작업 목록을 빠르게 확인하는 요약 화면입니다. 세부 수정과 제출 관리는 작업 공간에서 계속할 수 있습니다.
-            </Typography>
-          </Stack>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
-            <Chip label={`현재 권한 ${getUserRoleLabel(session.user.role, session.user.isSuperuser)}`} color="primary" variant="outlined" />
-            <Chip label={`프로젝트 ${projects.length}`} color="primary" />
-            <Chip label={`작업 ${orderedTasks.length}`} />
-          </Stack>
-        </Stack>
-
-        {selectedProject ? (
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
-            <Stack spacing={1}>
-              <Typography variant="h5">현재 프로젝트</Typography>
-              <Typography variant="h6">{selectedProject.name}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                기간 {formatDate(selectedProject.startDate)} ~ {formatDate(selectedProject.endDate)}
-              </Typography>
-            </Stack>
-          </Paper>
-        ) : projects.length === 0 ? (
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
-            <Typography variant="body2" color="text.secondary">
-              아직 생성된 프로젝트가 없습니다. 관리자에게 프로젝트 생성을 요청하세요.
-            </Typography>
-          </Paper>
-        ) : null}
-
-        {selectedProject ? <ProjectGanttChart project={selectedProject} tasks={orderedTasks} /> : null}
-
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
-          <Stack spacing={2}>
-            <Typography variant="h5">업무 목록</Typography>
-            {orderedTasks.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                선택한 프로젝트에 아직 작업이 없습니다.
-              </Typography>
-            ) : (
-              <Stack spacing={1.5}>
-                {orderedTasks.map((task) => (
-                  <Link
-                    key={task.id}
-                    href={`/tasks?projectId=${selectedProject.id}&taskId=${task.id}#task-${task.id}`}
-                    style={{ display: "block" }}
-                  >
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        p: 2,
-                        borderRadius: 3,
-                        ml: { xs: 0, md: task.depth * 2 },
-                        borderLeft: "3px solid",
-                        borderColor: "primary.main",
-                        cursor: "pointer",
-                        overflow: "hidden",
-                        transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease",
-                        '&:hover': {
-                          transform: "translateY(-2px)",
-                          boxShadow: 6,
-                          borderColor: "secondary.main",
-                        },
-                      }}
-                    >
-                      <Stack spacing={0.75} sx={{ minWidth: 0 }}>
-                        <Typography variant="subtitle1">{task.title}</Typography>
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                          <Typography variant="body2" color="text.secondary">
-                            {formatDate(task.startDate)} ~ {formatDate(task.endDate)}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            담당자 {task.assigneeName ?? "미지정"}
-                          </Typography>
-                        </Stack>
-                        {task.description ? (
-                          <MarkdownContent content={task.description} />
-                        ) : (
-                          <Typography variant="body2" color="text.secondary">
-                            설명이 아직 입력되지 않았습니다.
-                          </Typography>
-                        )}
-                        <Typography variant="caption" color="primary.main">
-                          클릭하면 작업 관리 화면에서 이 업무 상세와 제출 이력을 바로 확인합니다.
-                        </Typography>
-                      </Stack>
-                    </Paper>
-                  </Link>
-                ))}
-              </Stack>
-            )}
-          </Stack>
-        </Paper>
-      </Stack>
-    </Container>
-  );
+  return <Container component="main" sx={{py:{xs:3,md:5},minWidth:0,overflowWrap:'anywhere','& .MuiChip-root':{maxWidth:'100%',height:'auto'},'& .MuiChip-label':{whiteSpace:'normal',overflowWrap:'anywhere',py:0.5}}}>
+    <Stack spacing={3}>
+      <Stack spacing={1}><Typography component="h1" variant="h4">프로젝트</Typography><Typography color="text.secondary">프로젝트의 목표와 일정을 확인하고, 업무와 제출 상세로 이어집니다.</Typography><Stack direction="row" spacing={1} useFlexGap sx={{flexWrap:'wrap'}}><Chip size="small" label={`현재 권한 ${getUserRoleLabel(session.user.role,session.user.isSuperuser)}`} variant="outlined"/><Chip size="small" label={`프로젝트 ${projects.length}`} variant="outlined"/></Stack></Stack>
+      <Stack direction="row" spacing={1} useFlexGap sx={{flexWrap:'wrap'}} aria-label="프로젝트 선택">{projects.map(project=><Button key={project.id} component={Link} href={`/?projectId=${project.id}`} variant={project.id===selectedProject?.id?'contained':'outlined'} aria-current={project.id===selectedProject?.id?'page':undefined} sx={{textAlign:'left',overflowWrap:'anywhere',maxWidth:'100%'}}>{project.name}</Button>)}</Stack>
+      {selectedProject?<>
+        <Paper component="section" elevation={0} data-testid="project-overview" sx={{p:{xs:2,sm:3},borderRadius:3,minWidth:0}}><Stack spacing={1.5}>
+          <Typography component="h2" variant="h5">{selectedProject.name}</Typography><Stack direction="row" spacing={0.75} useFlexGap sx={{flexWrap:'wrap'}}><Chip size="small" variant="outlined" label={selectedProject.projectType==='volunteering'?'봉사활동':'업무 협업'}/><Chip size="small" variant="outlined" label={`업무 ${orderedTasks.length} · 하위 포함`}/></Stack>
+          <Typography sx={{whiteSpace:'pre-wrap'}}>목표: {selectedProject.goal||'목표를 정리하고 첫 업무를 추가해 보세요.'}</Typography><Typography variant="body2" color="text.secondary">{formatDate(selectedProject.startDate)} ~ {formatDate(selectedProject.endDate)}</Typography>
+          <Button component={Link} href={`/tasks?projectId=${selectedProject.id}`} variant="contained" sx={{alignSelf:'flex-start'}}>프로젝트 작업 공간</Button>
+        </Stack></Paper>
+        <ProjectGanttChart project={selectedProject} tasks={orderedTasks}/>
+        <Stack component="section" spacing={1.5} aria-label="프로젝트 업무 요약"><Typography component="h2" variant="h6">업무 요약</Typography>{orderedTasks.length?orderedTasks.map(task=><TaskSummaryCard key={task.id} task={task} href={`/tasks?projectId=${selectedProject.id}&taskId=${task.id}#task-${task.id}`} childCount={orderedTasks.filter(child=>child.parentId===task.id).length}/>):<Paper elevation={0} sx={{p:3,borderRadius:3}}><Typography color="text.secondary">아직 업무가 없습니다. 프로젝트 작업 공간에서 첫 업무를 추가하세요.</Typography></Paper>}</Stack>
+      </>:<Paper elevation={0} sx={{p:3,borderRadius:3}}><Typography color="text.secondary">표시할 프로젝트가 없습니다. 관리자에게 프로젝트 참여나 생성을 요청하세요.</Typography></Paper>}
+    </Stack>
+  </Container>;
 }

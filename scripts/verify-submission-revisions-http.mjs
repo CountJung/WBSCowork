@@ -8,6 +8,7 @@ export async function verifySubmissionRevisionWorkflow({request,db,bucket,actorC
  await form(route,owner,create,initial,[{name:'history.txt',bytes:'first-version-bytes'}]);
  const submission=await db.prepare("SELECT * FROM submissions WHERE content='REVISION_PRIVATE_V1'").first();
  check(submission?.current_revision===1&&submission.material_url==='https://example.com/first','revisions: first projection has version and material URL');
+ route=`/tasks?projectId=${projectId}&taskId=${taskId}&submissionId=${submission.id}`;
  const id=submission.id,read=()=>db.prepare('SELECT * FROM submissions WHERE id=?').bind(id).first();
  const revisions=()=>db.prepare('SELECT * FROM submission_revisions WHERE submission_id=? ORDER BY revision_number').bind(id).all();
  const attachment=await db.prepare('SELECT * FROM submission_attachments WHERE submission_id=?').bind(id).first();

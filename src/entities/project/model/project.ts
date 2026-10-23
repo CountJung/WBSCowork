@@ -3,6 +3,7 @@ export type ProjectRow = {
   id: number;
   name: string;
   project_type?: ProjectType;
+  access_mode?: "legacy_authenticated" | "members_only";
   goal: string;
   success_criteria: string;
   start_date: Date | string;
@@ -14,6 +15,7 @@ export type Project = {
   id: number;
   name: string;
   projectType?: ProjectType;
+  accessMode?: "legacy_authenticated" | "members_only";
   goal: string;
   successCriteria: string;
   startDate: Date;
@@ -26,6 +28,7 @@ export function mapProjectRow(row: ProjectRow): Project {
     id: row.id,
     name: row.name,
     projectType: row.project_type ?? "collaboration",
+    accessMode: row.access_mode ?? "legacy_authenticated",
     goal: row.goal ?? "",
     successCriteria: row.success_criteria ?? "",
     startDate: row.start_date instanceof Date ? row.start_date : new Date(row.start_date),

@@ -43,7 +43,7 @@ open docs/manual/USER_MANUAL.html
 | 13 | DB 관리 | `/admin/database` (슈퍼관리자) |
 | 14 | 로깅·모니터링 | `/admin/logs` (슈퍼관리자) |
 | 15 | 환경 설정 | `/admin/settings` (슈퍼관리자) |
-| 16 | 권한 관리 | `/admin/users` |
+| 16 | 권한 관리 | `/admin/users` (슈퍼관리자) |
 | 17~18 | 팁·모범 사례 | 운영 권장 사항 |
 | 19 | FAQ | 자주 묻는 질문 |
 | 20 | 지원 | 문의 경로 |

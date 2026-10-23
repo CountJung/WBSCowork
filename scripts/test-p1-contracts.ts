@@ -17,6 +17,7 @@ try {
   const {createSubmission}=await import('../src/entities/submission/index.server');
   for(const [id,role]of [[1,'guest'],[2,'member'],[3,'member'],[4,'admin']] as const)await db.query('INSERT INTO users(id,email,name,role) VALUES(?,?,?,?)',[id,`p1-${id}@example.test`,`P1 ${id}`,role]);
   for(const id of [1,2])await db.query("INSERT INTO projects(id,name,start_date,end_date) VALUES(?,?,'2026-01-01','2026-12-31')",[id,`P1 ${id}`]);
+  await db.query("INSERT INTO project_members(project_id,user_id) VALUES(1,4),(2,4)");
   const actor={userId:2,isAdmin:false,isSuperuser:false};
   const make=(title:string,projectId=1)=>createTask({projectId,title,actor,token:randomUUID(),assigneeId:2,startDate:'2026-01-01',endDate:'2026-12-31',deliverable:'output',definitionOfDone:'check'});
   const a=await make('A'),b=await make('B'),c=await make('C'),foreign=await make('Other',2);

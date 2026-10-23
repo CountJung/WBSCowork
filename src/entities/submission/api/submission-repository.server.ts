@@ -1,3 +1,5 @@
+import {getRuntimeEnv} from "@/src/shared/server/runtime-env/index.server";
+import {projectTaskAccessGuard,projectPrivateReadGuard} from "@/src/shared/server/project-scope/index.server";
 import { lockTaskProject } from "@/src/shared/server/task-dependencies/index.server";
 import { createHash, randomUUID } from "node:crypto";
 import type { StoredSubmissionAttachment } from "./submission-files.server";
@@ -174,6 +176,9 @@ export async function updateSubmission(input: UpdateSubmissionInput): Promise<Su
 }
 
 export async function deleteSubmission(submissionId: number, actor?: SubmissionActor): Promise<Submission> {
+  if(actor){const current=(await getDatabasePool().query("SELECT role,email FROM users WHERE id=?",[actor.userId]) as {role:string;email:string}[])[0];
+    actor={...actor,isAdmin:current?.role==='admin',isSuperuser:!!current&&actor.isSuperuser&&current.email.toLowerCase()===(getRuntimeEnv().auth.superuserEmail??'')};
+  }
   const existingSubmission = await getSubmissionById(submissionId);
 
   if (!existingSubmission) {
@@ -182,19 +187,20 @@ export async function deleteSubmission(submissionId: number, actor?: SubmissionA
 
   const key = `${actor?.userId ?? 0}:submission.delete:${submissionId}:${randomUUID()}`;
   const requestFingerprint = createHash('sha256').update(JSON.stringify({ submissionId, taskId: existingSubmission.taskId })).digest('hex');
+  const administrator=actor?projectPrivateReadGuard({userId:actor.userId,isSuperuser:actor.isSuperuser},"submissions.task_id"):{sql:'1=0',params:[]};
   const access = actor ? {
-    sql: `(?=1 OR EXISTS(SELECT 1 FROM users writer WHERE writer.id=? AND writer.role IN ('member','admin')))
-      AND (author_id=? OR ?=1 OR EXISTS(SELECT 1 FROM users administrator WHERE administrator.id=? AND administrator.role='admin'))`,
-    params: [actor.isSuperuser ? 1 : 0, actor.userId, actor.userId, actor.isSuperuser ? 1 : 0, actor.userId],
-  } : { sql: '1=1', params: [] };
+    sql: `(?=1 OR EXISTS(SELECT 1 FROM users writer WHERE writer.id=? AND writer.role IN ('member','admin'))) AND (author_id=? OR ${administrator.sql})`,
+    params:[actor.isSuperuser?1:0,actor.userId,actor.userId,...administrator.params],
+  }:{sql:'1=1',params:[]};
+  const binding=projectTaskAccessGuard(actor?{userId:actor.userId,isSuperuser:actor.isSuperuser}:{},"submissions.task_id");
   // The action has already confirmed permanent deletion. This batch only keeps
   // the task projection consistent with that exact, freshly authorized deletion.
   const results = await databaseBatch([
     lockTaskProject(existingSubmission.taskId),
     { sql: 'UPDATE tasks SET id=id WHERE id=?', params: [existingSubmission.taskId] },
     {
-      sql: `UPDATE submissions SET last_operation_token=? WHERE id=? AND task_id=? AND ${access.sql}`,
-      params: [key, submissionId, existingSubmission.taskId, ...access.params],
+      sql: `UPDATE submissions SET last_operation_token=? WHERE id=? AND task_id=? AND ${access.sql} AND ${binding.sql}`,
+      params: [key, submissionId, existingSubmission.taskId, ...access.params,...binding.params],
     },
     ...submissionReviewInvalidationStatements({
       taskId: existingSubmission.taskId, submissionId, actorId: actor?.userId ?? null,

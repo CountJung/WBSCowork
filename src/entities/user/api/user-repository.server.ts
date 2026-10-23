@@ -2,6 +2,7 @@ import { isHostedRuntime } from "@/src/shared/server/hosted-runtime/index.server
 import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
 import { getDatabasePool } from "@/src/shared/server/database/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
+import { projectAccessGuard,type ProjectViewer } from "@/src/shared/server/project-scope/index.server";
 import {
   getDefaultUserRole,
   manageableUserRoles,
@@ -139,7 +140,11 @@ export async function upsertUser(input: UpsertUserInput): Promise<User> {
   return user;
 }
 
-export async function updateUserRole(userId: number, role: ManageableUserRole): Promise<User> {
+export async function updateUserRole(userId: number, role: ManageableUserRole, actor:{userId:number;email:string;isSuperuser:boolean}): Promise<User> {
+  const superuserEmail=getRuntimeEnv().auth.superuserEmail;
+  if(!actor?.isSuperuser||!superuserEmail||normalizeEmail(actor.email)!==superuserEmail) throw new Error("사용자 권한 변경은 슈퍼관리자만 할 수 있습니다.");
+  const persistedActor=await getUserById(actor.userId);
+  if(!persistedActor||normalizeEmail(persistedActor.email)!==superuserEmail) throw new Error("슈퍼관리자 계정을 확인할 수 없습니다.");
   if (!manageableUserRoles.includes(role)) {
     throw new Error("변경 가능한 사용자 권한이 아닙니다.");
   }
@@ -154,7 +159,11 @@ export async function updateUserRole(userId: number, role: ManageableUserRole): 
     throw new Error("env에 지정된 슈퍼관리자 계정의 권한은 여기서 변경할 수 없습니다.");
   }
 
-  await getDatabasePool().query("UPDATE users SET role = ? WHERE id = ?", [role, userId]);
+  const result=await getDatabasePool().query("UPDATE users SET role = ? WHERE id = ? AND EXISTS (SELECT 1 FROM (SELECT id,email FROM users) AS actor_identity WHERE actor_identity.id=? AND LOWER(TRIM(actor_identity.email))=?)", [role, userId, actor.userId, superuserEmail]) as {affectedRows?:number};
+  if(result.affectedRows===0) {
+    const currentActor=await getUserById(actor.userId);
+    if(!currentActor||normalizeEmail(currentActor.email)!==superuserEmail) throw new Error("슈퍼관리자 계정을 확인할 수 없습니다.");
+  }
 
   const updatedUser = await getUserById(userId);
 
@@ -240,4 +249,15 @@ export async function syncAuthenticatedUserIfPossible(
 /** Public workspace selector labels only; never serialize authentication metadata. */
 export async function listUserNames():Promise<{id:number;name:string}[]> {
  return await getDatabasePool().query('SELECT id,name FROM users ORDER BY name,id') as {id:number;name:string}[];
+}
+
+/** Assignment selector data only; restricted projects expose their active roster. */
+export async function listProjectUsersForViewer(projectId:number,viewer:ProjectViewer):Promise<Pick<User,"id"|"name"|"email"|"role">[]> {
+  if(!Number.isSafeInteger(projectId)||projectId<1)return [];
+  const access=projectAccessGuard(viewer,"directory_project.id");
+  const email=typeof viewer.email==="string"?normalizeEmail(viewer.email):null;
+  return await getDatabasePool().query(`SELECT u.id,u.name,u.email,u.role FROM users u JOIN projects directory_project ON directory_project.id=?
+    WHERE ${access.sql} AND EXISTS(SELECT 1 FROM users directory_viewer WHERE directory_viewer.id=? OR (? IS NOT NULL AND LOWER(directory_viewer.email)=?))
+    AND (directory_project.access_mode='legacy_authenticated' OR EXISTS(SELECT 1 FROM project_members directory_member WHERE directory_member.project_id=directory_project.id AND directory_member.user_id=u.id AND directory_member.active=1))
+    ORDER BY u.name,u.id`,[projectId,...access.params,viewer.userId??null,email,email]) as Pick<User,"id"|"name"|"email"|"role">[];
 }

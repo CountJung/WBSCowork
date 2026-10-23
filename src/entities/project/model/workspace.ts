@@ -8,6 +8,7 @@ export type CompletionMode = "submission_required" | "direct_completion";
 
 /** Admin roster commands; canonical team leadership is checked by task guards. */
 export type WorkspaceCommand =
+  | {kind:"access_mode";accessMode:"legacy_authenticated"|"members_only";confirmImpact:boolean;impactHash:string}
   | { kind: "project_type"; projectType: ProjectType }
   | { kind: "project_member"; userId: number; active: boolean }
   | { kind: "create_team"; activityKind: ActivityKind; name: string }
@@ -38,6 +39,9 @@ export function normalizeWorkspaceCommand(input: WorkspaceCommand): WorkspaceCom
     return value;
   };
   switch (input.kind) {
+    case "access_mode":
+      if(!["legacy_authenticated","members_only"].includes(input.accessMode)||input.confirmImpact!==true||!/^([a-f0-9]{64})$/.test(input.impactHash))throw new Error("영향 미리보기를 다시 확인하고 접근 정책 변경에 동의해 주세요.");
+      return {kind:input.kind,accessMode:input.accessMode,confirmImpact:true,impactHash:input.impactHash};
     case "project_type":
       if (!projectTypes.includes(input.projectType)) throw new Error("프로젝트 유형이 올바르지 않습니다.");
       return { kind: input.kind, projectType: input.projectType };
@@ -58,3 +62,5 @@ export function normalizeWorkspaceCommand(input: WorkspaceCommand): WorkspaceCom
       throw new Error("지원하지 않는 프로젝트 변경입니다.");
   }
 }
+
+export type ProjectAccessPreview={projectId:number;accessMode:"legacy_authenticated"|"members_only";version:number;impactHash:string;activeMemberCount:number;visibleUserCount:number;blockedUserCount:number;unboundOpenTaskCount:number;unboundReviewerCount:number;leaderCount:number;canRestrict:boolean;warnings:string[]};

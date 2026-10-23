@@ -51,7 +51,7 @@ async function truncateAll() {
   try {
     await connection.query("SET FOREIGN_KEY_CHECKS = 0");
 
-    for (const table of ["submission_events", "submission_revisions", "task_events", "bug_report_purge_receipts", "bug_report_events", "bug_reports", "comments", "submission_attachments", "submissions", "tasks", "projects", "users"]) {
+    for (const table of ["activity_team_leaders", "activity_team_members", "activity_teams", "project_members", "project_workspace_events", "task_dependencies", "task_template_runs", "notification_reads", "submission_events", "submission_revisions", "task_events", "bug_report_purge_receipts", "bug_report_events", "bug_reports", "comments", "submission_attachments", "submissions", "tasks", "projects", "users"]) {
       await connection.query(`TRUNCATE TABLE ${table}`);
     }
 
@@ -186,6 +186,8 @@ export async function seedFixture(): Promise<Fixture> {
   }
 
   const projectId = await insertProject("가시성 fixture 프로젝트");
+  // Synthetic SU designation: the admin positive cases manage this project only.
+  await getDatabasePool().query("INSERT INTO project_members(project_id,user_id,active) VALUES(?,?,1)",[projectId,userIdByActor.admin]);
   const taskId = await insertTask(projectId, "대상 작업");
 
   // 교차 식별자: 다른 프로젝트/작업에 속한 공개 제출물.

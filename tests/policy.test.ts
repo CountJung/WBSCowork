@@ -7,6 +7,7 @@ import {
   canAccessAdminPanel,
   canManageAllSubmissions,
   canWriteTaskContent,
+  adminAssignableRoles, manageableUserRoles,
 } from "@/src/entities/user";
 import { testActors, type TestActorName } from "./helpers/session";
 
@@ -30,7 +31,12 @@ describe("역할 정책", () => {
     assert.equal(canWriteTaskContent("guest", true), true, "슈퍼관리자는 역할과 무관하게 통과");
   });
 
-  test("admin 패널과 전체 제출물 관리는 admin 이상", () => {
+  test("전역 계정 역할은 프로젝트 관리자에게 부여하지 않는다",()=>{
+    assert.deepEqual(adminAssignableRoles,[]);
+    assert.deepEqual(manageableUserRoles,["guest","member","admin"]);
+  });
+
+  test("관리 메뉴·제출물 관리 후보 역할은 서버 프로젝트 범위와 함께 검사한다", () => {
     for (const check of [canAccessAdminPanel, canManageAllSubmissions]) {
       assert.equal(check("guest"), false);
       assert.equal(check("member"), false);

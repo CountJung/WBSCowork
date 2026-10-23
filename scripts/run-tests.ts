@@ -59,7 +59,7 @@ async function main() {
   console.log("· 단위/정책 suite 실행");
 
   // These action fault-injection mocks own next/cache and must not reuse the bootstrap mocks.
-  const actionExitCode = await runNodeTest(["tests/submission-delete-actions.test.ts"], false);
+  const actionExitCode = await runNodeTest(["tests/submission-delete-actions.test.ts","tests/global-admin-actions.test.ts","tests/global-admin-repository.test.ts","tests/submission-review-context.test.ts"], false);
   const unitExitCode = (await runNodeTest(UNIT_TESTS)) || actionExitCode;
   let databaseExitCode = 0;
 

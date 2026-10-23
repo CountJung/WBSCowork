@@ -1,3 +1,4 @@
+import {projectAccessForCurrentUser,projectManagementForCurrentUser} from '@/src/shared/server/project-scope/index.server';
 import {taskManagementGuard} from '@/src/shared/server/task-scope/index.server';
 import {createHash} from 'node:crypto';
 import {databaseBatch,getDatabasePool,type QueryStatement} from '@/src/shared/server/database/index.server';
@@ -12,8 +13,10 @@ export async function applyTaskTemplate(input:{projectId:number;templateKey:stri
  const nodes=normalizeTemplatePayload(input.templateKey,input.templateVersion,input.nodes);
  const key=`${actor.userId}:template:${workOperationToken(input.token)}`, fingerprint=createHash('sha256').update(JSON.stringify({projectId:input.projectId,templateKey:input.templateKey,templateVersion:input.templateVersion,nodes})).digest('hex');
  const db=getDatabasePool();
- const find=async()=> (await db.query('SELECT id,request_fingerprint,completed_at FROM task_template_runs WHERE operation_token=? AND actor_id=?',[key,actor.userId]) as {id:number;request_fingerprint:string;completed_at:string|null}[])[0];
- const result=async(replayed:boolean)=>({replayed,taskIds:(await db.query('SELECT id FROM tasks WHERE project_id=? AND creation_token IN ('+nodes.map(()=>'?').join(',')+') ORDER BY order_index,id',[input.projectId,...nodes.map(n=>key+':'+n.key)]) as {id:number}[]).map(r=>Number(r.id))});
+ const receiptScope=taskManagementGuard(actor,"task_template_runs.project_id","NULL");
+ const find=async()=> (await db.query(`SELECT id,request_fingerprint,completed_at FROM task_template_runs WHERE operation_token=? AND actor_id=? AND ${receiptScope.sql}`,[key,actor.userId,...receiptScope.params]) as {id:number;request_fingerprint:string;completed_at:string|null}[])[0];
+ const resultScope=taskManagementGuard(actor,"tasks.project_id","NULL");
+ const result=async(replayed:boolean)=>({replayed,taskIds:(await db.query('SELECT id FROM tasks WHERE project_id=? AND creation_token IN ('+nodes.map(()=>'?').join(',')+') AND '+resultScope.sql+' ORDER BY order_index,id',[input.projectId,...nodes.map(n=>key+':'+n.key),...resultScope.params]) as {id:number}[]).map(r=>Number(r.id))});
  const previous=await find();if(previous){if(previous.request_fingerprint!==fingerprint||!previous.completed_at)throw new Error('같은 요청을 다른 템플릿 내용에 사용할 수 없습니다.');return result(true);}
  const assignees=[...new Set(nodes.flatMap(n=>n.assigneeId===null?[]:[n.assigneeId]))];
  const duplicate=isHostedRuntime()?' ON CONFLICT DO NOTHING':' ON DUPLICATE KEY UPDATE id=task_template_runs.id';
@@ -25,8 +28,8 @@ export async function applyTaskTemplate(input:{projectId:number;templateKey:stri
    SELECT ?,?,?,?,?,?,? FROM projects WHERE id=? AND ${scope.sql}
    AND EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND (actor.role IN ('member','admin') OR (?=1 AND LOWER(actor.email)=?)))
    AND (project_type='collaboration' OR (SELECT COUNT(*) FROM project_members pm WHERE pm.project_id=projects.id AND pm.active=1 AND pm.user_id IN (${assignees.length?assignees.map(()=>'?').join(','):'NULL'}))=?)
-   AND (SELECT COUNT(*) FROM users target WHERE target.id IN (${assignees.length?assignees.map(()=>'?').join(','):'NULL'}) AND (target.role IN ('member','admin') OR LOWER(target.email)=?))=?${duplicate}`,
-   params:[input.projectId,actor.userId,input.templateKey,input.templateVersion,key,fingerprint,nodes.length,input.projectId,...scope.params,actor.userId,actor.isSuperuser?1:0,getRuntimeEnv().auth.superuserEmail??'',...assignees,assignees.length,...assignees,getRuntimeEnv().auth.superuserEmail??'',assignees.length]},
+   AND (SELECT COUNT(*) FROM users target WHERE target.id IN (${assignees.length?assignees.map(()=>'?').join(','):'NULL'}) AND (target.role='member' OR ${projectManagementForCurrentUser('projects.id','target.id','LOWER(target.email)=?')}) AND ${projectAccessForCurrentUser('projects.id','target.id','LOWER(target.email)=?')})=?${duplicate}`,
+   params:[input.projectId,actor.userId,input.templateKey,input.templateVersion,key,fingerprint,nodes.length,input.projectId,...scope.params,actor.userId,actor.isSuperuser?1:0,getRuntimeEnv().auth.superuserEmail??'',...assignees,assignees.length,...assignees,getRuntimeEnv().auth.superuserEmail??'',getRuntimeEnv().auth.superuserEmail??'',assignees.length]},
  ];
  for(const node of nodes){
   const nodeKey=key+':'+node.key;

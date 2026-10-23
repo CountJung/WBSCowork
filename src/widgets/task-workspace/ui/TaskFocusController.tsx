@@ -4,13 +4,13 @@ import { useEffect } from "react";
 
 type TaskFocusControllerProps = {
   taskId: number | null;
+  submissionId?:number|null;
 };
 
-export default function TaskFocusController({ taskId }: TaskFocusControllerProps) {
+export default function TaskFocusController({ taskId,submissionId }: TaskFocusControllerProps) {
   useEffect(() => {
-    if (!taskId) {
-      return;
-    }
+    const targetId=submissionId?`submission-${submissionId}`:taskId?`task-${taskId}`:/^#task-\d+$/.test(window.location.hash)?window.location.hash.slice(1):null;
+    if (!targetId) return;
 
     let cancelled = false;
     let frameId = 0;
@@ -23,10 +23,11 @@ export default function TaskFocusController({ taskId }: TaskFocusControllerProps
         return;
       }
 
-      const taskElement = document.getElementById(`task-${taskId}`);
+      const taskElement = document.getElementById(targetId);
 
       if (taskElement) {
-        taskElement.scrollIntoView({ behavior: "smooth", block: "start" });
+        taskElement.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth", block: "start" });
+        taskElement.focus({preventScroll:true});
 
         return;
       }
@@ -49,7 +50,7 @@ export default function TaskFocusController({ taskId }: TaskFocusControllerProps
       window.cancelAnimationFrame(nestedFrameId);
       window.clearTimeout(timeoutId);
     };
-  }, [taskId]);
+  }, [taskId,submissionId]);
 
   return null;
 }

@@ -20,7 +20,7 @@ export async function verifyBugScreenshotsHttp({request,db,bucket,actorCookies,a
  check(rows.length===2&&rows.every(f=>f.file_mime_type==="image/png"&&f.file_size_bytes===png.length),"actual Worker records two validated image attachments");
  const detail=await(await request(`/bugs/${report.id}`,actorCookies.guest)).text();
  check(rows.every(f=>detail.includes(`/api/bug-screenshots/${f.id}`)),"detail refresh renders protected screenshot URLs");
- for(const [name,cookie,allowed] of [["author",actorCookies.guest,true],["admin",actorCookies.admin,true],["superuser",actorCookies.superuser,true],["other member",actorCookies.member2,false],["anonymous",null,false]]) {
+ for(const [name,cookie,allowed] of [["author",actorCookies.guest,true],["project admin",actorCookies.admin,false],["superuser",actorCookies.superuser,true],["other member",actorCookies.member2,false],["anonymous",null,false]]) {
   const response=await request(`/api/bug-screenshots/${rows[0].id}`,cookie);const bytes=Buffer.from(await response.arrayBuffer());
   check(response.status===(allowed?200:cookie?404:401)&&(!allowed||bytes.equals(png)),`${name}: screenshot bytes authorization`);
   check(response.headers.get("Cache-Control")==="private, no-store",`${name}: screenshots prohibit shared cache`);
@@ -39,7 +39,7 @@ export async function verifyBugScreenshotsHttp({request,db,bucket,actorCookies,a
  check((await bucket.list()).objects.length===before,"HTTP replay removes unused uploaded objects");
  await db.prepare("UPDATE bug_reports SET trashed_at=CURRENT_TIMESTAMP WHERE id=?").bind(report.id).run();
  check((await request(`/api/bug-screenshots/${rows[0].id}`,actorCookies.guest)).status===404,"trash immediately revokes reporter screenshot access");
- check((await request(`/api/bug-screenshots/${rows[0].id}`,actorCookies.admin)).status===200,"admin can inspect trashed screenshot");
+ check((await request(`/api/bug-screenshots/${rows[0].id}`,actorCookies.superuser)).status===200,"superuser can inspect trashed screenshot");
  await db.prepare("UPDATE bug_reports SET trashed_at=NULL WHERE id=?").bind(report.id).run();
  check((await request(`/api/bug-screenshots/${rows[0].id}`,actorCookies.guest)).status===200,"restored report restores reporter screenshot access");
  check((await request("/"+rows[0].file_path,actorCookies.guest)).status===404,"R2 screenshot keys are never public routes");

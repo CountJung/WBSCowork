@@ -53,8 +53,10 @@ describe("submission history visibility predicates", () => {
 
   test("anonymous/other viewers need both current and historical public visibility", () => {
     const scope = buildSubmissionVisibilityWhere({ canSeeAll: false }, aliases);
-    assert.equal(scope.clause, "AND ((s.visibility='public' AND r.visibility='public'))");
-    assert.deepEqual(scope.params, []);
+    assert.match(scope.clause, /s\.visibility='public' AND r\.visibility='public'/);
+    assert.match(scope.clause,/access_project\.access_mode='legacy_authenticated'/);
+    assert.match(scope.clause,/access_member\.active=1/);
+    assert.equal((scope.clause.match(/\?/g)??[]).length,scope.params.length);
   });
 
   test("only original author identity or administrator access bypasses the dual public check", () => {
@@ -62,15 +64,20 @@ describe("submission history visibility predicates", () => {
     assert.match(scope.clause, /s\.author_id=\?/);
     assert.match(scope.clause, /LOWER\(u\.email\)=\?/);
     assert.doesNotMatch(scope.clause, /editor|assignee|reviewer/);
-    assert.deepEqual(scope.params, [42, "owner@example.test"]);
-    assert.deepEqual(buildSubmissionVisibilityWhere({ canSeeAll: true }, aliases), { clause: "", params: [] });
+    assert.deepEqual(scope.params.slice(0,2), [42, "owner@example.test"]);
+    const admin=buildSubmissionVisibilityWhere({canSeeAll:true,viewerUserId:42},aliases);
+    assert.match(admin.clause,/manage_viewer\.role='admin'/);
+    assert.match(admin.clause,/manage_member\.active=1/);
+    assert.doesNotMatch(admin.clause,/private_project\.access_mode='legacy_authenticated'/);
+    assert.equal((admin.clause.match(/\?/g)??[]).length,admin.params.length);
   });
 
   test("binds viewer identity and rejects SQL aliases outside the constant identifier grammar", () => {
     const email = "x' OR 1=1 --";
     const scope = buildSubmissionVisibilityWhere({ canSeeAll: false, viewerEmail: email }, aliases);
     assert.equal(scope.clause.includes(email), false);
-    assert.deepEqual(scope.params, [email.toLowerCase()]);
+    assert.equal(scope.params[0],email.toLowerCase());
+    assert.equal((scope.clause.match(/\?/g)??[]).length,scope.params.length);
     assert.throws(() => buildSubmissionVisibilityWhere({ canSeeAll: true }, { revisionAlias: "r; DROP TABLE users" }));
   });
 });

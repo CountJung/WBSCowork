@@ -10,6 +10,8 @@ applyTestEnv();
 let deleted = false;
 let fault: "none" | "database" | "cleanup" | "refresh" | "audit" | "cleanup-refresh" = "none";
 let authorId = 2;
+let persistedRole = "member";
+let projectVisible = true;
 let cleanupCalls: string[] = [];
 let failures: UserActionLogPayload[] = [];
 let audits: UserActionLogPayload[] = [];
@@ -21,11 +23,11 @@ replace("next/cache", { revalidatePath() { if (fault === "refresh" || fault === 
 replace("../src/entities/user/index.server.ts", {
   getAuthSession: async () => ({ user: { email: "owner@example.test", role: "member", isSuperuser: false } }),
   getSignInPath: () => "/api/auth/signin",
-  getUserByEmail: async () => ({ id: 2, email: "owner@example.test", role: "member" }),
+  getUserByEmail: async () => ({ id: 2, email: "owner@example.test", role: persistedRole }),
 });
 const unused = () => { throw new Error("Unexpected repository call in deletion action"); };
 replace("../src/entities/task/index.server.ts", {
-  getTaskById: async () => ({ id: 11, projectId: 1 }),
+  getTaskByIdForViewer: async () => projectVisible ? ({ id: 11, projectId: 1 }) : null,
   createTask: unused, deleteTask: unused, updateTask: unused, changeTaskStatus: unused,assertTaskScope:unused,
 });
 replace("../src/shared/server/logging/index.server.ts", {
@@ -46,7 +48,22 @@ replace("../src/entities/submission/index.server.ts", {
 });
 const { deleteSubmissionAction } = await import("../src/features/task-workspace/server/actions");
 const form = () => formDataFrom({ projectId: 1, taskId: 11, submissionId: 21, confirmRevisionDeletion: "yes" });
-beforeEach(() => { deleted = false; fault = "none"; authorId = 2; cleanupCalls = []; failures = []; audits = []; });
+beforeEach(() => { deleted = false; fault = "none"; authorId = 2; persistedRole = "member"; projectVisible = true; cleanupCalls = []; failures = []; audits = []; });
+
+test("revoked project access rejects an already-open owner's delete form before cleanup", async () => {
+  projectVisible = false;
+  const outcome = await runAction(() => deleteSubmissionAction(form()));
+  assert.equal(outcome.status, "error");
+  assert.equal(deleted, false); assert.deepEqual(cleanupCalls, []); assert.deepEqual(audits, []);
+});
+
+test("current DB guest role rejects a stale member session before cleanup", async () => {
+  persistedRole = "guest";
+  const outcome = await runAction(() => deleteSubmissionAction(form()));
+  assert.equal(outcome.status, "error");
+  assert.match(outcome.message!, /쓰기 권한/);
+  assert.equal(deleted, false); assert.deepEqual(cleanupCalls, []); assert.deepEqual(audits, []);
+});
 
 test("committed delete reports success and cleans all known files", async () => {
   const outcome = await runAction(() => deleteSubmissionAction(form()));

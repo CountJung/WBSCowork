@@ -196,7 +196,7 @@
         <h2 style="margin-top: 60pt; color: #5EA8A7;">사용설명서</h2>
         <p style="margin-top: 40pt; font-size: 18pt;">Next.js + TypeScript 기반 WBS/간트 협업 플랫폼</p>
         <p style="color: #999; font-size: 14pt; margin-top: 80pt;">완벽한 프로젝트 관리와 팀 협업을 위한 종합 가이드</p>
-        <p style="font-size: 12pt;">업무 협업 기본 교육 자료입니다. 봉사활동의 팀장 범위·신규 업무 직접 완료/선택 제출과 기존 업무 제출 필수 절차는 <a href="../TEAM_WORKFLOW_GUIDE.md">최신 팀 업무 안내</a>를 따릅니다.</p>
+        <p style="font-size: 12pt;">업무 협업 기본 교육 자료입니다. 봉사활동의 팀장 범위·신규 업무 직접 완료/선택 제출과 기존 업무 제출 필수 절차는 <a href="../TEAM_WORKFLOW_GUIDE.md">최신 팀 업무 안내</a>를 따릅니다. 프로젝트 접근 scope와 지정 관리자 범위가 추가되었으며 구현·게시 상태도 해당 안내에서 확인합니다.</p>
     </div>
 </div>
 
@@ -268,7 +268,7 @@
         </div>
         <div class="feature-box">
             <span class="role-badge">관리자</span> (role: admin)<br>
-            <strong class="accent">관리 권한:</strong> /admin, /admin/users 접근 가능, 모든 제출물 조회, 일반사용자/게스트 권한 부여
+            <strong class="accent">관리 권한:</strong> 지정 프로젝트 관리·제출물 조회. 전역 사용자/역할 변경은 슈퍼관리자 전용
         </div>
         <div class="feature-box">
             <span class="role-badge">일반사용자</span> (role: member)<br>
@@ -289,7 +289,7 @@
     </div>
     <div class="slide-content content-full">
         <h3>공개 (public)</h3>
-        <p>모든 인증 사용자가 조회 가능</p>
+        <p>프로젝트 접근이 허용된 인증 사용자가 조회 가능</p>
         <ul>
             <li>팀 전체와 공유할 제출물</li>
             <li>프로젝트 진행 상황 공개</li>
@@ -298,8 +298,8 @@
         <h3>비공개 (private)</h3>
         <p>제한된 사용자만 조회 가능:</p>
         <ul>
-            <li><strong>작성자</strong> (본인)</li>
-            <li><strong>관리자</strong> (admin 역할)</li>
+            <li><strong>작성자</strong> (본인, 프로젝트 접근 유지 시)</li>
+            <li><strong>지정 프로젝트 관리자</strong> (admin 역할 + 현재 소속)</li>
             <li><strong>슈퍼관리자</strong> (isSuperuser)</li>
         </ul>
         
@@ -400,8 +400,8 @@
         
         <h3>공개 범위 설정</h3>
         <div class="feature-box">
-            <strong>공개:</strong> 모든 인증 사용자가 조회 가능<br>
-            <strong>비공개:</strong> 작성자, 관리자, 슈퍼관리자만 조회 가능
+            <strong>공개:</strong> 프로젝트 접근이 허용된 인증 사용자가 조회 가능<br>
+            <strong>비공개:</strong> 프로젝트 접근이 허용된 작성자, 지정 프로젝트 관리자, 슈퍼관리자만 조회 가능
         </div>
         
         <p class="accent">💡 팀과 공유할 정보는 공개로, 개인 피드백은 비공개로 설정하세요.</p>
@@ -469,13 +469,13 @@
 <div class="slide">
     <div class="slide-header">
         <div class="slide-title">관리자 패널</div>
-        <div class="slide-subtitle">/admin 대시보드 안내</div>
+        <div class="slide-subtitle">SU 개요와 지정 프로젝트 관리</div>
     </div>
     <div class="slide-content content-full">
         <h3>관리자 패널 접근</h3>
         <div class="feature-box">
-            <span class="role-badge">슈퍼관리자</span> 모든 관리 기능 접근 가능<br>
-            <span class="role-badge">관리자</span> /admin (개요), /admin/users 만 접근 가능
+            <span class="role-badge">슈퍼관리자</span> /admin 개요와 모든 관리 기능 접근 가능<br>
+            <span class="role-badge">관리자</span> /admin/projects · 지정 프로젝트 관리
         </div>
         
         <h3>주요 기능 (슈퍼관리자 전용)</h3>
@@ -485,7 +485,7 @@
             <li><strong>/admin/settings:</strong> 환경변수 편집</li>
         </ul>
         
-        <h3>사용자 관리 (관리자 + 슈퍼관리자)</h3>
+        <h3>사용자 관리 (슈퍼관리자 전용)</h3>
         <p>/admin/users 에서 사용자 역할 변경 가능 (guest ↔ member)</p>
     </div>
 </div>
@@ -575,7 +575,7 @@
         <div class="slide-subtitle">사용자 역할 및 접근 제어</div>
     </div>
     <div class="slide-content content-full">
-        <h3>권한 변경 절차</h3>
+        <h3>권한 변경 절차 (슈퍼관리자 전용)</h3>
         <ul>
             <li><span class="step-number">1</span>/admin/users 로 이동</li>
             <li><span class="step-number">2</span>사용자 선택</li>
@@ -585,7 +585,7 @@
         
         <h3>역할 업그레이드 규칙</h3>
         <ul>
-            <li><strong>관리자:</strong> guest/member 만 부여 가능 (슈퍼관리자만 admin 부여)</li>
+            <li><strong>역할 부여:</strong> 슈퍼관리자만 guest/member/admin을 변경. 프로젝트 소속 추가는 역할 승격과 별개</li>
             <li><strong>슈퍼관리자:</strong> 환경변수에 지정된 이메일만 해당</li>
             <li><strong>SUPERUSER_EMAIL 예약:</strong> 해당 계정은 항상 슈퍼관리자</li>
         </ul>
@@ -653,7 +653,7 @@
     </div>
     <div class="slide-content content-full">
         <h3>Q. 산출물을 어떻게 삭제하나요?</h3>
-        <p>산출물 작성자와 관리자만 삭제 가능합니다. 산출물 상세 화면에서 삭제 버튼을 클릭하세요.</p>
+        <p>프로젝트 접근이 허용된 산출물 작성자와 지정 프로젝트 관리자/슈퍼관리자만 삭제 가능합니다. 산출물 상세 화면에서 삭제 버튼을 클릭하세요.</p>
         
         <h3>Q. 공개 산출물을 비공개로 변경할 수 있나요?</h3>
         <p>네, 작성자는 산출물 공개 범위를 언제든지 변경할 수 있습니다.</p>

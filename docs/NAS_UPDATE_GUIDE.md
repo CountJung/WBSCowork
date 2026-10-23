@@ -67,8 +67,8 @@ npm run build:native
 
 - [ ] 기존 Google 로그인, HTTPS callback(`/api/auth/callback/google`), 재접속/로그아웃, 기존 역할과 슈퍼관리자 표시가 기대와 같다.
 - [ ] 기존 프로젝트·담당자·공개/비공개 제출물과 첨부를 읽을 수 있다. 예전 파일의 다운로드 내용이 원본과 같다.
-- [ ] guest/member/admin/SU의 기존 조회·수정 경계를 확인한다. guest/member는 타인의 비공개 직접 링크/첨부가 거부되고, admin/SU는 기존 관리 권한으로 조회할 수 있다. 담당자·검토자 지정만으로 private 접근이 늘지 않는다.
-- [ ] admin 일반 화면과 SU DB/설정/로그 화면의 구분이 유지된다. native 관리자 개요는 MariaDB/로컬 파일을 안내하고 schema credential 값은 설정 목록에 나오지 않는다. 이번 검사에서 실제 비밀값을 바꾸지 않는다.
+- [ ] 현재 project scope와 guest/member/admin/SU의 조회·수정 경계를 확인한다. 타인 private의 직접 링크/첨부는 member/guest·미지정 admin에게 거부되며 SU 또는 현재 해당 프로젝트에 지정된 admin만 관리 예외로 조회한다. 본인 소유권도 project 접근 gate를 우회하지 않고 담당자·검토자 지정만으로 private 접근이 늘지 않는다.
+- [ ] 지정 프로젝트 admin 관리 화면과 SU 개요/DB/설정/로그 화면의 구분이 유지된다. native SU 개요는 MariaDB/로컬 파일을 안내하고 schema credential 값은 설정 목록에 나오지 않는다. 이번 검사에서 실제 비밀값을 바꾸지 않는다.
 
 ### P0: 주제에서 제출·완료까지
 

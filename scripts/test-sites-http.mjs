@@ -69,13 +69,19 @@ try {
     const session=await request("/api/auth/session",cookie);const body=await session.json();
     check(session.status===200&&body.user?.role===a.role&&body.user?.isSuperuser===(a.name==="superuser"),`${a.name}: actual Worker JWT role refresh`);
     const workspace=await request("/tasks?projectId=1",cookie);const html=await workspace.text();
-    check(workspace.status===200&&html.includes("PUBLIC_ONLY_83827"),`${a.name}: existing workspace renders public submission`);
-    check(html.includes("PRIVATE_OWNER1_83827")===["member1","admin","superuser"].includes(a.name),`${a.name}: owner1 private content boundary in SSR`);
-    check(html.includes("PRIVATE_OWNER2_83827")===["member2","admin","superuser"].includes(a.name),`${a.name}: owner2 private content boundary in SSR`);
-    if(a.name==="member1"){memberHtml=html;memberCookie=cookie;}
+    check(workspace.status===200&&html.includes("task-summary-1")&&!html.includes("PUBLIC_ONLY_83827")&&!html.includes("PRIVATE_OWNER1_83827")&&!html.includes("PRIVATE_OWNER2_83827"),`${a.name}: project summary omits submission bodies`);
+    const taskDetail=await(await request("/tasks?projectId=1&taskId=1",cookie)).text();
+    const publicDetail=await(await request("/tasks?projectId=1&taskId=1&submissionId=1",cookie)).text();
+    check(publicDetail.includes("PUBLIC_ONLY_83827"),`${a.name}: selected public submission renders body`);
+    for(const [id,marker,owner] of [[2,"PRIVATE_OWNER1_83827","member1"],[3,"PRIVATE_OWNER2_83827","member2"]]) {
+      const detail=await request(`/tasks?projectId=1&taskId=1&submissionId=${id}`,cookie),body=await detail.text();
+      const allowed=[owner,"superuser"].includes(a.name);
+      check(detail.status===(allowed?200:404)&&body.includes(marker)===allowed,`${a.name}: selected private submission ${id} boundary`);
+    }
+    if(a.name==="member1"){memberHtml=taskDetail;memberCookie=cookie;}
     for(const route of ["/admin","/admin/users","/admin/database","/admin/settings","/admin/logs"]){
       const response=await request(route,cookie);const content=await response.text();
-      const allowed=a.name==="superuser"||(a.name==="admin"&&["/admin","/admin/users"].includes(route));
+      const allowed=a.name==="superuser";
       check(allowed?response.status===200:response.status>=300&&response.status<400,`${a.name}: ${route} authorization`);
       check(!content.includes(secret)&&!content.includes(providerSecret),`${a.name}: no runtime secrets in ${route}`);
       if(allowed&&route==="/admin") {
@@ -84,11 +90,11 @@ try {
         check(content.includes("슈퍼관리자 계정으로 로그인된 상태입니다.")===(a.name==="superuser"),`${a.name}: overview identity matches effective privilege`);
       }
       if(allowed&&route==="/admin/database") check(content.includes("저장소: Sites D1")&&content.includes("바인딩: DB")&&!content.includes("Port: 0")&&!content.includes("DB 및 기본 테이블 생성"),"hosted database panel uses binding metadata without initialization controls");
-      if(allowed&&route==="/admin/users") check(content.includes("로그·세팅·DB 관리는 슈퍼관리자 전용"),`${a.name}: user policy describes narrower superuser access`);
+      if(allowed&&route==="/admin/users") check(content.includes("전역 사용자 역할·운영 설정·버그 리뷰는 슈퍼관리자만"),`${a.name}: user policy describes narrower superuser access`);
       if(allowed&&route==="/admin/logs") check(content.includes("보존 기간 내 D1 감사 로그")&&!content.includes("영구 감사 로그")&&!content.includes("로그 파일이 없습니다"),"hosted audit view uses retention and date labels");
     }
     for(const route of ["/api/submission-attachments/2","/api/submissions/2/attachment"]){
-      const response=await request(route,cookie);const content=await response.text();const allowed=["member1","admin","superuser"].includes(a.name);
+      const response=await request(route,cookie);const content=await response.text();const allowed=["member1","superuser"].includes(a.name);
       check(response.status===(allowed?200:404)&&(!allowed||content==="PRIVATE_OWNER1_83827"),`${a.name}: ${route} private bytes boundary`);
       check(response.headers.get("Cache-Control")==="private, no-store",`${a.name}: private attachment cache contract`);
     }
@@ -112,8 +118,8 @@ try {
     await verifyBugScreenshotsHttp({request,db,bucket,actorCookies,actionOrigin,check});
     console.log(`Actual Worker bug HTTP checks passed: ${checks}. Synthetic local fixtures only.`);
   } else {
-  const createAction=memberHtml.match(/name="(\$ACTION_ID_[^"]*#createSubmissionAction)"/)?.[1];
-  check(Boolean(createAction),"real rendered form exposes existing create-submission action");
+  const createAction=memberHtml.match(/name="(\$ACTION_ID_[^"]*#createSubmissionAction)"/)?.[1]??(()=>{const reference=memberHtml.match(/([a-f0-9]+)#createSubmissionAction[^A-Za-z]/)?.[1];return reference?`$ACTION_ID_${reference}#createSubmissionAction`:null;})();
+  check(Boolean(createAction),"existing create-submission action reference is available");
   function smallForm(content){const boundary="wbs-small-boundary";let body="";for(const [name,value]of[[createAction,""],["operationToken",randomUUID()],["projectId","1"],["taskId","1"],["content",content],["visibility","private"]])body+=`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`;return body+`--${boundary}--\r\n`;}
   const beforeDenied=await db.prepare("SELECT COUNT(*) AS n FROM submissions").first();
   const denied=await request("/tasks?projectId=1",actorCookies.guest,{method:"POST",headers:{Origin:actionOrigin,"Content-Type":"multipart/form-data; boundary=wbs-small-boundary"},body:smallForm("FORBIDDEN_WRITE")});

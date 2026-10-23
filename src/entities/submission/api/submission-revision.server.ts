@@ -1,3 +1,5 @@
+import {getRuntimeEnv} from "@/src/shared/server/runtime-env/index.server";
+import {projectTaskAccessGuard,projectVisibilityViewer,projectAccessGuard,projectPrivateReadGuard,projectManagementGuard} from "@/src/shared/server/project-scope/index.server";
 import { lockTaskProject } from "@/src/shared/server/task-dependencies/index.server";
 import { createHash } from "node:crypto";
 import { databaseBatch, getDatabasePool, type QueryStatement } from "@/src/shared/server/database/index.server";
@@ -100,25 +102,29 @@ function fingerprint(payload: unknown) {
 async function assertActor(actor: SubmissionActor): Promise<SubmissionActor> {
   if (!actor) throw new Error("제출물을 변경할 사용자 정보가 필요합니다.");
   positiveId(actor.userId, "사용자");
-  const rows = await getDatabasePool().query("SELECT role FROM users WHERE id=? LIMIT 1", [actor.userId]) as { role: string }[];
+  const rows = await getDatabasePool().query("SELECT role,email FROM users WHERE id=? LIMIT 1", [actor.userId]) as { role: string;email:string }[];
   const role = rows[0]?.role;
-  if (!role || (!actor.isSuperuser && role !== "member" && role !== "admin")) throw new Error("제출물 작성 권한이 없습니다.");
-  return { userId: actor.userId, isAdmin: role === "admin", isSuperuser: Boolean(actor.isSuperuser) };
+  const isSuperuser=Boolean(actor.isSuperuser)&&rows[0]?.email.toLowerCase()===(getRuntimeEnv().auth.superuserEmail??"");
+  if (!role || (!isSuperuser && role !== "member" && role !== "admin")) throw new Error("제출물 작성 권한이 없습니다.");
+  return { userId: actor.userId, isAdmin: role === "admin", isSuperuser };
 }
 
 /** Current database role, not a cached isAdmin claim, decides authorization inside the mutation. */
-function actorGuard(actor: SubmissionActor, authorExpression: string, authorParams: unknown[] = []) {
+function actorGuard(actor: SubmissionActor, authorExpression: string, authorParams: unknown[] = [],taskId?:number) {
+  const binding=taskId===undefined?projectPrivateReadGuard({userId:actor.userId,isSuperuser:actor.isSuperuser},authorExpression.replace(/author_id$/,'task_id')):projectManagementGuard({userId:actor.userId,isSuperuser:actor.isSuperuser},"create_guard_task.project_id");
+  const override=taskId===undefined?binding:{sql:`EXISTS(SELECT 1 FROM tasks create_guard_task WHERE create_guard_task.id=? AND ${binding.sql})`,params:[taskId,...binding.params]};
   return {
-    sql: `(?=1 OR EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND actor.role IN ('member','admin'))) AND (${authorExpression}=? OR ?=1 OR EXISTS(SELECT 1 FROM users administrator WHERE administrator.id=? AND administrator.role='admin'))`,
-    params: [actor.isSuperuser ? 1 : 0, actor.userId, ...authorParams, actor.userId, actor.isSuperuser ? 1 : 0, actor.userId],
+    sql: `(?=1 OR EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND actor.role IN ('member','admin'))) AND (${authorExpression}=? OR ${override.sql})`,
+    params: [actor.isSuperuser ? 1 : 0, actor.userId, ...authorParams, actor.userId,...override.params],
   };
 }
 
 async function findOperation(key: string, actor: SubmissionActor): Promise<Operation | undefined> {
   const access = actorGuard(actor, "s.author_id");
+  const binding=projectTaskAccessGuard({userId:actor.userId,isSuperuser:actor.isSuperuser},"s.task_id");
   const rows = await getDatabasePool().query(
-    `SELECT e.submission_id,e.revision_number,e.request_fingerprint FROM submission_events e JOIN submissions s ON s.id=e.submission_id WHERE e.operation_token=? AND e.actor_id=? AND ${access.sql} LIMIT 1`,
-    [key, actor.userId, ...access.params],
+    `SELECT e.submission_id,e.revision_number,e.request_fingerprint FROM submission_events e JOIN submissions s ON s.id=e.submission_id WHERE e.operation_token=? AND e.actor_id=? AND ${access.sql} AND ${binding.sql} LIMIT 1`,
+    [key, actor.userId, ...access.params,...binding.params],
   ) as { submission_id: number; revision_number: number; request_fingerprint: string }[];
   const row = rows[0];
   return row ? { submissionId: Number(row.submission_id), revisionNumber: Number(row.revision_number), request_fingerprint: row.request_fingerprint } : undefined;
@@ -208,14 +214,16 @@ export async function commitSubmissionCreation(input: CreateSubmissionInput, att
   if (!tasks.length) throw new Error("대상 작업을 찾을 수 없습니다.");
   if (!authors.length) throw new Error("제출 작성자 정보를 찾을 수 없습니다.");
   await assertUploadedObjects(attachments);
-  const access = actorGuard(actor, "?", [authorId]);
+  const access = actorGuard(actor, "?", [authorId],taskId);
+  const binding=projectAccessGuard({userId:actor.userId,isSuperuser:actor.isSuperuser},"access_target.project_id");
   const lease = stagingLeaseGuard(attachments);
   const legacyGuard=legacyReferenceGuard(legacy.filePath);
   const duplicate = isHostedRuntime() ? " ON CONFLICT(creation_token) DO NOTHING" : " ON DUPLICATE KEY UPDATE id=submissions.id";
   await databaseBatch([
+    lockTaskProject(taskId),
     {
-      sql: `INSERT INTO submissions(task_id,author_id,content,visibility,material_url,file_path,file_name,file_mime_type,file_size_bytes,current_revision,version,creation_token,last_operation_token) SELECT ?,?,?,?,?,?,?,?,?,1,1,?,? WHERE ${access.sql} AND NOT EXISTS(SELECT 1 FROM submission_events applied WHERE applied.operation_token=?)${lease.sql}${legacyGuard.sql}${duplicate}`,
-      params: [taskId, authorId, content, visibility, materialUrl, legacy.filePath, legacy.fileName, legacy.fileMimeType, legacy.fileSizeBytes, key, key, ...access.params, key, ...lease.params,...legacyGuard.params],
+      sql: `INSERT INTO submissions(task_id,author_id,content,visibility,material_url,file_path,file_name,file_mime_type,file_size_bytes,current_revision,version,creation_token,last_operation_token) SELECT ?,?,?,?,?,?,?,?,?,1,1,?,? WHERE ${access.sql} AND EXISTS(SELECT 1 FROM tasks access_target WHERE access_target.id=? AND ${binding.sql}) AND NOT EXISTS(SELECT 1 FROM submission_events applied WHERE applied.operation_token=?)${lease.sql}${legacyGuard.sql}${duplicate}`,
+      params: [taskId, authorId, content, visibility, materialUrl, legacy.filePath, legacy.fileName, legacy.fileMimeType, legacy.fileSizeBytes, key, key, ...access.params, taskId,...binding.params,key, ...lease.params,...legacyGuard.params],
     },
     revisionInsert(key, actor, changeSummary),
     ...attachmentInserts(key, attachments),
@@ -261,6 +269,7 @@ export async function commitSubmissionRevision(input: UpdateSubmissionInput, att
     fileMimeType: existing.file_mime_type, fileSizeBytes: existing.file_size_bytes,
   };
   const access = actorGuard(actor, "submissions.author_id");
+  const binding=projectTaskAccessGuard({userId:actor.userId,isSuperuser:actor.isSuperuser},"submissions.task_id");
   const pending = pendingOperationWhere(key);
   const lease = stagingLeaseGuard(attachments);
   const legacyGuard=legacyReferenceGuard(legacy.filePath);
@@ -271,8 +280,8 @@ export async function commitSubmissionRevision(input: UpdateSubmissionInput, att
     lockTaskProject(existing.task_id),
     { sql: "UPDATE tasks SET id=id WHERE id=?", params: [existing.task_id] },
     {
-      sql: `UPDATE submissions SET content=?,visibility=?,material_url=?,file_path=?,file_name=?,file_mime_type=?,file_size_bytes=?,current_revision=current_revision+1,version=version+1,last_operation_token=? WHERE id=? AND current_revision=? AND ${access.sql} AND EXISTS(SELECT 1 FROM submission_revisions previous_revision WHERE previous_revision.submission_id=submissions.id AND previous_revision.revision_number=submissions.current_revision) AND NOT EXISTS(SELECT 1 FROM submission_events applied WHERE applied.operation_token=?)${lease.sql}${legacyGuard.sql}`,
-      params: [content, visibility ?? existing.visibility, materialUrl ?? existing.material_url, legacy.filePath, legacy.fileName, legacy.fileMimeType, legacy.fileSizeBytes, key, id, expectedRevision, ...access.params, key, ...lease.params,...legacyGuard.params],
+      sql: `UPDATE submissions SET content=?,visibility=?,material_url=?,file_path=?,file_name=?,file_mime_type=?,file_size_bytes=?,current_revision=current_revision+1,version=version+1,last_operation_token=? WHERE id=? AND current_revision=? AND ${access.sql} AND ${binding.sql} AND EXISTS(SELECT 1 FROM submission_revisions previous_revision WHERE previous_revision.submission_id=submissions.id AND previous_revision.revision_number=submissions.current_revision) AND NOT EXISTS(SELECT 1 FROM submission_events applied WHERE applied.operation_token=?)${lease.sql}${legacyGuard.sql}`,
+      params: [content, visibility ?? existing.visibility, materialUrl ?? existing.material_url, legacy.filePath, legacy.fileName, legacy.fileMimeType, legacy.fileSizeBytes, key, id, expectedRevision, ...access.params,...binding.params,key, ...lease.params,...legacyGuard.params],
     },
     revisionInsert(key, actor, changeSummary),
     {
@@ -302,7 +311,7 @@ export function buildSubmissionVisibilityWhere(
   const submission = sqlAlias(aliases.submissionAlias ?? "submissions");
   const user = sqlAlias(aliases.userAlias ?? "users");
   const revision = aliases.revisionAlias ? sqlAlias(aliases.revisionAlias) : null;
-  if (filter.canSeeAll) return { clause: "", params: [] };
+  const binding=projectTaskAccessGuard(projectVisibilityViewer(filter),`${submission}.task_id`);
   const conditions = [`(${submission}.visibility='public'${revision ? ` AND ${revision}.visibility='public'` : ""})`];
   const params: unknown[] = [];
   if (filter.viewerUserId) {
@@ -315,7 +324,8 @@ export function buildSubmissionVisibilityWhere(
     conditions.push(`LOWER(${user}.email)=?`);
     params.push(email);
   }
-  return { clause: `AND (${conditions.join(" OR ")})`, params };
+  if(filter.canSeeAll){const administrator=projectPrivateReadGuard(projectVisibilityViewer(filter),`${submission}.task_id`);conditions.push(administrator.sql);params.push(...administrator.params);}
+  return { clause: `AND (${conditions.join(" OR ")}) AND ${binding.sql}`, params:[...params,...binding.params] };
 }
 
 type RevisionRow = {

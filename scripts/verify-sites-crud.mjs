@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 /** Isolated workerd HTTP lifecycle using only synthetic D1/R2 and signed test actors. */
 export async function verifySitesCrud({ request, db, bucket, actorCookies, actionOrigin, check }) {
-  const admin = actorCookies.admin, member = actorCookies.member1, other = actorCookies.member2;
+  const admin = actorCookies.admin, superuser = actorCookies.superuser, member = actorCookies.member1, other = actorCookies.member2;
   const html = async (route, cookie=member) => (await request(route,cookie)).text();
   const action = (markup, name) => {
     let id = [...markup.matchAll(/name="(\$ACTION_ID_[^"]+)"/g)].map(m=>m[1]).find(id=>id.endsWith(`#${name}`));
@@ -27,14 +27,23 @@ export async function verifySitesCrud({ request, db, bucket, actorCookies, actio
     return response;
   }
   const dates={startDate:'2026-01-01',endDate:'2026-12-31'};
-  let page=await html('/admin/projects',admin);
+  let page=await html('/admin/projects',superuser);
   const createProject=action(page,'createProjectAdminAction');
   await submit('/admin/projects',member,createProject,{name:'FORBIDDEN_PROJECT',...dates});
   check(!(await db.prepare("SELECT id FROM projects WHERE name='FORBIDDEN_PROJECT'").first()),'member cannot invoke admin project create action');
-  await submit('/admin/projects',admin,createProject,{name:'CRUD_SYNTHETIC_PROJECT',...dates});
+  await submit('/admin/projects',admin,createProject,{name:'FORBIDDEN_ADMIN_PROJECT',...dates});
+  check(!(await db.prepare("SELECT id FROM projects WHERE name='FORBIDDEN_ADMIN_PROJECT'").first()),'unbound admin cannot invoke SU-only project creation');
+  await submit('/admin/projects',superuser,createProject,{name:'CRUD_SYNTHETIC_PROJECT',...dates});
   let project=await db.prepare("SELECT id FROM projects WHERE name='CRUD_SYNTHETIC_PROJECT'").first();
-  check(Boolean(project),'admin project creation persists through actual Worker action');
-  const projectId=project.id, route=`/tasks?projectId=${projectId}`;
+  check(Boolean(project),'superuser project creation persists through actual Worker action');
+  const projectId=project.id, projectRoute=`/tasks?projectId=${projectId}`;
+  let route=projectRoute;
+  // Explicit synthetic assignment models SU-granted admin scope; project creation grants none.
+  check(!(await db.prepare('SELECT user_id FROM project_members WHERE project_id=?').bind(projectId).first()),'project creation never infers administrator membership');
+  const unboundUpdateProject=action(await html('/admin/projects',superuser),'updateProjectAdminAction');
+  await submit('/admin/projects',admin,unboundUpdateProject,{projectId,name:'FORBIDDEN_UNBOUND_ADMIN_EDIT',...dates});
+  check((await db.prepare('SELECT name FROM projects WHERE id=?').bind(projectId).first()).name==='CRUD_SYNTHETIC_PROJECT','unbound admin cannot manage a legacy-readable project');
+  await db.prepare('INSERT INTO project_members(project_id,user_id,active) VALUES(?,4,1)').bind(projectId).run();
   page=await html('/admin/projects',admin);
   const updateProject=action(page,'updateProjectAdminAction'),deleteProject=action(page,'deleteProjectAdminAction');
   await submit('/admin/projects',admin,updateProject,{projectId,name:'CRUD_PROJECT_EDITED',...dates});
@@ -49,12 +58,14 @@ export async function verifySitesCrud({ request, db, bucket, actorCookies, actio
   await submit(route,member,createTask,{projectId,parentId:parent.id,title:'CRUD_CHILD',...dates});
   const child=await db.prepare("SELECT id,depth,parent_id FROM tasks WHERE project_id=? AND title='CRUD_CHILD'").bind(projectId).first();
   check(child?.parent_id===parent.id&&child.depth===1,'nested task parent and depth persist');
+  route=`${projectRoute}&taskId=${child.id}`;
   page=await html(route);
   const updateTask=action(page,'updateTaskAction'),deleteTask=action(page,'deleteTaskAction');
   await submit(route,member,updateTask,{projectId,taskId:child.id,title:'CRUD_CHILD_EDITED',parentId:parent.id,...dates});
   check((await html(route)).includes('CRUD_CHILD_EDITED'),'task edit survives refreshed server rendering');
   await submit(route,actorCookies.guest,deleteTask,{projectId,taskId:child.id});
   check(Boolean(await db.prepare('SELECT id FROM tasks WHERE id=?').bind(child.id).first()),'guest cannot invoke task deletion');
+  route=`${projectRoute}&taskId=${parent.id}`;
   page=await html(route);
   const createSubmission=action(page,'createSubmissionAction');
   const scope={projectId,taskId:parent.id};
@@ -62,10 +73,15 @@ export async function verifySitesCrud({ request, db, bucket, actorCookies, actio
   const submission=await db.prepare("SELECT id FROM submissions WHERE content='CRUD_PRIVATE_SUBMISSION'").first();
   check(Boolean(submission),'private submission and upload commit via Worker multipart action');
   const subScope={...scope,submissionId:submission.id};
+  route=`${projectRoute}&taskId=${parent.id}&submissionId=${submission.id}`;
   let attachments=(await db.prepare('SELECT a.* FROM submission_attachments a JOIN submissions s ON s.id=a.submission_id WHERE a.submission_id=? AND a.revision_number=s.current_revision').bind(submission.id).all()).results;
   check(attachments.length===1&&(await bucket.get(attachments[0].file_path))!==null,'committed attachment has R2 bytes');
   check((await request(`/api/submission-attachments/${attachments[0].id}`,other)).status===404,'other member cannot download freshly uploaded private file');
   check((await(await request(`/api/submission-attachments/${attachments[0].id}`,member)).text())==='PRIVATE_ATTACHMENT_ONE','owner downloads exact fresh attachment bytes');
+  check((await request(`/api/submission-attachments/${attachments[0].id}`,admin)).status===200,'explicitly assigned admin can read project private attachment');
+  await db.prepare('UPDATE project_members SET active=0 WHERE project_id=? AND user_id=4').bind(projectId).run();
+  check((await request(`/api/submission-attachments/${attachments[0].id}`,admin)).status===404&&(await request(projectRoute,admin)).status===200,'admin scope removal blocks private bytes on next request while preserving legacy public read');
+  await db.prepare('UPDATE project_members SET active=1 WHERE project_id=? AND user_id=4').bind(projectId).run();
   page=await html(route);
   const updateSubmission=action(page,'updateSubmissionAction'),deleteSubmission=action(page,'deleteSubmissionAction'),createComment=action(page,'createCommentAction');
   await submit(route,other,updateSubmission,{...subScope,content:'FORBIDDEN_SUBMISSION_EDIT',visibility:'public'});
@@ -106,6 +122,7 @@ export async function verifySitesCrud({ request, db, bucket, actorCookies, actio
   check(!(await db.prepare('SELECT id FROM submissions WHERE id=?').bind(submission.id).first()),'owner submission deletion removes synthetic metadata');
   for(const table of ['submission_revisions','submission_events','submission_attachments','comments'])check(Number((await db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE submission_id=?`).bind(submission.id).first()).n)===0,`successful deletion removes synthetic ${table}`);
   check((await Promise.all(attachments.map(a=>bucket.head(a.file_path)))).every(value=>value===null),'submission deletion cleans every synthetic private object');
+  route=`${projectRoute}&taskId=${parent.id}`;
   await submit(route,member,deleteTask,{projectId,taskId:parent.id,confirmRevisionDeletion:'yes'});
   const detached=await db.prepare('SELECT parent_id,depth FROM tasks WHERE id=?').bind(child.id).first();
   check(detached?.parent_id===null&&detached.depth===0,'deleting parent re-roots child with correct depth');

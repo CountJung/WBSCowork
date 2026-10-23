@@ -34,6 +34,12 @@ const theme = createTheme({
         secondary: {
           main: "#f0bf7c",
         },
+        error: {
+          main: "#ff8076",
+          dark: "#ec6d64",
+          light: "#ffa297",
+          contrastText: "#23100e",
+        },
         background: {
           default: "#0d1513",
           paper: "#16211d",
@@ -96,6 +102,17 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 999,
+        },
+      },
+    },
+    // Menus share the viewport-capped Popover paper; long names must wrap inside it.
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          whiteSpace: "normal",
+          overflowWrap: "anywhere",
+          minWidth: 0,
+          maxWidth: "100%",
         },
       },
     },

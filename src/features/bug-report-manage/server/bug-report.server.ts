@@ -1,5 +1,4 @@
 import { redirect, notFound } from "next/navigation";
-import { canAccessAdminPanel } from "@/src/entities/user";
 import {
   getAuthSession,
   getSignInPath,
@@ -28,10 +27,11 @@ export async function requireBugViewer(
   if (!session?.user?.email) redirect(getSignInPath(path));
   const user = await getUserByEmail(session.user.email);
   if (!user) notFound();
+  const globalAdmin=Boolean(session.user.isSuperuser&&isSuperuserEmail(user.email));
   const viewer = {
     userId: user.id,
-    canReview: canAccessAdminPanel(user.role, isSuperuserEmail(user.email)),
-    canPurge: isSuperuserEmail(user.email),
+    canReview: globalAdmin,
+    canPurge: globalAdmin,
   };
   if (adminOnly && !viewer.canReview) notFound();
   return viewer;

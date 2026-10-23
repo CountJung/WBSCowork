@@ -7,6 +7,7 @@ import path from 'node:path';
 import {randomBytes} from 'node:crypto';
 import {Miniflare,Log,LogLevel} from 'miniflare';
 import {encode} from 'next-auth/jwt';
+import {buildSnapshot} from './test-project-ux-provenance.mjs';
 
 const origin='https://volunteer-browser.example.test';
 const secret=randomBytes(32).toString('hex');
@@ -22,8 +23,9 @@ async function modules(directory){
   }
   return files;
 }
+const buildRoots=['dist/server','dist/client'],buildBefore=await buildSnapshot(buildRoots);
 const entry=path.resolve('dist/server/index.js');
-const mf=new Miniflare({cf:false,name:'volunteer-browser',modules:[{type:'ESModule',path:entry},...(await modules(path.resolve('dist/server'))).filter(m=>m.path!==entry)],modulesRoot:path.resolve('dist/server'),compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:{DB:'volunteer-browser-db'},r2Buckets:{ATTACHMENTS:'volunteer-browser-files'},assets:{directory:path.resolve('dist/client'),binding:'ASSETS',routerConfig:{invoke_user_worker_ahead_of_assets:false,has_user_worker:true}},bindings:{NEXTAUTH_SECRET:secret,NEXTAUTH_URL:origin,GOOGLE_CLIENT_ID:'synthetic.apps.googleusercontent.com',GOOGLE_CLIENT_SECRET:'synthetic-not-credential',SUPERUSER_EMAIL:'superuser@example.test'},log:new Log(LogLevel.ERROR)});
+const mf=new Miniflare({cf:false,name:'volunteer-browser',modules:[{type:'ESModule',path:entry},...(await modules(path.resolve('dist/server'))).filter(m=>m.path!==entry)],modulesRoot:path.resolve('dist/server'),compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:{DB:'volunteer-browser-db'},r2Buckets:{ATTACHMENTS:'volunteer-browser-files'},assets:{directory:path.resolve('dist/client'),binding:'ASSETS',routerConfig:{invoke_user_worker_ahead_of_assets:false,has_user_worker:true}},bindings:{NEXTAUTH_SECRET:secret,NEXTAUTH_URL:origin,GOOGLE_CLIENT_ID:'synthetic.apps.googleusercontent.com',GOOGLE_CLIENT_SECRET:'synthetic-not-credential',SUPERUSER_EMAIL:'volunteer-1@example.test'},log:new Log(LogLevel.ERROR)});
 let root;
 const observations=[];
 const server=createServer(async(req,res)=>{
@@ -97,4 +99,4 @@ try{
   console.log(`PASS actual hydrated volunteer flow: ${manifest.checks} browser checks at 1280/390px; ${observations.length} real RSC form POSTs`);
   if(manifest.adminSpa)console.log('PASS admin SPA updates reset participant/team selectors and remove departed rows without forced reload; task/submission persistence is separately reloaded');
   console.log('PASS final isolated D1/R2: direct completion actors/times/history, optional private TXT bytes, single leader revocation, legacy submission rule preserved');
-}finally{server.close();await mf.dispose();}
+}finally{await writeFile(path.join(output,'requests.json'),JSON.stringify(observations,null,2));server.close();await mf.dispose();const buildAfter=await buildSnapshot(buildRoots);await writeFile(path.join(output,'build-provenance.json'),JSON.stringify({before:buildBefore,after:buildAfter,unchanged:JSON.stringify(buildBefore)===JSON.stringify(buildAfter)},null,2));assert.deepEqual(buildAfter,buildBefore,'Build inputs changed during browser acceptance');}

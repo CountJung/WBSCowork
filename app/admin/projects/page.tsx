@@ -1,24 +1,24 @@
 import {
   Alert,
   Button,
-  Checkbox,
   Chip,
   Container,
   Divider,
-  FormControlLabel,
   Paper,
   Stack,
   TextField,
   Typography,
   MenuItem,
 } from "@mui/material";
+import FieldLabel from "@/src/shared/ui/field-label";
+import ConfirmationCheckbox from "@/src/shared/ui/confirmation-checkbox";
 import { redirect } from "next/navigation";
 import { getAuthSession, getSignInPath,getUserByEmail,listAllUsers } from "@/src/entities/user/index.server";
 import { getDatabaseAdminStatus } from "@/src/shared/server/database-admin/index.server";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
-import { listAllProjects,getProjectWorkspace } from "@/src/entities/project/index.server";
+import { listManagedProjectsForViewer,getProjectWorkspace,previewProjectAccess } from "@/src/entities/project/index.server";
 import {ProjectWorkspaceAdmin} from "@/src/widgets/project-workspace";
-import type {ProjectWorkspace} from "@/src/entities/project";
+import type {ProjectWorkspace,ProjectAccessPreview} from "@/src/entities/project";
 import type {User} from "@/src/entities/user";
 import { formatDate } from "@/src/shared/lib/date";
 import { canAccessAdminPanel } from "@/src/entities/user";
@@ -57,14 +57,14 @@ function ProjectCreateForm({
         <Typography variant="body2" color="text.secondary">
           프로젝트를 생성하면 /tasks 작업 공간에서 해당 프로젝트의 WBS 작업을 관리할 수 있습니다.
         </Typography>
-        <TextField name="name" label="프로젝트 이름" required />
+        <TextField name="name" label={<FieldLabel requirement="required">프로젝트 이름</FieldLabel>} required />
         <TextField select name="projectType" label="프로젝트 유형" defaultValue="collaboration"><MenuItem value="collaboration">업무 협업</MenuItem><MenuItem value="volunteering">봉사활동</MenuItem></TextField>
-        <TextField name="goal" label="주제의 목표" multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
-        <TextField name="successCriteria" label="프로젝트 성공 기준" multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
+        <TextField name="goal" label={<FieldLabel>주제의 목표</FieldLabel>} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
+        <TextField name="successCriteria" label={<FieldLabel>프로젝트 성공 기준</FieldLabel>} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <TextField
             name="startDate"
-            label="시작일"
+            label={<FieldLabel requirement="required">시작일</FieldLabel>}
             type="date"
             defaultValue={defaultStartDate}
             required
@@ -73,7 +73,7 @@ function ProjectCreateForm({
           />
           <TextField
             name="endDate"
-            label="종료일"
+            label={<FieldLabel requirement="required">종료일</FieldLabel>}
             type="date"
             defaultValue={defaultEndDate}
             required
@@ -91,7 +91,7 @@ function ProjectCreateForm({
   );
 }
 
-function ProjectEditCard({ project,workspace,users }: { project: Project;workspace:ProjectWorkspace;users:User[] }) {
+function ProjectEditCard({ project,workspace,users,accessPreview }: { project: Project;workspace:ProjectWorkspace;users:User[];accessPreview:ProjectAccessPreview|null }) {
   return (
     <Paper data-testid={`project-card-${project.id}`} elevation={0} sx={{ p: 3, borderRadius: 4, border: "1px solid", borderColor: "divider" }}>
       <Stack spacing={2}>
@@ -102,30 +102,20 @@ function ProjectEditCard({ project,workspace,users }: { project: Project;workspa
               기간 {formatDate(project.startDate)} ~ {formatDate(project.endDate)}
             </Typography>
           </Stack>
-          <Stack component="form" action={deleteProjectAdminAction} spacing={1} sx={{ maxWidth: 360 }}>
-            <input type="hidden" name="projectId" value={String(project.id)} />
-            <FormControlLabel
-              control={<Checkbox name="confirmDestruction" value="yes" required size="small" />}
-              label="종료 후 관련 DB 데이터와 첨부파일을 영구 파기합니다."
-              sx={{ alignItems: "flex-start", m: 0 }}
-            />
-            <Button type="submit" color="error" size="small" variant="outlined">
-              종료 및 파기
-            </Button>
-          </Stack>
+
         </Stack>
 
         <Divider />
 
         <Stack component="form" action={updateProjectAdminAction} spacing={2}>
           <input type="hidden" name="projectId" value={String(project.id)} />
-          <TextField name="name" label="프로젝트 이름" defaultValue={project.name} required />
-          <TextField name="goal" label="주제의 목표" defaultValue={project.goal} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
-          <TextField name="successCriteria" label="프로젝트 성공 기준" defaultValue={project.successCriteria} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
+          <TextField name="name" label={<FieldLabel requirement="required">프로젝트 이름</FieldLabel>} defaultValue={project.name} required />
+          <TextField name="goal" label={<FieldLabel>주제의 목표</FieldLabel>} defaultValue={project.goal} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
+          <TextField name="successCriteria" label={<FieldLabel>프로젝트 성공 기준</FieldLabel>} defaultValue={project.successCriteria} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             <TextField
               name="startDate"
-              label="시작일"
+              label={<FieldLabel requirement="required">시작일</FieldLabel>}
               type="date"
               defaultValue={formatDate(project.startDate)}
               required
@@ -134,7 +124,7 @@ function ProjectEditCard({ project,workspace,users }: { project: Project;workspa
             />
             <TextField
               name="endDate"
-              label="종료일"
+              label={<FieldLabel requirement="required">종료일</FieldLabel>}
               type="date"
               defaultValue={formatDate(project.endDate)}
               required
@@ -148,7 +138,20 @@ function ProjectEditCard({ project,workspace,users }: { project: Project;workspa
             </Button>
           </Stack>
         </Stack>
-        <ProjectWorkspaceAdmin workspace={workspace} users={users} action={changeProjectWorkspaceAction}/>
+        <ProjectWorkspaceAdmin workspace={workspace} users={users} accessPreview={accessPreview} action={changeProjectWorkspaceAction}/>
+        <details><summary>프로젝트 종료 및 영구 파기…</summary>
+          <Stack component="form" action={deleteProjectAdminAction} spacing={1} sx={{ maxWidth: 360 }}>
+            <input type="hidden" name="projectId" value={String(project.id)} />
+            <ConfirmationCheckbox
+              name="confirmDestruction" value="yes" required size="small"
+              label="종료 후 관련 DB 데이터와 첨부파일을 영구 파기합니다."
+              sx={{ alignItems: "flex-start", m: 0 }}
+            />
+            <Button type="submit" color="error" size="small" variant="outlined">
+              종료 및 파기
+            </Button>
+          </Stack>
+        </details>
       </Stack>
     </Paper>
   );
@@ -205,9 +208,19 @@ export default async function AdminProjectsPage({ searchParams }: AdminProjectsP
     );
   }
 
-  const [projects,users,currentUser] = await Promise.all([listAllProjects(),listAllUsers(),getUserByEmail(session.user.email??"")]);
+  const currentUser=await getUserByEmail(session.user.email??"");
   if(!currentUser)redirect(getSignInPath('/admin/projects'));
-  const workspaces=await Promise.all(projects.map(p=>getProjectWorkspace(p.id,{userId:currentUser.id,isSuperuser:!!session.user.isSuperuser})));
+  const isCurrentSuperuser=!!session.user.isSuperuser&&currentUser.email.toLowerCase()===runtimeEnv.auth.superuserEmail;
+  if(!canAccessAdminPanel(currentUser.role,isCurrentSuperuser))redirect('/');
+  const actor={userId:currentUser.id,isSuperuser:isCurrentSuperuser};
+  const projects=await listManagedProjectsForViewer({...actor,email:currentUser.email});
+  const [workspaces,accessPreviews,allUsers]=await Promise.all([
+    Promise.all(projects.map(p=>getProjectWorkspace(p.id,actor))),
+    Promise.all(projects.map(p=>isCurrentSuperuser?previewProjectAccess(p.id,actor):null)),
+    listAllUsers(),
+  ]);
+  const memberIds=new Set(workspaces.flatMap(workspace=>workspace.members.filter(member=>member.active).map(member=>member.userId)));
+  const users=isCurrentSuperuser?allUsers:allUsers.filter(user=>memberIds.has(user.id));
 
   return (
     <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
@@ -215,7 +228,7 @@ export default async function AdminProjectsPage({ searchParams }: AdminProjectsP
         <Stack spacing={1}>
           <Typography variant="h3">프로젝트 관리</Typography>
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
-            프로젝트를 생성하고 수정하거나 삭제합니다. 이 페이지는 관리자 이상만 접근할 수 있습니다.
+            프로젝트를 생성하고 수정하거나 삭제합니다. 일반 관리자는 슈퍼관리자가 지정한 프로젝트만 관리합니다.
             프로젝트를 선택하여 /tasks 작업 공간에서 URL 파라미터를 통해 특정 프로젝트로 이동할 수 있습니다.
           </Typography>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
@@ -227,22 +240,22 @@ export default async function AdminProjectsPage({ searchParams }: AdminProjectsP
           <Alert severity={feedbackStatus === "success" ? "success" : "error"}>{feedbackMessage}</Alert>
         ) : null}
 
-        <ProjectCreateForm
+        {isCurrentSuperuser?<ProjectCreateForm
           defaultStartDate={today.toISOString().slice(0, 10)}
           defaultEndDate={nextMonth.toISOString().slice(0, 10)}
-        />
+        />:null}
 
         {projects.length === 0 ? (
           <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
             <Typography variant="body2" color="text.secondary">
-              아직 생성된 프로젝트가 없습니다. 위 폼에서 첫 프로젝트를 만들어 보세요.
+              {isCurrentSuperuser?"아직 생성된 프로젝트가 없습니다. 위 폼에서 첫 프로젝트를 만들어 보세요.":"관리하도록 지정된 프로젝트가 없습니다. 슈퍼관리자에게 프로젝트 소속 지정을 요청해 주세요."}
             </Typography>
           </Paper>
         ) : (
           <Stack spacing={2}>
             <Typography variant="h5">프로젝트 목록</Typography>
             {projects.map((project,index) => (
-              <ProjectEditCard key={project.id} project={project} workspace={workspaces[index]} users={users}/>
+              <ProjectEditCard key={project.id} project={project} workspace={workspaces[index]} users={users} accessPreview={accessPreviews[index]}/>
             ))}
           </Stack>
         )}
