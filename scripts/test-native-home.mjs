@@ -14,8 +14,11 @@ import {runNativeMigrations} from '../src/shared/server/database-admin/native-mi
 import {buildSnapshot} from './test-project-ux-provenance.mjs';
 
 const expectRed=process.argv.includes('--expect-red');
-assert(process.argv.slice(2).every(value=>value==='--expect-red'),'Only --expect-red is supported.');
-const phase=expectRed?'red':'green',out=path.resolve(`.test-artifacts/native-home/${phase}`);
+const expectStaticSession=process.argv.includes('--expect-static-session');
+const httpOnly=process.argv.includes('--http-only')||expectStaticSession;
+assert(process.argv.slice(2).every(value=>['--expect-red','--expect-static-session','--http-only'].includes(value)),'Unsupported Native home QA option.');
+assert(!(expectRed&&expectStaticSession),'Choose either the home RSC RED or static-session RED.');
+const phase=expectRed?'red':expectStaticSession?'static-session-red':httpOnly?'http-green':'green',out=path.resolve(`.test-artifacts/native-home/${phase}`);
 const buildRoots=['.next/BUILD_ID','.next/server','.next/static','.next/required-server-files.json'];
 const before=await buildSnapshot(buildRoots),serverDir=path.join(out,'server');
 await mkdir(serverDir,{recursive:true});
@@ -27,6 +30,8 @@ const database=`wbs_native_home_${Date.now().toString(36)}_${randomBytes(3).toSt
 const db=await createConnection(options),secret=randomBytes(32).toString('hex'),tokens={};
 let app,handler,exitCode=0;const requests=[],serverErrors=[],checks=[];
 const check=(condition,label)=>{assert.ok(condition,label);checks.push(label);console.log('PASS '+label);};
+// Privacy body documents Google login too; inspect only the actual app-bar auth UI.
+const authHeader=html=>{const header=html.match(/<header\b[^>]*>[\s\S]*?<\/header>/)?.[0];assert(header,'App header must be present in SSR HTML');return header;};
 const baseError=console.error;
 console.error=(...args)=>{serverErrors.push(args.map(value=>String(value)).join(' ').replaceAll(secret,'[synthetic-secret]'));baseError(...args);};
 const server=createServer((req,res)=>{res.on('finish',()=>{requests.push({path:req.url,method:req.method,status:res.statusCode,contentType:res.getHeader('content-type'),cacheControl:res.getHeader('cache-control')});});handler(req,res);});
@@ -57,14 +62,39 @@ try{
   const empty=await request('/?projectId=3',2);check(empty.status===200&&(await empty.text()).includes('아직 업무가 없습니다'),'Native empty project home renders without a client boundary failure');
   const su=await request('/',1);check(su.status===200&&(await su.text()).includes('HOME_FORBIDDEN_PROJECT'),'configured SU home retains global project visibility');
   const anonymous=await request('/');check(anonymous.status===200&&!(await anonymous.text()).includes('HOME_VISIBLE_PROJECT'),'anonymous home stays public without another viewer project data');
-  const child=spawn('python3',[fileURLToPath(new URL('./test-native-home-browser.py',import.meta.url))],{stdio:['pipe','inherit','inherit']});
-  child.stdin.end(JSON.stringify({url,token:tokens[2],output:out}));
-  const code=await new Promise((resolve,reject)=>{child.once('exit',resolve);child.once('error',reject);});assert.equal(code,0,'Native home browser regression failed');
+  const apiSession=await request('/api/auth/session',2),session=await apiSession.json();
+  check(apiSession.status===200&&session.user?.name==='HOME_SYNTHETIC_MEMBER','runtime synthetic signed cookie resolves to the current persisted member');
+  const prerender=JSON.parse(await readFile('.next/prerender-manifest.json','utf8'));
+  const signedPrivacy=await request('/privacy',2),signedPrivacyHtml=await signedPrivacy.text();
+  const signedPrivacyHeader=authHeader(signedPrivacyHtml);
+  await writeFile(path.join(out,'signed-privacy.html'),signedPrivacyHtml);
+  if(expectStaticSession){
+   check(Boolean(prerender.routes['/privacy']),'RED: missing-secret build classified privacy as a static page');
+   check(signedPrivacy.status===200&&signedPrivacyHeader.includes('Google 로그인')&&!signedPrivacyHeader.includes('HOME_SYNTHETIC_MEMBER'),'RED: valid runtime signed viewer receives a cached anonymous privacy header');
+  }else{
+   check(!prerender.routes['/privacy'],'privacy remains request-rendered independently of build-time secret presence');
+   check(signedPrivacy.status===200&&signedPrivacyHeader.includes('HOME_SYNTHETIC_MEMBER')&&signedPrivacyHeader.includes('로그아웃')&&!signedPrivacyHeader.includes('Google 로그인'),'signed public privacy SSR starts with the correct authenticated snapshot');
+   const anonymousPrivacy=await request('/privacy'),anonymousPrivacyHtml=await anonymousPrivacy.text();
+   const anonymousPrivacyHeader=authHeader(anonymousPrivacyHtml);
+   check(anonymousPrivacy.status===200&&anonymousPrivacyHeader.includes('Google 로그인')&&!anonymousPrivacyHeader.includes('HOME_SYNTHETIC_MEMBER'),'anonymous privacy SSR never inherits the preceding signed viewer snapshot');
+   const otherPrivacy=await request('/privacy',3),otherPrivacyHtml=await otherPrivacy.text();
+   const otherPrivacyHeader=authHeader(otherPrivacyHtml);
+   check(otherPrivacy.status===200&&otherPrivacyHeader.includes('HOME_SYNTHETIC_OTHER')&&!otherPrivacyHeader.includes('HOME_SYNTHETIC_MEMBER'),'a second signed privacy viewer receives only its own initial snapshot');
+   const repeatedPrivacy=await request('/privacy',2),repeatedPrivacyHtml=await repeatedPrivacy.text();
+   const repeatedPrivacyHeader=authHeader(repeatedPrivacyHtml);
+   check(repeatedPrivacy.status===200&&repeatedPrivacyHeader.includes('HOME_SYNTHETIC_MEMBER')&&!repeatedPrivacyHeader.includes('HOME_SYNTHETIC_OTHER'),'signed/anonymous/other/signed privacy requests preserve per-request identity');
+   check([signedPrivacy,anonymousPrivacy,otherPrivacy,repeatedPrivacy].every(value=>/private/.test(value.headers.get('cache-control')||'')&&/no-store/.test(value.headers.get('cache-control')||'')),'privacy responses prohibit shared and persisted viewer snapshot caching');
+  }
+  if(!httpOnly){
+   const child=spawn('python3',[fileURLToPath(new URL('./test-native-home-browser.py',import.meta.url))],{stdio:['pipe','inherit','inherit']});
+   child.stdin.end(JSON.stringify({url,token:tokens[2],output:out}));
+   const code=await new Promise((resolve,reject)=>{child.once('exit',resolve);child.once('error',reject);});assert.equal(code,0,'Native home browser regression failed');
+  }
   check(!serverErrors.some(message=>message.includes('Functions cannot be passed directly to Client Components')),'no RSC function serialization failure in green home requests');
  }
  const counts=await db.query('SELECT (SELECT COUNT(*) FROM users) AS users,(SELECT COUNT(*) FROM projects) AS projects,(SELECT COUNT(*) FROM tasks) AS tasks');
  check(Number(counts[0].users)===3&&Number(counts[0].projects)===3&&Number(counts[0].tasks)===2,'home GET/navigation leaves synthetic rows unchanged');
- await writeFile(path.join(out,'result.json'),JSON.stringify({complete:true,phase,checks:checks.length,database,assertions:checks},null,2));
+ await writeFile(path.join(out,'result.json'),JSON.stringify({complete:true,phase,browserExecuted:!httpOnly&&!expectRed,checks:checks.length,database,assertions:checks},null,2));
  console.log(`Native home ${phase} checks passed: ${checks.length}. Retained isolated database ${database}`);
 }catch(error){exitCode=1;console.error(error);await writeFile(path.join(out,'result.json'),JSON.stringify({complete:false,phase,error:String(error)},null,2));}
 finally{

@@ -7,6 +7,9 @@ import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import "../node_modules/frappe-gantt/dist/frappe-gantt.css";
 import "./globals.css";
 
+// The runtime secret may be absent during build. Never cache an anonymous session snapshot.
+export const dynamic = "force-dynamic";
+
 const roboto = Roboto({
   weight: ["300", "400", "500", "700"],
   subsets: ["latin"],

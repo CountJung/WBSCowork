@@ -13,6 +13,7 @@ import { verifySitesQuality } from "./verify-sites-quality.mjs";
 import { verifyBugScreenshotsHttp } from "./verify-bug-screenshots-http.mjs";
 import { verifyBugHttp } from "./verify-bug-http.mjs";
 import { verifySitesCrud } from "./verify-sites-crud.mjs";
+import { consumeWorkerResponse } from "./consume-worker-response.mjs";
 
 const origin = "https://wbscowork.cometgnome.chatgpt.site";
 const secret = randomBytes(32).toString("hex");
@@ -41,7 +42,10 @@ const mf = new Miniflare({
 });
 let checks=0;
 function check(value,message){assert.ok(value,message);checks++;console.log(`PASS ${message}`);}
-async function request(route,cookie,init={}) {return mf.dispatchFetch(origin+route,{...init,headers:{...(cookie?{Cookie:cookie}:{}),...init.headers},redirect:"manual"});}
+async function request(route,cookie,init={}) {
+  const response=await mf.dispatchFetch(origin+route,{...init,headers:{...(cookie?{Cookie:cookie}:{}),...init.headers},redirect:"manual"});
+  return consumeWorkerResponse(response,{route,method:init.method??"GET"});
+}
 try {
   const db=await mf.getD1Database("DB"), bucket=await mf.getR2Bucket("ATTACHMENTS");
   for(const file of (await readdir("drizzle")).filter(f=>f.endsWith(".sql")).sort()){

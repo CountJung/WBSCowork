@@ -1,5 +1,6 @@
 """Hydrated Native home links on synthetic loopback data only."""
 import json
+import os
 import sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
@@ -13,7 +14,7 @@ checks = []
 errors = []
 console = []
 with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True)
+    browser = p.chromium.launch(headless=True, executable_path=os.environ.get("CHROMIUM_PATH", "/usr/bin/chromium"), chromium_sandbox=True)
     try:
         for width in [390, 1280]:
             context = browser.new_context(viewport={'width': width, 'height': 900}, timezone_id='Asia/Seoul')
