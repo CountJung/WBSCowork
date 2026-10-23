@@ -1,3 +1,5 @@
+import { taskManagementGuard, taskAssignmentGuard } from "@/src/shared/server/task-scope/index.server";
+import { assertTaskScope } from "./task-permissions.server";
 import { lockTaskProject } from "@/src/shared/server/task-dependencies/index.server";
 import { createHash, randomUUID } from "node:crypto";
 import { assertTaskActor, commitTaskMutation, hasTaskMutation } from "./task-workflow.server";
@@ -22,6 +24,8 @@ export type CreateTaskInput = {
   startDate: Date | string;
   endDate: Date | string;
   assigneeId?: number | null;
+  activityTeamId?: number | null;
+  completionMode?: "submission_required" | "direct_completion";
 };
 
 export type UpdateTaskInput = {
@@ -39,6 +43,8 @@ export type UpdateTaskInput = {
   startDate: Date | string;
   endDate: Date | string;
   assigneeId?: number | null;
+  activityTeamId?: number | null;
+  completionMode?: "submission_required" | "direct_completion";
 };
 
 
@@ -59,8 +65,8 @@ function normalizeDescription(description?: string) {
 }
 
 async function ensureProjectExists(projectId: number) {
-  const rows = (await getDatabasePool().query("SELECT id FROM projects WHERE id = ? LIMIT 1", [projectId])) as Array<{
-    id: number;
+  const rows = (await getDatabasePool().query("SELECT id,project_type FROM projects WHERE id = ? LIMIT 1", [projectId])) as Array<{
+    id: number; project_type: "collaboration" | "volunteering";
   }>;
   const project = rows[0];
 
@@ -192,7 +198,8 @@ export async function getTaskById(id: number): Promise<Task | null> {
   const rows = (await getDatabasePool().query(
     `SELECT
       tasks.id,
-      tasks.project_id,
+      tasks.project_id, tasks.activity_team_id, tasks.completion_mode, tasks.completed_by, tasks.completed_at,
+      activity_team.name AS activity_team_name,
       tasks.parent_id,
       tasks.title,
       tasks.description,
@@ -209,6 +216,7 @@ export async function getTaskById(id: number): Promise<Task | null> {
       users.name AS assignee_name,
       tasks.created_at
     FROM tasks
+    LEFT JOIN activity_teams activity_team ON activity_team.id=tasks.activity_team_id AND activity_team.project_id=tasks.project_id
     LEFT JOIN users ON users.id = tasks.assignee_id
     LEFT JOIN users reviewer ON reviewer.id = tasks.reviewer_id
     WHERE tasks.id = ?
@@ -225,7 +233,8 @@ export async function listTasksByProject(projectId: number): Promise<Task[]> {
   const rows = (await getDatabasePool().query(
     `SELECT
       tasks.id,
-      tasks.project_id,
+      tasks.project_id, tasks.activity_team_id, tasks.completion_mode, tasks.completed_by, tasks.completed_at,
+      activity_team.name AS activity_team_name,
       tasks.parent_id,
       tasks.title,
       tasks.description,
@@ -242,6 +251,7 @@ export async function listTasksByProject(projectId: number): Promise<Task[]> {
       users.name AS assignee_name,
       tasks.created_at
     FROM tasks
+    LEFT JOIN activity_teams activity_team ON activity_team.id=tasks.activity_team_id AND activity_team.project_id=tasks.project_id
     LEFT JOIN users ON users.id = tasks.assignee_id
     LEFT JOIN users reviewer ON reviewer.id = tasks.reviewer_id
     WHERE tasks.project_id = ?
@@ -254,36 +264,46 @@ export async function listTasksByProject(projectId: number): Promise<Task[]> {
 
 export async function createTask(input: CreateTaskInput): Promise<Task> {
   const { startDate, endDate } = validateDateRange(input.startDate, input.endDate);
-  await ensureProjectExists(input.projectId);
-
+  const project = await ensureProjectExists(input.projectId);
+  if (project.project_type === "volunteering" && !input.actor) throw new Error("봉사활동 업무에는 현재 관리자·팀장 확인이 필요합니다.");
   const [parentTask, assigneeId, orderIndex] = await Promise.all([
-    ensureParentTask(input.projectId, input.parentId ?? null),
-    ensureEligibleTaskUser(input.assigneeId ?? null),
-    getNextOrderIndex(input.projectId),
+    ensureParentTask(input.projectId, input.parentId ?? null), ensureEligibleTaskUser(input.assigneeId ?? null), getNextOrderIndex(input.projectId),
   ]);
-
-  const values=[input.projectId,parentTask?.id??null,normalizeTitle(input.title),normalizeDescription(input.description),startDate,endDate,parentTask?parentTask.depth+1:0,orderIndex,assigneeId,normalizeWorkGoal(input.deliverable,"기대 산출물"),normalizeWorkGoal(input.definitionOfDone,"완료 기준"),input.reviewRequired?1:0];
+  const teamId = input.activityTeamId === undefined ? parentTask?.activityTeamId ?? null : input.activityTeamId;
+  if (teamId !== null && (!Number.isSafeInteger(teamId) || teamId < 1)) throw new Error("활동팀이 올바르지 않습니다.");
+  const completionMode = input.completionMode ?? (project.project_type === "volunteering" ? "direct_completion" : "submission_required");
+  if (!["submission_required","direct_completion"].includes(completionMode)) throw new Error("완료 방식이 올바르지 않습니다.");
+  if (project.project_type === "collaboration" && completionMode !== "submission_required") throw new Error("업무 협업 프로젝트는 제출 필수 방식을 유지합니다.");
+  if (completionMode === "direct_completion" && input.reviewRequired) throw new Error("직접 완료와 제출물 검토 필수는 함께 사용할 수 없습니다.");
+  if(input.actor) {
+    await assertTaskActor(input.actor);
+    if(parentTask) await assertTaskScope(parentTask.id,input.actor);
+  }
+  const values=[parentTask?.id??null,normalizeTitle(input.title),normalizeDescription(input.description),startDate,endDate,parentTask?parentTask.depth+1:0,orderIndex,assigneeId,normalizeWorkGoal(input.deliverable,"기대 산출물"),normalizeWorkGoal(input.definitionOfDone,"완료 기준"),input.reviewRequired?1:0];
   const key=input.actor?`${input.actor.userId}:create:${workOperationToken(input.token)}`:randomUUID();
   const fingerprint=createHash('sha256').update(JSON.stringify({...input,actor:undefined,token:undefined})).digest('hex');
-  if(input.actor)await assertTaskActor(input.actor);
+  const scope=input.actor?taskManagementGuard(input.actor,"p.id","chosen_team.id"):{sql:"p.project_type='collaboration'",params:[]};
+  const assignment=taskAssignmentGuard("p.id","chosen_team.id","selected_user.id");
+  const parentScope=input.actor ? taskManagementGuard(input.actor,"parent_scope.project_id","parent_scope.activity_team_id") : {sql:"1=1",params:[]};
+  const parentGuard=parentTask ? ` AND EXISTS(SELECT 1 FROM tasks parent_scope WHERE parent_scope.id=? AND parent_scope.project_id=p.id AND ${parentScope.sql})` : "";
   const duplicate=isHostedRuntime()?" ON CONFLICT DO NOTHING":" ON DUPLICATE KEY UPDATE id=tasks.id";
   const eventDuplicate=isHostedRuntime()?" ON CONFLICT DO NOTHING":" ON DUPLICATE KEY UPDATE id=task_events.id";
   await databaseBatch([
-    {sql:`INSERT INTO tasks(project_id,parent_id,title,description,start_date,end_date,depth,order_index,assignee_id,deliverable,definition_of_done,review_required,creation_token,last_operation_token) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,? WHERE (?=1 OR EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND actor.role IN ('member','admin'))) AND (? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') OR LOWER(target.email)=?)))${duplicate}`,params:[...values,key,key,!input.actor||input.actor.isSuperuser?1:0,input.actor?.userId??null,assigneeId,assigneeId,getRuntimeEnv().auth.superuserEmail??'']},
+    {sql:"UPDATE projects SET id=id WHERE id=?",params:[input.projectId]},
+    {sql:`INSERT INTO tasks(project_id,parent_id,title,description,start_date,end_date,depth,order_index,assignee_id,deliverable,definition_of_done,review_required,creation_token,last_operation_token,activity_team_id,completion_mode)
+      SELECT p.id,?,?,?,?,?,?,?,?,?,?,?,?,?,chosen_team.id,? FROM projects p
+      LEFT JOIN activity_teams chosen_team ON chosen_team.id=? AND chosen_team.project_id=p.id
+      LEFT JOIN users selected_user ON selected_user.id=?
+      WHERE p.id=? AND p.project_type=? AND (? IS NULL OR chosen_team.id IS NOT NULL) AND (? IS NULL OR selected_user.id IS NOT NULL)
+      AND ${scope.sql} AND ${assignment.sql}${parentGuard}${duplicate}`,
+      params:[...values,key,key,completionMode,teamId,assigneeId,input.projectId,project.project_type,teamId,assigneeId,...scope.params,...assignment.params,...(parentTask?[parentTask.id,...parentScope.params]:[])]},
     {sql:`INSERT INTO task_events(task_id,actor_id,operation_token,request_fingerprint,kind,status,assignee_id,reviewer_id,note,task_version) SELECT id,?,?,?,'created',status,assignee_id,reviewer_id,'',version FROM tasks WHERE creation_token=?${eventDuplicate}`,params:[input.actor?.userId??null,key,fingerprint,key]},
   ]);
   const created=await getDatabasePool().query('SELECT t.id,e.request_fingerprint FROM tasks t JOIN task_events e ON e.task_id=t.id AND e.operation_token=? WHERE t.creation_token=?',[key,key]) as {id:number;request_fingerprint:string}[];
-  if(!created[0]||created[0].request_fingerprint!==fingerprint)throw new Error("저장된 요청과 내용이 다릅니다. 화면을 새로고침해 주세요.");
-  const result={insertId:created[0].id};
-
+  if(!created[0]||created[0].request_fingerprint!==fingerprint)throw new Error("저장된 요청과 내용이 다르거나 현재 팀 관리·배정 권한이 없습니다. 화면을 새로고침해 주세요.");
   await databaseBatch(buildTaskDepthUpdates(await listTasksByProject(input.projectId)));
-
-  const task = await getTaskById(Number(result.insertId));
-
-  if (!task) {
-    throw new Error("작업을 생성했지만 결과를 다시 불러오지 못했습니다.");
-  }
-
+  const task=await getTaskById(Number(created[0].id));
+  if(!task)throw new Error("작업을 생성했지만 결과를 다시 불러오지 못했습니다.");
   return task;
 }
 
@@ -295,6 +315,9 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
     throw new Error("수정할 작업 정보를 찾을 수 없습니다.");
   }
 
+  const project = await ensureProjectExists(existingTask.projectId);
+  if(project.project_type === "volunteering" && !input.actor) throw new Error("봉사활동 업무에는 현재 팀 관리 권한 확인이 필요합니다.");
+  if(input.actor) await assertTaskScope(existingTask.id,input.actor);
   const payload={...input,actor:undefined,token:undefined};
   if(input.actor) {
     if(await hasTaskMutation({id:input.id,actor:input.actor,token:input.token??"",kind:'updated',payload}))return existingTask;
@@ -323,23 +346,41 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
   if(reviewerId !== existingTask.reviewerId) await ensureEligibleTaskUser(reviewerId);
   if(reviewerId && reviewerId===assigneeId)throw new Error("담당자와 검토자는 서로 달라야 합니다.");
   const reviewRequired=input.reviewRequired ?? existingTask.reviewRequired;
-  if(reviewRequired!==existingTask.reviewRequired) {
+  const completionMode=input.completionMode ?? existingTask.completionMode;
+  if(!["submission_required","direct_completion"].includes(completionMode)) throw new Error("완료 방식이 올바르지 않습니다.");
+  if(project.project_type === "collaboration" && completionMode !== "submission_required") throw new Error("업무 협업 프로젝트는 제출 필수 방식을 유지합니다.");
+  if(completionMode==='direct_completion' && reviewRequired) throw new Error("직접 완료와 제출물 검토 필수는 함께 사용할 수 없습니다.");
+  const teamId=input.activityTeamId === undefined ? existingTask.activityTeamId : input.activityTeamId;
+  if(teamId !== null && (!Number.isSafeInteger(teamId) || teamId < 1)) throw new Error("활동팀이 올바르지 않습니다.");
+  if(input.actor && parentTask) await assertTaskScope(parentTask.id,input.actor);
+  if(reviewRequired!==existingTask.reviewRequired || completionMode!==existingTask.completionMode || teamId!==existingTask.activityTeamId) {
     const started=await getDatabasePool().query("SELECT id FROM task_events WHERE task_id=? AND status<>'planned' LIMIT 1",[existingTask.id]) as {id:number}[];
-    if(existingTask.status!=='planned'||started.length)throw new Error("업무 시작 후 검토 방식은 변경할 수 없습니다.");
+    if(existingTask.status!=='planned'||started.length)throw new Error("업무 시작 후 완료·검토 방식과 활동팀은 변경할 수 없습니다.");
   }
   if(existingTask.status==='review_pending')throw new Error("검토 중인 작업은 검토 처리 후 수정해 주세요.");
   const values=[parentTask?.id ?? null,normalizeTitle(input.title),normalizeDescription(input.description),startDate,endDate,assigneeId,
-    normalizeWorkGoal(input.deliverable ?? existingTask.deliverable,"기대 산출물"),normalizeWorkGoal(input.definitionOfDone ?? existingTask.definitionOfDone,"완료 기준"),reviewRequired?1:0,reviewerId];
-  const setSql="parent_id=?,title=?,description=?,start_date=?,end_date=?,assignee_id=?,deliverable=?,definition_of_done=?,review_required=?,reviewer_id=?";
-  const teamAssignmentGuard = "(activity_team_id IS NULL OR ? IS NULL OR EXISTS(SELECT 1 FROM activity_team_members tm JOIN project_members pm ON pm.project_id=tm.project_id AND pm.user_id=tm.user_id JOIN users target ON target.id=tm.user_id WHERE tm.project_id=tasks.project_id AND tm.team_id=tasks.activity_team_id AND tm.user_id=? AND tm.active=1 AND pm.active=1 AND (target.role IN ('member','admin') OR LOWER(target.email)=?)))";
-  const teamAssignmentParams = [assigneeId,assigneeId,getRuntimeEnv().auth.superuserEmail??''];
+    normalizeWorkGoal(input.deliverable ?? existingTask.deliverable,"기대 산출물"),normalizeWorkGoal(input.definitionOfDone ?? existingTask.definitionOfDone,"완료 기준"),reviewRequired?1:0,reviewerId,teamId,completionMode];
+  const setSql="parent_id=?,title=?,description=?,start_date=?,end_date=?,assignee_id=?,deliverable=?,definition_of_done=?,review_required=?,reviewer_id=?,activity_team_id=?,completion_mode=?";
+  const assignment = taskAssignmentGuard("tasks.project_id","chosen_team.id","selected_user.id");
+  const newScope = input.actor ? taskManagementGuard(input.actor,"tasks.project_id","chosen_team.id") : {sql:"EXISTS(SELECT 1 FROM projects p WHERE p.id=tasks.project_id AND p.project_type='collaboration')",params:[]};
+  const teamAssignmentGuard = `EXISTS(SELECT 1 FROM projects assignment_project
+    LEFT JOIN activity_teams chosen_team ON chosen_team.id=? AND chosen_team.project_id=assignment_project.id
+    LEFT JOIN users selected_user ON selected_user.id=?
+    WHERE assignment_project.id=tasks.project_id AND (? IS NULL OR chosen_team.id IS NOT NULL)
+      AND ${newScope.sql} AND ((assignment_project.project_type='collaboration' AND ?=1) OR ${assignment.sql}))`;
+  const teamAssignmentParams = [teamId,assigneeId,teamId,...newScope.params,assigneeId===existingTask.assigneeId?1:0,...assignment.params];
+  const parentScope=input.actor ? taskManagementGuard(input.actor,"parent_scope.project_id","parent_scope.activity_team_id") : {sql:"1=1",params:[]};
+  const parentGuard=parentTask ? ` AND EXISTS(SELECT 1 FROM tasks parent_scope WHERE parent_scope.id=? AND parent_scope.project_id=tasks.project_id AND ${parentScope.sql})` : "";
+  const parentGuardParams=parentTask ? [parentTask.id,...parentScope.params] : [];
+  const configurationGuard = (reviewRequired!==existingTask.reviewRequired || completionMode!==existingTask.completionMode || teamId!==existingTask.activityTeamId)
+    ? " AND status='planned' AND NOT EXISTS(SELECT 1 FROM task_events started WHERE started.task_id=tasks.id AND started.status<>'planned')" : "";
   if(input.actor) {
-    await commitTaskMutation({id:input.id,actor:input.actor,token:input.token??randomUUID(),version:input.version??existingTask.version,kind:'updated',note:existingTask.status==='done'?'완료 후 작업 내용 변경으로 다시 열림':'',payload,setSql:`${setSql},status=?,workflow_note=?`,setParams:[...values,['done','changes_requested'].includes(existingTask.status)?'in_progress':existingTask.status,existingTask.status==='done'?'작업 내용이 변경되어 다시 확인이 필요합니다.':existingTask.workflowNote],
+    await commitTaskMutation({id:input.id,actor:input.actor,token:input.token??randomUUID(),version:input.version??existingTask.version,kind:'updated',note:existingTask.status==='done'?'완료 후 작업 내용 변경으로 다시 열림':'',payload,setSql:`${setSql},status=?,workflow_note=?,completed_by=NULL,completed_at=NULL`,setParams:[...values,['done','changes_requested'].includes(existingTask.status)?'in_progress':existingTask.status,existingTask.status==='done'?'작업 내용이 변경되어 다시 확인이 필요합니다.':existingTask.workflowNote],
       invalidateReview:existingTask.reviewRequired?{reason:'작업 정보가 변경되어 이전 검토 대상이 해제되었습니다.'}:undefined,
-      guardSql:`status<>'review_pending' AND (?=1 OR ? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') OR LOWER(target.email)=?))) AND (?=1 OR ? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') OR LOWER(target.email)=?))) AND ${teamAssignmentGuard}`,guardParams:[assigneeId===existingTask.assigneeId?1:0,assigneeId,assigneeId,getRuntimeEnv().auth.superuserEmail??'',reviewerId===existingTask.reviewerId?1:0,reviewerId,reviewerId,getRuntimeEnv().auth.superuserEmail??'',...teamAssignmentParams]});
+      guardSql:`status<>'review_pending' AND (?=1 OR ? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') OR LOWER(target.email)=?))) AND (?=1 OR ? IS NULL OR EXISTS(SELECT 1 FROM users target WHERE target.id=? AND (target.role IN ('member','admin') OR LOWER(target.email)=?))) AND ${teamAssignmentGuard}${configurationGuard}${parentGuard}`,guardParams:[assigneeId===existingTask.assigneeId?1:0,assigneeId,assigneeId,getRuntimeEnv().auth.superuserEmail??'',reviewerId===existingTask.reviewerId?1:0,reviewerId,reviewerId,getRuntimeEnv().auth.superuserEmail??'',...teamAssignmentParams,...parentGuardParams]});
   } else {
     // Internal fixtures retain the repository API; production actions always supply a freshly resolved actor.
-    const results = await databaseBatch([{sql:`UPDATE tasks SET ${setSql},version=version+1 WHERE id=? AND version=? AND ${teamAssignmentGuard}`,params:[...values,existingTask.id,existingTask.version,...teamAssignmentParams]}]);
+    const results = await databaseBatch([{sql:`UPDATE tasks SET ${setSql},version=version+1 WHERE id=? AND version=? AND ${teamAssignmentGuard}${configurationGuard}${parentGuard}`,params:[...values,existingTask.id,existingTask.version,...teamAssignmentParams,...parentGuardParams]}]);
     // This guarded UPDATE always increments version; zero changes is rejection.
     const result = results[0] as {affectedRows?:number;meta?:{changes:number}};
     if (Number(result.affectedRows ?? result.meta?.changes ?? 0) < 1) throw new Error("업무 또는 팀 배정이 변경되었습니다. 새로고침해 주세요.");
@@ -355,21 +396,31 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
   return task;
 }
 
-export async function deleteTask(taskId: number) {
+export async function deleteTask(taskId: number, actor?: TaskActor) {
   const existingTask = await getTaskById(taskId);
 
   if (!existingTask) {
     throw new Error("삭제할 작업 정보를 찾을 수 없습니다.");
   }
 
+  const project = await ensureProjectExists(existingTask.projectId);
+  if(actor) { await assertTaskActor(actor); await assertTaskScope(taskId,actor); }
+  else if(project.project_type === "volunteering") throw new Error("봉사활동 업무 삭제에는 현재 팀 관리 권한 확인이 필요합니다.");
+  const scope=actor?taskManagementGuard(actor):{sql:"EXISTS(SELECT 1 FROM projects p WHERE p.id=tasks.project_id AND p.project_type='collaboration')",params:[]};
+  const manageAll=actor?taskManagementGuard(actor,"tasks.project_id","NULL"):{sql:"1=1",params:[]};
+  const childSafety=`(${manageAll.sql} OR NOT EXISTS(SELECT 1 FROM tasks child WHERE child.parent_id=tasks.id))`;
   const tasks = await listTasksByProject(existingTask.projectId);
+  if(project.project_type==='volunteering' && tasks.some(t=>t.parentId===taskId) && actor) {
+    const all=await getDatabasePool().query(`SELECT tasks.id FROM tasks WHERE tasks.id=? AND ${manageAll.sql}`,[taskId,...manageAll.params]) as {id:number}[];
+    if(!all.length)throw new Error("하위 업무가 있는 봉사활동 업무 삭제는 관리자만 처리할 수 있습니다.");
+  }
   const references = await getDatabasePool().query("SELECT id FROM task_dependencies WHERE task_id=? OR predecessor_id=? LIMIT 1",[taskId,taskId]) as {id:number}[];
   if(references.length)throw new Error("선행 관계를 먼저 해제한 뒤 작업을 삭제해 주세요.");
   const remaining = tasks.filter((task) => task.id !== existingTask.id).map((task) => task.parentId === existingTask.id ? { ...task, parentId: existingTask.parentId } : task);
   await databaseBatch([
     lockTaskProject(taskId),
-    { sql: "UPDATE tasks SET parent_id = ? WHERE parent_id = ? AND NOT EXISTS(SELECT 1 FROM task_dependencies WHERE task_id=? OR predecessor_id=?)", params: [existingTask.parentId, existingTask.id,taskId,taskId] },
-    { sql: "DELETE FROM tasks WHERE id = ? AND NOT EXISTS(SELECT 1 FROM task_dependencies WHERE task_id=? OR predecessor_id=?)", params: [existingTask.id,taskId,taskId] },
+    { sql: `UPDATE tasks SET parent_id = ? WHERE parent_id = ? AND EXISTS(SELECT 1 FROM tasks retained WHERE retained.id=? AND ${scope.sql.replaceAll("tasks.","retained.")} AND ${manageAll.sql.replaceAll("tasks.","retained.")}) AND NOT EXISTS(SELECT 1 FROM task_dependencies WHERE task_id=? OR predecessor_id=?)`, params: [existingTask.parentId, existingTask.id,taskId,...scope.params,...manageAll.params,taskId,taskId] },
+    { sql: `DELETE FROM tasks WHERE id = ? AND ${scope.sql} AND ${childSafety} AND NOT EXISTS(SELECT 1 FROM task_dependencies WHERE task_id=? OR predecessor_id=?)`, params: [existingTask.id,...scope.params,...manageAll.params,taskId,taskId] },
     ...buildTaskDepthUpdates(remaining).map(statement=>({sql:statement.sql+" AND NOT EXISTS(SELECT 1 FROM tasks retained WHERE retained.id=?)",params:[...(statement.params??[]),taskId]})),
   ]);
 

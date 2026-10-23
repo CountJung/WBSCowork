@@ -1,3 +1,4 @@
+import {taskManagementGuard} from '@/src/shared/server/task-scope/index.server';
 import {createHash} from 'node:crypto';
 import {databaseBatch,getDatabasePool,type QueryStatement} from '@/src/shared/server/database/index.server';
 import {getRuntimeEnv} from '@/src/shared/server/runtime-env/index.server';
@@ -17,20 +18,22 @@ export async function applyTaskTemplate(input:{projectId:number;templateKey:stri
  const assignees=[...new Set(nodes.flatMap(n=>n.assigneeId===null?[]:[n.assigneeId]))];
  const duplicate=isHostedRuntime()?' ON CONFLICT DO NOTHING':' ON DUPLICATE KEY UPDATE id=task_template_runs.id';
  const guard='EXISTS(SELECT 1 FROM task_template_runs applied WHERE applied.operation_token=? AND applied.request_fingerprint=? AND applied.completed_at IS NULL)';
+ const scope=taskManagementGuard(actor,"projects.id","NULL");
  const statements:QueryStatement[]=[
   {sql:'UPDATE projects SET id=id WHERE id=?',params:[input.projectId]},
   {sql:`INSERT INTO task_template_runs(project_id,actor_id,template_key,template_version,operation_token,request_fingerprint,task_count)
-   SELECT ?,?,?,?,?,?,? FROM projects WHERE id=?
+   SELECT ?,?,?,?,?,?,? FROM projects WHERE id=? AND ${scope.sql}
    AND EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND (actor.role IN ('member','admin') OR (?=1 AND LOWER(actor.email)=?)))
+   AND (project_type='collaboration' OR (SELECT COUNT(*) FROM project_members pm WHERE pm.project_id=projects.id AND pm.active=1 AND pm.user_id IN (${assignees.length?assignees.map(()=>'?').join(','):'NULL'}))=?)
    AND (SELECT COUNT(*) FROM users target WHERE target.id IN (${assignees.length?assignees.map(()=>'?').join(','):'NULL'}) AND (target.role IN ('member','admin') OR LOWER(target.email)=?))=?${duplicate}`,
-   params:[input.projectId,actor.userId,input.templateKey,input.templateVersion,key,fingerprint,nodes.length,input.projectId,actor.userId,actor.isSuperuser?1:0,getRuntimeEnv().auth.superuserEmail??'',...assignees,getRuntimeEnv().auth.superuserEmail??'',assignees.length]},
+   params:[input.projectId,actor.userId,input.templateKey,input.templateVersion,key,fingerprint,nodes.length,input.projectId,...scope.params,actor.userId,actor.isSuperuser?1:0,getRuntimeEnv().auth.superuserEmail??'',...assignees,assignees.length,...assignees,getRuntimeEnv().auth.superuserEmail??'',assignees.length]},
  ];
  for(const node of nodes){
   const nodeKey=key+':'+node.key;
   const depth=(k:string|null):number=>k?1+depth(nodes.find(n=>n.key===k)?.parentKey??null):0;
-  statements.push({sql:`INSERT INTO tasks(project_id,parent_id,title,description,deliverable,definition_of_done,start_date,end_date,assignee_id,depth,order_index,creation_token,last_operation_token)
-   SELECT ?,${node.parentKey?'(SELECT id FROM tasks parent WHERE parent.creation_token=?)':'NULL'},?,?,?,?,?,?,?,?,COALESCE((SELECT MAX(order_index)+1 FROM tasks previous WHERE previous.project_id=?),0),?,? WHERE ${guard}`,
-   params:[input.projectId,...(node.parentKey?[key+':'+node.parentKey]:[]),node.title,node.description,node.deliverable,node.definitionOfDone,node.startDate,node.endDate,node.assigneeId,depth(node.parentKey),input.projectId,nodeKey,nodeKey,key,fingerprint]});
+  statements.push({sql:`INSERT INTO tasks(project_id,parent_id,title,description,deliverable,definition_of_done,start_date,end_date,assignee_id,depth,order_index,creation_token,last_operation_token,completion_mode)
+   SELECT ?,${node.parentKey?'(SELECT id FROM tasks parent WHERE parent.creation_token=?)':'NULL'},?,?,?,?,?,?,?,?,COALESCE((SELECT MAX(order_index)+1 FROM tasks previous WHERE previous.project_id=?),0),?,?,(SELECT CASE WHEN project_type='volunteering' THEN 'direct_completion' ELSE 'submission_required' END FROM projects WHERE id=?) WHERE ${guard}`,
+   params:[input.projectId,...(node.parentKey?[key+':'+node.parentKey]:[]),node.title,node.description,node.deliverable,node.definitionOfDone,node.startDate,node.endDate,node.assigneeId,depth(node.parentKey),input.projectId,nodeKey,nodeKey,input.projectId,key,fingerprint]});
   statements.push({sql:`INSERT INTO task_events(task_id,actor_id,operation_token,request_fingerprint,kind,status,assignee_id,reviewer_id,note,task_version)
    SELECT id,?,?,?,'created',status,assignee_id,reviewer_id,?,version FROM tasks WHERE creation_token=? AND ${guard}`,
    params:[actor.userId,nodeKey,fingerprint,`템플릿 ${input.templateKey} v${input.templateVersion}에서 생성`,nodeKey,key,fingerprint]});

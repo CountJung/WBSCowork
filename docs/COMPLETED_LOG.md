@@ -20,10 +20,24 @@
 | OPS-034 네트워크 하네스 | 기존 proxy/정책 read-only 진단, CONNECT403과 site HTTP403 구분, 익명 GET-only smoke, browser loopback guard와 합성12조건. 플랫폼 host 추가 승인과 실제 적용은 별개; 현 환경 적용 대기 |
 | PRD-045, 2026-10-20 | bug 본문+private screenshot 3×2MiB, preview/remove/실패 초안 유지/detail/refresh, MIME bytes·권한·lease/rollback. 0013/native v9 additive. version12 게시. native 첨부 purge는 QLT-020 미해결 |
 | OPS-036, 2026-10-20 | 아래 archive6개 검증 후5개 임시 remote branch atomic 삭제. main/sites2개, 공통 code/schema/test/document와 기본 build 차이 보존. NAS 배포/Sites 재게시 없음 |
+| PRD-047~050/QLT-023, 2026-10-23 | 확정 정책의 단일 팀장·팀 범위 업무·직접 완료와 UI, 기존 자료/제출 필수/private 보존을 구현하고 로컬/합성 인수. [완료 범위](#봉사활동-팀과-직접-완료-인수), 실측은 [하네스](HARNESS_MAP.md#봉사활동-팀장과-직접-완료-검증). 운영 migration/실 Google/게시 미실행 |
+| PRD-046, 2026-10-23 | 사용자 확정: 팀당 팀장 1명, 신규 봉사 업무는 제출 선택/직접 완료, 현재 담당자·해당 팀장·관리자의 직접 완료. 기존 협업/기존 업무 제출 의무와 private 권한은 유지. [결정 근거](#prd-046-봉사활동-정책-확정) |
 | QLT-019, 2026-10-23 | Node ESM과 bundler의 실제 GoogleProvider default export 형태 차이를 정규화하고 테스트 Google 설정을 합성 값으로 고정. 원인/완료 경계는 [아래](#qlt-019-google-provider-import), 실행 결과는 [하네스](HARNESS_MAP.md#봉사활동-저장-기반과-auth-import-검증) |
 | QLT-021, 2026-10-21 | D1 총 변경 수를 부모 삭제 수로 오인. DELETE RETURNING의 요청 id rowset과 commit 후 followup 분리. main ddcedd6/sites c1c55da, DB109/action8/unit119/visibility33/Worker257, 양쪽 build/lint/types/FSD PASS. 후속 version13의 핵심 삭제 오판 운영 인수는 아래 별도 기록. NAS 적용·첨부 인수는 포함하지 않음 |
 
 과거 네트워크 기록의 제목 QLT-020은 당시 잘못 중복 사용된 표기다. 현재 TODO의 QLT-020은 native 첨부 bug 파일 정리를 뜻하며 번호를 다시 발급하지 않는다. QLT-015/016, OPS-021/031/032/033/034/035는 이 완료 색인으로 닫히지 않는다. QLT-019의 과거 실패는 보존하며 후속 수정은 아래 별도 근거다.
+
+## 봉사활동 팀과 직접 완료 인수
+
+PRD-047~050/QLT-023은 프로젝트 유형·참여자·활동 종류/실제 팀·복수 팀 참여, 관리자에 의한 단일 팀장 교체, 팀 범위 업무 생성/배정/진행, 신규 봉사 업무의 직접 완료/선택 제출과 기존 업무/협업의 제출 필수 보존을 구현했다. Native v11/Drizzle0015는 v10/0014 위에 단일 팀장 pointer·완료자/시각만 추가하고 과거 자료/판정·private 계약을 유지한다. 중복 과거 팀장을 임의 선출하지 않는 fail-closed와 현재 역할·소속·canonical pointer를 재검사하는 SQL scope를 채택했다.
+
+관리자 프로젝트/팀 관리와 작업 화면의 범위별 생성/편집·팀 필터·완료 방식·완료/재개 이력을 구현했다. 실제 hydrated 로컬 브라우저에서는 프로젝트 참여자/팀장 관리, 업무 생성·배정·완료/재개·권한 표시·선택 파일을 검증했다. SPA 명단 변경 후 select 초기화/행 제거와 private TXT·완료 기록의 새로고침 영속화를 확인했다. 업무 편집과 팀 필터 직접 조작은 이 브라우저 흐름에서 실행하지 않았으며 구현 범위와 클릭 인수 범위를 구분한다. 합성 권한·DB·Worker/브라우저 결과와 정확한 bundle 근거는 [하네스](HARNESS_MAP.md#봉사활동-팀장과-직접-완료-검증)에만 둔다.
+
+이 완료는 코드·로컬/합성 게이트이며 운영 migration·실제 계정 역할 부여·실 Google 로그인·실사이트 인수·게시/배포를 포함하지 않는다. 기존 public Sites version14와 프로젝트5/작업7·사용자 자료를 보존했다. 운영 적용은 기존 백업·명시 대상/승인·최종 게시 결과 확인 절차를 별도로 따른다.
+
+## PRD-046 봉사활동 정책 확정
+
+사용자가 팀당 팀장 한 명, 봉사활동 새 업무의 제출물 선택, 직접 완료 가능자를 담당자·해당 팀장·관리자로 명시했다. 팀장은 전역 계정 등급이 아닌 팀 범위 역할이며 기존 업무의 제출 필수와 비공개 제출물 조회 계약은 유지한다. 이 결정은 기능/운영 인수 완료가 아니며 현재 계약은 [ARCHITECTURE](ARCHITECTURE.md#봉사활동-확장-계획), 단계별 검증 상태는 [TODO](TODO.md#봉사활동-확장-작업)를 따른다.
 
 ## QLT-019 Google Provider import
 

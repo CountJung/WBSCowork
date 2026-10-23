@@ -26,7 +26,7 @@ replace("../src/entities/user/index.server.ts", {
 const unused = () => { throw new Error("Unexpected repository call in deletion action"); };
 replace("../src/entities/task/index.server.ts", {
   getTaskById: async () => ({ id: 11, projectId: 1 }),
-  createTask: unused, deleteTask: unused, updateTask: unused, changeTaskStatus: unused,
+  createTask: unused, deleteTask: unused, updateTask: unused, changeTaskStatus: unused,assertTaskScope:unused,
 });
 replace("../src/shared/server/logging/index.server.ts", {
   logUserAction: async (_source: string, payload: UserActionLogPayload) => { if (fault === "audit") throw new Error("synthetic audit failure"); audits.push(payload); },

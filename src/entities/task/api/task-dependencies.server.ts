@@ -1,3 +1,5 @@
+import { taskManagementGuard } from '@/src/shared/server/task-scope/index.server';
+import { assertTaskScope } from './task-permissions.server';
 import { createHash } from 'node:crypto';
 import { databaseBatch,getDatabasePool } from '@/src/shared/server/database/index.server';
 import { getRuntimeEnv } from '@/src/shared/server/runtime-env/index.server';
@@ -15,6 +17,8 @@ export async function getDependencySnapshot(projectId:number):Promise<Dependency
 export async function setTaskPredecessors(input:{taskId:number;version:number;graphVersion:number;predecessorIds:number[];actor:TaskActor;token:string}) {
   const actor=await assertTaskActor(input.actor), task=await getTaskById(input.taskId);
   if(!task)throw new Error('업무를 찾을 수 없습니다.');
+  await assertTaskScope(task.id,actor);
+  const scope=taskManagementGuard(actor,'t.project_id','t.activity_team_id');
   const ids=normalizePredecessors(input.predecessorIds,task.id),version=taskVersion(input.version);
   if(!Number.isSafeInteger(input.graphVersion)||input.graphVersion<0)throw new Error('선행 관계 버전이 올바르지 않습니다.');
   const key=`${actor.userId}:dependencies:${task.id}:${workOperationToken(input.token)}`;
@@ -29,10 +33,10 @@ export async function setTaskPredecessors(input:{taskId:number;version:number;gr
   const guard='last_operation_token=? AND NOT EXISTS(SELECT 1 FROM task_events e WHERE e.operation_token=?)';
   await databaseBatch([
     {sql:`UPDATE projects SET dependency_version=dependency_version+1,dependency_token=? WHERE id=? AND dependency_version=?
-      AND EXISTS(SELECT 1 FROM tasks t WHERE t.id=? AND t.project_id=projects.id AND t.version=? AND t.status IN ('planned','blocked'))
+      AND EXISTS(SELECT 1 FROM tasks t WHERE t.id=? AND t.project_id=projects.id AND t.version=? AND t.status IN ('planned','blocked') AND ${scope.sql})
       AND EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND (actor.role IN ('member','admin') OR (?=1 AND LOWER(actor.email)=?)))
       AND (SELECT COUNT(*) FROM tasks predecessors WHERE predecessors.project_id=projects.id AND predecessors.id IN (${ids.length?ids.map(()=>'?').join(','):'NULL'}))=?
-      AND NOT EXISTS(SELECT 1 FROM task_events e WHERE e.operation_token=?)`,params:[key,task.projectId,input.graphVersion,task.id,version,actor.userId,actor.isSuperuser?1:0,getRuntimeEnv().auth.superuserEmail??'',...ids,ids.length,key]},
+      AND NOT EXISTS(SELECT 1 FROM task_events e WHERE e.operation_token=?)`,params:[key,task.projectId,input.graphVersion,task.id,version,...scope.params,actor.userId,actor.isSuperuser?1:0,getRuntimeEnv().auth.superuserEmail??'',...ids,ids.length,key]},
     {sql:`UPDATE tasks SET version=version+1,last_operation_token=? WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM projects p WHERE p.id=tasks.project_id AND p.dependency_token=? AND p.dependency_version=?) AND NOT EXISTS(SELECT 1 FROM task_events e WHERE e.operation_token=?)`,params:[key,task.id,version,key,input.graphVersion+1,key]},
     {sql:`DELETE FROM task_dependencies WHERE task_id=? AND EXISTS(SELECT 1 FROM tasks WHERE id=? AND ${guard})`,params:[task.id,task.id,key,key]},
     ...ids.map(id=>({sql:`INSERT INTO task_dependencies(project_id,task_id,predecessor_id) SELECT project_id,id,? FROM tasks WHERE id=? AND ${guard} AND EXISTS(SELECT 1 FROM tasks predecessor WHERE predecessor.id=? AND predecessor.project_id=tasks.project_id)`,params:[id,task.id,key,key,id]})),

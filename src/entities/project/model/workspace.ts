@@ -3,9 +3,10 @@ export type ProjectType = (typeof projectTypes)[number];
 export const activityKinds = ["meal", "facility", "senior_care", "child_care", "recreation", "other"] as const;
 export type ActivityKind = (typeof activityKinds)[number];
 export type TeamRole = "member" | "leader";
+export const activityKindLabels: Record<ActivityKind,string> = {meal:"식사준비",facility:"시설보수",senior_care:"어르신 돌봄",child_care:"아동 돌봄",recreation:"레크레이션",other:"기타"};
 export type CompletionMode = "submission_required" | "direct_completion";
 
-/** Policy-independent storage commands; these do not delegate task permissions. */
+/** Admin roster commands; canonical team leadership is checked by task guards. */
 export type WorkspaceCommand =
   | { kind: "project_type"; projectType: ProjectType }
   | { kind: "project_member"; userId: number; active: boolean }
@@ -19,9 +20,10 @@ export type ProjectWorkspace = {
   projectType: ProjectType;
   version: number;
   members: { userId: number; active: boolean }[];
-  teams: { id: number; name: string; activityKind: ActivityKind }[];
+  teams: { id: number; name: string; activityKind: ActivityKind; leaderUserId: number | null }[];
   teamMembers: { teamId: number; userId: number; role: TeamRole; active: boolean }[];
 };
+export type TaskTeamDirectory = {teams:ProjectWorkspace["teams"];memberIdsByTeam:Record<number,number[]>;projectMemberIds?:number[]};
 
 export function workspaceId(value: unknown): number {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1) {

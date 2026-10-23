@@ -10,7 +10,7 @@ type ColumnDefinition = {
   definition: string;
 };
 
-const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments", "bug_reports", "bug_report_screenshots", "bug_report_events", "bug_report_purge_receipts", "task_events", "submission_revisions", "submission_events", "task_dependencies", "task_template_runs", "notification_reads", "project_members", "activity_teams", "activity_team_members", "project_workspace_events"] as const;
+const managedTableNames = ["users", "projects", "tasks", "submissions", "submission_attachments", "comments", "bug_reports", "bug_report_screenshots", "bug_report_events", "bug_report_purge_receipts", "task_events", "submission_revisions", "submission_events", "task_dependencies", "task_template_runs", "notification_reads", "project_members", "activity_teams", "activity_team_members", "project_workspace_events", "activity_team_leaders"] as const;
 
 export type ManagedTableName = (typeof managedTableNames)[number];
 
@@ -57,10 +57,11 @@ const requiredColumnsByTable: Partial<Record<ManagedTableName, string[]>> = {
   task_dependencies:["project_id","task_id","predecessor_id"],
   project_members: ["project_id","user_id","active","joined_at"],
   activity_teams: ["project_id","activity_kind","name","created_at"],
+  activity_team_leaders: ["team_id","project_id","user_id"],
   activity_team_members: ["project_id","team_id","user_id","role","active"],
   project_workspace_events: ["project_id","actor_id","operation_token","request_fingerprint","kind","detail","workspace_version","created_at"],
   projects: ["project_type", "workspace_version", "workspace_token", "goal", "success_criteria", "dependency_version", "dependency_token"],
-  tasks: ["activity_team_id", "completion_mode", "review_submission_id", "review_revision_number", "deliverable", "definition_of_done", "review_required", "status", "version", "workflow_note", "reviewer_id", "last_operation_token", "creation_token"],
+  tasks: ["completed_by", "completed_at", "activity_team_id", "completion_mode", "review_submission_id", "review_revision_number", "deliverable", "definition_of_done", "review_required", "status", "version", "workflow_note", "reviewer_id", "last_operation_token", "creation_token"],
   task_events: ["task_id", "actor_id", "operation_token", "request_fingerprint", "kind", "status", "assignee_id", "reviewer_id", "note", "task_version"],
   submissions: [...requiredSubmissionColumns.map((column) => column.name),"creation_token","current_revision","version","last_operation_token","material_url"],
   submission_attachments:["revision_number"],

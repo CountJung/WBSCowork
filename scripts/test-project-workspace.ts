@@ -136,4 +136,4 @@ if (!process.argv.includes("--d1")) {
     await connection.end();
   }
 }
-console.log(`PASS workspace contracts: ${checks} checks; storage foundation only, no delegated permissions or direct completion enabled`);
+console.log(`PASS workspace storage contracts: ${checks} checks; execution permissions are covered by test:volunteer:tasks`);

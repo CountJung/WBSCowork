@@ -50,16 +50,17 @@ async function verify(query:Query,label:string){
 }
 const files=(await readdir('drizzle')).filter(name=>name.endsWith('.sql')).sort();
 const sqlByFile=await Promise.all(files.map(async name=>(await readFile(`drizzle/${name}`,'utf8')).split('--> statement-breakpoint').map(sql=>sql.trim()).filter(Boolean)));
-check(!sqlByFile.at(-1)!.some(sql=>/DROP TABLE|DELETE FROM|PRAGMA foreign_keys=OFF/i.test(sql)), 'new D1 migration uses no table replacement, data deletion or disabled FK checks');
+const workspaceIndex=files.findIndex(name=>name.startsWith('0014_'));
+check(workspaceIndex>=0&&!sqlByFile.slice(workspaceIndex).flat().some(sql=>/DROP TABLE|DELETE FROM|PRAGMA foreign_keys=OFF/i.test(sql)), 'new D1 migrations use no table replacement, data deletion or disabled FK checks');
 async function d1(){
   const mf=new Miniflare({host:'127.0.0.1',cf:false,modules:true,script:"export default {fetch(){return new Response('synthetic')}}",compatibilityDate:'2026-05-15',d1Databases:{DB:'volunteer-upgrade-test',FRESH:'volunteer-fresh-test'}});
   try{
     const db=await mf.getD1Database('DB');
     const query:Query=async(sql,params=[])=>{const result=await db.prepare(sql).bind(...params).all<Row>();return result.results;};
-    for(const statements of sqlByFile.slice(0,-1))for(const sql of statements)await db.prepare(sql).run();
+    for(const statements of sqlByFile.slice(0,workspaceIndex))for(const sql of statements)await db.prepare(sql).run();
     await seed(query);const before=await snapshot(query);
     const triggers=json(await query("SELECT name,sql FROM sqlite_master WHERE type='trigger' ORDER BY name"));
-    for(const sql of sqlByFile.at(-1)!)await db.prepare(sql).run();
+    for(const statements of sqlByFile.slice(workspaceIndex))for(const sql of statements)await db.prepare(sql).run();
     check(await snapshot(query)===before,'D1: populated pre-0014 IDs, roles, task state and private content unchanged');
     check(json(await query("SELECT name,sql FROM sqlite_master WHERE type='trigger' ORDER BY name"))===triggers,'D1: existing cleanup and staging triggers preserved');
     await verify(query,'D1 existing');

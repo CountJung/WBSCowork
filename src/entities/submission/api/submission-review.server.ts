@@ -1,3 +1,4 @@
+import { taskAssignmentGuard } from "@/src/shared/server/task-scope/index.server";
 import { lockTaskProject,taskPredecessorsCompleteSql } from "@/src/shared/server/task-dependencies/index.server";
 import { createHash } from "node:crypto";
 import { databaseBatch, getDatabasePool, type QueryStatement } from "@/src/shared/server/database/index.server";
@@ -14,7 +15,7 @@ const publicReviewNote = "제출물 검토 상태가 변경되었습니다.";
 type FreshActor = SubmissionActor & { role: string };
 type ReviewRow = {
   task_id: number; project_id: number; task_version: number; status: string;
-  review_required: number; review_submission_id: number | null; review_revision_number: number | null;
+  completion_mode: string; review_required: number; review_submission_id: number | null; review_revision_number: number | null;
   assignee_id: number | null; assignee_eligible: number; deliverable: string; definition_of_done: string;
   reviewer_id: number | null; reviewer_name: string | null; reviewer_eligible: number; reviewer_can_view: number;
   author_id: number; editor_id: number | null; current_revision: number; revision_number: number;
@@ -55,7 +56,7 @@ function actorVisibility(actor: FreshActor) {
 async function readReviewRow(submissionId: number, revisionNumber: number, actor: FreshActor): Promise<ReviewRow | null> {
   const access = actorVisibility(actor);
   const rows = await getDatabasePool().query(
-    `SELECT t.id AS task_id,t.project_id,t.version AS task_version,t.status,t.review_required,
+    `SELECT t.id AS task_id,t.project_id,t.version AS task_version,t.status,t.review_required,t.completion_mode,
       CASE WHEN EXISTS(SELECT 1 FROM task_dependencies d JOIN tasks predecessor ON predecessor.id=d.predecessor_id WHERE d.task_id=t.id AND predecessor.status<>'done') THEN 1 ELSE 0 END AS dependency_blocked,
       t.review_submission_id,t.review_revision_number,t.assignee_id,t.deliverable,t.definition_of_done,
       t.reviewer_id,reviewer.name AS reviewer_name,s.author_id,r.editor_id,s.current_revision,r.revision_number,
@@ -84,6 +85,7 @@ function contextFor(row: ReviewRow, submissionId: number, actor: FreshActor): Su
     || (row.editor_id !== null && Number(row.reviewer_id) === Number(row.editor_id));
   let unavailableReason: string | null = null;
   if (!canWrite(actor)) unavailableReason = "현재 역할에는 검토 처리 권한이 없습니다.";
+  else if (row.completion_mode !== "submission_required") unavailableReason = "직접 완료 업무에는 제출물 검토를 요청할 수 없습니다.";
   else if (!Number(row.review_required)) unavailableReason = "검토가 필요하지 않은 작업입니다.";
   else if (!current) unavailableReason = "현재 제출 버전에서 검토를 진행해 주세요.";
   else if (!row.assignee_id || !Number(row.assignee_eligible)) unavailableReason = "업무를 수행할 수 있는 담당자를 지정해 주세요.";
@@ -178,7 +180,8 @@ async function commitReview(input: SubmissionReviewInput, kind: ReviewAction, re
   const eventKind = cancel && row.status === 'done' ? 'approval_revoked' : kind;
   const status = kind === 'review_requested' ? 'review_pending'
     : kind === 'approved' ? 'done' : kind === 'changes_requested' ? 'changes_requested' : 'in_progress';
-  const commonGuard = `tasks.review_required=1 AND EXISTS(
+  const assignment = taskAssignmentGuard("tasks.project_id","tasks.activity_team_id","tasks.assignee_id");
+  const commonGuard = `tasks.completion_mode='submission_required' AND tasks.review_required=1 AND EXISTS(
     SELECT 1 FROM submissions s
     JOIN submission_revisions r ON r.submission_id=s.id AND r.revision_number=?
     JOIN users viewer ON viewer.id=?
@@ -191,9 +194,9 @@ async function commitReview(input: SubmissionReviewInput, kind: ReviewAction, re
         AND (reviewer.role IN ('member','admin') OR LOWER(reviewer.email)=?)
         AND (reviewer.role='admin' OR LOWER(reviewer.email)=? OR s.author_id=reviewer.id OR (s.visibility='public' AND r.visibility='public'))
         AND reviewer.id<>s.author_id AND reviewer.id<>tasks.assignee_id AND (r.editor_id IS NULL OR reviewer.id<>r.editor_id))`}
-  )`;
+  ) AND EXISTS(SELECT 1 FROM projects review_project WHERE review_project.id=tasks.project_id AND (review_project.project_type='collaboration' OR ${assignment.sql}))`;
   const commonParams = [revision, actor.userId, input.submissionId, actor.isSuperuser ? 1 : 0, ...access.params,
-    ...(cancel ? [] : [superuserEmail(), superuserEmail(), superuserEmail()])];
+    ...(cancel ? [] : [superuserEmail(), superuserEmail(), superuserEmail()]),...assignment.params];
   const executorGuard = "(?=1 OR tasks.assignee_id=? OR EXISTS(SELECT 1 FROM users administrator WHERE administrator.id=? AND administrator.role='admin'))";
   let transitionGuard: string;
   let transitionParams: unknown[];
@@ -213,10 +216,10 @@ async function commitReview(input: SubmissionReviewInput, kind: ReviewAction, re
     { sql: 'UPDATE tasks SET id=id WHERE id=?', params: [input.taskId] },
     { sql: 'UPDATE submissions SET id=id WHERE id=? AND task_id=?', params: [input.submissionId, input.taskId] },
     {
-      sql: `UPDATE tasks SET status=?,review_submission_id=?,review_revision_number=?,workflow_note=?,version=version+1,last_operation_token=?
+      sql: `UPDATE tasks SET status=?,review_submission_id=?,review_revision_number=?,workflow_note=?,completed_by=?,completed_at=${status === 'done' ? 'CURRENT_TIMESTAMP' : 'NULL'},version=version+1,last_operation_token=?
         WHERE id=? AND version=? AND ${commonGuard} AND ${transitionGuard} ${['review_requested','approved','changes_requested'].includes(kind)?`AND ${taskPredecessorsCompleteSql}`:''}
         AND NOT EXISTS(SELECT 1 FROM submission_events applied WHERE applied.operation_token=?)`,
-      params: [status, cancel ? null : input.submissionId, cancel ? null : revision, publicReviewNote, key,
+      params: [status, cancel ? null : input.submissionId, cancel ? null : revision, publicReviewNote, status==='done'?actor.userId:null, key,
         input.taskId, version, ...commonParams, ...transitionParams, key],
     },
     {
@@ -273,7 +276,7 @@ export function submissionReviewInvalidationStatements(input: {
     },
     {
       sql: `UPDATE tasks SET review_submission_id=NULL,review_revision_number=NULL,
-        status=CASE WHEN status IN ('review_pending','changes_requested','done') THEN 'in_progress' ELSE status END,
+        status=CASE WHEN status IN ('review_pending','changes_requested','done') THEN 'in_progress' ELSE status END,completed_by=NULL,completed_at=NULL,
         workflow_note='검토 대상 변경으로 다시 확인이 필요합니다.',version=version+1,last_operation_token=?
         WHERE id=? AND review_submission_id=?${input.previousRevision === undefined ? '' : ' AND review_revision_number=?'}
         AND EXISTS(SELECT 1 FROM submissions s WHERE s.id=? AND ${sourceGuard})

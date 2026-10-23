@@ -53,6 +53,9 @@
 | `npm run test:sites:network` | 운영 요청 없는 proxy/guard 합성12 |
 | `npm run test:project:workspace` | 관리자 전용 저장 기반의 격리 D1/MariaDB command·CAS/권한/이력/보존 회귀; 운영 자료를 쓰지 않음 |
 | `npm run test:volunteer:schema` | 양 DB의 봉사 저장 schema fresh/existing additive·복합 FK·default·보존·재실행 검사 |
+| `npm run test:volunteer:completion-schema` | v11/0015의 단일 팀장 baseline/중복 거부·완료 metadata·기존 자료 보존을 양 DB에서 확인 |
+| `npm run test:volunteer:tasks` | 봉사활동 팀 범위 관리·직접/제출 필수 완료·현재 권한·교체/탈퇴·완료/재개 이력의 격리 양 DB 회귀 |
+| `npm run test:volunteer:browser` | Sites build 후 loopback Worker/D1/R2와 기본 sandbox Chromium의 실제 관리자/팀장/담당자 desktop/mobile UI·multipart 회귀 |
 
 `node scripts/check-docs.mjs`는 저장소의 문서 등록·역할·상대 링크/anchor·명령·필수 읽기 경로를 검사한다. `--self-test`는 검사기의 유효/무효 fixture를 확인한다. 원본 docs-canon SKILL/점검기가 아닌 로컬 대체 검사이며 원본 준수 인증으로 표시하지 않는다.
 
@@ -153,9 +156,29 @@ version14 부모 운영 재검증에서는 전송 실패 뒤 페이지 유지·�
 | `npm run build:native`, `npm run build:sites` | 두 대상 production build PASS | Native 기존 logging NFT2 경고, Vinext proxy 감지/정적 route 분류 경고 유지. 배포 결과가 아님 |
 | `npm run test:sites:http`, `npm run test:sites:auth` | 격리 Worker HTTP257, auth18 각각 PASS | 실제 Worker/합성 session 회귀. 실제 Google 로그인·운영 인수를 뜻하지 않음 |
 
-readiness는 관리표20개와 `schema_migrations`를 구분한다. 이번 구현은 관리자 전용 server repository/모델/schema까지이며 루트 action·사용자 화면·팀장 위임 권한·직접 완료 실행은 아직 없다. 따라서 새 봉사활동 화면의 hydrated desktop/mobile 인수와 직접 완료자/시각·재개 이력 테스트는 미실행이며 PRD-048~050/QLT-023의 남은 게이트다. 모든 신규/기존 업무는 제출 필수 기본값이고 mode 값 표현만으로 직접 완료를 활성화하지 않는다.
+해당 v10 저장 기반 회차는 관리표20개와 `schema_migrations`를 구분했다. 당시 범위는 관리자 전용 server repository/모델/schema였으며 루트 action·사용자 화면·팀장 위임 권한·직접 완료 실행은 포함하지 않았다. 모든 신규/기존 업무의 제출 필수 기본값을 유지한 당시 검증이며, 사용자 정책 확정 후 후속 구현·인수는 아래 별도 절과 구분한다.
 
-문서 전담은 docs-canon 지침에 따라 기존 정본만 동기화했다. 저장소 문서 검사/self-test·MASTER_PLAN HTMLParser·`git diff --check` PASS이며 문서30·등록16/핵심7·상대링크189·npm명령99를 확인했다. 별도 내용 검토로 실제 저장 기반/아직 미구현인 권한·직접 완료·UI, 정책 선택 대기, 과거 결과와 이번 검증의 구분을 확인했다. 원본 검사기는 앞선 리소스 미제공/승인 ZIP 다운로드 실패 기록 이후 이번에 추가 실행하지 않았다. 원본 canon 통과나 기능/운영 인수로 확대하지 않는다.
+해당 회차 문서 전담은 docs-canon 지침에 따라 기존 정본만 동기화했다. 당시 저장소 문서 검사/self-test·MASTER_PLAN HTMLParser·`git diff --check` PASS이며 문서30·등록16/핵심7·상대링크189·npm명령99를 확인했다. 별도 내용 검토로 실제 저장 기반/아직 미구현인 권한·직접 완료·UI, 정책 선택 대기, 과거 결과와 이번 검증의 구분을 확인했다. 원본 검사기는 앞선 리소스 미제공/승인 ZIP 다운로드 실패 기록 이후 이번에 추가 실행하지 않았다. 원본 canon 통과나 기능/운영 인수로 확대하지 않는다.
+
+## 봉사활동 팀장과 직접 완료 검증
+
+2026-10-23 후속 기준은 main `17f8d87`/sites `07b4eaa` + 이번 구현 작업 트리다. Node24.19.0/npm11.9.0/MariaDB11.4.13, 새 loopback `*_test` DB와 격리 Worker/D1/R2·합성 세션/파일만 사용한다. 운영 version14/source41059c8·프로젝트5/작업7·사용자 업로드 자료를 건드리지 않았으며 실제 Google 로그인·운영 migration·계정 권한 부여·재게시/배포는 하지 않았다.
+
+| 명령·대상 | 실제 결과 | 범위/남은 한계 |
+| --- | --- | --- |
+| `npm run test:volunteer:tasks` | D1 53/MariaDB53, 합계106 PASS | 기존 업무 제출 필수·새 봉사 직접 완료/선택 제출, 담당자/현재 팀장/관리자·타팀/이전 팀장/탈퇴/역할 상실·actor 없는 쓰기 거부, 완료자/시각·재개 이력·검토/선행/시작 이력 뒤 방식 변경·rollback과 private 계약 |
+| `npm run test:project:workspace` | 후속 소스 재실행86 PASS | 이전 저장 기반 suite의 회귀이며 위106 및 과거 회차86과 합산하지 않음 |
+| `npm run test:volunteer:completion-schema` | 54 PASS | v11/0015 additive·현재 팀장 baseline/복수 기존 팀장 거부·완료 metadata와 원문/이력 보존. 운영 적용 성공은 아님 |
+| `npm run test:volunteer:schema`, `npm run test:native:migrations` | 저장 기반58, 별도 Native99 각각 PASS | 별개 fixture scope이며 위106/54 또는 아래 unit와 합산하지 않음 |
+| `npm run test:sites:p1` | 65 PASS | 기존 선후행·템플릿·검색·알림 계약 회귀 |
+| `npm test -- --require-db` | unit131, action8, visibility33 각각 PASS | 초기 현재 관리자 DB 검사 위치로 unit2실패 후 수정/focused11 PASS. 이후 action mock의 named export 누락을 fixture와 맞춘 뒤 action8과 전체 suite 재실행 PASS. 실제 인가를 mock으로 대체해 성공시키지 않음 |
+| `npm run lint`, `npm run check:fsd`, `npm run typecheck` | lint PASS, FSD self-test5/경계0, types PASS | 기존 Next typegen 후 순차 types 절차 유지 |
+| `npm run build:native`, `npm run build:sites`, `npm run test:sites:http`, `npm run test:sites:auth` | 최종 소스 양쪽 build·auth18, Worker HTTP257 PASS | 기존 Native logging/NFT·Vinext proxy/static 분류 경고 유지. 최종 UI 안내/명단 scope·선택 state 보정 후 bundle 재빌드와 lint/types/FSD도 PASS, 동일 최종 bundle 브라우저도 아래 별도 scope로 PASS |
+| `WBS_QA_ADMIN_SPA=1 node scripts/test-volunteer-browser.mjs` | 최종 bundle의 1280 light/390 dark 각18, 합계36 조건 PASS; hydrated RSC multipart POST46건 모두303 | 관리자 SPA 프로젝트/참여자/팀장 변경·select 초기화/행 제거, 업무 생성/배정·담당자/팀장 직접 완료/재개·선택 private TXT bytes·완료 metadata/이력·기존 제출 필수 거부. D1/R2 대조와 명시 reload 영속화 PASS, uncaught page error/실패 request/가로 overflow0 |
+
+브라우저 최초 일반 shell launch는 Chromium SUID sandbox misconfigured/SIGABRT로 실패했다. 승인된 실행 경로에서 같은 기본 Chromium sandbox로 실행해 실제 흐름을 통과했으며 `--no-sandbox`나 플랫폼/권한 설정 변경은 없었다. selector/redirect 대기 보정은 QA 동기화 문제였고 앱 실패로 단정하지 않았다. readiness는 관리표21개와 별도 migration ledger를 확인한다. 최종 브라우저 실행 전후 entry SHA256 `c09b51a26cd9ed363ee83c25ded79065169eb3358690a5a100f78e5375bea211`이 동일했다. PRD-047~050/QLT-023의 코드·로컬/합성 게이트를 닫으며 운영 적용·실계정/실사이트 인수와 구분한다. 업무 편집·팀 필터의 브라우저 직접 조작은 이번 흐름에 포함하지 않았으며 서버/DB 회귀나 구현 확인을 클릭 인수로 확대하지 않는다.
+
+원본 docs-canon 검사는 기존 리소스/전달 ZIP 미가용 이후 이번에 실행하지 않았다. 저장소 문서 검사/self-test·수정한 두 HTML의 HTMLParser·`git diff --check` PASS이며 문서30·등록16/핵심7·상대링크200·npm명령115를 확인했다. 별도 내용 검토로 확정 정책/실제 구현/최종 합성 인수와 운영 미실행 경계, 과거 기반 회차와 이번 scope의 구분, 사용자 가이드와 현재 계약의 정합성을 확인했다. 원본 canon 준수 인증으로 확대하지 않는다.
 
 ## 문서 정리 검증
 

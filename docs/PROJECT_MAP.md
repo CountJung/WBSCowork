@@ -143,7 +143,7 @@ Native는 전용 schema 연결의 lock/불변 명세·postcondition 검증과 `s
 
 ### Native migration 진입점 (QLT-012/013)
 
-`npm run db:migrate`(기본 read-only) / SU database action → `database-admin` → 전용 schema connection → `native-migrations.server.ts` lock/ledger/검증 → 불변 `native-migration-v1.ts`–`native-migration-v10.ts`. 일반 runtime readiness는 기존 DB identity를 사용한다. D1 `drizzle/`와 분리되며 봉사 저장 기반은 Native v10/Drizzle0014에 각각 추가한다. [운영 절차](NATIVE_DATABASE_MIGRATIONS.md).
+`npm run db:migrate`(기본 read-only) / SU database action → `database-admin` → 전용 schema connection → `native-migrations.server.ts` lock/ledger/검증 → 불변 `native-migration-v1.ts`–`native-migration-v11.ts`. 일반 runtime readiness는 기존 DB identity를 사용한다. D1 `drizzle/`와 분리되며 봉사 저장 기반은 Native v10/Drizzle0014, 단일 팀장·완료 metadata는 v11/0015에 각각 추가한다. [운영 절차](NATIVE_DATABASE_MIGRATIONS.md).
 
 P1 의존성: `src/entities/task/api/task-dependencies.server.ts`의 graph CAS와 `src/shared/server/task-dependencies`의 실행 guard, `src/features/task-dependencies` action, `src/widgets/task-dependencies` UI가 WBS와 별도 선후행을 담당한다. 상세 범위는 [P1 계획](ARCHITECTURE.md#팀-업무와-검토-계약).
 
@@ -162,10 +162,11 @@ Native NAS 실행은 `scripts/run-next.ts`와 main의 기본 `build`/`start`를 
 
 `src/entities/submission/api/submission-repository.server.ts`의 `deleteSubmission`은 guarded DELETE/RETURNING의 요청 ID로 성공을 판정한다. `src/features/task-workspace/server/actions.ts`는 commit 이전 실패와 이후 followup 오류를 분리한다. `scripts/test-submission-delete.ts`는 실제 D1/MariaDB 비교·권한 변경·rollback, `tests/submission-delete-actions.test.ts`는 action fault injection, `scripts/verify-sites-crud.mjs`는 production Worker HTTP/redirect/audit/파일 경계를 검사한다. [분석과 실행 명령](ARCHITECTURE.md#제출물-삭제-결과와-후속-처리-qlt-021).
 
-## 봉사활동 저장 기반 (PRD-047 부분)
+## 봉사활동 팀과 직접 완료
 
 - `src/entities/project/model/workspace.ts`: 프로젝트 유형·활동 종류·팀 역할/완료 모드 타입과 저장 command 정규화.
-- `src/entities/project/api/project-workspace.server.ts`: `getProjectWorkspace`/`changeProjectWorkspace`, 현재 DB 관리자 인가·workspace CAS·한 번 저장한 명단 event. 루트 action/사용자 UI·팀장 위임 권한·직접 완료 실행 진입점은 아직 없다.
-- `src/entities/task/api/task-repository.server.ts`: 팀 연결 업무의 담당자 변경 시 현재 프로젝트/팀 소속과 수행 자격을 추가 검사한다.
-- `native-migration-v10.ts`는 database-admin slice, D1은 `drizzle/0014_volunteer_workspace.sql`; readiness는 같은 slice의 실제 관리표/필수 컬럼을 사용한다.
-- `scripts/test-project-workspace.ts`, `scripts/test-volunteer-schema.ts`: 격리 양 DB 저장 command·additive/보존 검증. 실제 결과는 [하네스](HARNESS_MAP.md#봉사활동-저장-기반과-auth-import-검증)가 소유한다.
+- `src/entities/project/api/project-workspace.server.ts`: 관리자 명단 관리/단일 팀장 교체, `getProjectTaskTeams`의 metadata·범위별 배정 명단 조회, workspace CAS·명단 event. `/admin/projects` → `features/project-manage` → `widgets/project-workspace`가 유형·참여자·팀 관리 UI를 조립한다.
+- `src/shared/server/task-scope`와 `src/entities/task/api/task-permissions.server.ts`: 현재 canonical 팀장·프로젝트/팀 소속·계정 자격의 SQL 관리/실행/배정 guard. task repository/workflow·선후행·템플릿·검토의 각 mutation이 사용한다.
+- `/tasks` → `TaskAssignmentFields`/`TaskCard`: 팀 필터·범위별 생성/편집/담당자·완료 방식·완료자/시각과 event 이력. 기존 제출 UI는 직접 완료에서도 선택적으로 재사용한다.
+- `native-migration-v10.ts`/`native-migration-v11.ts`는 database-admin slice, D1은 `drizzle/0014_volunteer_workspace.sql`/`drizzle/0015_volunteer_team_completion.sql`; readiness는 같은 slice의 실제 관리표/필수 컬럼을 사용한다.
+- `scripts/test-project-workspace.ts`, `scripts/test-volunteer-schema.ts`: 저장 기반 검증. `scripts/test-volunteer-tasks.ts`/`test-volunteer-completion-schema.ts`/`test-volunteer-browser.mjs`·`.py`는 후속 양 DB·단일 팀장/완료 metadata·hydrated UI를 검사한다. 실제 결과는 [하네스](HARNESS_MAP.md#봉사활동-팀장과-직접-완료-검증)가 소유한다.

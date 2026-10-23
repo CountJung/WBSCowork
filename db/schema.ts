@@ -28,6 +28,12 @@ export const activityTeamMembers = sqliteTable("activity_team_members", {
   foreignKey({columns:[t.projectId,t.teamId],foreignColumns:[activityTeams.projectId,activityTeams.id]}).onDelete("cascade"),
   check("activity_team_role_check",sql`${t.role} IN ('member','leader')`), check("activity_team_active_check",sql`${t.active} IN (0,1)`),
 ]);
+export const activityTeamLeaders = sqliteTable("activity_team_leaders", {
+  teamId: integer("team_id").primaryKey().notNull(), projectId: integer("project_id").notNull(), userId: integer("user_id"),
+}, t => [
+  foreignKey({columns:[t.projectId,t.teamId],foreignColumns:[activityTeams.projectId,activityTeams.id]}).onDelete("cascade"),
+  foreignKey({columns:[t.teamId,t.userId],foreignColumns:[activityTeamMembers.teamId,activityTeamMembers.userId]}).onDelete("cascade"),
+]);
 export const projectWorkspaceEvents = sqliteTable("project_workspace_events", {
   id: id(), projectId: integer("project_id").notNull().references(() => projects.id,{onDelete:"cascade"}),
   actorId: integer("actor_id").references(() => users.id,{onDelete:"set null"}),
@@ -38,6 +44,7 @@ export const tasks = sqliteTable("tasks", {
   id: id(), projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   activityTeamId: integer("activity_team_id").references(() => activityTeams.id, {onDelete:"set null"}),
   completionMode: text("completion_mode").notNull().default("submission_required"),
+  completedBy: integer("completed_by").references(() => users.id,{onDelete:"set null"}), completedAt: text("completed_at"),
   parentId: integer("parent_id").references((): AnySQLiteColumn => tasks.id, { onDelete: "set null" }),
   title: text("title").notNull(), description: text("description"), deliverable: text("deliverable").notNull().default(""), definitionOfDone: text("definition_of_done").notNull().default(""), reviewRequired: integer("review_required").notNull().default(0), startDate: text("start_date").notNull(), endDate: text("end_date").notNull(),
   creationToken: text("creation_token").unique(),
