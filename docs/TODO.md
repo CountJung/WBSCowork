@@ -9,12 +9,12 @@
 | 구분 | 확인된 상태 | 다음 경계 |
 | --- | --- | --- |
 | 제품 | 기반 WBS/FSD와 팀 업무 P0/P1, 버그/스크린샷 구현 완료 | 실제 다중 Google 계정·운영의 채워진 UI 인수는 로컬 합성 검증과 별개 |
-| Git 소스 | PRD-051~055 UI·프로젝트 scope 구현과 QLT-024 로컬 회귀 완료, main/sites 반영 예정 | 이번 소스 검증은 HARNESS_MAP, 운영 반영 여부는 게시 원장으로 구분. main/sites 기본 build 차이 유지 |
-| 운영 게시 | 기존 public Sites version15, source d7550fb의 terminal succeeded와 active/latest 일치 확인 | [게시 원장](COMPLETED_LOG.md#sites-게시-원장). 봉사 schema/기능 반영·기존 표본 보존 확인. 현 실행기는 운영 host CONNECT403으로 실 Google/UI·자산 GET 미검증. NAS 배포 없음 |
+| Git 소스 | PRD-051~055·QLT-024 완료, 기능 소스 main b7fe96e/sites62b9320 푸시·원격 HEAD 확인 | 이번 소스 검증은 HARNESS_MAP, 운영 반영 여부는 게시 원장으로 구분. main/sites 기본 build 차이 유지 |
+| 운영 게시 | 기존 public Sites version16, source62b9320의 terminal succeeded와 active/latest·deployment 일치 재조회 확인 | [게시 원장](COMPLETED_LOG.md#sites-게시-원장). UX/프로젝트 scope·D1 0016 효과와 기존7표 보존 확인. 기존 CONNECT403 제한으로 운영 GET/실 Google/UI는 재시도 없이 미검증. NAS 배포 없음 |
 | 최근 검증 | QLT-021 핵심 삭제 오판은 실제 Google 세션의 운영 UI 인수 PASS | [검증 기준선](HARNESS_MAP.md#검증-기준선). 신규 업로드는 통과했으나 추가 첨부·운영 파일 삭제는 미검증이며 QLT-022와 다른 열린 항목 유지 |
 | 후속 계획 | digest/report D0–D5 미구현, 실제 NAS 적용/인수 미완료 | D0부터 순서대로 진행, delivery는 별도 동의·승인 |
 | 봉사활동 | 확정 정책의 프로젝트/팀 관리·팀장 범위 업무·직접 완료를 구현하고 로컬/합성 인수·version15 게시 완료 | 기존 업무/협업 업무 제출 필수·private 계약과 사용자 자료 표본 보존. 실제 운영 UI·Google 인수와 R2 bytes 대조는 미실행 |
-| UX·프로젝트 바인딩 | 확정된 다중 소속·SU 전역/지정 프로젝트 admin 정책으로 UI·SQL scope 구현·Worker/Native strict UI와 기존 봉사 회귀 완료 | main/sites 커밋·푸시 및 기존 Sites 게시 대기. 실제 소속·역할/운영 데이터 변경 없음 |
+| UX·프로젝트 바인딩 | 확정된 다중 소속·SU 전역/지정 프로젝트 admin 정책으로 UI·SQL scope 구현·Worker/Native strict UI와 기존 봉사 회귀 완료 | 기존 Sites version16 게시 완료. 계정 role/소속 자동 부여0·기존7표 보존; 확정 admin 관리 축소는 게시 코드 정책으로 적용 |
 
 ## 열린 항목
 
@@ -31,7 +31,7 @@
 | OPS-031 | [!] | Native bug purge 포함 전체 수명주기/두 isolation-level 경합 검증은 별도 승인 대기. 비파괴16조건·Sites 삭제 완료와 구분 | [완료 범위](COMPLETED_LOG.md#실환경-qa와-삭제-승인-경계) |
 | OPS-032 | [ ] | Next/NextAuth/MariaDB 등 남은 dependency advisory를 실제 native/Worker 사용 경로별 검토. 전체 npm audit 해결이나 강제 major override를 주장하지 않음 | [보안 근거](COMPLETED_LOG.md#보안-패치와-활성-decoder) |
 | OPS-033 | [!] | 레이아웃 실사이트의 전체6개 너비·관리자/버그 UI 인수. 부모 Chrome의 홈/tasks1188×761 확인은 부분 근거 | [접속 경계](NAS_UPDATE_GUIDE.md#운영-접속과-테스트-네트워크) |
-| OPS-034 | [!] | version15 현재 실행기는 CONNECT403/Domain forbidden·해당 policy rule 부재로 운영 GET/UI 미실행. 과거 host 승인/차단과 version13 환경의 CONNECT200·익명 GET 성공을 보존하며 환경별 결과를 구분. 제한 우회 없음 | [최신 경계](HARNESS_MAP.md#version15-게시와-운영-검증-경계) |
+| OPS-034 | [!] | version16에서도 기존 CONNECT403/Domain forbidden·해당 policy rule 부재 경계로 운영 GET/UI 재시도0·미실행. 과거 host 승인/차단과 version13 환경의 CONNECT200·익명 GET 성공을 보존하며 환경별 결과를 구분. 제한 우회 없음 | [최신 경계](HARNESS_MAP.md#version16-게시와-운영-검증-경계) |
 | OPS-035 | [!] | version12 스크린샷의 실제 운영 UI 인수. 합성Chromium1280/390 결과와 구분하고 운영 제보 생성/삭제를 임의로 하지 않음 | [버그 계약](BUG_REPORTS.md#스크린샷) |
 | RPT-015 | [ ] | D0 versioned DigestSnapshot·privacy fixture·stable hash | [D0–D5 계획](PROJECT_DIGEST_REPORT_PLAN.md) |
 | RPT-016 | [ ] | D1 manual JSON preview; RPT-015 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
@@ -50,7 +50,9 @@ PRD/QLT 완료 범위는 양 DB·서버 권한/완료 workflow·실제 로컬 Wo
 
 PRD-051~055와 QLT-024의 소스·로컬 인수를 완료해 열린 큐에서 이관했다. [결정 기록](COMPLETED_LOG.md#ux-시안과-프로젝트-권한-정책-확정), [구현·인수 범위](COMPLETED_LOG.md#ux와-프로젝트-바인딩-구현), [실측 하네스](HARNESS_MAP.md#ux-바인딩-구현과-회귀-검증)를 따른다. 기존 PRD-047~050/QLT-023과 자료·검토/직접 완료 계약은 보존한다.
 
-이번 요청에서 남은 단계는 승인된 main/sites 커밋·푸시와 기존 Sites의 exact 소스 게시·terminal 상태 및 기존 자료/정책 보존 확인이다. 현재 운영은 version15이며 게시 전이다. 사용자 계정 role·명단을 추정 부여하지 않고 프로젝트5/업무7·사용자 파일과 기존 public/owner·환경을 보존한다. 일반 admin 관리 범위 축소는 확정 정책에 따른 코드 변경이며 계정 role 행 변경과 구분한다. 운영 host CONNECT403 제한을 우회/재시도하지 않고 실 Google·운영 UI 인수를 로컬 성공으로 대체하지 않는다.
+승인된 main/sites 기능 소스 반영·푸시와 기존 Sites version16의 terminal succeeded/active·latest 재조회, D1 0016 효과·기존7표/공개 범위·환경 보존 확인까지 완료했다. exact 게시 소스와 아티팩트·복구 참조는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장), CI 조회 거부와 운영 미검증 경계는 [검증 기록](HARNESS_MAP.md#version16-게시와-운영-검증-경계)이 소유한다. 후속 문서 commit은 이미 게시한 앱의 소스 SHA를 바꾸거나 새 게시를 뜻하지 않는다.
+
+실제 계정 role/소속 자동 부여는 없고 프로젝트5/업무7·제출물5/첨부7 metadata를 보존했다. 일반 admin 관리 범위 축소는 확정 정책의 게시 코드 변경이며 계정 role 행 변경과 구분한다. 실제 R2 inventory/bytes 다운로드·운영 UI/Google은 미검증이며 기존 CONNECT403 제한을 재시도/우회하지 않았다. Native v12의 실제 NAS 적용도 수행하지 않았다.
 
 ## ID와 갱신 규칙
 

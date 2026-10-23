@@ -41,7 +41,7 @@ PRD-052/053은 단일 열 업무 요약→선택 업무/제출 상세→댓글 �
 
 PRD-055는 기존 명단/workspace CAS·event를 모든 프로젝트 유형에 재사용하고 SU 소속/접근 설정·영향 미리보기와 지정 프로젝트 admin 관리, 현재 DB identity/역할·소속과 자원 visibility/ownership을 교차하는 서버/SQL scope를 구현했다. Native v12/D1 0016은 인증 읽기 기본값을 보존하는 접근 모드만 추가하며 계정 role/명단을 자동 부여하지 않는다. 제한 프로젝트의 과거 본인 자료도 탈퇴 후 차단하는 사용자 확정 정책을 따른다.
 
-소스·양 DB·Worker HTTP와 실제 Worker/Native 앱의 새5폭/두 테마, 기존 봉사 UI의 최종 로컬 인수를 완료했다. 초기 대비 허용오차·긴 option clip·상태 폼 표시·client checkbox/FCL·검토 승인 done 표시를 보완하고 같은 bundle을 재검증했다. 정확한 실행 범위·원인/실패와 재실행 결과·예상404/취소 요청의 구분은 [하네스](HARNESS_MAP.md#ux-바인딩-구현과-회귀-검증)가 소유한다. QLT-024는 로컬 합성 게이트 완료이며 전체 WCAG 인증·실기기/실 Google·운영 UI나 게시 성공을 뜻하지 않는다. 이 시점 운영은 version15이고 실제 계정 role/명단·사용자 자료는 변경하지 않았다. 게시 결과는 별도 원장 확인 전 대기다.
+소스·양 DB·Worker HTTP와 실제 Worker/Native 앱의 새5폭/두 테마, 기존 봉사 UI의 최종 로컬 인수를 완료했다. 초기 대비 허용오차·긴 option clip·상태 폼 표시·client checkbox/FCL·검토 승인 done 표시를 보완하고 같은 bundle을 재검증했다. 정확한 실행 범위·원인/실패와 재실행 결과·예상404/취소 요청의 구분은 [하네스](HARNESS_MAP.md#ux-바인딩-구현과-회귀-검증)가 소유한다. QLT-024는 로컬 합성 게이트 완료이며 전체 WCAG 인증·실기기/실 Google·운영 UI나 게시 성공을 뜻하지 않는다. 로컬 인수 시점에는 운영 version15와 실제 계정 role/명단·사용자 자료를 유지했다. 이후 version16 게시와 보존 확인은 아래 게시 원장의 별도 근거를 따른다.
 
 ## 봉사활동 팀과 직접 완료 인수
 
@@ -79,12 +79,15 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 13 · 10-22 11:19:22.961 | b249c4dc525a36c4c843876625e2e0dde64c1461 | succeeded, appgdep_6ad9f0d0f3c481919846d8a5be031cc5; QLT-021 포함. public policy revision2/env revision11 유지 |
 | 14 · 10-22 11:59:06.590701 | 41059c82c37d7de718a3e61b414d4ab0331e6c5a | succeeded, appgdep_6ad9fa80e2fc819183a6094e4d07563d; 첨부 transport 오류의 폼 내 안내/초안 보존 안정화. 기존 URL/public access policy revision2/env revision11 유지. 연결 실패 UI 보존 및 사용자 신규 첨부·새로고침·다운로드 PASS. 운영 수정 시 추가 첨부는 미검증 |
 | 15 · 2026-10-23 04:23:10.491622 | d7550fb783b046738bf7a2d2e22aa412515bf02c | succeeded, appgdep_6adae1242adc8191b7cdd73c54537031; get_site/get_site_version 재조회 active/latest15·source·deployment 일치. 기존 URL/public policy revision2·auth_client·env revision11 entries 유지. 봉사활동과 D1 0014/0015 반영, 운영 UI 인수는 미실행 |
+| 16 · 2026-10-23 08:01:01.751040 | 62b93208e1f32f2b19d58249643d5637242a8b36 | terminal succeeded, appgdep_6adb14287d548191924eba6c6d844aa3; get_site/get_site_version 재조회 active/latest16·source·deployment 일치. public policy2/auth_client/env11 유지, D1 접근 모드 추가·기존7표 전체 기존 컬럼 동일. 실 운영 GET/UI·Google은 미검증 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
 version14 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_d5ff1c027aec8191a156027e98bc5df9`다. 코드 checkpoint는 GitHub main `82a8777a6ffe636c99366c81722fa9941836b2a7` / sites `41059c82c37d7de718a3e61b414d4ab0331e6c5a`이며 정상 atomic push 후 원격 SHA를 확인했다. 기본 build 차이만 보존했고 동일 sites 소스를 별도 Sites source repository의 main에 반영한 뒤 저장·게시했다. 문서만 갱신하는 후속 commit은 앱 재게시 근거가 아니다.
 
 version15 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_22032f6377f08191bb66b0c9b280ed01`이다. 사용자 명시 승인 후 공식 Sites source repository main을 source41059c8에서 위 exact GitHub sites SHA로 fast-forward push하고 원격 일치를 확인했다. installed/cloud source helper 미가용을 확인해 [기존 게시 fallback](NAS_UPDATE_GUIDE.md#sites-게시)으로 hidden stdin/메모리 credential과 보존한 hosting manifest·dist·drizzle archive를 사용했다. 기존 사이트 ID/owner/public 범위·계정 역할·보안/환경 설정은 변경하지 않았고 NAS 배포도 하지 않았다. local/운영 검증과 보존 범위는 [하네스](HARNESS_MAP.md#version15-게시와-운영-검증-경계)가 소유한다.
+
+version16 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_91fd504d5de88191b2e41191d1d3985b`다. 기능 commit main `b7fe96e386aba05938fd61a8822ce565a83c6551` / GitHub sites `62b93208e1f32f2b19d58249643d5637242a8b36`의 푸시·원격 HEAD를 확인하고 동일 sites SHA를 공식 source main에 반영했다. 별도 clean source clone에서 build한 실제 게시 artifact를 다시 인수해 저장·게시했다. 후속 문서 전용 HEAD는 이 exact 게시 소스와 구분하며 문서 반영 자체가 앱 재게시가 아니다. 실제 artifact QA·7표/설정 대조·운영/CI 제한은 [하네스](HARNESS_MAP.md#version16-게시와-운영-검증-경계)가 소유한다. 기존 사이트 ID/공개 범위·auth_client·환경을 유지했으며 계정 role/소속 자동 부여·NAS 배포는 하지 않았다.
 
 ### package와 복구 근거
 
@@ -94,6 +97,7 @@ version15 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_22032f6377f081
 - version10 초기 old menu/404·청크 import 실패는 재배포 없이 reload1회 후 정상화했다. asset 전환 시점 불일치는 가설이며 원인 확정 아님. 반복 HTTP 관찰은 네트워크 승인 취소로 수집 중단 후 재시도하지 않았다.
 - version14 저장 archive는350files/5,273,600bytes, normalized content hash `sha256:46b3b742157c665ff887b4ea18ea61062b9703d6aa3d81cceefe9819f3d2cf32`다. 정상 게시 확인은 운영 첨부 인수나 최초 연결 차단 원인 해결을 증명하지 않으며 [QLT-022 검증 기록](HARNESS_MAP.md#제출물-첨부-운영-오류-qlt-022)의 남은 경계를 유지한다.
 - version15 로컬 tar는5,488,640bytes, bytes SHA256 `26a6de3463ed954e158160390911f6eeedf95e7c46148570daadb3be12d81387`다. native save가 반환한 archive는353files/5,478,400bytes, content hash `956442722b10a37bc981f48e94d51f239b0c83f680e727448b59fa58c9c7449b`이며 각 반환값을 구분해 보존한다.
+- version16 로컬 `wbscowork-ux-binding-62b9320.tar`는360entries/5,990,400bytes, bytes SHA256 `8fd6fd92f3860c9f1fdc1cd3fd325905e9db9b9a01afef2dd912fddc291826d9`다. server 저장 archive 반환값은360files/5,621,760bytes, hash `sha256:79f829d3941880900c5257fab14b3614c2105ac193cdaa745e86595272062f05`이며 두 tar의 bytes/hash가 같다고 해석하지 않는다. 저장된 version15는 복구 참조로 유지했고 schema down/실제 복원은 수행하지 않았다. 소속 제한 활성화 후 구형 전역 관리자 앱으로 writable rollback하는 위험은 기존 운영/권한 정본을 따른다.
 - [Cloudflare의 D1 Time Travel 문서](https://developers.cloudflare.com/d1/reference/time-travel/)는 production backend의 시점 복원을 설명한다. 현재 Sites 도구에는 bookmark/export/restore가 노출되지 않아 이 사이트의 실제 bookmark 확보나 복원은 검증하지 않았다. 메모리의 사전 표본 비교는 전체 DB/R2 백업이 아니다. 새 봉사 기능이 사용된 뒤 version14 앱으로 writable rollback하면 새 팀 범위/완료 계약을 깨뜨릴 수 있으므로 forward fix를 우선하고 자동 down은 하지 않는다.
 - 모든 row 비교는 기록된 표/complete page 범위이며 audit전체/R2 bucket inventory 동일성을 보장한 것이 아니다. additive 이력/선후행 도입 후 구형 writable 앱으로 rollback하면 계약을 깰 수 있어 forward fix가 기본이다.
 
