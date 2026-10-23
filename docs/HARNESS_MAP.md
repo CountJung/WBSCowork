@@ -412,6 +412,18 @@ compiled18은 DOCX9,425/PPTX81,094bytes의 OOXML·SHA/ETag/R2 metadata, 현재 �
 
 새 명령은 현재 package에 등록돼 있음을 문서 담당이 확인했다. 새 보고서나 DDL 사본을 만들지 않고 원본 docs-canon 검사 미가용 경계를 유지한다.
 
+### 저장 version19와 배포 거부
+
+추가 회귀만 포함한 GitHub mainffda904/sites409f514 푸시와 공식 source repository main `409f514a56dfac47932f0d3f874650f4e8b059bc`의 정상 fast-forward·ls-remote 일치를 확인했다. 최종 compiled SSR/RSC+OOXML33조건 PASS, 기존 entry6f781e9f…/351files fingerprint a0632631…는 불변이다. 수동 RSC GET307은 인증 실패가 아니라 같은 경로의 canonical `?_rsc` redirect였고 따라간 응답200을 확인했다. 실제 브라우저는 Native SUID sandbox 차단으로 미검증이며 설정 우회0이다.
+
+기존 사이트의 version19 저장은 성공했지만 **운영 배포는 실행되지 않았다**. 대상 `deploy_site_version` 호출은 자동 승인 검토에서 다음 이유로 거부됐다: “Production deployment external commitment replacing maintainedv18; active instructions prohibit publish until parentreview”. 최신 최종 게시 위임과 충돌하는 검토 결과이며 새 근거 없이 재시도/우회하지 않았다. version19 재조회는 deployment_id=null·배포ID 없음이다. 정확한 version/archive 식별자는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유하며 저장v19를 운영v19로 쓰지 않는다.
+
+D1 0017은 CREATE3표+CREATE INDEX8개의11문장만 있고 DML/ALTER/DROP/GRANT가 없으나 배포 거부로 **미적용**이다. 실DB는23표이며25행 pagination으로 audit270행을 포함한 모든 표/컬럼/행을 투영 생략·잘림 없이 전후 대조해 정확히 같았다. 사용자 project5/task7/submission5/attachment7 metadata·사용자2명의 role·membership0을 보존했다. 독립 R2 inventory/원본 bytes는 조회하지 않았고 전체 backup 검증도 아니다.
+
+public policy revision2·auth_client·env revision11의5keys는 동일하며 실제 값은 출력하지 않았다. cloud automations는 빈 배열, DIGEST_SCHEDULER_ENABLED/DIGEST_ALLOW_ARTIFACTS 설정 없음으로 예약/산출물 opt-in을 활성화하지 않았다. v18 saved archive는 code fallback 참조로 확인했으나 DB 자동 down/backup 복원을 실행한 것은 아니다. Native v13/v14/NAS 적용·영구 삭제·환경/계정 변경·코딩 proxy 재시도0이다.
+
+최종 Worker artifact에서 dev audit23건의 취약 동작 도달 경로는 발견하지 못했다. Vinext 하위 image-size2.0.2는 build metadata 전용이며 bundle parser/import가 없고 image optimizer route의 등록0 응답302/400은 bytes parser를 호출하지 않았다. 이는 취약점 해결이나 무위험 보증이 아니며 production audit0/전체23 잔여 구분은 유지한다. 남은 조치는 OPS-038의 승인 충돌 해소 후 정확한 저장 version19 배포 결과 확인이며 자동 거부를 승인 대기로 바꾸거나 성공으로 추정하지 않는다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.
