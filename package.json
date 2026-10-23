@@ -54,7 +54,8 @@
     "test:attachment:preview:native": "node --import tsx scripts/test-attachment-preview-native.mjs",
     "test:superuser:invariants": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-superuser-invariants.ts",
     "test:hydration:timezone:worker": "node scripts/test-hydration-timezone-worker.mjs",
-    "test:hydration:timezone:native": "node --import tsx scripts/test-hydration-timezone-native.mjs"
+    "test:hydration:timezone:native": "node --import tsx scripts/test-hydration-timezone-native.mjs",
+    "test:native:home": "node --import tsx scripts/test-native-home.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
