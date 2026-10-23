@@ -2,6 +2,16 @@ export function formatDate(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
+/** A named zone makes server rendering and browser hydration agree. Storage stays UTC. */
+const appDateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul",
+  year: "numeric", month: "2-digit", day: "2-digit",
+  hour: "2-digit", minute: "2-digit",
+});
+export function formatAppDateTime(value: Date): string {
+  return `${appDateTimeFormatter.format(value)} KST`;
+}
+
 
 /** Calendar dates shared by MariaDB DATE and D1 TEXT, without timezone-dependent rollover. */
 export function toCalendarDate(value: Date | string): string {

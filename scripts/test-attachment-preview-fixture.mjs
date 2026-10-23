@@ -73,7 +73,7 @@ export async function seedAttachmentPreview(db,{encode,secret,putFile}){
   return {tokens,files,legacy,text:files.find(file=>file.kind==='utf8').bytes.toString('utf8'),clientFiles:files.map(file=>Object.fromEntries(Object.entries(file).filter(([key])=>key!=='bytes')))};
 }
 
-export async function verifyAttachmentPreviewFixture(fixture,{query,readFile}){
+export async function verifyAttachmentPreviewFixture(fixture,{query,readFile,authorActive=false}){
   const rows=await query('SELECT id,submission_id,revision_number,file_path,file_name,file_mime_type,file_size_bytes FROM submission_attachments ORDER BY id');
   assert.equal(rows.length,fixture.files.length);
   for(const file of fixture.files){const row=rows.find(row=>Number(row.id)===file.id);assert(row);assert.equal(Number(row.submission_id),file.submissionId);assert.equal(Number(row.revision_number),file.revision);assert.equal(row.file_path,file.key);assert.equal(row.file_name,file.name);assert.equal(row.file_mime_type,file.mime);assert.equal(Number(row.file_size_bytes),file.size);assert.equal(createHash('sha256').update(await readFile(file.key)).digest('hex'),file.sha256);}
@@ -84,7 +84,7 @@ export async function verifyAttachmentPreviewFixture(fixture,{query,readFile}){
   assert.equal((await query('SELECT assignee_id FROM tasks WHERE id=2001'))[0].assignee_id,null);
   const su=await query('SELECT role FROM users WHERE id=1');assert.equal(su[0].role,'guest');
   assert.equal(Number((await query('SELECT COUNT(*) count FROM project_members WHERE user_id=1'))[0].count),0);
-  const removed=await query('SELECT active FROM project_members WHERE project_id=1001 AND user_id=2');assert.equal(Number(removed[0].active),0);
+  const removed=await query('SELECT active FROM project_members WHERE project_id=1001 AND user_id=2');assert.equal(Number(removed[0].active),authorActive?1:0);
   const other=await query('SELECT active FROM project_members WHERE project_id=1002 AND user_id=4');assert.equal(Number(other[0].active),1);
-  return {complete:true,counts,preservedFiles:fixture.files.length+fixture.legacy.length,authorMembershipRevoked:true,otherProjectMembershipPreserved:true,environmentSuDatabaseRolePreserved:true,environmentSuMemberships:0,legacySuAssignmentPreserved:true};
+  return {complete:true,counts,preservedFiles:fixture.files.length+fixture.legacy.length,authorMembershipRevoked:!authorActive,otherProjectMembershipPreserved:true,environmentSuDatabaseRolePreserved:true,environmentSuMemberships:0,legacySuAssignmentPreserved:true};
 }
