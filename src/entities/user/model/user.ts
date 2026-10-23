@@ -10,12 +10,20 @@ export const adminAssignableRoles = [] as const;
 
 export type AdminAssignableRole = (typeof adminAssignableRoles)[number];
 
+/** A configured identity has a stable effective role; this does not authenticate anyone. */
+export function isConfiguredSuperuser(email:string|null|undefined,configuredEmail:string|null|undefined) {
+  return Boolean(email?.trim()&&configuredEmail?.trim()&&email.trim().toLowerCase()===configuredEmail.trim().toLowerCase());
+}
+export function getEffectiveUserRole(role:UserRole,email:string|null|undefined,configuredEmail:string|null|undefined):UserRole {
+  return isConfiguredSuperuser(email,configuredEmail)?"admin":role;
+}
+
 export function getDefaultUserRole(email: string | null | undefined, superuserEmail: string | null | undefined): UserRole {
   if (!email || !superuserEmail) {
     return "guest";
   }
 
-  return email.trim().toLowerCase() === superuserEmail.trim().toLowerCase() ? "admin" : "guest";
+  return isConfiguredSuperuser(email,superuserEmail) ? "admin" : "guest";
 }
 
 export function getUserRoleLabel(role: UserRole, isSuperuser = false) {
@@ -69,6 +77,8 @@ export type UserRow = {
 };
 
 export type User = {
+  /** Effective server identity; never a stored role or an authentication substitute. */
+  isSuperuser?:boolean;
   id: number;
   email: string;
   name: string;

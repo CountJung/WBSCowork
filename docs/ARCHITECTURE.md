@@ -53,7 +53,7 @@ src/widgets/features/entities/shared public API
 3. JWT callback이 email, DB role, env 기반 `isSuperuser`를 넣음.
 4. session callback이 이를 `session.user`에 노출.
 
-슈퍼관리자는 별도 DB role이 아니라 `SUPERUSER_EMAIL`과 session flag로 표현된다. DB row의 role은 `admin|member|guest`다.
+슈퍼관리자는 별도 DB role이 아니라 검증된 로그인 이메일과 현재 `SUPERUSER_EMAIL`의 일치로 판정한다. JWT/session callback과 `getAuthSession`이 현재 설정으로 effective admin/SU 표시를 다시 계산하므로 오래된 DB role·session flag가 SU를 강등하지 않는다. DB row의 role은 `admin|member|guest`이며 이 보강이 기존 row를 강제 승급하는 것은 아니다.
 
 ### 권한 정책
 
@@ -63,6 +63,10 @@ src/widgets/features/entities/shared public API
 - 쓰기: 기존 role helper는 후보만 판정한다. 프로젝트 접근/관리 및 현재 팀장·담당자 등 자원별 SQL guard를 함께 적용하며 guest 소속 추가는 쓰기 승격이 아니다.
 
 인가를 UI props나 오래된 session role만으로 구현하지 않는다. action/handler와 SQL에서 현재 DB identity/역할·소속, target 상위 관계, ownership/visibility를 확인한다. 전역 설정의 실제 권한 부여와 배포 여부는 TODO/게시 원장이 소유한다.
+
+### 환경 슈퍼관리자 불변성 보강
+
+PRD-057은 검증된 로그인 identity와 현재 `SUPERUSER_EMAIL`로 SU 관리/조회 권한을 유지한다. DB role·session flag·프로젝트/팀 소속이 이를 강등하지 않으며 요청 flag만으로 SU를 만들지 않는다. UI에서만 숨기는 방식이 아니라 새 담당자·팀장·프로젝트/팀 참여자 후보와 서버 배정에서 SU를 제외하되 기존 연결/이력은 유지하고 명시적 관리 조회에서 계정을 숨기지 않는다. 요청이 주장한 이메일/flag나 비로그인을 SU로 인정하지 않으며 실제 계정/환경 값을 바꾸어 검증하지 않는다. 소스·Native 검증과 최종 Worker/게시 인수 상태는 TODO/HARNESS의 PRD-057/QLT-026을 따른다.
 
 ## 4. 산출물 가시성 경계
 
@@ -129,6 +133,20 @@ DB cascade는 파일 삭제를 하지 않는다. 삭제 action은 DB 삭제 전 
 - 다운로드는 `getSubmissionByIdForViewer`로 프로젝트 접근과 부모 제출물의 public/작성자/지정 프로젝트 admin/SU 가시성을 질의에 적용하고 `Cache-Control: private, no-store`, length/type/disposition을 반환한다.
 - `src/shared/server/logging` 및 `instrumentation.ts`: `LOG_DIR` 롤링 로그와 구조화 action log.
 - action log metadata의 경로성 키(`filePath`, `storedFilePath`, `absolutePath`, `uploadDir`, `path`)는 기록 시 `[redacted]` 또는 `[redacted]:<확장자>`로 축약된다(`REDACTED_METADATA_KEYS`). 비밀값·private content는 애초에 metadata에 담지 않는다.
+
+### 제출물 첨부 미리보기 확장
+
+제출 상세와 버전 이력은 공통 `AttachmentFile`을 사용해 사용자가 요청한 지원 파일만 미리보기한다. UI 후보 판정은 확장자·MIME allowlist를 사용하고 서버가 저장된 실제 내용을 다시 검사한다. 현재/과거·legacy/다중 첨부에 같은 계약을 적용하며 실제 Worker/게시 인수 범위는 TODO/HARNESS가 소유한다.
+
+| 미리보기 대상 | 확정 제한/처리 |
+| --- | --- |
+| 허용 확장자/MIME의 UTF-8 텍스트·UTF-8 BOM | TXT/CSV/JSON/XML·문서/코드/설정 등의 코드 allowlist를 사용하고 최대256KiB prefix·잘림을 표시한다. HTML/SVG/Markdown/코드도 실행/렌더링하지 않는 raw text다. 잘린 마지막 UTF-8 문자는 보류하며 binary 제어문자/손상 인코딩은 거부한다 |
+| PNG/JPEG/GIF/WebP/AVIF raster | 확장자/MIME·기본 signature/크기 검사를 하고 최대8MiB·각변8192px·총33,554,432pixels 이내만 미리보기한다. 완전한 이미지 decode는 브라우저에서 확인하며 실패 시 안내한다 |
+| UTF-16/비UTF-8(EUC-KR 등)·PDF·audio/video·지원 불가 파일 | 현재 확장에서는 미리보기 대신 다운로드 fallback을 제공한다 |
+
+기존 legacy/다중 첨부 GET의 `?preview=1`에서도 현재/당시 snapshot·프로젝트 인가를 먼저 검사하고 bounded storage 읽기와 private/no-store 응답을 유지한다.
+
+확장도 기존 `UPLOAD_DIR`/비공개 R2·인가된 legacy/다중 첨부 route와 현재/당시 revision viewer 검사를 재사용한다. 미리보기 내용은 신뢰할 수 없는 데이터로 취급하고 HTML/스크립트나 외부 링크 자동 실행 경로를 만들지 않는다. 현재 DB 역할·프로젝트 scope·private ownership의 교집합을 유지하며 같은 팀/담당자·검토자 지정으로 읽기 권한을 늘리지 않는다. 원본 bytes·불변 버전·다운로드를 유지하고 지원 불가/제한 초과/읽기 실패는 안전한 안내와 기존 다운로드로 처리한다. 현재 진행/남은 인수는 [TODO](TODO.md), 실제 형식/환경별 검증은 [HARNESS_MAP](HARNESS_MAP.md#제출물-첨부-미리보기-검증)이 소유한다.
 
 ## FSD 의존 경계
 

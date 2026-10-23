@@ -22,12 +22,21 @@
 | OPS-036, 2026-10-20 | 아래 archive6개 검증 후5개 임시 remote branch atomic 삭제. main/sites2개, 공통 code/schema/test/document와 기본 build 차이 보존. NAS 배포/Sites 재게시 없음 |
 | PRD-047~050/QLT-023, 2026-10-23 | 확정 정책의 단일 팀장·팀 범위 업무·직접 완료와 UI, 기존 자료/제출 필수/private 보존을 구현하고 로컬/합성 인수. [완료 범위](#봉사활동-팀과-직접-완료-인수), 실측은 [하네스](HARNESS_MAP.md#봉사활동-팀장과-직접-완료-검증). 운영 migration/실 Google/게시 미실행 |
 | PRD-046, 2026-10-23 | 사용자 확정: 팀당 팀장 1명, 신규 봉사 업무는 제출 선택/직접 완료, 현재 담당자·해당 팀장·관리자의 직접 완료. 기존 협업/기존 업무 제출 의무와 private 권한은 유지. [결정 근거](#prd-046-봉사활동-정책-확정) |
+| PRD-056/057, 2026-10-23 | 현재/과거 첨부의 안전한 텍스트/raster 미리보기와 verified env SU 유지·신규 배정 제외 소스 구현 및 Native 실제 인수 완료. [구현 범위](#첨부-미리보기와-su-불변성-구현). 최종 Worker·게시 인수는 QLT-025/026 진행 |
 | PRD-052/053/055·QLT-024, 2026-10-23 | 프로젝트 요약/선택 상세·폼/위험 확인, SU 다중 소속/전환·지정 admin SQL scope와 비파괴 이행을 구현. 허용오차 없는 Worker/Native 새5폭·기존 봉사 회귀의 로컬 인수 완료. [완료 범위](#ux와-프로젝트-바인딩-구현), 운영 게시/실 Google·운영 UI는 별도 |
 | PRD-051/054, 2026-10-23 | 프로젝트 요약→상세/댓글 IA의 정적 A/B 시안5폭 렌더 후 A를 채택. 사용자 확정 정책은 다중 소속·SU 전역/지정 프로젝트 admin·기존 읽기 유지·제한 프로젝트 탈퇴 후 본인 자료 차단이다. [결정 범위](#ux-시안과-프로젝트-권한-정책-확정), 실제 앱 인수는 아래 별도 완료 근거와 구분 |
 | QLT-019, 2026-10-23 | Node ESM과 bundler의 실제 GoogleProvider default export 형태 차이를 정규화하고 테스트 Google 설정을 합성 값으로 고정. 원인/완료 경계는 [아래](#qlt-019-google-provider-import), 실행 결과는 [하네스](HARNESS_MAP.md#봉사활동-저장-기반과-auth-import-검증) |
 | QLT-021, 2026-10-21 | D1 총 변경 수를 부모 삭제 수로 오인. DELETE RETURNING의 요청 id rowset과 commit 후 followup 분리. main ddcedd6/sites c1c55da, DB109/action8/unit119/visibility33/Worker257, 양쪽 build/lint/types/FSD PASS. 후속 version13의 핵심 삭제 오판 운영 인수는 아래 별도 기록. NAS 적용·첨부 인수는 포함하지 않음 |
 
 과거 네트워크 기록의 제목 QLT-020은 당시 잘못 중복 사용된 표기다. 현재 TODO의 QLT-020은 native 첨부 bug 파일 정리를 뜻하며 번호를 다시 발급하지 않는다. QLT-015/016, OPS-021/031/032/033/034/035는 이 완료 색인으로 닫히지 않는다. QLT-019의 과거 실패는 보존하며 후속 수정은 아래 별도 근거다.
+
+## 첨부 미리보기와 SU 불변성 구현
+
+PRD-056은 기존 저장·인가 경로를 재사용해 제출 상세/버전 이력의 공통 첨부 컴포넌트에서 지원 파일을 요청할 때만 미리보기하도록 구현했다. 텍스트는 bounded UTF-8 prefix와 잘림 안내·raw text만 표시하고 raster는 allowlist·기본 signature/해상도 검사를 거친다. 지원 불가/손상/크기 초과와 읽기 실패는 기존 다운로드·재시도 안내로 처리하며 원본·불변 버전·private/프로젝트 인가를 유지한다. 상세 형식/제한은 ARCHITECTURE가 소유한다.
+
+PRD-057은 검증된 로그인 identity와 현재 env의 SU 이메일로 effective role/SU를 다시 계산해 오래된 DB role·JWT/session flag·소속으로 강등되지 않게 했다. SU를 새 담당자·팀장·명단 후보와 서버 배정에서 제외하되 기존 배정/자료·명시적 전역 관리 조회는 보존한다. 실제 계정 role/소속·환경을 바꾼 것이 아니다.
+
+소스 회귀와 Native의 실제 현재/과거 파일·형식/실패·권한 회수·SU stale guest/소속0·기존 배정 보존을 인수했다. 합성 seed 보정과 기대된 권한 거부는 제품 결함과 구분했으며 정확한 실행 수치·artifact·팀장 후보 UI 미검증은 [하네스](HARNESS_MAP.md#제출물-첨부-미리보기-검증)가 소유한다. 이 기록은 최종 Worker/게시·운영 UI/Google 인수가 아니며 운영 version16과 사용자 자료는 유지했다.
 
 ## UX 시안과 프로젝트 권한 정책 확정
 

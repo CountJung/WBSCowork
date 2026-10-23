@@ -28,8 +28,8 @@ export async function applyTaskTemplate(input:{projectId:number;templateKey:stri
    SELECT ?,?,?,?,?,?,? FROM projects WHERE id=? AND ${scope.sql}
    AND EXISTS(SELECT 1 FROM users actor WHERE actor.id=? AND (actor.role IN ('member','admin') OR (?=1 AND LOWER(actor.email)=?)))
    AND (project_type='collaboration' OR (SELECT COUNT(*) FROM project_members pm WHERE pm.project_id=projects.id AND pm.active=1 AND pm.user_id IN (${assignees.length?assignees.map(()=>'?').join(','):'NULL'}))=?)
-   AND (SELECT COUNT(*) FROM users target WHERE target.id IN (${assignees.length?assignees.map(()=>'?').join(','):'NULL'}) AND (target.role='member' OR ${projectManagementForCurrentUser('projects.id','target.id','LOWER(target.email)=?')}) AND ${projectAccessForCurrentUser('projects.id','target.id','LOWER(target.email)=?')})=?${duplicate}`,
-   params:[input.projectId,actor.userId,input.templateKey,input.templateVersion,key,fingerprint,nodes.length,input.projectId,...scope.params,actor.userId,actor.isSuperuser?1:0,getRuntimeEnv().auth.superuserEmail??'',...assignees,assignees.length,...assignees,getRuntimeEnv().auth.superuserEmail??'',getRuntimeEnv().auth.superuserEmail??'',assignees.length]},
+   AND (SELECT COUNT(*) FROM users target WHERE target.id IN (${assignees.length?assignees.map(()=>'?').join(','):'NULL'}) AND LOWER(TRIM(target.email))<>? AND (target.role='member' OR ${projectManagementForCurrentUser('projects.id','target.id','LOWER(target.email)=?')}) AND ${projectAccessForCurrentUser('projects.id','target.id','LOWER(target.email)=?')})=?${duplicate}`,
+   params:[input.projectId,actor.userId,input.templateKey,input.templateVersion,key,fingerprint,nodes.length,input.projectId,...scope.params,actor.userId,actor.isSuperuser?1:0,getRuntimeEnv().auth.superuserEmail??'',...assignees,assignees.length,...assignees,getRuntimeEnv().auth.superuserEmail??'',getRuntimeEnv().auth.superuserEmail??'',getRuntimeEnv().auth.superuserEmail??'',assignees.length]},
  ];
  for(const node of nodes){
   const nodeKey=key+':'+node.key;

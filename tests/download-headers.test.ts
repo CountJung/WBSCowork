@@ -11,6 +11,7 @@ mockModuleExports("@/src/entities/submission/index.server", {
   getSubmissionAttachmentForViewer: async () => ({ id: 1, submissionId: 1, filePath: "synthetic/file", fileName: "file.txt", fileMimeType: "text/plain", fileSizeBytes: 999 }),
   getSubmissionRevisionForViewer: async () => ({id:1,submissionId:1,revisionNumber:1,taskId:1,filePath:"synthetic/file",fileName:"file.txt",fileMimeType:"text/plain",fileSizeBytes:999}),
   readStoredSubmissionAttachment: async () => ({ buffer: Buffer.from("abc"), fileSizeBytes: 3 }),
+  readSubmissionAttachmentPreview: async () => {throw new Error("A normal download must not request a preview.");},
 });
 const legacy = await import("@/app/api/submissions/[submissionId]/attachment/route");
 const multiple = await import("@/app/api/submission-attachments/[attachmentId]/route");

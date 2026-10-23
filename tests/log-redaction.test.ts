@@ -4,6 +4,7 @@ import { test, describe, before } from "node:test";
 import assert from "node:assert/strict";
 import { readFile, readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
+import {TEST_SUPERUSER_EMAIL} from "./helpers/test-env";
 const {
   getAbsoluteLogDirectory,
   logUserAction,
@@ -19,7 +20,7 @@ async function readLastLoggedEntry() {
     .filter(Boolean);
 
   return JSON.parse(lines[lines.length - 1]) as {
-    details?: { metadata?: Record<string, unknown> };
+    details?: { actorIsSuperuser?:boolean;actorRole?:string;metadata?: Record<string, unknown> };
   };
 }
 
@@ -88,4 +89,12 @@ describe("action log — 저장 경로가 로그에 남지 않는다", () => {
     assert.ok(!serialized.includes("uploads"), "디렉터리 구조가 노출되면 안 된다");
     assert.ok(!serialized.includes("개인정보-원본"), "파일 본명이 노출되면 안 된다");
   });
+});
+
+test("audit labels the configured superuser without exposing a configuration value",async()=>{
+ await logUserAction("test",{actorEmail:TEST_SUPERUSER_EMAIL,action:"synthetic.superuser",entityType:"test"});
+ const entry=await readLastLoggedEntry();
+ assert.equal(entry.details?.actorIsSuperuser,true);assert.equal(entry.details?.actorRole,"superuser");
+ await logUserAction("test",{actorEmail:"member@example.test",action:"synthetic.member",entityType:"test"});
+ assert.equal((await readLastLoggedEntry()).details?.actorIsSuperuser,false);
 });

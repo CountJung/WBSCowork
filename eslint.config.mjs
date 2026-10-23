@@ -21,6 +21,8 @@ const eslintConfig = defineConfig([
     // Generated documents and FSD checker fixtures are inputs/outputs, not app code.
     "scripts/outputs/**",
     "scripts/fixtures/**",
+    // Local browser evidence can contain generated diagnostic copies of harnesses.
+    ".test-artifacts/**",
   ]),
   {
     // Document authoring scripts are plain CommonJS run directly with node.

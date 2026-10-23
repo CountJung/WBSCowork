@@ -6,6 +6,8 @@ export type TaskRow = {
   activity_team_name: string | null;
   completion_mode: "submission_required" | "direct_completion";
   completed_by: number | null;
+  completed_by_name?:string|null;
+  completed_by_is_superuser?:number;
   completed_at: Date | string | null;
   parent_id: number | null;
   title: string;
@@ -35,6 +37,8 @@ export type Task = {
   activityTeamName: string | null;
   completionMode: "submission_required" | "direct_completion";
   completedBy: number | null;
+  completedByName?:string|null;
+  completedByIsSuperuser?:boolean;
   completedAt: Date | null;
   parentId: number | null;
   title: string;
@@ -65,6 +69,8 @@ export function mapTaskRow(row: TaskRow): Task {
     activityTeamName: row.activity_team_name ?? null,
     completionMode: row.completion_mode ?? "submission_required",
     completedBy: row.completed_by ?? null,
+    completedByName:row.completed_by_name??null,
+    completedByIsSuperuser:!!Number(row.completed_by_is_superuser??0),
     completedAt: row.completed_at ? new Date(row.completed_at) : null,
     parentId: row.parent_id,
     title: row.title,

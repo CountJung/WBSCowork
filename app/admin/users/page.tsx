@@ -101,7 +101,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   const loggedInCount = users.filter((user) => Boolean(user.lastLoginAt)).length;
   const adminCount = users.filter((user) => user.role === "admin" && !isSuperuserEmail(user.email)).length;
   const memberCount = users.filter((user) => user.role === "member" && !isSuperuserEmail(user.email)).length;
-  const guestCount = users.filter((user) => user.role === "guest").length;
+  const guestCount = users.filter((user) => user.role === "guest" && !isSuperuserEmail(user.email)).length;
 
   return (
     <Container component="main" sx={{ py: { xs: 6, md: 10 } }}>
@@ -147,7 +147,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
             users.map((user) => {
               const isSuperuser = isSuperuserEmail(user.email);
               const roleDescription = isSuperuser
-                ? "env 기반 슈퍼관리자 계정입니다. 관리자 전용 페이지와 시스템 설정에 접근할 수 있습니다."
+                ? "env 기반 슈퍼관리자 계정입니다. 프로젝트 배정 없이 전체 프로젝트를 관리하며, 새 담당자·팀장·프로젝트 소속 배정에서는 제외됩니다. 기존 업무와 기록은 보존됩니다."
                 : user.role === "admin"
                   ? "슈퍼관리자가 명시적으로 배정한 프로젝트를 관리합니다. 전역 사용자 역할과 운영 설정은 변경할 수 없습니다."
                   : user.role === "member"

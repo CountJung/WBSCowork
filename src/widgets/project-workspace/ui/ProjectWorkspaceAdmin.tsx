@@ -13,6 +13,7 @@ function Fields({workspace,kind}:{workspace:ProjectWorkspace;kind:string}){
 export default function ProjectWorkspaceAdmin({workspace,users,action,accessPreview}:{workspace:ProjectWorkspace;users:User[];action:Action;accessPreview:ProjectAccessPreview|null}){
   const userName=(id:number)=>users.find(u=>u.id===id)?.name??`회원 #${id}`;
   const active=workspace.members.filter(m=>m.active);
+  const candidates=users.filter(user=>!user.isSuperuser);
   return <Stack key={`${workspace.projectId}:${workspace.version}`} spacing={2}>
     <Divider/><Typography variant="h6">프로젝트 소속과 활동팀</Typography>
     <Typography variant="body2">슈퍼관리자가 프로젝트 소속을 지정합니다. 소속 추가는 계정 역할이나 비공개 제출물 열람 권한을 높이지 않습니다.</Typography>
@@ -39,11 +40,11 @@ export default function ProjectWorkspaceAdmin({workspace,users,action,accessPrev
     </Stack>
       {accessPreview?<Stack component="form" action={action} spacing={1.5}>
         <Fields workspace={workspace} kind="project_member"/><input type="hidden" name="active" value="1"/>
-        <TextField select name="userId" label={<FieldLabel requirement="required">프로젝트 참여자</FieldLabel>} defaultValue="" required><MenuItem value="" disabled>참여자를 선택하세요</MenuItem>{users.filter(u=>!active.some(m=>m.userId===u.id)).map(u=><MenuItem key={u.id} value={u.id}>{u.name}{u.role==="admin"?" · 관리자":""}</MenuItem>)}</TextField>
+        <TextField select name="userId" label={<FieldLabel requirement="required">프로젝트 참여자</FieldLabel>} defaultValue="" required><MenuItem value="" disabled>참여자를 선택하세요</MenuItem>{candidates.filter(u=>!active.some(m=>m.userId===u.id)).map(u=><MenuItem key={u.id} value={u.id}>{u.name}{u.role==="admin"?" · 관리자":""}</MenuItem>)}</TextField>
         <SubmitButton variant="outlined" pendingLabel="소속 지정 중…">참여자 추가</SubmitButton>
       </Stack>:null}
       <Stack spacing={1}>{active.map(member=><Stack key={member.userId} direction={{xs:"column",sm:"row"}} spacing={1} sx={{alignItems:{sm:"center"},justifyContent:"space-between"}}>
-        <Typography>{userName(member.userId)}{users.find(user=>user.id===member.userId)?.role==="admin"?" · 이 프로젝트 관리자":""}</Typography>{accessPreview?<Stack component="form" action={action}><Fields workspace={workspace} kind="project_member"/><input type="hidden" name="active" value="0"/><input type="hidden" name="userId" value={member.userId}/><SubmitButton size="small" pendingLabel="종료 중…">프로젝트 참여 종료</SubmitButton></Stack>:null}
+        <Typography>{userName(member.userId)}{users.find(user=>user.id===member.userId)?.isSuperuser?" · 슈퍼관리자 (기존 소속)":users.find(user=>user.id===member.userId)?.role==="admin"?" · 이 프로젝트 관리자":""}</Typography>{accessPreview?<Stack component="form" action={action}><Fields workspace={workspace} kind="project_member"/><input type="hidden" name="active" value="0"/><input type="hidden" name="userId" value={member.userId}/><SubmitButton size="small" pendingLabel="종료 중…">프로젝트 참여 종료</SubmitButton></Stack>:null}
       </Stack>)}</Stack>
     {!accessPreview?<Typography variant="caption">프로젝트 소속 지정·해제와 접근 범위 변경은 슈퍼관리자 전용입니다.</Typography>:null}
     {workspace.projectType==="volunteering"?<>
@@ -63,7 +64,7 @@ export default function ProjectWorkspaceAdmin({workspace,users,action,accessPrev
         </Stack>)}
         <Stack component="form" action={action} spacing={1.5} aria-label={`${team.name} 참여자 배정`}>
           <Fields workspace={workspace} kind="team_member"/><input type="hidden" name="active" value="1"/><input type="hidden" name="teamId" value={team.id}/>
-          <TextField select name="userId" label={<FieldLabel requirement="required">팀 참여자</FieldLabel>} defaultValue="" required><MenuItem value="" disabled>프로젝트 참여자 선택</MenuItem>{active.map(m=><MenuItem key={m.userId} value={m.userId}>{userName(m.userId)}</MenuItem>)}</TextField>
+          <TextField select name="userId" label={<FieldLabel requirement="required">팀 참여자</FieldLabel>} defaultValue="" required><MenuItem value="" disabled>프로젝트 참여자 선택</MenuItem>{active.filter(m=>candidates.some(u=>u.id===m.userId)).map(m=><MenuItem key={m.userId} value={m.userId}>{userName(m.userId)}</MenuItem>)}</TextField>
           <TextField select name="role" label="팀 역할" defaultValue="member" helperText="업무 작성 권한이 있는 팀원만 팀장으로 지정할 수 있습니다."><MenuItem value="member">팀원</MenuItem><MenuItem value="leader">팀장 (기존 팀장 교체)</MenuItem></TextField>
           <Button type="submit" variant="outlined">팀원 배정</Button>
         </Stack>

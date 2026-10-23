@@ -4,7 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
 import { logUserAction, logUserActionFailure } from "@/src/shared/server/logging/index.server";
 import { resolveUserRoleForSession, syncAuthenticatedUserIfPossible } from "./user-repository.server";
-import { getDefaultUserRole } from "../model/user";
+import { getDefaultUserRole,getEffectiveUserRole,isConfiguredSuperuser } from "../model/user";
 
 const runtimeEnv = getRuntimeEnv();
 const googleClientId = runtimeEnv.auth.googleClientId;
@@ -20,7 +20,7 @@ const createGoogleProvider = typeof GoogleProvider === "function"
 export function isSuperuserEmail(email?: string | null) {
   const superuserEmail = getRuntimeEnv().auth.superuserEmail;
 
-  return Boolean(email && superuserEmail && email.toLowerCase() === superuserEmail);
+  return isConfiguredSuperuser(email,superuserEmail);
 }
 
 function getRoleForEmail(email?: string | null) {
@@ -101,8 +101,8 @@ export const authOptions = {
     session({ session, token }) {
       if (session.user) {
         session.user.email = token.email ?? session.user.email;
-        session.user.role = token.role ?? getRoleForEmail(session.user.email);
-        session.user.isSuperuser = Boolean(token.isSuperuser);
+        session.user.role = getEffectiveUserRole(token.role ?? getRoleForEmail(session.user.email),session.user.email,getRuntimeEnv().auth.superuserEmail);
+        session.user.isSuperuser = isSuperuserEmail(session.user.email);
       }
 
       return session;
@@ -111,7 +111,12 @@ export const authOptions = {
 } satisfies NextAuthOptions;
 
 export async function getAuthSession() {
-  return getServerSession(authOptions);
+  const session=await getServerSession(authOptions);
+  if(session?.user){
+    session.user.role=getEffectiveUserRole(session.user.role??"guest",session.user.email,getRuntimeEnv().auth.superuserEmail);
+    session.user.isSuperuser=isSuperuserEmail(session.user.email);
+  }
+  return session;
 }
 
 export function getSignInPath(callbackPath: string) {

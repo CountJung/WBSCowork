@@ -2,7 +2,7 @@
 
 이 문서는 **지금 어디까지 왔고 다음 무엇을 해야 하는가**를 소유한다. 단계/완료 게이트는 [MASTER_PLAN](MASTER_PLAN.html), 과거 근거는 [COMPLETED_LOG](COMPLETED_LOG.md), 상세 digest 설계는 [계획](PROJECT_DIGEST_REPORT_PLAN.md)에 있다.
 
-최종 검토: 2026-10-23 · 다음 번호: **QLT-025 / RPT-021 / OPS-038 / PRD-056**
+최종 검토: 2026-10-23 · 다음 번호: **QLT-027 / RPT-021 / OPS-038 / PRD-058**
 
 ## 현재 상태
 
@@ -15,6 +15,7 @@
 | 후속 계획 | digest/report D0–D5 미구현, 실제 NAS 적용/인수 미완료 | D0부터 순서대로 진행, delivery는 별도 동의·승인 |
 | 봉사활동 | 확정 정책의 프로젝트/팀 관리·팀장 범위 업무·직접 완료를 구현하고 로컬/합성 인수·version15 게시 완료 | 기존 업무/협업 업무 제출 필수·private 계약과 사용자 자료 표본 보존. 실제 운영 UI·Google 인수와 R2 bytes 대조는 미실행 |
 | UX·프로젝트 바인딩 | 확정된 다중 소속·SU 전역/지정 프로젝트 admin 정책으로 UI·SQL scope 구현·Worker/Native strict UI와 기존 봉사 회귀 완료 | 기존 Sites version16 게시 완료. 계정 role/소속 자동 부여0·기존7표 보존; 확정 admin 관리 축소는 게시 코드 정책으로 적용 |
+| 제출물 첨부 미리보기 | PRD-056 소스 구현·Native 실제 미리보기 인수 완료 | 지원/제한은 설계 정본, 최종 Worker/실제 게시 artifact 인수 대기. QLT-025 로컬/실제 artifact 인수와 기존 Sites 게시 전 완료로 기록하지 않음 |
 
 ## 열린 항목
 
@@ -27,6 +28,8 @@
 | QLT-016 | [ ] | Worker 동시 form의 간헐503 원인 확인. 재실행 통과를 원인 해결로 바꾸지 않음 | [검증 기준선](HARNESS_MAP.md#검증-기준선) |
 | QLT-020 | [ ] | Native 첨부 bug의 durable 파일 정리 도입. 그전 영구 삭제는 fail-closed 유지 | [버그 계약](BUG_REPORTS.md#스크린샷) |
 | QLT-022 | [!] | version14 연결 실패 안내·초안 보존과 사용자 브라우저 신규 첨부·새로고침·다운로드는 통과했다. 수정으로 첨부를 추가하는 운영 경로는 미검증이며 로컬 회귀만 통과. 최초 연결 실패 원인은 미확정으로 자동화 파일 전달 한계와 앱 원인을 구분한다. 생성된 사용자 자료는 보존하며 삭제는 미승인 | [관측·미확인 경계](HARNESS_MAP.md#제출물-첨부-운영-오류-qlt-022) |
+| QLT-025 | [~] | 소스·Native390/1280의 미리보기371조건 통과. 최종 source Worker/실제 게시 artifact에서 텍스트·raster·실패/재시도·모바일을 검증. legacy·다중 첨부/과거 버전·private·현재 권한/소속 해제와 원본 bytes 보존을 양 runtime·실제 브라우저에서 대조. 게시 artifact와 운영 상태를 별도 확인 | [검증 계획](HARNESS_MAP.md#제출물-첨부-미리보기-검증) |
+| QLT-026 | [~] | SU 양 DB/identity·Native UI의 stale guest/소속0·후보 제외/기존 배정 보존 통과. 최종 Worker에서 같은 계약과 새 팀장 후보 UI 미검증 범위를 확인하고 게시/운영 경계와 구분. 실제 계정 role/환경 설정을 바꾸지 않음 | [권한 회귀 계획](HARNESS_MAP.md#제출물-첨부-미리보기-검증) |
 | OPS-021 | [~] | NAS 소스/업데이트 절차는 준비됨. 실제 플랫폼·백업·기본 build·대상 릴리스 migration 적용·기동·자료/역할/수동 인수는 운영자가 수행. 기존 NFT warning도 유지 | [운영 안내](NAS_UPDATE_GUIDE.md) |
 | OPS-031 | [!] | Native bug purge 포함 전체 수명주기/두 isolation-level 경합 검증은 별도 승인 대기. 비파괴16조건·Sites 삭제 완료와 구분 | [완료 범위](COMPLETED_LOG.md#실환경-qa와-삭제-승인-경계) |
 | OPS-032 | [ ] | Next/NextAuth/MariaDB 등 남은 dependency advisory를 실제 native/Worker 사용 경로별 검토. 전체 npm audit 해결이나 강제 major override를 주장하지 않음 | [보안 근거](COMPLETED_LOG.md#보안-패치와-활성-decoder) |
@@ -39,6 +42,10 @@
 | RPT-018 | [ ] | D3 scheduler token/dry-run/별도 schema/run ledger; QLT-012 완료 계약과 RPT-017 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
 | RPT-019 | [ ] | D4 download-only/retention; RPT-018 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
 | RPT-020 | [!] | D5 recipient consent·visibility/threat model 확정 후 delivery 검토; RPT-019 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
+
+## 첨부 미리보기와 환경 슈퍼관리자
+
+PRD-056/057 소스 구현과 Native 실제 인수를 완료 이력으로 이관했다. 지원 형식/제한·SU의 현재 계약은 [ARCHITECTURE](ARCHITECTURE.md#제출물-첨부-미리보기-확장), 고유 구현 근거는 [COMPLETED_LOG](COMPLETED_LOG.md#첨부-미리보기와-su-불변성-구현), 남은 QLT-025/026 Worker/게시 인수는 [HARNESS_MAP](HARNESS_MAP.md#제출물-첨부-미리보기-검증)을 따른다. 운영은 아직 version16이며 실제 사용자 자료/role·소속·환경 변경이나 영구 삭제는 없다.
 
 ## 봉사활동 확장 작업
 
