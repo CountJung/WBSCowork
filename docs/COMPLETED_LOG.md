@@ -10,6 +10,7 @@
 | OPS-038, 2026-10-23 | 최초 배포 자동 승인 거부는 보존. 사용자 새 직접 승인 뒤 같은 저장v19의 미실행 확인→1회 배포 재시도 terminal succeeded·active/latest19와 D1 추가3표/기존23표·설정 보존 확인. [승인/배포 근거](HARNESS_MAP.md#version19-승인과-운영-배포), 운영 UI/새 OAuth는 별도 |
 | PRD-058, 2026-10-23 | 기존6종 활동팀의 공통 준비표·서버 식사량·현재 팀 권한·CAS/불변 이력·UI 진입 경로와 양 DB additive 저장 구현, 소스/실DB·실제 Native/Worker compiled HTTP 인수 완료. [구현·게시 구분](#활동팀-공통-준비표-소스-구현), 실제 화면/운영 인수는 QLT-031 유지 |
 | OPS-039, 2026-10-23 | 최초 v20 자동 승인 거부를 보존. 새 직접 승인 뒤 같은 저장v20 미실행 확인→배포1회 재시도 succeeded/active/latest20·0018 신규2표·기존 행/설정 보존 확인. [승인/배포 범위](HARNESS_MAP.md#version20-승인과-운영-배포), 후속 envSU 화면 부분 인수 후 QLT-031 잔여 유지 |
+| OPS-040, 2026-10-25 | 최초 텍스트 중간v21 자동 배포 거부 보존. 새 승인 후1회 재시도 succeeded·28표337행/설정 동일 확인. [게시/실검토 범위](HARNESS_MAP.md#version21-승인과-텍스트-중간-배포), PRD-059/QLT-032 이미지/최종 게이트는 열린 상태 |
 | QLT-001/002, 2026-08 | ESLint 기준선, FSD M0~M5 완료. root app 조립과 public API로 이동하고 components/lib/models 호환층 제거. URL/권한/SQL 변경과 구조 이동을 분리 |
 | QLT-003~007, 2026-09 | private 파생 댓글/첨부 props 유출, ownership 없는 mutation, unscoped 단건, 경로 로그, task route의 project 관리 권한을 수정. SQL viewer/IdScope·상위 관계·작성자/admin·canonical project 경로를 강제 |
 | QLT-008/009 | node --import tsx로 loader 경고 정리, 실제 인가 경로의 node:test visibility fixture 도입. synthetic session은 실제 OAuth가 아님 |
@@ -110,7 +111,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 18 · 2026-10-23 10:38:44.852001 | ccabf815e78d4aa43f15b12caf1c8d8a5b1577f7 | appgdep_6adb3920d4c081918b876140930c2be8 terminal succeeded; active/latest18·exact source/deployment 재조회 일치. public policy2/auth_client/env11 동일·기존7표 전체 동일, schema/migration0. 후속 같은 Work 브라우저의 QLT-027 관측 범위 재인수 PASS |
 | 19 · 2026-10-23(updated12:39:08.402934) | 409f514a56dfac47932f0d3f874650f4e8b059bc | 최초 자동 승인 거부 후 새 직접 승인에 따른1회 재시도 terminal succeeded, appgdep_6adb555e05908191a189d19e2863f4cf. active/latest19·exact source/deployment 일치·기존23표/설정 동일, 새3표 각0행. 후속 허용 Chrome 운영 읽기/미리보기 부분 PASS |
 | 20 · 2026-10-23 15:06:43.558919(반환) | 69e1fb92a88371d96c95f30078a1ec08d07f7b86 | 최초 자동 거부 후 새 직접 승인·동일 저장v20 배포1회 재시도 terminal succeeded, appgdep_6adb77f8a28881919ade7c049e008ecd. active/latest20·0018 새2표 각0행, 기존25표 동일·audit 기존279행 보존+INFO5/설정 동일. 실제 브라우저 미검증 |
-| 21 · 저장만/배포 미실행 | 570b0c6526835e6865ed8327057c940c3b52c639 | 텍스트 중간 가이드 저장 성공. deploy_site_version1회 자동 승인 검토 거부·deployment_id=null. livev20 유지·기존28표337행/설정 동일, schema 변경0. PRD-059/QLT-032 전체 미완료 |
+| 21 · 2026-10-25 05:27:08.650286 | 570b0c6526835e6865ed8327057c940c3b52c639 | 최초 자동 거부 후 새 승인·단1회 재시도 succeeded, appgdep_6add932312c4819192c91350c59a9f24.28표337행/설정 동일·migration0. 부모 envSU1180px 부분 검토 PASS, 이미지/최종 가이드는 미완료 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -128,7 +129,7 @@ version19 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_4351f6dc188881
 
 version20 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_b042a7294da4819193a6382e5e87c421`다. source `69e1fb92a88371d96c95f30078a1ec08d07f7b86` push/원격과 exact 새 build/compiled30·34HTTP를 확인해 저장했다. 최초 자동 검토 거부로 livev19를 유지한 이력은 보존한다. 이후 사용자 새 직접 승인에 따라 deployment_id=null 확인→같은 저장v20 배포1회 재시도해 terminal succeeded·active/latest20을 확인했고 재저장/새 코드·build는 없었다. D1 0018 새2표와 기존 사용자 행/역할·설정을 보존했으며 audit INFO5건 추가는 전후 동일 주장과 구분한다. 정확한 승인/배포·보존/미검증 범위는 [하네스](HARNESS_MAP.md#version20-승인과-운영-배포)를 따르고 OPS-039는 완료 이관했다. 후속 허용 Chrome1165px/envSU의4종 준비표 부분 인수는 [운영 검토](HARNESS_MAP.md#version20-허용-chrome-운영-준비표-검토)에 기록하며 QLT-031의 모바일/실제 팀장 등 잔여 게이트를 유지한다. 합성 project6/팀1~4/준비표v1은 보존했고 삭제하지 않았다.
 
-저장 version21 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_c0017972f114819189f46527f99f99b6`다. 이미지 없는 텍스트 중간 가이드 source `570b0c6526835e6865ed8327057c940c3b52c639`를 저장했으나 배포 호출은 이미지 gate 미완료/변경된 가이드 게시 승인 부족을 이유로 자동 승인 검토에서 거부됐다. 후속 재시도0·deployment_id=null이고 운영은 기존v20이다. 검증된 text 중간 범위·실제 배포 거부/보존 확인과 새 승인 근거 대기는 [하네스](HARNESS_MAP.md#저장-version21와-텍스트-중간-배포-거부)를 따른다. PRD-059/QLT-032 기능 전체를 완료 이관하지 않으며 OPS-040은 열린 상태다.
+version21 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_c0017972f114819189f46527f99f99b6`다. 이미지 없는 텍스트 중간 가이드 source `570b0c6526835e6865ed8327057c940c3b52c639`의 최초 자동 배포 거부는 보존하고, 새 승인 후 단1회 재시도로 succeeded·기존 행/설정 보존을 확인해 OPS-040을 해소했다. 부모의 envSU1180px 운영 안내/목차·복귀 부분 검토와 실제 이미지0·타역할/모바일 미검증은 [하네스](HARNESS_MAP.md#version21-허용-chrome-가이드-검토)를 따른다. PRD-059/QLT-032는 기능 전체를 완료 이관하지 않았다. 후속 문구 보완v22의 로컬 model/정적·양 build와 각 text35/51페이지 HTTP 통과는 별도 범위이며 전체 이미지 gate 미완료·아직 미게시다.
 
 
 
