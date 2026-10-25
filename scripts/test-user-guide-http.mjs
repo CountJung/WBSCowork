@@ -18,7 +18,7 @@ function parseHtml(html){
  const parsed=spawnSync("python3",["-c",program],{input:html,encoding:"utf8",maxBuffer:8*1024*1024});assert.equal(parsed.status,0,parsed.stderr);return JSON.parse(parsed.stdout);
 }
 /** Shared only by the two focused HTTP drivers; no browser assertions are inferred. */
-export async function verifyUserGuide(request,out,{runtime,secretSentinel="SYNTHETIC_GUIDE_SECRET_MUST_NOT_RENDER"}={}){
+async function verifyGuideContent(request,out,{runtime,secretSentinel="SYNTHETIC_GUIDE_SECRET_MUST_NOT_RENDER"}={}){
  await mkdir(out,{recursive:true});const assertions=[],pages=[],assets=[];
  const check=(condition,label)=>{if(!condition){const error=new Error(`${runtime}: ${label}`);error.partial={checks:assertions.length,assertions:[...assertions],pages:pages.length,assets:[...assets]};error.blockedBy=label.startsWith("at least one reviewed actual screenshot")?"missing_reviewed_screenshot_assets":undefined;throw error;}assertions.push(label);console.log(`PASS ${runtime}: ${label}`);};
  async function page(route){const response=await request(route),html=await response.text(),dom=parseHtml(html);const row={route,status:response.status,contentType:response.headers.get("content-type"),html,dom};pages.push(row);await writeFile(path.join(out,route.replaceAll("/","_")+'.html'),html);return row;}
@@ -52,6 +52,15 @@ export async function verifyUserGuide(request,out,{runtime,secretSentinel="SYNTH
  if(rsc.status===307){check(rsc.headers.get("location")===rscPath+"?_rsc","RSC canonicalization stays on the same public feature route");rsc=await request(rscPath+"?_rsc",headers);rscText=await rsc.text();}
  check(rsc.status===200&&rsc.headers.get("content-type")?.includes("text/x-component")&&!errorMarker(rscText),"guide RSC payload serializes without client-function/error chunks");await writeFile(path.join(out,"feature.rsc"),rscText);
  await writeFile(path.join(out,"dom.json"),JSON.stringify(pages.map(({route,status,contentType,dom})=>({route,status,contentType,dom})),null,2));
+ const noScreenshots=pages.every(row=>row.dom.images.length===0);
+ check(!noScreenshots||pages.every(row=>row.html.includes('data-testid="guide-screenshots-pending"')&&row.dom.text.includes("스크린샷 준비 중입니다")&&row.dom.text.includes("현재는 글로 설명하는 사용설명서를 먼저 제공합니다")),"image-free guide visibly discloses pending screenshots and the current text-first release");
+ check(pages.every(row=>row.dom.images.every(image=>typeof image.src==="string"&&image.src.trim().length>0)),"guide pages contain no empty or broken placeholder image references");
+ return {check,pages,assets,assertions,invalid,runtime};
+}
+
+/** Full acceptance keeps the mandatory real-image gate; this cannot accept text-only content. */
+export async function verifyUserGuide(request,out,options={}){
+ const {check,pages,assets,assertions,invalid,runtime}=await verifyGuideContent(request,out,options);
  const images=pages.flatMap(row=>row.dom.images.map(image=>({...image,page:row.route,captions:row.dom.captions})));
  check(images.length>0,"at least one reviewed actual screenshot is rendered; empty placeholders do not count as image proof");
  check(images.every(image=>image.alt?.trim().length>=8&&Number(image.width)>0&&Number(image.height)>0&&image.src?.startsWith("/")&&!image.src.startsWith("//")),"every screenshot has descriptive alt, intrinsic dimensions and a same-site source");
@@ -66,15 +75,22 @@ export async function verifyUserGuide(request,out,{runtime,secretSentinel="SYNTH
 
  return {complete:true,runtime,checks:assertions.length,assertions,pages:pages.length,assets,invalid,limitations:"HTTP/SSR/RSC and decoded static-image bytes only. Actual Chromium unavailable: chrome-sandbox owner nobody:nogroup mode4755 unchanged. No browser launch, hydration console, responsive viewport, keyboard/focus/back navigation, or visual screenshot inspection is claimed. No DB/R2/account/production/publication operations."};
 }
+/** Separate intermediate-release contract. Passing this explicitly does not accept screenshot readiness. */
+export async function verifyGuideText(request,out,options={}){
+ const {check,pages,assets,assertions,invalid,runtime}=await verifyGuideContent(request,out,options);
+ check(pages.every(row=>row.dom.images.length===0),"intermediate text release has no image tags, so it cannot expose missing screenshot URLs");
+ return {complete:true,acceptance:"intermediate_text_guide",screenshotsAccepted:false,screenshotReadiness:"pending",runtime,checks:assertions.length,assertions,pages:pages.length,assets,invalid,limitations:"Text-guide HTTP/SSR/RSC acceptance only. Strict full-guide image acceptance remains blocked and must be run separately. No actual browser, viewport, keyboard/focus, hydration/client console, DB/R2/accounts, production or publication verification."};
+}
+
 async function workerModules(dir){const entries=[];for(const item of await readdir(dir,{withFileTypes:true})){const file=path.join(dir,item.name);if(item.isDirectory())entries.push(...await workerModules(file));else if(file.endsWith('.js'))entries.push({type:"ESModule",path:file});}return entries;}
-async function runWorker(){
- const out=path.resolve(".test-artifacts/user-guide-http"),entry=path.resolve("dist/server/index.js"),before=await buildSnapshot(["dist/server","dist/client"]),trace=[];await mkdir(out,{recursive:true});await writeFile(path.join(out,"result.json"),JSON.stringify({complete:false,phase:"running"}));
+export async function runWorkerGuideQa({verify=verifyUserGuide,outputDirectory="user-guide-http"}={}){
+ const out=path.resolve(".test-artifacts",outputDirectory),entry=path.resolve("dist/server/index.js"),before=await buildSnapshot(["dist/server","dist/client"]),trace=[];await mkdir(out,{recursive:true});await writeFile(path.join(out,"result.json"),JSON.stringify({complete:false,phase:"running"}));
  const origin="https://guide-loopback.example.test",secret=randomBytes(32).toString("hex");
  const mf=new Miniflare({cf:false,modules:[{type:"ESModule",path:entry},...(await workerModules(path.resolve("dist/server"))).filter(item=>item.path!==entry)],modulesRoot:path.resolve("dist/server"),compatibilityDate:"2026-05-15",compatibilityFlags:["nodejs_compat"],assets:{directory:path.resolve("dist/client"),binding:"ASSETS",routerConfig:{invoke_user_worker_ahead_of_assets:true,has_user_worker:true}},bindings:{NEXTAUTH_URL:origin,NEXTAUTH_SECRET:secret,GOOGLE_CLIENT_ID:"synthetic-guide",GOOGLE_CLIENT_SECRET:"synthetic-guide-no-credential"},log:new Log(LogLevel.ERROR)});
  try{
   const request=async(route,headers={})=>{const response=await consumeWorkerResponse(await mf.dispatchFetch(origin+route,{headers,redirect:"manual"}),{route,method:"GET"});trace.push({route,status:response.status,contentType:response.headers.get("content-type"),location:response.headers.get("location"),cacheControl:response.headers.get("cache-control")});return response;};
-  const result=await verifyUserGuide(request,out,{runtime:"worker",secretSentinel:secret});await writeFile(path.join(out,"result.json"),JSON.stringify({...result,requests:trace.length,entrySha256:sha(await readFile(entry))},null,2));
+  const result=await verify(request,out,{runtime:"worker",secretSentinel:secret});await writeFile(path.join(out,"result.json"),JSON.stringify({...result,requests:trace.length,entrySha256:sha(await readFile(entry))},null,2));
  }catch(error){await writeFile(path.join(out,"result.json"),JSON.stringify({complete:false,phase:error.blockedBy?"blocked":"failed",blockedBy:error.blockedBy,...error.partial,requests:trace.length,entrySha256:sha(await readFile(entry)),error:String(error),browserExecuted:false,limitations:"Partial HTTP/SSR/RSC only. Required real screenshot gate remains strict. Missing assets prevent completion; no browser or production access."},null,2));console.error(error);process.exitCode=1;
  }finally{await writeFile(path.join(out,"requests.json"),JSON.stringify(trace,null,2));await mf.dispose();const after=await buildSnapshot(["dist/server","dist/client"]);await writeFile(path.join(out,"build-provenance.json"),JSON.stringify({before,after,unchanged:JSON.stringify(before)===JSON.stringify(after)},null,2));assert.deepEqual(after,before,"Guide compiled Worker changed during QA");}
 }
-if(path.resolve(process.argv[1]??"")===fileURLToPath(import.meta.url))await runWorker();
+if(path.resolve(process.argv[1]??"")===fileURLToPath(import.meta.url))await runWorkerGuideQa();

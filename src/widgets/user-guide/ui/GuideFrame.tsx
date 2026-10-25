@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
+import { guideScreenshots } from "../model/screenshots";
 
 export type GuideContentsItem = { id: string; label: string };
 export function GuideFrame({ title, intro, contents, breadcrumbs = [], children }: {
@@ -16,6 +17,7 @@ export function GuideFrame({ title, intro, contents, breadcrumbs = [], children 
         {breadcrumbs.length ? <Stack component="nav" aria-label="현재 위치" direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap", alignItems: "center" }}>{breadcrumbs.map(item => <Box key={item.href}><Button component="a" href={item.href} size="small">{item.label}</Button><span aria-hidden="true"> / </span></Box>)}<Typography aria-current="page" variant="body2">{title}</Typography></Stack> : null}
         <Typography id="guide-title" component="h1" variant="h3" sx={{ fontSize: { xs: "1.9rem", sm: "2.5rem" }, lineHeight: 1.3 }}>{title}</Typography>
         <Typography color="text.secondary" sx={{ maxWidth: "75ch", lineHeight: 1.85 }}>{intro}</Typography>
+        {guideScreenshots.length === 0 ? <Alert severity="info" data-testid="guide-screenshots-pending">스크린샷 준비 중입니다. 현재는 글로 설명하는 사용설명서를 먼저 제공합니다. 메뉴 위치와 입력 예시를 따라 이용할 수 있으며, 실제 화면 예시는 검토를 마친 뒤 추가하겠습니다.</Alert> : null}
       </Stack>
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "15rem minmax(0, 1fr)" }, gap: { xs: 2, md: 4 }, alignItems: "start" }}>
         <Paper component="nav" aria-label="사용설명서 목차" variant="outlined" sx={{ p: 2, minWidth: 0, position: { md: "sticky" }, top: { md: 176, xl: 112 }, maxHeight: { md: "calc(100dvh - 200px)", xl: "calc(100dvh - 136px)" }, overflowY: { md: "auto" } }}>
