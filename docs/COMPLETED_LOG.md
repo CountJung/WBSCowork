@@ -132,7 +132,7 @@ version20 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_b042a7294da481
 
 version21 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_c0017972f114819189f46527f99f99b6`다. 이미지 없는 텍스트 중간 가이드 source `570b0c6526835e6865ed8327057c940c3b52c639`의 최초 자동 배포 거부는 보존하고, 새 승인 후 단1회 재시도로 succeeded·기존 행/설정 보존을 확인해 OPS-040을 해소했다. 부모의 envSU1180px 운영 안내/목차·복귀 부분 검토와 실제 이미지0·타역할/모바일 미검증은 [하네스](HARNESS_MAP.md#version21-허용-chrome-가이드-검토)를 따른다. PRD-059/QLT-032는 기능 전체를 완료 이관하지 않았다. 후속 문구 보완v22의 로컬 model/정적·양 build와 각 text35/51페이지 HTTP는 별도 근거이며 아래 v22 게시/검증 경계로 구분한다.
 
-version22 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_57a98e2c07cc8191bc9a6e3bb69f14ef`다. 기능 main `e2287849da5350dc079599659ea6f7e0292a4256` / sites·공식 source `717847138879815506d3d4ae3a692b6deb0619e6`의 문구 보완 텍스트 가이드를 게시해 succeeded와 active/latest22·deployment 일치를 확인했다. 이번 직전 baseline28표350행/환경 동일을 대조했고 이전337행·배포전 audit 증가와 구분했다. 정확한 로컬/게시/CI·새 브라우저 미인수는 [하네스](HARNESS_MAP.md#version22-텍스트-중간-가이드-게시)가 소유한다. 이미지 실패와 PRD-059/QLT-032 최종 미완료는 유지한다.
+version22 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_57a98e2c07cc8191bc9a6e3bb69f14ef`다. 기능 main `e2287849da5350dc079599659ea6f7e0292a4256` / sites·공식 source `717847138879815506d3d4ae3a692b6deb0619e6`의 문구 보완 텍스트 가이드를 게시해 succeeded와 active/latest22·deployment 일치를 확인했다. 이번 직전 baseline28표350행/환경 동일을 대조했고 이전337행·배포전 audit 증가와 구분했다. 정확한 로컬/게시/CI는 [게시 근거](HARNESS_MAP.md#version22-텍스트-중간-가이드-게시)가 소유하며, 후속 기존SU/1180px의 문구·목차·복귀·무앱오류 집중 재검토 PASS는 [별도 실제 검토](HARNESS_MAP.md#version22-허용-chrome-집중-재검토)로 구분한다. 이미지 실패와 PRD-059/QLT-032 최종 미완료는 유지한다.
 
 
 

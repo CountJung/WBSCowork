@@ -540,7 +540,7 @@ getversions의 v21 deployment null/v20 기존 deployment와 v20 status succeeded
 | --- | --- |
 | model/정적·build | 전체 유효45 role-feature variant shape 회귀 포함 model14 PASS, lint/typecheck/FSD·새 Native/Worker build PASS. 기존 Native trace13/Vinext 정보 경고 유지 |
 | text/strict HTTP | 실제 Native/Worker 각각 text35조건/51유효 페이지/59GET PASS. 각 full strict는 공통34조건 뒤 missing_reviewed_screenshot_assets exit1·complete:false, 전체 이미지 gate 미완료 유지 |
-| 게시/실제 화면 | 아래 v22 게시 확인과 실제 후속 브라우저 인수 미실행을 구분. Library 추가 시도0·실제 이미지0/픽셀 검토 미완료·PRD-059/QLT-032 열린 상태 유지 |
+| 게시/실제 화면 | 아래 v22 게시 확인 및 기존SU/1180px 집중 재검토를 로컬 검증과 구분. Library 추가 시도0·실제 이미지0/픽셀 검토 미완료·PRD-059/QLT-032 열린 상태 유지 |
 
 각 runtime의 text/strict bundle 전후 지문은 불변이며 Native server-errors는 빈 배열이다. exact303개 source 입력을 stage와 대조했고 Native/main·Worker/sites의 package 기본 build 차이를 명시해 보존했다. 근거는 `.test-artifacts/user-guide-revision/result.json`이다. 이전 text25/전체 strict24는 v21 중간 회차이며 이번35/34 결과와 중복 합산하지 않는다. v21 부모 실제 검토를 v22 실브라우저 통과로 쓰지 않는다.
 
@@ -550,7 +550,13 @@ getversions의 v21 deployment null/v20 기존 deployment와 v20 status succeeded
 
 이번 **배포 바로 전후** baseline은28표350행으로 모든 행이 완전히 같았다. 과거 v21 직후337행과의 차이는 v22 배포 전에 이미 audit_logs304→317행으로 늘어난 것뿐이며 나머지27표는 같고 기존 행은 모두 남았다. 이 증가의 원인은 단정하지 않으며 이번 배포로 생겼다고 쓰지 않는다. v21의 과거337행 동일 대조도 보존한다. env revision11/5keys 값·public policy revision2·auth_client·automations 빈 배열은 완전히 동일하며 신규 migration/권한·환경 변경0, R2 bytes 독립 검증0이다.
 
-입력 archive와 서비스 저장 container는 별도 hash/bytes로 기록했고 v21을 rollback 참조로 유지했다. 이 게시 확인 이후 새 코드 수정/추가 재게시·Library 시도0이다. 이미지 실패/실제 파일0은 그대로이며 **새 v22 운영 브라우저 검토는 아직 미실행**이다. 부모에게 후속 검토를 전달했으며 v21 부분 PASS나 로컬 text35 PASS를 v22 실제 화면 인수로 바꾸지 않는다. PRD-059/QLT-032는 열린 상태다. 게시/보존 근거는 `.test-artifacts/user-guide-revision/publication.json`이다.
+입력 archive와 서비스 저장 container는 별도 hash/bytes로 기록했고 v21을 rollback 참조로 유지했다. 게시 후 새 코드 수정/추가 재게시·Library 시도0이며 이미지 실패/실제 파일0은 그대로다. 후속 v22 실제 집중 재검토는 아래에 별도 기록하며 v21 부분 PASS나 로컬 text35 PASS를 재사용한 결과가 아니다. PRD-059/QLT-032는 열린 상태다. 게시/보존 근거는 `.test-artifacts/user-guide-revision/publication.json`이다.
+
+### version22 허용 Chrome 집중 재검토
+
+2026-10-25 05:47:44~05:48:19 UTC, 부모의 별도 허용 클라우드 브라우저·기존SU 세션·1180px에서 수행한 실제 검토다. 작업/활동 보고서 메뉴명, 제출·준비표의 실제 버튼 순서, 게스트의 읽기 전용 제목·절차·체크리스트와 구성원의 ‘우리 팀 준비표 확인하기’를 확인했다. 보고서 UTC 입력의 날짜 변경 예시와 준비표 날짜·시각에9시간 차감을 적용하지 않는 설명도 확인했다. 이는 SU가 역할별 설명을 읽은 결과이며 실제 게스트·구성원 계정의 기능 접근 검증은 아니다.
+
+목차 Enter 이동·뒤로가기, 누락 anchor0·가로 넘침 없음, 신규 앱 console/hydration 오류 없음을 확인했다. 기존 실제/합성 자료·권한·캡처 변경은 없었고 사용자에게05:48 텍스트 가이드 사용 가능과 이미지 포함 전체 미완료를 안내했다. 좁은 모바일·실제 타역할 로그인·비로그인 운영 공개 접근·신규 Google OAuth는 미검증이다. 이미지0장/준비 중·전체 strict 이미지 gate 실패는 유지하며 이번 브라우저 PASS로 이미지 인수를 대체하지 않는다. 이미지 확보에는 사용자 추가 자료나 지원되는 전달 경로가 필요하고 같은 실패한 Library 전송을 반복하지 않는다.
 
 ## 문서 정리 검증
 
