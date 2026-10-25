@@ -56,4 +56,3 @@ export function UserGuideFeature({ role, feature }: { role: GuideRole; feature: 
     <GuideSection id="related" title="이어서 읽기"><Stack direction="row" useFlexGap spacing={1} sx={{ flexWrap: "wrap" }}>{related.map(item => <Button component="a" key={item.id} href={`/guide/${role.id}/${item.id}`} variant="outlined">{item.title}</Button>)}<Button component="a" href={`/guide/${role.id}`}>{role.label} 기능 목록으로</Button></Stack><Typography variant="caption" color="text.secondary">공통 용어가 낯설다면 <Link href="/guide#terms">헷갈리는 말 알아보기</Link>를 함께 읽어보세요.</Typography></GuideSection>
   </GuideFrame>;
 }
-
