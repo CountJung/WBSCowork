@@ -2,19 +2,19 @@
 
 이 문서는 **지금 어디까지 왔고 다음 무엇을 해야 하는가**를 소유한다. 단계/완료 게이트는 [MASTER_PLAN](MASTER_PLAN.html), 과거 근거는 [COMPLETED_LOG](COMPLETED_LOG.md), 상세 digest 설계는 [계획](PROJECT_DIGEST_REPORT_PLAN.md)에 있다.
 
-최종 검토: 2026-10-25 · 다음 번호: **QLT-033 / RPT-021 / OPS-040 / PRD-060**
+최종 검토: 2026-10-25 · 다음 번호: **QLT-033 / RPT-021 / OPS-041 / PRD-060**
 
 ## 현재 상태
 
 | 구분 | 확인된 상태 | 다음 경계 |
 | --- | --- | --- |
 | 제품 | 기반 WBS/FSD와 팀 업무 P0/P1, 버그/스크린샷 구현 완료 | 실제 다중 Google 계정·운영의 채워진 UI 인수는 로컬 합성 검증과 별개 |
-| Git 소스 | 준비표 source main805c1c7/sites69e1fb9와 공식 source main69e1fb9 push·ls-remote 일치 확인. 운영v20 source69e1fb9와 후속 문서 HEAD 구분 | 이번 소스 검증은 HARNESS_MAP, 운영 반영 여부는 게시 원장으로 구분. main/sites 기본 build 차이 유지 |
-| 운영 게시 | 기존 public Sites version20/source69e1fb9 terminal succeeded·saved deployment/get_site active/latest20 일치 확인 | [게시 원장](COMPLETED_LOG.md#sites-게시-원장). 새 직접 승인 후 같은 저장v20 배포1회 재시도로 OPS-039 해소. 배포 직후 대조에서0018 신규2표 각0행·기존25표 동일/audit 기존행 보존+INFO5·설정 불변을 확인. 후속 허용 Chrome1165px/envSU 준비표 부분 검토 PASS. 좁은 폭·실제 팀장·새 OAuth/R2 bytes는 미검증, Native/NAS 미적용 |
+| Git 소스 | 텍스트 중간 가이드 기능 mainc67619b/sites570b0c6, 공식 source main570b0c6 push 성공. 운영v20 source69e1fb9·저장v21·후속 문서 HEAD 구분 | 이번 소스 검증은 HARNESS_MAP, 운영 반영 여부는 게시 원장으로 구분. main/sites 기본 build 차이 유지 |
+| 운영 게시 | 운영 public Sites는 version20/source69e1fb9 terminal succeeded·기존 deployment 유지. get_site latest21은 저장 번호이며 미게시 | [게시 원장](COMPLETED_LOG.md#sites-게시-원장). 새 직접 승인 후 같은 저장v20 배포1회 재시도로 OPS-039 해소. 배포 직후 대조에서0018 신규2표 각0행·기존25표 동일/audit 기존행 보존+INFO5·설정 불변을 확인. 후속 허용 Chrome1165px/envSU 준비표 부분 검토 PASS. 좁은 폭·실제 팀장·새 OAuth/R2 bytes는 미검증, Native/NAS 미적용 |
 | 최근 검증 | QLT-021 핵심 삭제 오판은 실제 Google 세션의 운영 UI 인수 PASS | [검증 기준선](HARNESS_MAP.md#검증-기준선). 신규 업로드는 통과했으나 추가 첨부·운영 파일 삭제는 미검증이며 QLT-022와 다른 열린 항목 유지 |
 | 선행 로컬 구현 | QLT-016/029와 RPT-015/017은 독립 로컬 검증 완료 이관. QLT-028/020·OPS-032와 RPT-016/018/019의 외부 인수 게이트 유지 | 구현 소스·추가 compiled33·main/sites 푸시와 기존 Sites v19 게시 완료. 최초 거부와 새 승인 후1회 배포·보존 확인은 [승인/게시 이력](HARNESS_MAP.md#version19-승인과-운영-배포)을 따른다. D5 외부 발송·운영 예약 활성화·NAS/실계정/보안/영구 삭제는 제외 |
 | 팀별 공통 준비표 | PRD-058 소스·양 DB·compiled HTTP 완료, QLT-031 운영 envSU/1165px 부분 인수 PASS·모바일/실제 팀장 등 잔여 | exact 게시 checkout build/compiled30·34HTTP 후 같은 저장v20 배포 완료. [최초 거부·새 승인/배포](HARNESS_MAP.md#version20-승인과-운영-배포), 기존 실제 사용자 기록/권한·NAS 변경 없음. 부모가 만든 합성 project6/팀1~4/준비표v1은 보존하며 실제 화면 잔여는 QLT-031로 유지 |
-| 역할별 웹 사용설명서 | PRD-059 공통/5역할/11기능 설명과 공개 정적 경로 구현 중, QLT-032 실스크린샷/화면 인수 대기 | 공통 시작→역할 선택→기능 상세의 쉬운 단계·예시·저장 확인/오류 대응. 현재 서버 권한 대조 완료, 실제 이미지11건 공식 전송 실패 후 ZIP 직접 첨부 대기·파일0/가짜 이미지0. Native/Worker 텍스트 중간 gate 각25조건/29GET PASS·전체 strict는 이미지 누락 실패. 텍스트 중간 게시만 승인·실제 결과 대기, 이미지 포함 최종 완료/게시 준비 아님·권한 변경 없음 |
+| 역할별 웹 사용설명서 | PRD-059 공통/5역할/11기능 설명과 공개 정적 경로 구현 중, QLT-032 실스크린샷/화면 인수 대기 | 공통 시작→역할 선택→기능 상세의 쉬운 단계·예시·저장 확인/오류 대응. 현재 서버 권한 대조 완료, 실제 이미지11건 공식 전송 실패 후 ZIP 직접 첨부 대기·파일0/가짜 이미지0. Native/Worker 텍스트 중간 gate 각25조건/29GET PASS·전체 strict는 이미지 누락 실패. 텍스트 중간 v21 저장 후 자동 승인 검토에서 배포 거부·미실행, 운영v20 유지. 이미지 포함 최종 완료/게시 준비 아님·권한 변경 없음 |
 | 봉사활동 | 확정 정책의 프로젝트/팀 관리·팀장 범위 업무·직접 완료를 구현하고 로컬/합성 인수·version15 게시 완료 | 기존 업무/협업 업무 제출 필수·private 계약과 사용자 자료 표본 보존. 실제 운영 UI·Google 인수와 R2 bytes 대조는 미실행 |
 | UX·프로젝트 바인딩 | 확정된 다중 소속·SU 전역/지정 프로젝트 admin 정책으로 UI·SQL scope 구현·Worker/Native strict UI와 기존 봉사 회귀 완료 | 기존 Sites version16 게시 완료. 계정 role/소속 자동 부여0·기존7표 보존; 확정 admin 관리 축소는 게시 코드 정책으로 적용 |
 | 제출물 첨부 미리보기 | PRD-056/057·QLT-025/026의 Native/Worker371조건·실제 게시 artifact와 version17 게시 확인 완료 | 부모 Work의 상세/버전 텍스트 미리보기와 SU 참여자·담당자·검토자 후보 제외 부분 PASS. 탐색 React418/초기 표시는 QLT-027 운영 재인수 완료; 팀장 후보 UI·새 Google 인증·원본 bytes 대조는 미검증 |
@@ -32,14 +32,15 @@
 | QLT-028 | [!] | Home 함수 직렬화 RED500의 href anchor 최소 수정·Native build/SSR7 PASS. 별도 Chromium OS sandbox helper 차단으로 UI 미인수, secret0 정적 인증 cache 추가 결함의 force-dynamic 보완·최종 HTTP16 PASS 후 브라우저 인수 대기 | [진행 근거](HARNESS_MAP.md#남은-품질과-digest-구현-진행) |
 | QLT-030 | [ ] | P2: 보고서 역전기간/31일 초과는 이미 차단 PASS이나 범용 오류만 표시한다. 안전한 구체 기간 오류를 입력 옆에 안내하고 정상기간 복원 후 재실행 성공을 검증할 것. 권한/내부 오류 상세를 노출하지 않음 | [운영 UX 관측](HARNESS_MAP.md#version19-허용-chrome-운영-읽기-검토) |
 | QLT-031 | [!] | P1: 소스·양 DB·compiled HTTP 완료, 운영 Chrome1165px/envSU에서4종 준비표 저장·재조회/식사 수량·필수값 오류 초안 보존·Enter/Space·취소 부분 PASS. 실제360/390/768/1280/1440px·팀장 역할/범위·미관측 키보드/초점·뒤로가기/반복클릭 등 잔여 게이트 유지. 합성 project6/팀1~4/준비표v1 보존, 영구 삭제하지 않음 | [운영 검토·남은 범위](HARNESS_MAP.md#version20-허용-chrome-운영-준비표-검토) |
-| PRD-059 | [~] | P1: 공통 시작→5역할→11기능/45조합의 쉬운 단계·예시·저장 확인·오류 대응과 AppShell/Drawer 진입 구현. 현재 서버 역할 대조·model11/unit286 checkpoint PASS. 실제 SU 캡처11JPG 공식 전송 실패 후 사용자 ZIP 직접 첨부 대기·파일0/빈 manifest. 이미지 없는 텍스트 중간 게시만 승인·결과 대기이며 “스크린샷 준비 중”을 명시한다. 자산/개인정보 픽셀 검토 전 이미지 포함 최종 완료/게시 준비 판정 금지 | [사용 안내 책임](TEAM_WORKFLOW_GUIDE.md) |
-| QLT-032 | [!] | P1·PRD-059 선행: 실제 스크린샷 ZIP 직접 첨부·브라우저 인수 대기. 같은 Library flow의 다른 묶음 재시도 금지, 도착 가정0·파일/픽셀검토0. Native/Worker 텍스트 중간 gate 각25조건/29GET PASS지만 전체 strict는 각 공통24조건 뒤 이미지 누락 exit1·complete:false. Native Chromium launch/우회0으로 실제5폭/키보드 미검증. 양 최종 중간 build/텍스트 QA PASS, screenshotsAccepted:false·실제 게시 결과 대기이며 부분 결과를 전체 완료로 쓰지 않음 | [진행·차단 근거](HARNESS_MAP.md#역할별-사용설명서-구현-검증) |
+| PRD-059 | [~] | P1: 공통 시작→5역할→11기능/45조합의 쉬운 단계·예시·저장 확인·오류 대응과 AppShell/Drawer 진입 구현. 현재 서버 역할 대조·model11/unit286 checkpoint PASS. 실제 SU 캡처11JPG 공식 전송 실패 후 사용자 ZIP 직접 첨부 대기·파일0/빈 manifest. 이미지 없는 텍스트 중간 가이드는 “스크린샷 준비 중”을 명시해v21에 저장했으나 배포는 OPS-040 자동 검토 거부로 미실행이다. 자산/개인정보 픽셀 검토 전 이미지 포함 최종 완료/게시 준비 판정 금지 | [사용 안내 책임](TEAM_WORKFLOW_GUIDE.md) |
+| QLT-032 | [!] | P1·PRD-059 선행: 실제 스크린샷 ZIP 직접 첨부·브라우저 인수 대기. 같은 Library flow의 다른 묶음 재시도 금지, 도착 가정0·파일/픽셀검토0. Native/Worker 텍스트 중간 gate 각25조건/29GET PASS지만 전체 strict는 각 공통24조건 뒤 이미지 누락 exit1·complete:false. Native Chromium launch/우회0으로 실제5폭/키보드 미검증. 양 최종 중간 build/텍스트 QA PASS, screenshotsAccepted:false·중간 배포는 OPS-040 거부 상태이며 부분 결과를 전체 완료로 쓰지 않음 | [진행·차단 근거](HARNESS_MAP.md#역할별-사용설명서-구현-검증) |
 | OPS-021 | [~] | NAS 소스/업데이트 절차는 준비됨. 실제 플랫폼·백업·기본 build·대상 릴리스 migration 적용·기동·자료/역할/수동 인수는 운영자가 수행. 기존 NFT warning도 유지 | [운영 안내](NAS_UPDATE_GUIDE.md) |
 | OPS-031 | [!] | Native bug purge 포함 전체 수명주기/두 isolation-level 경합 검증은 별도 승인 대기. 비파괴16조건·Sites 삭제 완료와 구분 | [완료 범위](COMPLETED_LOG.md#실환경-qa와-삭제-승인-경계) |
 | OPS-032 | [!] | PPTX 하위 image-size2.0.4 scoped override·호환 검사/양 build 후 production audit0, 전체23(high18/moderate4/low1) 잔여 검토. 최종 전체294·양 build/호환·compiled OOXML18 PASS·전체 취약점 해소 아님. Native trace13경고·NAS 포장 게이트 미확인 | [보안 근거](COMPLETED_LOG.md#보안-패치와-활성-decoder) |
 | OPS-033 | [!] | 레이아웃 실사이트의 전체6개 너비·관리자/버그 UI 인수. 부모 Chrome의 과거 홈/tasks1188×761 및 v19 탐색/보고서1165×757은 부분 근거이며 전체 폭 인수 아님 | [접속 경계](NAS_UPDATE_GUIDE.md#운영-접속과-테스트-네트워크) |
 | OPS-034 | [!] | 코딩 실행기의 기존 CONNECT403/Domain forbidden·해당 policy rule 부재 경계로 운영 GET/UI 재시도0. 별도 허용 Work 브라우저의 v17 미리보기·v18 QLT-027·v19 읽기 검토 PASS는 별개 경로다. 과거 host 승인/차단과 version13 환경의 CONNECT200·익명 GET 성공을 보존하며 환경별 결과를 구분. 제한 우회 없음 | [최신 경계](HARNESS_MAP.md#version19-허용-chrome-운영-읽기-검토) |
 | OPS-035 | [!] | version12 스크린샷의 실제 운영 UI 인수. 합성Chromium1280/390 결과와 구분하고 운영 제보 생성/삭제를 임의로 하지 않음 | [버그 계약](BUG_REPORTS.md#스크린샷) |
+| OPS-040 | [!] | 텍스트 중간 가이드 저장v21의 deploy_site_version이 자동 승인 검토에서 이미지 gate 실패·변경 가이드 게시 승인 부족을 이유로 거부됨. deployment_id=null·미실행, livev20 유지. 중간 게시 요청과 검토 판단의 충돌을 해소할 새 승인 근거 전 추가 시도0. 기존28표337행·설정/권한 동일 | [대상/거부·완료 범위](HARNESS_MAP.md#저장-version21와-텍스트-중간-배포-거부) |
 | RPT-016 | [!] | D1 manual preview의 소스/compiled 및 v19 허용 Chrome1165×757 운영 desktop 미리보기 PASS. 좁은 viewport·키보드 인수는 미검증이며 Native Chromium sandbox 차단과 구분. 실제 운영 생성·다운로드·예약저장·보관/다른 역할은 미검증. 기간 오류 안내는 QLT-030 | [운영 범위/한계](HARNESS_MAP.md#version19-허용-chrome-운영-읽기-검토) |
 | RPT-018 | [!] | D3 기존 runner의 Native v14/D1 0017 ledger·비활성 기본 scheduler 구현/소스 검증. 로컬 ledger/compiled 인수 완료 후 runtime DDL 거부 실증·운영 조건 확인 대기, 운영 예약 활성화0; QLT-012/RPT-017 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
 | RPT-019 | [!] | D4 인가 download/만료404·가역 quarantine 구현/소스 검증, 소스/compiled 인수 완료 후 실제 NAS 권한/free-space/atomic rename·운영 저장소 인수 대기; RPT-018 선행 | [계획](PROJECT_DIGEST_REPORT_PLAN.md) |
