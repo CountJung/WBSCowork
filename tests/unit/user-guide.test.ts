@@ -32,7 +32,8 @@ test("role-feature routing permits only the explicit two-sided intersection", ()
     const listed = role.featureIds.includes(feature.id), allowed = feature.roles.includes(role.id);
     assert.equal(listed, allowed, `${role.id}/${feature.id}`);
     const result = getGuideFeature(role.id, feature.id);
-    assert.equal(result, listed && allowed ? feature : undefined);
+    assert.equal(result?.id, listed && allowed ? feature.id : undefined);
+    if (result) assert.strictEqual(result.roles, feature.roles, "Wording changes cannot alter the route permission matrix");
     if (result) validPages++;
   }
   assert.equal(validPages, 45);
@@ -75,7 +76,7 @@ test("beginner guidance includes steps, examples, outcome checks and recovery pa
     assert(role.canDo.length >= 3 && role.cannotDo.length >= 3);
     for (const step of role.firstSteps) assert(step.title.trim() && step.body.trim());
   }
-  for (const feature of guideFeatures) {
+  for (const feature of guideRoles.flatMap(role => role.featureIds.map(id => getGuideFeature(role.id, id)!))) {
     assert(feature.title.trim() && feature.summary.trim() && feature.menu.trim());
     assert(feature.steps.length >= 4 && feature.steps.length <= 6, feature.id);
     for (const step of feature.steps) assert(step.title.trim() && step.body.trim());
@@ -145,4 +146,38 @@ test("glossary explains the activity concepts without changing actual permission
   for (const term of ["프로젝트", "WBS", "소속과 계정 등급", "팀장", "제출 필수·제출 선택", "직접 완료", "비공개", "검토자", "버전", "준비표", "보고서"]) assert(guideGlossary.some(item => item.term === term));
   for (const item of guideGlossary) assert(item.description.trim() && item.example.trim());
   assert.match(JSON.stringify(guideGettingStarted), /역할 선택.*권한은 바뀌지 않/);
+});
+
+test("guest reading and member preparation do not instruct the reader to write or save", () => {
+  for (const [role, ids] of [["guest", ["projects", "tasks", "submissions", "attachments", "personal"]], ["member", ["preparation"]]] as const) {
+    for (const id of ids) {
+      const feature = getGuideFeature(role, id)!;
+      assert.equal(feature.readingOnly, true, `${role}/${id}`);
+      assert.doesNotMatch(feature.title, /쓰기|남기기|등록하기/);
+      for (const step of feature.steps) assert.doesNotMatch(step.title, /작성하세요|등록하세요|저장하세요|수정하세요|입력하세요|완료하세요/);
+      assert.doesNotMatch(feature.checks.join(" "), /제출했는지|필수 항목을 채웠|저장 후.*변경한/);
+    }
+  }
+  assert.equal(getGuideFeature("guest", "submissions")!.title, "제출물·댓글·이력 읽기");
+  assert(!getGuideFeature("guest", "bugs")!.readingOnly, "Guests can still write their own bug reports");
+  assert(!getGuideFeature("team_leader", "preparation")!.readingOnly, "Leaders retain their editable preparation instructions");
+  assert.match(JSON.stringify(getGuideFeature("guest", "submissions")), /새로 등록하거나 수정하지 않/);
+});
+
+test("writer instructions use actual task, submission, preparation and report button labels", () => {
+  assert.doesNotMatch(JSON.stringify([guideRoles, guideFeatures, guideGettingStarted]), /업무 목록/);
+  const submissions = JSON.stringify(getGuideFeature("member", "submissions"));
+  for (const label of ["업무 상세", "제출물 등록…", "새 제출 내용", "공개 범위", "제출 등록", "본문은 필수", "파일은 선택"]) assert(submissions.includes(label), label);
+  const preparation = JSON.stringify(getGuideFeature("team_leader", "preparation"));
+  for (const label of ["팀 준비표 · 메뉴·활동 준비", "준비표 편집", "준비 항목 추가", "준비표 저장"]) assert(preparation.includes(label), label);
+  const reports = JSON.stringify(getGuideFeature("project_admin", "reports"));
+  for (const label of ["관리자 → 프로젝트 관리", "활동 보고서", "미리보기", "보고서 생성", "DOCX 다운로드", "PPTX 다운로드"]) assert(reports.includes(label), label);
+  assert.match(JSON.stringify(getGuideFeature("member", "review")), /팀장 지정만으로 검토 요청 권한이 생기지는 않/);
+});
+
+test("UTC report inputs include a date rollover without converting preparation calendar dates", () => {
+  const report = JSON.stringify(getGuideFeature("superuser", "reports"));
+  assert.match(report, /한국 10월 25일 00:00은 UTC 10월 24일 15:00/);
+  assert.equal(new Date("2026-10-25T00:00:00+09:00").toISOString(), "2026-10-24T15:00:00.000Z");
+  assert.match(report, /준비표의 달력 날짜·24시간제 시각은 그대로 입력/);
 });

@@ -510,15 +510,39 @@ PRD-059의 독립 구현은 공통/역할/기능 설명과 static public route�
 
 부모가 캡처에 사용한 합성 project6/팀1~4·task8/submission6/attachment8(QA 사용설명서 TXT201bytes)는 보존한다. 문서/구현 담당이 운영 자료를 수정한 결과가 아니며 기존 실제 project5/task7/submission5/attachment7도 보존한다. 양 build/compiled의 독립 부분 통과를 보존하되 실제 자산 확보·픽셀 개인정보 검토·전체 이미지 gate/실제 화면 인수 전 이미지 포함 최종 기능 완료/게시 준비로 쓰지 않는다. 이후 사용자가 **이미지 없는 텍스트 중간 가이드**의 기존 Sites 게시만 승인했다. 중간 화면에 “스크린샷 준비 중”을 명시했으며 아래 저장v21/배포 거부 결과와 구분한다. strict 전체 게이트와 machine proof의 false를 성공으로 바꾸지 않는다. 문서 담당의 저장/배포·공식 source 업로드 실행0이다. 원본 docs-canon checker 리소스 읽기는 실패해 실행하지 않았고 저장소 대체 검사/내용 검토만 수행한다.
 
-### 저장 version21와 텍스트 중간 배포 거부
+### version21 승인과 텍스트 중간 배포
 
-기능 main `c67619bd3355bffd332ec76cfd197bd182e48c97` / GitHub sites `570b0c6526835e6865ed8327057c940c3b52c639`이며 공식 source main570b0c6 push를 확인해 텍스트 중간 가이드를 저장했다. version/archive 식별자는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다. source와 후속 문서 HEAD·운영v20은 별개다. 두 기능 SHA의 CI combined statuses는 각 빈 배열이며 CI 통과로 주장하지 않는다.
+기능 main `c67619bd3355bffd332ec76cfd197bd182e48c97` / GitHub sites `570b0c6526835e6865ed8327057c940c3b52c639`이며 공식 source main570b0c6 push를 확인해 텍스트 중간 가이드를 저장했다. version/archive 식별자는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다. 당시 source와 후속 문서 HEAD·운영v20은 별개였다. 두 기능 SHA의 CI combined statuses는 각 빈 배열이며 CI 통과로 주장하지 않는다.
 
-저장v21은 성공했고 재조회 deployment_id=null이다. 대상 `deploy_site_version`1회 호출은 **자동 승인 검토에서 거부돼 미실행**이다. 사유는 “incomplete screenshot-pending guide”, “strict image gate fails”, “no user authorization covers publishing this changed guide”였다. 사용자의 텍스트 중간 게시 요청을 전달받았지만 검토 뒤 새로운 승인 근거가 없어 추가 시도/우회0으로 중단했다. 중간 전용 text gate 통과를 전체 strict/이미지 통과나 서비스 배포 허용으로 바꾸지 않는다.
+최초 시도에서 저장v21은 성공했고 재조회 deployment_id=null이었다. 대상 `deploy_site_version`1회 호출은 **자동 승인 검토에서 거부돼 미실행**이었다. 사유는 “incomplete screenshot-pending guide”, “strict image gate fails”, “no user authorization covers publishing this changed guide”였다. 사용자의 텍스트 중간 게시 요청을 전달받았지만 검토 뒤 새로운 승인 근거가 없어 추가 시도/우회0으로 중단했다. 중간 전용 text gate 통과를 전체 strict/이미지 통과나 서비스 배포 허용으로 바꾸지 않는다.
 
-getversions의 v21 deployment null/v20 기존 deployment와 v20 status succeeded(`appgdep_6adb77f8a28881919ade7c049e008ecd`)를 확인해 livev20임을 구분했다. 운영 URL은 그대로이며 실제 운영 `/guide`는 아직 없으므로 부모의 운영 브라우저 검토도 대기다. 저장v21을 livev21로 쓰지 않는다.
+getversions의 v21 deployment null/v20 기존 deployment와 v20 status succeeded(`appgdep_6adb77f8a28881919ade7c049e008ecd`)를 확인해 livev20임을 구분했다. 당시 운영 `/guide`는 아직 없었고 부모의 브라우저 검토도 대기였다. 최초 저장v21을 livev21로 쓰지 않았다.
 
-배포 전후28표337행의 모든 행은 잘림 없이 동일했고 env revision11/5keys·public policy revision2·auth ID·automations 빈 배열도 같았다. 환경 값은 출력하지 않았고 schema 변경·R2 bytes 읽기·자료 삭제·권한 변경0이다. 사용자 실제 자료와 합성 QA6/team1~4/task8/submission6/attachment8을 보존한다. 기계 근거는 `.test-artifacts/user-guide-intermediate/publication.json`이며 원본 docs-canon checker는 기존 리소스 미가용으로 미실행이다. OPS-040 승인 충돌 해소 전 배포를 다시 시도하지 않는다.
+배포 전후28표337행의 모든 행은 잘림 없이 동일했고 env revision11/5keys·public policy revision2·auth ID·automations 빈 배열도 같았다. 환경 값은 출력하지 않았고 schema 변경·R2 bytes 읽기·자료 삭제·권한 변경0이다. 사용자 실제 자료와 합성 QA6/team1~4/task8/submission6/attachment8을 보존한다. 기계 근거는 `.test-artifacts/user-guide-intermediate/publication.json`이며 원본 docs-canon checker는 기존 리소스 미가용으로 미실행이다. 이 거부 기록은 다음 새 승인 전의 이력으로 보존한다.
+
+이후 새 승인에 따라 단1회 재시도해 version21/source `570b0c6526835e6865ed8327057c940c3b52c639`, deployment `appgdep_6add932312c4819192c91350c59a9f24`의 succeeded를 확인했다(`2026-10-25T05:27:08.650286Z`).28표337행이 모두 같고 env revision11·public policy revision2·auth/automations도 동일했으며 migration0이다. OPS-040은 이 범위에서 해소했다. 이미지 없는 텍스트 중간 게시이며 이미지 포함 전체 가이드 완료는 아니다.
+
+### version21 허용 Chrome 가이드 검토
+
+부모가 별도 허용 브라우저의 기존 envSU 세션·1180px에서 2026-10-25 05:28:46~05:31:01 UTC에 직접 검토한 결과다. 공통5역할/SU11기능, member의 준비표 설명/guest의 제출물 설명을 열었고 역할을 골라도 실제 계정은SU로 유지됐다. 이는 실제 member/guest 계정의 접근 검증이 아니다.
+
+목차11기능의 누락 anchor0·Enter 이동 시 헤더 가림 없음·skip article 포커스, 역할 재선택·tasks 복귀·뒤로가기와 가로 넘침0을 확인했다. 앱 오류/React418은 없었고 확장 metadata 오류는 별도다. 깨진 img0이나 이미지 자체도0이므로 실제11JPG의 로딩/픽셀 검토로 확대하지 않는다. 좁은 모바일·실제 다른역할·비로그인 공개접근은 미검증이고 기존 세션을 신규 OAuth 교환으로 쓰지 않는다.
+
+부모 검토에서 발견한 문구 보완은 다음 v22 로컬 회귀와 구분한다. v21 운영 검토 결과를 후속 수정 artifact의 실제 브라우저 인수로 재사용하지 않는다. PRD-059/QLT-032와 이미지 gate는 열린 상태이며 Library 추가 시도 금지·ZIP 직접 첨부 대기·기존 실제/합성 자료 보존을 유지한다.
+
+### v22 로컬 가이드 문구 보완
+
+교육용 readingOnly·역할별 wording overlay로8페이지를 읽기 전용 안내에 맞췄다. guest5기능과 member/team_leader의 프로젝트 읽기·member 준비표 읽기를 구분하고 project admin의 프로젝트 생성/소속 설정은 SU에게 요청하도록 설명한다. 이는 설명 콘텐츠 변경이며 실제 서버 역할/권한·계정·schema·환경·사용자 자료를 바꾸지 않는다.
+
+앱의 실제 작업→프로젝트→업무 상세·제출/검토·준비표 편집/저장 버튼 순서와 필수 입력에 맞춰 안내했다. 보고서 UTC 입력의 전날 날짜 예시를 보완하되 준비표 calendar date를 변환하는 규칙은 만들지 않았다. 자세한 현재 안내는 코드 model이 소유하고 문서에 전체 버튼 설명을 복제하지 않는다.
+
+| v22 로컬 범위 | 확인된 상태 |
+| --- | --- |
+| model/정적·build | 전체 유효45 role-feature variant shape 회귀 포함 model14 PASS, lint/typecheck/FSD·새 Native/Worker build PASS. 기존 Native trace13/Vinext 정보 경고 유지 |
+| text/strict HTTP | 실제 Native/Worker 각각 text35조건/51유효 페이지/59GET PASS. 각 full strict는 공통34조건 뒤 missing_reviewed_screenshot_assets exit1·complete:false, 전체 이미지 gate 미완료 유지 |
+| 게시/실제 화면 | v22 미게시, 후속 브라우저 인수 미실행. Library 추가 시도0·실제 이미지0/픽셀 검토 미완료·PRD-059/QLT-032 열린 상태 유지 |
+
+각 runtime의 text/strict bundle 전후 지문은 불변이며 Native server-errors는 빈 배열이다. exact303개 source 입력을 stage와 대조했고 Native/main·Worker/sites의 package 기본 build 차이를 명시해 보존했다. 근거는 `.test-artifacts/user-guide-revision/result.json`이다. 이전 text25/전체 strict24는 v21 중간 회차이며 이번35/34 결과와 중복 합산하지 않는다. v21 부모 실제 검토를 v22 실브라우저 통과로 쓰지 않는다.
 
 ## 문서 정리 검증
 
