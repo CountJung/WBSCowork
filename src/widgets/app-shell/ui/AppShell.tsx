@@ -81,6 +81,10 @@ function PrivacyGuideIcon() {
   );
 }
 
+function UserGuideIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M12 5.5C8.5 3.5 5.5 3.5 3 4.5V19c2.5-1 5.5-1 9 1 3.5-2 6.5-2 9-1V4.5c-2.5-1-5.5-1-9 1Zm0 0V20" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><path d="M6 8h3M15 8h3M6 11h3M15 11h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>;
+}
+
 export default function AppShell({ appName, authProvidersConfigured, children }: AppShellProps) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
@@ -95,6 +99,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
   const currentAdminNavItems = isSuperuser ? superuserAdminNavItems : adminRoleNavItems;
   const isAdminRouteActive = hasAdminAccess && isActivePath(pathname, "/admin");
   const isPrivacyRouteActive = isActivePath(pathname, "/privacy");
+  const isGuideRouteActive = isActivePath(pathname, "/guide");
 
   const selectedMode: AppThemeMode = mode ?? "system";
   const effectiveMode = selectedMode === "system" ? systemMode ?? "light" : selectedMode;
@@ -265,6 +270,9 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
               gridColumn: { xs: 2, xl: 3 },
               "& > *": { flexShrink: 0 },
             }}>
+              <Tooltip title="사용설명서">
+                <IconButton component={Link} href="/guide" aria-label="사용설명서 열기" aria-current={isGuideRouteActive ? "page" : undefined} color={isGuideRouteActive ? "primary" : "inherit"} sx={{minWidth:44,minHeight:44,border:"1px solid",borderColor:isGuideRouteActive?"primary.main":"divider",backgroundColor:isGuideRouteActive?"action.selected":"transparent"}}><UserGuideIcon /></IconButton>
+              </Tooltip>
               <Tooltip title="개인정보 처리지침">
                 <IconButton
                   component={Link}
@@ -370,6 +378,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
           <Divider />
 
           <Stack spacing={1}>
+            <Button component={Link} href="/guide" onClick={closeMobileNav} variant={isGuideRouteActive?"contained":"outlined"} aria-current={isGuideRouteActive?"page":undefined} sx={{justifyContent:"flex-start",minHeight:44}}>사용설명서</Button>
             {navItems.map((item) => {
               const active = isActivePath(pathname, item.href);
 

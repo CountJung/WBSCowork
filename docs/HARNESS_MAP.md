@@ -489,6 +489,24 @@ env revision11 entries 전체·public policy revision2·auth_client·cloud autom
 
 이번 동기화는 기존 정본3개의 원격 텍스트·참조 앵커/표·내용 정합성만 확인한다. 실행기 종료 상태의 접근을 우회하지 않았고 원본 canon/저장소 CLI 검사기·앱 테스트는 재실행하지 않았으며 로컬 HEAD/작업 트리 동기화는 미완료다. 코드 변경·재게시·테스트 자료 삭제는 없다.
 
+## 역할별 사용설명서 구현 검증
+
+PRD-059의 독립 구현은 공통/역할/기능 설명과 static public route를 제공하며, 가이드 콘텐츠에서 DB/계정 자료 조회나 기존 권한 API 변경은 없다. 기능 전체는 실제 이미지/화면 인수 대기로 미완료다. 계정 기본 역할과 프로젝트·팀 scope의 readonly 서버 근거를 대조했고 설명5역할/11기능/45조합은 사용자 스스로 읽는 안내 분류다. 이를 현재 로그인 사용자의 실권한 판정이나 실제 타역할 인수로 해석하지 않는다.
+
+| 확인된 범위 | 결과/남은 조건 |
+| --- | --- |
+| model/단위 | model11 PASS. `npm run test:unit` checkpoint action33/unit253,286 PASS·skip0. `--unit` 실행으로 DB suite는 실행하지 않았으며 DB 통과로 쓰지 않음 |
+| 정적 검사 | 최신 초보자용 현재 권한 표시/member 이름 설명 보정 후 focused model11·ESLint/typecheck PASS. 최종 전체 ESLint·FSD self-test5/경계0 PASS. source의44px 상단/Drawer 진입·skip/article scrollMargin 보강은 실제 렌더/키보드 검증과 구분 |
+| `npm run test:user-guide:http` / `npm run test:user-guide:native-http` | 실제 Native/Worker 각각22조건·29GET 부분 PASS(200×22/404×4/307×3). 공개5역할/11SU기능·대표 역할기능4개·TOC/skip·HTML/RSC·기존 tasks/admin 보호 확인. 최신 문구 보정 후 최종 build의 결과이며 strict 이미지 gate는 각각 exit1·complete:false·phase=blocked·blockedBy=missing_reviewed_screenshot_assets로 전체 인수 실패/차단 상태 |
+| 실제 캡처/전송 | 사용자가 제공한 부모 SU 합성 화면11JPG의 Library prepare_materialize는 성공했으나 workspace_path가 모두 null. 공식 transfer helper+companion materialize의 download가 exit1 “library file transfer failed: download failed”로 끝나 파일0. 새 전송정보의 첫 자산 bounded 재시도1회도 같은 실패 후 중단. HTTP status가 없어 접근 거부/원인을 단정하지 않음 |
+| 실제 이미지/브라우저 | manifest가 비어 있고 가짜 이미지0·개인정보/픽셀 검토0. Native Chromium SUID helper owner nobody:nogroup/4755는 읽기 확인만 했고 launch·재시도·설정 변경/우회0. 실제5폭/키보드 인수는 차단됐으며 source/HTTP 인수와 구분 |
+
+추가 자동 전송 지원 경로가 없어 사용자에게 이 작업 대화에 `wbs-guide-screenshots.zip`(안내11JPG/528,889bytes) 직접 첨부를 요청한 상태다. 실제 첨부 도착·다운로드·픽셀 검토는 아직0이며 요청한 파일 크기를 실제 검증한 것으로 쓰지 않는다. 같은 Library flow를 다른 묶음으로 재시도하지 않는다. 최신 문구 보정 후 두 runtime 최종 부분 build/같은 QA를 다시 확인했고 각 bundle 전후 지문은 불변이다. Native가 캡처한 server-errors는 빈 배열이다. 실제 이미지·타역할 UI 검증이나 최종 complete로 확대하지 않는다.
+
+환경 파일 복사0·신규 의존성0의263개 runtime 입력 파일 source fingerprint는 `eeff1fc2f71bbae80e056dae93d6d00be9b1fe5ff5a78be339373ee94fc460b5`로 양쪽 동일하다. Native의 기존 trace13/Vinext 분류 경고는 미해결로 유지한다. `.test-artifacts/user-guide-independent-final/result.json`의 overallComplete:false/publicationReady:false를 문서 담당이 직접 대조했다. 이 입력 지문과 runtime별 bundle 불변 증거를 구분한다. 실제 이미지0·개인정보 픽셀 검토0·실제5폭/키보드/hydration 브라우저0이며 asset 도착 후 manifest/자산과 새 검증·commit이 필요하다.
+
+부모가 캡처에 사용한 합성 project6/팀1~4·task8/submission6/attachment8(QA 사용설명서 TXT201bytes)는 보존한다. 문서/구현 담당이 운영 자료를 수정한 결과가 아니며 기존 실제 project5/task7/submission5/attachment7도 보존한다. 양 build/compiled의 독립 부분 통과를 보존하되 실제 자산 확보·픽셀 개인정보 검토·전체 이미지 gate/실제 화면 인수 전 기능 완료나 게시 준비로 쓰지 않는다. 저장/배포·공식 Sites source 업로드는 승인 대기이며 이번 담당의 실행0이다. 원본 docs-canon checker 리소스 읽기는 실패해 실행하지 않았고 저장소 대체 검사/내용 검토만 수행한다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.
