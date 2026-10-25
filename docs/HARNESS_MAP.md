@@ -506,7 +506,19 @@ PRD-059의 독립 구현은 공통/역할/기능 설명과 static public route�
 
 중간 게시 안내 보강 전 독립 구현 checkpoint의 환경 파일 복사0·신규 의존성0의263개 runtime 입력 파일 source fingerprint는 `eeff1fc2f71bbae80e056dae93d6d00be9b1fe5ff5a78be339373ee94fc460b5`로 양쪽 동일하다. Native의 기존 trace13/Vinext 분류 경고는 미해결로 유지한다. `.test-artifacts/user-guide-independent-final/result.json`의 overallComplete:false/publicationReady:false를 문서 담당이 직접 대조했다. 이 입력 지문과 runtime별 bundle 불변 증거를 구분한다. 실제 이미지0·개인정보 픽셀 검토0·실제5폭/키보드/hydration 브라우저0이며 asset 도착 후 manifest/자산과 새 검증·commit이 필요하다.
 
-부모가 캡처에 사용한 합성 project6/팀1~4·task8/submission6/attachment8(QA 사용설명서 TXT201bytes)는 보존한다. 문서/구현 담당이 운영 자료를 수정한 결과가 아니며 기존 실제 project5/task7/submission5/attachment7도 보존한다. 양 build/compiled의 독립 부분 통과를 보존하되 실제 자산 확보·픽셀 개인정보 검토·전체 이미지 gate/실제 화면 인수 전 이미지 포함 최종 기능 완료/게시 준비로 쓰지 않는다. 이후 사용자가 **이미지 없는 텍스트 중간 가이드**의 기존 Sites 게시만 승인했다. 중간 화면에 “스크린샷 준비 중”을 명시하고 실제 게시 결과는 구현 담당 인계 전까지 대기다. strict 전체 게이트와 machine proof의 false를 성공으로 바꾸지 않는다. 문서 담당의 저장/배포·공식 source 업로드 실행0이다. 원본 docs-canon checker 리소스 읽기는 실패해 실행하지 않았고 저장소 대체 검사/내용 검토만 수행한다.
+중간 게시 보강 후 입력 파일은264개(source fingerprint 접두22237086…)이며 앞선263개/eeff1fc2… checkpoint와 구분한다. 정확한 Sites 기본 build package로 최종 Worker를 재build해 텍스트25조건/29GET PASS를 재확인했고 전체 strict는24조건 뒤 이미지 누락 exit1을 유지했다. Worker의 두 gate는 entry `43413ca2c3b2aa510bf5bafa6731407c63a4805f6eedd1e67be633f23f2a282f`가 같고 각 bundle 전후 불변이다. Native의 text/strict bundle도 전후 불변이며 text server-errors는 빈 배열이다. `.test-artifacts/user-guide-intermediate/result.json`의 fullGuideComplete:false/screenshotsAccepted:false/publicationReadyIntermediateTextOnly:true는 **중간 텍스트 전용** 인수다. 이미지 포함 전체 가이드 승인으로 해석하지 않는다.
+
+부모가 캡처에 사용한 합성 project6/팀1~4·task8/submission6/attachment8(QA 사용설명서 TXT201bytes)는 보존한다. 문서/구현 담당이 운영 자료를 수정한 결과가 아니며 기존 실제 project5/task7/submission5/attachment7도 보존한다. 양 build/compiled의 독립 부분 통과를 보존하되 실제 자산 확보·픽셀 개인정보 검토·전체 이미지 gate/실제 화면 인수 전 이미지 포함 최종 기능 완료/게시 준비로 쓰지 않는다. 이후 사용자가 **이미지 없는 텍스트 중간 가이드**의 기존 Sites 게시만 승인했다. 중간 화면에 “스크린샷 준비 중”을 명시했으며 아래 저장v21/배포 거부 결과와 구분한다. strict 전체 게이트와 machine proof의 false를 성공으로 바꾸지 않는다. 문서 담당의 저장/배포·공식 source 업로드 실행0이다. 원본 docs-canon checker 리소스 읽기는 실패해 실행하지 않았고 저장소 대체 검사/내용 검토만 수행한다.
+
+### 저장 version21와 텍스트 중간 배포 거부
+
+기능 main `c67619bd3355bffd332ec76cfd197bd182e48c97` / GitHub sites `570b0c6526835e6865ed8327057c940c3b52c639`이며 공식 source main570b0c6 push를 확인해 텍스트 중간 가이드를 저장했다. version/archive 식별자는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다. source와 후속 문서 HEAD·운영v20은 별개다. 두 기능 SHA의 CI combined statuses는 각 빈 배열이며 CI 통과로 주장하지 않는다.
+
+저장v21은 성공했고 재조회 deployment_id=null이다. 대상 `deploy_site_version`1회 호출은 **자동 승인 검토에서 거부돼 미실행**이다. 사유는 “incomplete screenshot-pending guide”, “strict image gate fails”, “no user authorization covers publishing this changed guide”였다. 사용자의 텍스트 중간 게시 요청을 전달받았지만 검토 뒤 새로운 승인 근거가 없어 추가 시도/우회0으로 중단했다. 중간 전용 text gate 통과를 전체 strict/이미지 통과나 서비스 배포 허용으로 바꾸지 않는다.
+
+getversions의 v21 deployment null/v20 기존 deployment와 v20 status succeeded(`appgdep_6adb77f8a28881919ade7c049e008ecd`)를 확인해 livev20임을 구분했다. 운영 URL은 그대로이며 실제 운영 `/guide`는 아직 없으므로 부모의 운영 브라우저 검토도 대기다. 저장v21을 livev21로 쓰지 않는다.
+
+배포 전후28표337행의 모든 행은 잘림 없이 동일했고 env revision11/5keys·public policy revision2·auth ID·automations 빈 배열도 같았다. 환경 값은 출력하지 않았고 schema 변경·R2 bytes 읽기·자료 삭제·권한 변경0이다. 사용자 실제 자료와 합성 QA6/team1~4/task8/submission6/attachment8을 보존한다. 기계 근거는 `.test-artifacts/user-guide-intermediate/publication.json`이며 원본 docs-canon checker는 기존 리소스 미가용으로 미실행이다. OPS-040 승인 충돌 해소 전 배포를 다시 시도하지 않는다.
 
 ## 문서 정리 검증
 
