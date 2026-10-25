@@ -196,3 +196,10 @@ D0–D4의 소스·로컬/compiled 인수와 실제 화면/운영 활성화를 �
 `app/projects/[projectId]/teams/page.tsx`는 현재 viewer 허용 팀 요약을100팀/cursor 단위로 표시하고 `[teamId]/preparation/page.tsx`가 준비표 상세를 연다. `/tasks`의 현재 프로젝트와 관리자 team card는 이 경로로 진입한다. `src/widgets/team-preparation`은 종류별 읽기/편집·이력 UI를 조립한다.
 
 `src/entities/team-preparation/model/preparation.ts`·`api/preparation.server.ts`는6종 문서 검증/식사량·현재 scope·CAS/immutable revision을, `src/features/team-preparation/server/http.ts`와 `app/api/projects/[projectId]/teams/[teamId]/preparation/route.ts`는 bounded GET/PUT adapter를 소유한다. 활동 종류 공통 값은 `src/shared/config/activity-kinds.ts`, schema는 `native-migration-v15.ts`/`drizzle/0018_team_preparation_sheets.sql`에 있다. 삭제 endpoint는 없으며 구현/검증/미게시 여부는 [TODO](TODO.md)·[HARNESS_MAP](HARNESS_MAP.md#활동팀-공통-준비표-구현-검증)을 따른다.
+
+
+## 역할별 웹 사용설명서
+
+`app/guide/page.tsx` → `[role]/page.tsx` → `[role]/[feature]/page.tsx`는 공통 시작·역할·기능별 공개 정적 설명을 조립한다. `src/entities/user-guide/model/guide.ts`는5역할/11기능/45유효 조합의 단계·예시·저장 확인·오류 대응을 소유한다. `src/widgets/user-guide`의 GuidePages/GuideFrame/GuideScreenshots와 `model/screenshots.ts`가 화면·실제 캡처 manifest를 연결하며 AppShell 상단44px 책 아이콘/Drawer 사용설명서로 진입한다.
+
+설명은 DB/계정 자료를 조회하지 않고 설명용 역할/기능 조합만 검증하며 잘못된 경로는404다. 역할 선택은 실제 계정·소속·자료 권한을 바꾸지 않고 기존 서버 인가/API는 유지한다. 공개 설명의 SU 예시는 다른 역할의 실제 접근 성공 증거가 아니다. 실제 캡처 파일은 아직 전송 실패로0개이며 빈 manifest/미인수 상태를 [TODO](TODO.md)·[하네스](HARNESS_MAP.md#역할별-사용설명서-구현-검증)에서 구분한다. 기존 [팀 업무 안내](TEAM_WORKFLOW_GUIDE.md)와 [교육 자료 제작 안내](manual/USER_MANUAL.md)를 재사용한다.

@@ -66,7 +66,9 @@
     "test:team-preparation:schema": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-team-preparation-schema.ts",
     "test:team-preparation:workflow": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-team-preparation-workflow.ts",
     "test:team-preparation:http": "node scripts/test-team-preparation-http.mjs",
-    "test:team-preparation:native-http": "node --import tsx scripts/test-team-preparation-native-http.mjs"
+    "test:team-preparation:native-http": "node --import tsx scripts/test-team-preparation-native-http.mjs",
+    "test:user-guide:http": "node scripts/test-user-guide-http.mjs",
+    "test:user-guide:native-http": "node scripts/test-user-guide-native-http.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
