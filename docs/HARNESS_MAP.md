@@ -540,9 +540,17 @@ getversions의 v21 deployment null/v20 기존 deployment와 v20 status succeeded
 | --- | --- |
 | model/정적·build | 전체 유효45 role-feature variant shape 회귀 포함 model14 PASS, lint/typecheck/FSD·새 Native/Worker build PASS. 기존 Native trace13/Vinext 정보 경고 유지 |
 | text/strict HTTP | 실제 Native/Worker 각각 text35조건/51유효 페이지/59GET PASS. 각 full strict는 공통34조건 뒤 missing_reviewed_screenshot_assets exit1·complete:false, 전체 이미지 gate 미완료 유지 |
-| 게시/실제 화면 | v22 미게시, 후속 브라우저 인수 미실행. Library 추가 시도0·실제 이미지0/픽셀 검토 미완료·PRD-059/QLT-032 열린 상태 유지 |
+| 게시/실제 화면 | 아래 v22 게시 확인과 실제 후속 브라우저 인수 미실행을 구분. Library 추가 시도0·실제 이미지0/픽셀 검토 미완료·PRD-059/QLT-032 열린 상태 유지 |
 
 각 runtime의 text/strict bundle 전후 지문은 불변이며 Native server-errors는 빈 배열이다. exact303개 source 입력을 stage와 대조했고 Native/main·Worker/sites의 package 기본 build 차이를 명시해 보존했다. 근거는 `.test-artifacts/user-guide-revision/result.json`이다. 이전 text25/전체 strict24는 v21 중간 회차이며 이번35/34 결과와 중복 합산하지 않는다. v21 부모 실제 검토를 v22 실브라우저 통과로 쓰지 않는다.
+
+### version22 텍스트 중간 가이드 게시
+
+기능 main `e2287849da5350dc079599659ea6f7e0292a4256` / sites·공식 source `717847138879815506d3d4ae3a692b6deb0619e6`의 version22 배포가 succeeded다(`2026-10-25T05:43:24.285730Z`). get_site active/latest22와 get_version deployment ID 일치를 재조회했다. URL은 기존 사이트의 `/guide`이며 version/deployment·archive 식별자는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다. 두 기능 SHA의 CI combined statuses는 각각 빈 배열이며 CI 통과가 아니다.
+
+이번 **배포 바로 전후** baseline은28표350행으로 모든 행이 완전히 같았다. 과거 v21 직후337행과의 차이는 v22 배포 전에 이미 audit_logs304→317행으로 늘어난 것뿐이며 나머지27표는 같고 기존 행은 모두 남았다. 이 증가의 원인은 단정하지 않으며 이번 배포로 생겼다고 쓰지 않는다. v21의 과거337행 동일 대조도 보존한다. env revision11/5keys 값·public policy revision2·auth_client·automations 빈 배열은 완전히 동일하며 신규 migration/권한·환경 변경0, R2 bytes 독립 검증0이다.
+
+입력 archive와 서비스 저장 container는 별도 hash/bytes로 기록했고 v21을 rollback 참조로 유지했다. 이 게시 확인 이후 새 코드 수정/추가 재게시·Library 시도0이다. 이미지 실패/실제 파일0은 그대로이며 **새 v22 운영 브라우저 검토는 아직 미실행**이다. 부모에게 후속 검토를 전달했으며 v21 부분 PASS나 로컬 text35 PASS를 v22 실제 화면 인수로 바꾸지 않는다. PRD-059/QLT-032는 열린 상태다. 게시/보존 근거는 `.test-artifacts/user-guide-revision/publication.json`이다.
 
 ## 문서 정리 검증
 
