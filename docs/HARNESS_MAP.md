@@ -583,7 +583,15 @@ compiled Worker 최초 media415는 독립 echo로 global FormData를 Miniflare d
 
 현재 tool catalog에 browser/controller가 없고 기존 Chromium helper는 nobody/4755 제한 상태다. launch·설정 변경/우회0이며 실제 모바일/키보드 조작은 미검증이다. 부모의 별도 허용 운영 브라우저 인수와 구분한다. 기존 PRD-059/QLT-032 이미지 첨부/최종 가이드 미완료도 별도 유지한다.
 
-게시 전 fresh 공식 D1 baseline은 **28표376행**이며 전체 페이지 projection truncation/omission0이다. schedules/runs/artifacts와 project_members는0행, env revision11/5keys·public policy revision2·live version22를 확인했다. 과거 version22 게시 때의350행을 이번 대조 기준으로 재사용하지 않고 게시 후 보존 결과는 후속 기록한다. 이 사전 확인은 게시 성공을 뜻하지 않는다.
+게시 전 fresh 공식 D1 baseline은 **28표376행**이며 전체 페이지 projection truncation/omission0이다. schedules/runs/artifacts와 project_members는0행, env revision11/5keys·public policy revision2·live version22를 확인했다. 과거 version22 게시 때의350행을 이번 대조 기준으로 재사용하지 않고 게시 후 보존 결과는 아래 별도 대조를 따른다. 이 사전 확인 자체는 게시 성공 근거가 아니다.
+
+### version23 독립 프로젝트 포털 게시
+
+2026-10-27T02:02:05.793555Z에 기존 public Sites version23의 terminal succeeded를 확인했다. 게시 source는 `d8bcb3952d8aa4d2f80d3e624425993020681553`, 기능 main은65b06d2이며 원격 푸시를 확인했다. get_site active/latest23·정확 deployment와 env revision11을 재조회했다. 고유 version/deployment·archive는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다. 최종341 runtime 입력이 검증 source와 모두 일치했고 JSON 키 순서는 의미상 동일함을 정규화 대조한 뒤 복사했으며 검증 entry hash는 유지됐다. 두 기능 SHA의 combined statuses[]는 CI 통과가 아니다.
+
+D1 0019/0020은 신규7표를 추가했고 모두0행이다. 전체는35표379행이며 게시 전28표376행과 **전표 동일하지 않다**. 기존 업무27표는 전체 행이 같고 실제 project5/task7/submission5/attachment7 및 합성 project6/task8/submission6/attachment8 metadata·역할을 보존했다. audit_logs는343→346행이다. 기존 INFO id223~226(2026-10-21T23:30:48~51Z)4건이 만료 정리됐고 instrumentation INFO id566~572가7건 추가됐다. `logging.server.ts`의 logEvent/auditCutoff와 runtime-env 기본5일 정책은 기준 sites 대비 변경0이며 명시 retention env도 없다. 이번 구현이 새 보존 정책을 도입하거나 감사로그까지 전부 보존했다고 해석하지 않는다.
+
+public policy revision2·auth_client·env revision11의5entries·automations[]는 전후 동일하다. 실제 R2 bytes/inventory 독립 조회·운영 Chrome/모바일 인수는 미실행이며 부모의 별도 허용 브라우저 결과를 기다린다. 코딩 실행기의 운영 GET 재시도/우회0, NAS 실행0이며 NAS/MariaDB 검증은 사용자 담당이다. 기존 가이드 이미지·최종 인수 미완료는 이번 게시로 닫지 않는다. version22 source7178471과 archive를 복귀 참조로 유지했고 schema down은 하지 않았다. 공식 Worker logs의 최근5분 errors_only 반환2건은 crawler의 `/robots.txt`·`/sitemap.xml` 404/outcome=ok였고 반환된 앱5xx/exception은 없었다. 이 표본을 사용자 탐색 인수로 확대하지 않는다. 게시 증거는 `.test-artifacts/project-portal-http/publication-result.json`에 있다.
 
 docs-canon 본체 읽기는 성공했으나 원본 checker 리소스 읽기1회 실패로 원본 실행0이며 저장소 대체 검사와 내용 검토만 적용한다. 새 문서/보고서는 추가하지 않는다.
 
