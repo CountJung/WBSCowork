@@ -321,7 +321,7 @@ guest도 명단에 포함될 수 있지만 읽기 전용이며 팀장 후보 자
 
 ## 화면 구조
 
-theme의 Container 기본은 xl(1536px), 긴 글 privacy/bug detail은 md다. AppShell은 xl 이상 한 행, md~xl 미만 별도 메뉴 행, md 미만 기존 Drawer를 쓴다. 상단 탐색 메뉴의 nowrap/비수축과 이름 칩 ellipsis+전체 title은 유지하되 선택 메뉴의 `MuiMenuItem`은 viewport 안에서 긴 이름을 줄바꿈한다. 한국어 keep-all/긴 문자열 anywhere를 적용한다. shape.borderRadius는4px 단위이며 sx 숫자는 배수다. 업무 집중/복귀 맥락과 간트 내부 가로 스크롤을 보존한다. 개요·작업 화면은 간트를 중심으로 배치하며 light/dark 모두 선택 카드·중첩 패널·업로드 상태의 대비를 유지한다. 공통 SubmitButton의 pending 표시는 서버 중복 방지·인가를 대신하지 않는다.
+theme의 Container 기본은 xl(1536px), 긴 글 privacy/bug detail은 md다. AppShell은 모든 폭에 상단 햄버거 하나와 기본 닫힌 top Drawer를 둔다(max88dvh 내부 scroll·sticky 닫기). 선택/경로 이탈/popstate 시 닫고 outside/Escape·focus 복원은 MUI 기본 동작을 유지한다. 프로젝트의 고정 aside 대신 현재 프로젝트/전환 링크와 전체폭 본문을 사용한다. `scoped-navigation`에는 서버가 승인한 링크만 등록하고 정확한 root 또는 `/` 하위 경로 일치·token별 cleanup으로 다른 프로젝트 메뉴가 남지 않게 한다. 이는 서버 권한을 부여하지 않는다. 메뉴 링크의 prefetch는 끄되 보고서 미리보기 취소 원인을 해결했다고 해석하지 않는다. 상단 탐색 메뉴의 nowrap/비수축과 이름 칩 ellipsis+전체 title은 유지하되 선택 메뉴의 `MuiMenuItem`은 viewport 안에서 긴 이름을 줄바꿈한다. 한국어 keep-all/긴 문자열 anywhere를 적용한다. shape.borderRadius는4px 단위이며 sx 숫자는 배수다. 업무 집중/복귀 맥락과 간트 내부 가로 스크롤을 보존한다. 개요·작업 화면은 간트를 중심으로 배치하며 light/dark 모두 선택 카드·중첩 패널·업로드 상태의 대비를 유지한다. 공통 SubmitButton의 pending 표시는 서버 중복 방지·인가를 대신하지 않는다.
 
 ## 결정 색인
 
@@ -366,7 +366,7 @@ D0–D4의 소스·양 DB·compiled 인수와 실제 화면/운영 외부 게이
 
 PRD-060~064/QLT-033의 **구현 중 계약**이며 최종 인수/게시 완료가 아니다. 새 portal 진입은 로그인한 현재 DB 사용자와 활성 project_members 또는 검증된 env SU를 요구한다. 지정 admin도 해당 프로젝트 범위만 관리하고 SU의 기존 검증 신원/전역 권한은 유지한다. 기존 legacy_authenticated WBS 읽기를 이 새 gate로 소급 차단하거나 실제 계정/소속을 자동 배정하지 않는다. 기존 private 제출물/댓글/첨부·revision 인가는 변경하지 않는다.
 
-프로젝트 홈과 유형별 layout·봉사활동 presentation 요약, 사이드바의 팀/업무 이동을 제공하고 현재 식사/레크 준비표의 검증·CAS/불변 이력과 편집 권한을 재사용한다. UI 목록뿐 아니라 직접 URL/API·파일 bytes/metadata·count·요약/미리보기에서 같은 프로젝트 scope와 현재 역할/소속을 재검사한다. 소속/팀 회수 후 열린 화면의 다음 보호 요청도 검사한다.
+프로젝트 홈과 유형별 layout·봉사활동 presentation 요약, 상단 통합 메뉴의 팀/업무 이동을 제공하고 현재 식사/레크 준비표의 검증·CAS/불변 이력과 편집 권한을 재사용한다. UI 목록뿐 아니라 직접 URL/API·파일 bytes/metadata·count·요약/미리보기에서 같은 프로젝트 scope와 현재 역할/소속을 재검사한다. 소속/팀 회수 후 열린 화면의 다음 보호 요청도 검사한다.
 
 보수적 MVP의 `media`는7번째 activity kind로 추가하고 기존6종 문자열/자료는 바꾸지 않는다. 식사/레크의 편집기는 재사용하되 새 publication은 **선택한 불변 준비표 revision의 snapshot**만 공유한다. 기본은 private이며 이후 비공개 준비표 편집이 공유본을 자동 갱신/공개하지 않는다.
 
