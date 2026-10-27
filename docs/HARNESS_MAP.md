@@ -638,7 +638,15 @@ PRD-065/QLT-034는 top Drawer·단일 ☰/프로젝트 탐색 통합·전체폭 
 
 schema/migration 변경0이다. 직전 fresh D1 baseline35표474행에서 게시 후482행이며 업무34표 전체 행은 동일하고 audit441행은 전부 보존/삭제0·기동 INFO8(id668~675)만 추가됐다. 실제 project5/task7/submission5/attachment7과 합성 project6/team1~4/task8/submission6/attachment8 metadata도 같다. env revision11/5entries 값·public policy revision2·auth_client·automations[] 전후 동일, 실제 R2 bytes/inventory 독립 대조는 미실행이다. 공식 Worker 최근5분 errors_only 반환0은 표본이며 실제 UI 인수가 아니다.
 
-부모에게 상단 ☰·project6/5 전환·선택 후 닫힘/outside/Escape·focus/BackForward의 읽기 검토 가능 상태를 전달했으나 아직 결과 대기다. 실제 모바일/클라이언트 조작 PASS로 쓰지 않는다. 가이드 이미지 수신 차단/구v23 캡처 재대조·보고서 미리보기 원인 미확정·NAS 검증 사용자 담당은 유지한다. 이전v23 source/archive를 복귀 참조로 보존했고 자동 rollback은 하지 않았다.
+게시 직후 부모에게 실제 메뉴 읽기 검토를 요청했고 후속 결과는 아래 별도 관측으로 구분한다. 가이드 이미지 수신 차단/구v23 캡처 재대조·보고서 미리보기 원인 미확정·NAS 검증 사용자 담당은 유지한다. 이전v23 source/archive를 복귀 참조로 보존했고 자동 rollback은 하지 않았다.
+
+### version24 부모 Chrome 좁은 화면과 메뉴 검토
+
+부모 클라우드 Chrome 일반 창 resize/150% 확대에서 CSS viewport360×505(innerWidth360/dpr1.5)와390px(높이 미제공),100% 확대에서768×757을 확인했다. 실제 touch·기기 emulation·Safari가 아니며 DevTools는 조직 정책상 차단돼 사용/우회하지 않았다. 정확한 검토 시각·이번 역할별 신규 로그인은 제공되지 않아 추정하지 않는다.
+
+고정 sidebar0·햄버거44×44, 열기/닫기 버튼·outside click·Escape 후 trigger focus 복원, Tab/ShiftTab 양방향 메뉴 focus trap을 확인했다. project6 이름/팀 링크와6→목록→5의 이름/메뉴 갱신·6팀 잔존0, 열린 메뉴에서 Back/Forward 시 닫힘이 PASS다.360에서는 식단/레크 편집1열·가로넘침0·하단 버튼44px/전체폭,390에서는 레크/빈 미디어 화면 가로넘침0,768에서는 project5 홈/메뉴·6 식단 편집 가로넘침0을 확인했다. 해당 관측 범위에서 결함은 발견하지 않았다.
+
+저장 없이 모두 취소하고 창 크기/100% zoom을 복원했다. 수집된 console errors/warnings93건은 확장 metadata뿐이고 앱 출처0이며 전체 기간 무오류로 확대하지 않는다. media팀이 없어 업로드 form 실UI는 미검증이고 실제 touch/Safari·저장/실패 초안·신규 로그인/다른 역할도 이번 인수가 아니다. 부모 캡처는 코딩 실행기 수신/픽셀 검토가 아니며 전송 시도0이다. 가이드 이미지 차단·보고서 미리보기 원인 미확정·NAS 검증 사용자 담당을 유지한다. source110f4ec/version24는 그대로이며 이번 문서 동기화는 코드 변경/재게시가 아니다.
 
 ## 문서 정리 검증
 
