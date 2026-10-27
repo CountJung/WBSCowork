@@ -601,11 +601,11 @@ public policy revision2·auth_client·env revision11의5entries·automations[]�
 
 ### 기존 프로젝트 404 신고 조사
 
-사용자가 기존 프로젝트404를 신고했으나 **정확한 실패 URL 답변 대기·오류 미재현·원인 미확정**이다. 부모의 동일 SU 브라우저에서는 `/projects/6` 목록 링크/새로고침, `/projects/5` 직접 진입/새로고침과 `/tasks?projectId=5`의 업무1·제출1이 정상이다. 목록에는5/6만 보였고 구형 ID 링크는 관측하지 못했다. 다른 계정에서는 검증하지 않았다.
+최초에는 기존 프로젝트404 신고의 정확한 실패 URL 답변 대기·오류 미재현·원인 미확정 상태로 조사했다. 이후 사용자가 “404는 권한없는 계정 테스트였으니 내 실수”라고 확인해 **권한 없는 계정의 의도된404로 신고를 해소**했다. 부모의 동일 SU 브라우저에서는 `/projects/6` 목록 링크/새로고침, `/projects/5` 직접 진입/새로고침과 `/tasks?projectId=5`의 업무1·제출1이 정상이다. 목록에는5/6만 보였고 구형 ID 링크는 관측하지 못했다. 다른 계정에서는 검증하지 않았다.
 
-소스상 presentation settings는 LEFT JOIN/메타데이터 없는 version0 가상 기본값을 지원하고 테이블 누락 SQL 오류는 UNAVAILABLE503이다. 새 portal은 활성 프로젝트 소속 또는 현재 id/email을 재검증한 envSU에 한정한다. 기존 legacy WBS 정책은 보존하므로 일반 비소속자의 `/tasks` 허용·`/projects`404는 계약상 가능하며 canonical 정수가 아닌 ID도404다. SU는 DB role/소속에 의존하지 않는다. 이 구분은 진단 후보이며 사용자 실패 원인을 확정한 것이 아니다.
+소스상 presentation settings는 LEFT JOIN/메타데이터 없는 version0 가상 기본값을 지원하고 테이블 누락 SQL 오류는 UNAVAILABLE503이다. 새 portal은 활성 프로젝트 소속 또는 현재 id/email을 재검증한 envSU에 한정한다. 기존 legacy WBS 정책은 보존하므로 일반 비소속자의 `/tasks` 허용·`/projects`404는 계약상 가능하며 canonical 정수가 아닌 ID도404다. SU는 DB role/소속에 의존하지 않는다. 이 구분은 당시 진단 후보였으며 최종 해소 근거는 위 사용자 확인이다.
 
-동일 v23 Worker entry `06ff3648…`의 불변 artifact에서 compiled45조건/66요청 재실행 exit0을 확인했다. 메타데이터 없는 새 프로젝트·legacy private bytes 보존, SU/소속/비소속·직접URL·소속 회수 다음 요청 회귀가 PASS이며 실제 브라우저의 신고 오류 재현은 아니다. 증거는 `.test-artifacts/legacy-project-404-investigation/`의 `result.json`·`requests.json`·`build-provenance.json`이다. 코드 수정·자료 삭제/재생성·실제 권한 변경·NAS 실행·운영 GET 우회·재게시0이며 실패 증거 전 추측 수정하지 않는다.
+동일 v23 Worker entry `06ff3648…`의 불변 artifact에서 compiled45조건/66요청 재실행 exit0을 확인했다. 메타데이터 없는 새 프로젝트·legacy private bytes 보존, SU/소속/비소속·직접URL·소속 회수 다음 요청 회귀가 PASS이며 실제 브라우저의 신고 오류 재현은 아니다. 증거는 `.test-artifacts/legacy-project-404-investigation/`의 `result.json`·`requests.json`·`build-provenance.json`이다. 코드 수정·자료 삭제/재생성·실제 권한 변경·NAS 실행·운영 GET 우회·재게시0이며 추측 수정 없이 사용자 확인으로 종료했다. 별도 보고서 미리보기 조사나 가이드 이미지 미완료의 해소를 뜻하지 않는다.
 
 docs-canon 본체 읽기는 성공했으나 원본 checker 리소스 읽기1회 실패로 원본 실행0이며 저장소 대체 검사와 내용 검토만 적용한다. 새 문서/보고서는 추가하지 않는다.
 
