@@ -630,7 +630,15 @@ PRD-065/QLT-034는 top Drawer·단일 ☰/프로젝트 탐색 통합·전체폭 
 
 최종 로그는 `.test-artifacts/mobile-worker-final-build.log`·`mobile-native-final-compat-build.log`·`mobile-unit-tests.log`·`mobile-final-typecheck.log`·`mobile-full-lint.log`다. 브라우저 controller가 없고 helper nobody/4755 제한도 그대로여서 실제360/390/768 렌더·touch·링크/outside/Escape·초점 복원/이력·client console은 미실행이다. DOM simulation도 하지 않았다. 지원 로컬 인수가 실제 Chrome/모바일 인수는 아니며 부모의 별도 허용 브라우저 결과를 기다린다.
 
-게시 전 fresh 공식 D1은35표474행 complete·env revision11/5keys·public policy revision2·live23이다. 이번 schema/migration·실제 자료/권한/환경 변경0이며 게시 후 보존은 이 fresh baseline으로 별도 대조한다. 아직 새 게시 version/source 성공을 기록하지 않는다. NAS/MariaDB 실행은 사용자 담당, 이미지 bytes0/추가 전송0·v23 캡처 재대조 필요와 정상 비인가404 종료·보고서 미리보기 취소 원인 미확정은 유지한다. 원본 docs-canon checker는 기존 미가용으로 미실행이며 저장소 검사만 적용한다.
+게시 전 fresh 공식 D1은35표474행 complete·env revision11/5keys·public policy revision2·live23이다. 이번 schema/migration·실제 자료/권한/환경 변경0이며 게시 후 보존은 이 fresh baseline으로 별도 대조한다. 당시 새 게시 전 baseline이며 이후 version24 게시 결과는 아래에서 구분한다. NAS/MariaDB 실행은 사용자 담당, 이미지 bytes0/추가 전송0·v23 캡처 재대조 필요와 정상 비인가404 종료·보고서 미리보기 취소 원인 미확정은 유지한다. 원본 docs-canon checker는 기존 미가용으로 미실행이며 저장소 검사만 적용한다.
+
+### version24 모바일 우선 UI 게시
+
+2026-10-27T03:25:17.100610Z(한국12:25:17)에 기존 public Sites version24가 succeeded다. 기능 main `36b835267775307606be3ab8e3fc5acb12e6aad3`/sites·공식 source `110f4ec2e0c86ae94c0fe59e58b04adbac1ab59d` 원격 HEAD와 get_site active/latest24·저장 version의 source/deployment 일치를 확인했다. 검증된342 runtime 입력 bytes가 모두 일치하고 package 키 순서만 JSON 정규화로 동등함을 확인해 복사했으며 build/entry `54733b90…`는 불변이다. CI combined statuses[]는 통과가 아니다. 고유 version/deployment·archive 식별자는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다.
+
+schema/migration 변경0이다. 직전 fresh D1 baseline35표474행에서 게시 후482행이며 업무34표 전체 행은 동일하고 audit441행은 전부 보존/삭제0·기동 INFO8(id668~675)만 추가됐다. 실제 project5/task7/submission5/attachment7과 합성 project6/team1~4/task8/submission6/attachment8 metadata도 같다. env revision11/5entries 값·public policy revision2·auth_client·automations[] 전후 동일, 실제 R2 bytes/inventory 독립 대조는 미실행이다. 공식 Worker 최근5분 errors_only 반환0은 표본이며 실제 UI 인수가 아니다.
+
+부모에게 상단 ☰·project6/5 전환·선택 후 닫힘/outside/Escape·focus/BackForward의 읽기 검토 가능 상태를 전달했으나 아직 결과 대기다. 실제 모바일/클라이언트 조작 PASS로 쓰지 않는다. 가이드 이미지 수신 차단/구v23 캡처 재대조·보고서 미리보기 원인 미확정·NAS 검증 사용자 담당은 유지한다. 이전v23 source/archive를 복귀 참조로 보존했고 자동 rollback은 하지 않았다.
 
 ## 문서 정리 검증
 
