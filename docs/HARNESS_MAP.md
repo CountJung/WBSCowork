@@ -564,7 +564,7 @@ getversions의 v21 deployment null/v20 기존 deployment와 v20 status succeeded
 
 이번에는 현재 Library skill·materialization 참조와 공식 helper2종 리소스를 확보해 변경 없이 설치했다. 새로 확인된 자료의 prepare_materialize1회와 소비자 목적지 변경 bounded retry1회는 도구상 성공했으나 모두 workspace_path:null/signed transfer였다. 공식 `library_file_transfer.py materialize`는2회 모두 exit1 `library file transfer failed: download failed`로 끝났다. 목적지 `/workspace/wbs-guide-screenshots-20261027/WBSCowork-v23-screenshot-guide-20261027.zip`와 `/workspace/WBSCowork-v23-screenshot-guide-20261027.zip`의 실존 검사도 false다. HTTP 상태·상세 사유가 없어 정책/접근 거부나 별도 Library 원인을 단정하지 않는다. 추가 재시도·우회는0이다. Library ID·signed URL·token은 저장소에 기록하지 않는다.
 
-코딩 소비자 실제 bytes0·ZIP 무결성/숨긴 내용/픽셀 검토0·이미지 삽입/게시0이다. 새 ZIP을 **현재 WBSCowork 코딩 작업 채팅에 로컬파일로 직접 첨부**해야 하며 메인 대화 링크나 다른 실행기 경로는 수신을 보장하지 않는다. PRD-059/QLT-032와 이미지 strict gate는 미완료로 유지한다. 별도 보고서 미리보기 조사는 이 전달 차단과 구분한다.
+이후 사용자가 같은 이름 ZIP을 현재 대화에 직접 첨부해 사용을 요청했다. 새 첨부의 prepare_materialize1회는 size1,412,534/workspace_path:null/signed transfer였고, 공식 helper2종을 새로 확보한 뒤 전송1회도 exit1 `library file transfer failed: download failed`로 끝나 `/workspace/wbs-guide-direct-attachment-20261027/WBSCowork-v23-screenshot-guide-20261027.zip` 실존 false였다. 추가 재시도0이며 HTTP 상태/상세 원인이 없어 네트워크·정책 거부로 단정하지 않는다. **직접 첨부하면 해결된다는 이전 안내는 더 이상 유효하지 않다.** 재첨부 요청을 반복하지 않고 공식 실행기 파일 전달 경로 복구/새 지원 근거를 기다린다. 실제 bytes·ZIP 무결성/숨긴 내용/픽셀 검토·이미지 삽입/게시0, PRD-059/QLT-032와 이미지 strict gate 미완료를 유지한다. 새 첨부 ID는 기록하지 않으며 별도 보고서 미리보기 조사와도 구분한다.
 
 ## 독립 프로젝트 포털 검증 계획
 
