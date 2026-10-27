@@ -599,6 +599,14 @@ public policy revision2·auth_client·env revision11의5entries·automations[]�
 
 실제 저장·권한 변경·자료 변경은0이다. viewport 조절 API가 없어 모바일은 미검증이며 project6에 media팀이 없어 실제 브라우저 업로드도 미검증이다. 미디어 서버 회귀 통과를 이 UI 인수로 바꾸지 않는다. 실제 다른 역할/소속 회수·실패 초안·관측하지 않은 키보드 조작, R2 원본 bytes 대조·가이드 이미지 미완료는 유지한다. NAS/MariaDB 실행 검증은 사용자 담당이며 코딩 실행기에서 운영 접속이나 제품 테스트를 재실행한 결과가 아니다.
 
+### 기존 프로젝트 404 신고 조사
+
+사용자가 기존 프로젝트404를 신고했으나 **정확한 실패 URL 답변 대기·오류 미재현·원인 미확정**이다. 부모의 동일 SU 브라우저에서는 `/projects/6` 목록 링크/새로고침, `/projects/5` 직접 진입/새로고침과 `/tasks?projectId=5`의 업무1·제출1이 정상이다. 목록에는5/6만 보였고 구형 ID 링크는 관측하지 못했다. 다른 계정에서는 검증하지 않았다.
+
+소스상 presentation settings는 LEFT JOIN/메타데이터 없는 version0 가상 기본값을 지원하고 테이블 누락 SQL 오류는 UNAVAILABLE503이다. 새 portal은 활성 프로젝트 소속 또는 현재 id/email을 재검증한 envSU에 한정한다. 기존 legacy WBS 정책은 보존하므로 일반 비소속자의 `/tasks` 허용·`/projects`404는 계약상 가능하며 canonical 정수가 아닌 ID도404다. SU는 DB role/소속에 의존하지 않는다. 이 구분은 진단 후보이며 사용자 실패 원인을 확정한 것이 아니다.
+
+동일 v23 Worker entry `06ff3648…`의 불변 artifact에서 compiled45조건/66요청 재실행 exit0을 확인했다. 메타데이터 없는 새 프로젝트·legacy private bytes 보존, SU/소속/비소속·직접URL·소속 회수 다음 요청 회귀가 PASS이며 실제 브라우저의 신고 오류 재현은 아니다. 증거는 `.test-artifacts/legacy-project-404-investigation/`의 `result.json`·`requests.json`·`build-provenance.json`이다. 코드 수정·자료 삭제/재생성·실제 권한 변경·NAS 실행·운영 GET 우회·재게시0이며 실패 증거 전 추측 수정하지 않는다.
+
 docs-canon 본체 읽기는 성공했으나 원본 checker 리소스 읽기1회 실패로 원본 실행0이며 저장소 대체 검사와 내용 검토만 적용한다. 새 문서/보고서는 추가하지 않는다.
 
 ## 문서 정리 검증
