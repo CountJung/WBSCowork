@@ -2,7 +2,7 @@
 
 이 문서는 **지금 어디까지 왔고 다음 무엇을 해야 하는가**를 소유한다. 단계/완료 게이트는 [MASTER_PLAN](MASTER_PLAN.html), 과거 근거는 [COMPLETED_LOG](COMPLETED_LOG.md), 상세 digest 설계는 [계획](PROJECT_DIGEST_REPORT_PLAN.md)에 있다.
 
-최종 검토: 2026-10-27 · 다음 번호: **QLT-034 / RPT-021 / OPS-041 / PRD-065**
+최종 검토: 2026-10-27 · 다음 번호: **QLT-035 / RPT-021 / OPS-041 / PRD-066**
 
 ## 현재 상태
 
@@ -12,10 +12,11 @@
 | Git 소스 | 독립 프로젝트 포털 main65b06d2/sites·공식 source d8bcb3952d8aa4d2f80d3e624425993020681553 푸시·version23 게시 확인 | 후속 문서 HEAD와 게시 코드 source 구분. main/sites 기본 build 차이 유지·CI combined statuses[]는 CI PASS가 아님 |
 | 운영 게시 | public Sites version23/source d8bcb39 succeeded·active/latest23와 exact deployment 일치 확인 | [게시 원장](COMPLETED_LOG.md#sites-게시-원장). D1 신규7표 각0행·업무27표 동일. 감사로그 기존 정책의 만료4건/INFO7건 추가는 [별도 대조](HARNESS_MAP.md#version23-독립-프로젝트-포털-게시) 참조. 설정 동일·부모 클라우드 Chrome의 데스크톱 읽기 부분 PASS, 저장/미디어 업로드·모바일/실제 타역할 인수는 잔여 |
 | 독립 프로젝트 포털 | PRD-060~063 소스 구현·D1 source64/미디어D1·R2 source46·compiled Worker45조건/66요청 PASS. 양 build·lint/type/FSD PASS, version23 게시 완료·부모 클라우드 데스크톱 읽기 부분 PASS | 새 포털만 엄격 소속 격리·독립 홈/유형별 표시/사이드바, 기존 준비표 재사용과 프로젝트 내부 미디어 도구. 기존 legacy WBS/private·실계정·실제 자료 보존. NAS/MariaDB 실행 검증은 사용자 담당으로 이번 게이트에서 제외하며 실제 저장/미디어 업로드·모바일 미검증·가이드 이미지 미완료는 별도 유지. 프로젝트 생성→관리자 지정→팀 구성→공유 자료 준비의 시작 체크리스트는 미확정 제안이며 계획/구현으로 확정하지 않음 |
+| 모바일 우선 탐색 | PRD-065 소스 구현·QLT-034 지원 로컬 검사/최종 build 통과, 게시 준비 중·운영version23 유지 | 기본 닫힌 상단 햄버거·본문 전체폭·메뉴 중복 축소와360/390/768px 도구 배치 구현. compiled47조건/66요청 PASS·실제 Chrome/모바일 조작은 미실행으로 구분하고 실제 자료/권한/공개범위/schema 변경0·NAS 검증은 사용자 담당 |
 | 최근 검증 | QLT-021 핵심 삭제 오판은 실제 Google 세션의 운영 UI 인수 PASS | [검증 기준선](HARNESS_MAP.md#검증-기준선). 신규 업로드는 통과했으나 추가 첨부·운영 파일 삭제는 미검증이며 QLT-022와 다른 열린 항목 유지 |
 | 선행 로컬 구현 | QLT-016/029와 RPT-015/017은 독립 로컬 검증 완료 이관. QLT-028/020·OPS-032와 RPT-016/018/019의 외부 인수 게이트 유지 | 구현 소스·추가 compiled33·main/sites 푸시와 기존 Sites v19 게시 완료. 최초 거부와 새 승인 후1회 배포·보존 확인은 [승인/게시 이력](HARNESS_MAP.md#version19-승인과-운영-배포)을 따른다. D5 외부 발송·운영 예약 활성화·NAS/실계정/보안/영구 삭제는 제외 |
 | 팀별 공통 준비표 | PRD-058 소스·양 DB·compiled HTTP 완료, QLT-031 운영 envSU/1165px 부분 인수 PASS·모바일/실제 팀장 등 잔여 | exact 게시 checkout build/compiled30·34HTTP 후 같은 저장v20 배포 완료. [최초 거부·새 승인/배포](HARNESS_MAP.md#version20-승인과-운영-배포), 기존 실제 사용자 기록/권한·NAS 변경 없음. 부모가 만든 합성 project6/팀1~4/준비표v1은 보존하며 실제 화면 잔여는 QLT-031로 유지 |
-| 역할별 웹 사용설명서 | PRD-059 공통/5역할/11기능 설명과 공개 정적 경로 구현 중, QLT-032 실스크린샷/화면 인수 대기 | 공통 시작→역할 선택→기능 상세의 쉬운 단계·예시·저장 확인/오류 대응. 현재 서버 권한 대조 완료, 과거11장 전송 실패와 별개로 새 v23 캡처20JPG ZIP도 공식 소비자 전송 실패·실제 수신0. 사용자 직접 첨부도 완료됐으나 공식 실행기 전송1회 실패·파일0, 전달 경로 복구/새 지원 근거 대기·가짜 이미지0. Native/Worker 최신 text35조건/51페이지 PASS·전체 strict는 이미지 누락 실패. 문구 보완v22 게시·기존SU/1180px 집중 재검토 PASS, v21 envSU1180px 부분 검토는 과거 별도 근거. 이미지 포함 최종 완료/게시 준비 아님·권한 변경 없음 |
+| 역할별 웹 사용설명서 | PRD-059 공통/5역할/11기능 설명과 공개 정적 경로 구현 중, QLT-032 실스크린샷/화면 인수 대기 | 공통 시작→역할 선택→기능 상세의 쉬운 단계·예시·저장 확인/오류 대응. 현재 서버 권한 대조 완료, 과거11장 전송 실패와 별개로 새 v23 캡처20JPG ZIP도 공식 소비자 전송 실패·실제 수신0. 사용자 직접 첨부도 완료됐으나 공식 실행기 전송1회 실패·파일0, 전달 경로 복구/새 지원 근거 대기·가짜 이미지0. 추가 전송 재시도0·v23 캡처는 모바일 UI 변경 후 구버전일 수 있어 수신 시 재대조 필요. Native/Worker 최신 text35조건/51페이지 PASS·전체 strict는 이미지 누락 실패. 문구 보완v22 게시·기존SU/1180px 집중 재검토 PASS, v21 envSU1180px 부분 검토는 과거 별도 근거. 이미지 포함 최종 완료/게시 준비 아님·권한 변경 없음 |
 | 봉사활동 | 확정 정책의 프로젝트/팀 관리·팀장 범위 업무·직접 완료를 구현하고 로컬/합성 인수·version15 게시 완료 | 기존 업무/협업 업무 제출 필수·private 계약과 사용자 자료 표본 보존. 실제 운영 UI·Google 인수와 R2 bytes 대조는 미실행 |
 | UX·프로젝트 바인딩 | 확정된 다중 소속·SU 전역/지정 프로젝트 admin 정책으로 UI·SQL scope 구현·Worker/Native strict UI와 기존 봉사 회귀 완료 | 기존 Sites version16 게시 완료. 계정 role/소속 자동 부여0·기존7표 보존; 확정 admin 관리 축소는 게시 코드 정책으로 적용 |
 | 제출물 첨부 미리보기 | PRD-056/057·QLT-025/026의 Native/Worker371조건·실제 게시 artifact와 version17 게시 확인 완료 | 부모 Work의 상세/버전 텍스트 미리보기와 SU 참여자·담당자·검토자 후보 제외 부분 PASS. 탐색 React418/초기 표시는 QLT-027 운영 재인수 완료; 팀장 후보 UI·새 Google 인증·원본 bytes 대조는 미검증 |
@@ -41,6 +42,8 @@
 | PRD-063 | [~] | P1·S3 소스/D1·게시 완료, QLT033 실제 화면 인수 잔여;060~062 선행: 미디어팀 사진첩/영상 도구·프로젝트 내부 공개/현재팀 private 구현. media7번째 kind·private 기본/명시 준비표 revision 공유·현재 팀/지정admin/SU·미디어만 작성자 예외·프로젝트 전출 차단·사진8MiB/영상20MiB/1파일·삭제API0의 보수적MVP를 구현. 서버파일검증·매 요청 인가·기존자료 새 공개0·인터넷공개0이 완료 조건 | [MVP 계약](ARCHITECTURE.md#독립-프로젝트-포털-설계) |
 | PRD-064 | [!] | P1·S4: version23 게시·정확 source/deployment 및 업무 자료/설정 보존 대조 완료. 감사로그 만료4건/추가7건은 기존 정책에 따른 차이로 기록. 부모 허용 Chrome의 유형별 홈·탐색·편집기 열기/취소 데스크톱 읽기 부분 PASS. 저장/미디어 업로드·모바일 등 QLT033 잔여를 전체 인수로 확대하지 않음. NAS/MariaDB 실행 검증은 사용자 담당이며 Sites 게시 차단 조건이 아님 | [게시·검증](HARNESS_MAP.md#version23-독립-프로젝트-포털-게시) |
 | QLT-033 | [!] | P0: D1 portal64/media46·compiled Worker45조건/66요청·호환 build/정적 검사 및 version23 게시 완료. 부모 클라우드 Chrome의 데스크톱 유형별 홈/사이드바·4팀 편집기 열기/취소·Enter/skip 포커스·Back/Forward 부분 PASS. 실제 저장/실패 초안·권한 회수/다른역할·미디어 업로드·모바일/나머지 키보드 인수는 미검증 유지. 기존 프로젝트404 신고는 사용자가 권한 없는 계정 테스트였다고 확인해 의도된 접근 차단으로 해소했으며 별도 코드 수정은 없음([확인 근거](HARNESS_MAP.md#기존-프로젝트-404-신고-조사)). NAS/MariaDB 추가 준비·접속 복구·실행 검증은 사용자 담당이며 변경 전 Native 결과는 참고만 유지 | [게이트](HARNESS_MAP.md#독립-프로젝트-포털-검증-계획) |
+| PRD-065 | [~] | P0·M0/M1 소스 완료: 모든 폭 상단 햄버거·기본 닫힘/선택/경로 이탈·popstate 닫힘, top Drawer/닫기·현재 프로젝트/전환·본문 전체폭·중복 메뉴 축소를 구현. 식단/체크리스트768px이하1열·긴 라벨/파일명 줄바꿈·44px controls·미디어 폭 보완. 서버 권한/저장·취소 콜백 변경0. 실제 렌더·touch/초점 인수와 게시 결과는 QLT034 잔여 | [단계](MASTER_PLAN.html#mobile-first) |
+| QLT-034 | [~] | P0·M2: unit296(action33/unit263)·focused18/SSR7/event AST4·lint/type/FSD·Worker/Native 호환 build와 compiled Worker47조건/66요청 PASS(범위 중복 합산 금지). 실제360/390/768 렌더·touch·링크/outside/Escape·focus/history·client console는 capability 제한으로 미실행. 정확 Sites source/version/deployment·fresh D1 35표474행 기준 자료/설정 보존 대조와 부모 허용 브라우저 결과 대기. NAS/MariaDB 실행은 사용자 담당 | [검증·한계](HARNESS_MAP.md#모바일-우선-탐색-구현-검증) |
 | OPS-021 | [~] | NAS 소스/업데이트 절차는 준비됨. 실제 플랫폼·백업·기본 build·대상 릴리스 migration 적용·기동·자료/역할/수동 인수는 운영자가 수행. 기존 NFT warning도 유지 | [운영 안내](NAS_UPDATE_GUIDE.md) |
 | OPS-031 | [!] | Native bug purge 포함 전체 수명주기/두 isolation-level 경합 검증은 별도 승인 대기. 비파괴16조건·Sites 삭제 완료와 구분 | [완료 범위](COMPLETED_LOG.md#실환경-qa와-삭제-승인-경계) |
 | OPS-032 | [!] | PPTX 하위 image-size2.0.4 scoped override·호환 검사/양 build 후 production audit0, 전체23(high18/moderate4/low1) 잔여 검토. 최종 전체294·양 build/호환·compiled OOXML18 PASS·전체 취약점 해소 아님. Native trace13경고·NAS 포장 게이트 미확인 | [보안 근거](COMPLETED_LOG.md#보안-패치와-활성-decoder) |

@@ -617,6 +617,21 @@ public policy revision2·auth_client·env revision11의5entries·automations[]�
 
 docs-canon 본체 읽기는 성공했으나 원본 checker 리소스 읽기1회 실패로 원본 실행0이며 저장소 대체 검사와 내용 검토만 적용한다. 새 문서/보고서는 추가하지 않는다.
 
+## 모바일 우선 탐색 구현 검증
+
+PRD-065/QLT-034는 top Drawer·단일 ☰/프로젝트 탐색 통합·전체폭 본문과 식단/체크리스트768px이하1열·wrap/minWidth0·44px controls를 구현했다. 실제 편집 모달을 새로 추가하지 않았고 폼4파일의 저장/취소 콜백 AST는 동일하다. MUI 설치 코드의 기본 Backdrop/Escape·focus 복원을 유지하며 별도 disable을 넣지 않았다는 소스 확인과 실제 조작 인수는 구분한다.
+
+| 실제 실행 범위 | 결과/경계 |
+| --- | --- |
+| `npm test -- --unit` | action33/unit263,총296 PASS·fail/skip0. scoped navigation unit4 포함, DB suite는 명시 미실행·NAS/MariaDB 접속0 |
+| focused/SSR/이벤트 계약 | 미디어/준비표18·실제 component SSR7·event AST4 PASS. viewport 시각 렌더/클릭이 아니며 전체 unit과 중복 합산하지 않음 |
+| 최종 build/정적 | 최종 Worker·Next Native 호환 build, global ESLint/typecheck/FSD PASS. Native 기존 동적 filesystem trace13경고·Vinext 분류 안내 유지. 상시 trigger CSS 보정 후 최종 build 로그 기준 |
+| compiled Worker | 최종47조건/66요청 PASS(직전45/66 대체), unexpected500/503/403 없음. entry `54733b904dd5ce82418c49f0d3624f194b790d29b18574748c5da2ebcf2f000e`, snapshot `718fb3cdf0af94f39ab8fa239ad3b7241aca09f9904968e3e2612eee37f68bec`(416files/5,998,698bytes) 전후 불변 |
+
+최종 로그는 `.test-artifacts/mobile-worker-final-build.log`·`mobile-native-final-compat-build.log`·`mobile-unit-tests.log`·`mobile-final-typecheck.log`·`mobile-full-lint.log`다. 브라우저 controller가 없고 helper nobody/4755 제한도 그대로여서 실제360/390/768 렌더·touch·링크/outside/Escape·초점 복원/이력·client console은 미실행이다. DOM simulation도 하지 않았다. 지원 로컬 인수가 실제 Chrome/모바일 인수는 아니며 부모의 별도 허용 브라우저 결과를 기다린다.
+
+게시 전 fresh 공식 D1은35표474행 complete·env revision11/5keys·public policy revision2·live23이다. 이번 schema/migration·실제 자료/권한/환경 변경0이며 게시 후 보존은 이 fresh baseline으로 별도 대조한다. 아직 새 게시 version/source 성공을 기록하지 않는다. NAS/MariaDB 실행은 사용자 담당, 이미지 bytes0/추가 전송0·v23 캡처 재대조 필요와 정상 비인가404 종료·보고서 미리보기 취소 원인 미확정은 유지한다. 원본 docs-canon checker는 기존 미가용으로 미실행이며 저장소 검사만 적용한다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.

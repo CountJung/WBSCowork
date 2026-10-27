@@ -23,9 +23,10 @@ import {
 } from "@mui/material";
 import { useColorScheme } from "@mui/material/styles";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { type MouseEvent, type ReactNode, useState } from "react";
+import { type MouseEvent, type ReactNode, useCallback, useEffect, useState } from "react";
 import type { AppThemeMode } from "@/src/shared/config/theme";
 import { getUserRoleLabel } from "@/src/entities/user";
+import { ScopedNavigationContext, isNavigationScopeActive, type ScopedNavigation } from "@/src/shared/ui/scoped-navigation";
 
 type AppShellProps = {
   appName: string;
@@ -89,7 +90,20 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const { mode, setMode, systemMode } = useColorScheme();
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [openedMenuAt, setOpenedMenuAt] = useState<string | null>(null);
+  const [scopedNavigation, setScopedNavigation] = useState<(ScopedNavigation & { token: symbol }) | null>(null);
+  const mobileNavOpen = openedMenuAt === pathname;
+  const activeScope = scopedNavigation && isNavigationScopeActive(pathname, scopedNavigation.rootHref) ? scopedNavigation : null;
+  const registerNavigation = useCallback((navigation: ScopedNavigation) => {
+    const token = Symbol("navigation");
+    setScopedNavigation({ ...navigation, token });
+    return () => setScopedNavigation(current => current?.token === token ? null : current);
+  }, []);
+  const closeMobileNav = useCallback(() => setOpenedMenuAt(null), []);
+  useEffect(() => {
+    window.addEventListener("popstate", closeMobileNav);
+    return () => window.removeEventListener("popstate", closeMobileNav);
+  }, [closeMobileNav]);
   const [adminMenuAnchorEl, setAdminMenuAnchorEl] = useState<null | HTMLElement>(null);
   const navItems = [...defaultNavItems, taskNavItem, { href: "/my-work", label: "내 업무" }, {href:"/search",label:"검색"}, {href:"/notifications",label:"알림"}, {href:"/bugs",label:"버그 제보"}];
   const adminMenuOpen = Boolean(adminMenuAnchorEl);
@@ -121,10 +135,6 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
     setMode(value);
   }
 
-  function closeMobileNav() {
-    setMobileNavOpen(false);
-  }
-
   function openAdminMenu(event: MouseEvent<HTMLElement>) {
     setAdminMenuAnchorEl(event.currentTarget);
   }
@@ -150,6 +160,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
     );
 
   return (
+    <ScopedNavigationContext.Provider value={registerNavigation}>
     <Box
       sx={{
         minHeight: "100vh",
@@ -169,11 +180,13 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
           }}>
             <Stack direction="row" spacing={1.5} useFlexGap sx={{ alignItems: "center", minWidth: 0 }}>
               <IconButton
-                onClick={() => setMobileNavOpen(true)}
+                onClick={() => setOpenedMenuAt(pathname)}
                 aria-label="메뉴 열기"
                 aria-expanded={mobileNavOpen}
+                aria-controls="app-navigation"
+                aria-haspopup="dialog"
                 sx={{
-                  display: { xs: "inline-flex", md: "none" },
+                  display: "inline-flex",
                   minWidth: 44,
                   minHeight: 44,
                   flexShrink: 0,
@@ -351,126 +364,44 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
       </AppBar>
 
       <Drawer
-        anchor="left"
+        anchor="top"
         keepMounted
         open={mobileNavOpen}
         onClose={closeMobileNav}
-        slotProps={{
-          paper: {
-            sx: {
-              width: 320,
-              maxWidth: "86vw",
-              backgroundColor: "background.paper",
-            },
-          },
-        }}
+        slotProps={{ paper: { id: "app-navigation", role: "dialog", "aria-modal": true, "aria-labelledby": "app-navigation-title", sx: { width: "100%", maxWidth: "100vw", maxHeight: "88dvh", overflowY: "auto", overscrollBehavior: "contain", borderRadius: "0 0 16px 16px", backgroundColor: "background.paper", "& .MuiButton-root": { minHeight: 44, textAlign: "left", overflowWrap: "anywhere", whiteSpace: "normal", justifyContent: "flex-start" } } } }}
       >
-        <Stack spacing={2} sx={{ p: 2.5 }}>
-          <Stack spacing={0.5}>
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>
-              {appName}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              모바일과 데스크탑에서 모두 동작하는 공통 내비게이션입니다.
-            </Typography>
-          </Stack>
-
+        <Stack direction="row" spacing={1} sx={{ position: "sticky", top: 0, zIndex: 1, backgroundColor: "background.paper", p: 2, alignItems: "center", borderBottom: "1px solid", borderColor: "divider" }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}><Typography id="app-navigation-title" component="h2" variant="h6" sx={{ overflowWrap: "anywhere" }}>프로젝트와 사이트 메뉴</Typography><Typography variant="caption">메뉴를 선택하거나 바깥을 누르면 닫힙니다.</Typography></Box>
+          <IconButton aria-label="메뉴 닫기" onClick={closeMobileNav} sx={{ minWidth: 44, minHeight: 44, flexShrink: 0 }}>✕</IconButton>
+        </Stack>
+        <Stack spacing={2} sx={{ p: { xs: 2, sm: 3 }, minWidth: 0 }}>
+          {activeScope ? <Stack component="nav" aria-label="현재 프로젝트 메뉴" spacing={1}>
+            <Typography component="h3" variant="subtitle1" sx={{ overflowWrap: "anywhere", fontWeight: 700 }}>현재 프로젝트 · {activeScope.title}</Typography>
+            {activeScope.links.map(item => <Button key={item.href} component={Link} prefetch={false} href={item.href} onClick={closeMobileNav} variant={pathname === item.href ? "contained" : "outlined"} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</Button>)}
+            <Button component={Link} prefetch={false} href="/projects" onClick={closeMobileNav} variant="text">다른 프로젝트로 전환</Button>
+          </Stack> : <Button component={Link} prefetch={false} href="/projects" onClick={closeMobileNav} variant="outlined">내 프로젝트 홈</Button>}
           <Divider />
-
-          <Stack spacing={1}>
-            <Button component={Link} href="/guide" onClick={closeMobileNav} variant={isGuideRouteActive?"contained":"outlined"} aria-current={isGuideRouteActive?"page":undefined} sx={{justifyContent:"flex-start",minHeight:44}}>사용설명서</Button>
-            {navItems.map((item) => {
-              const active = isActivePath(pathname, item.href);
-
-              return (
-                <Button
-                  key={item.href}
-                  component={Link}
-                  href={item.href}
-                  variant={active ? "contained" : "outlined"}
-                  onClick={closeMobileNav}
-                  sx={{ justifyContent: "flex-start" }}
-                >
-                  {item.label}
-                </Button>
-              );
-            })}
-
-            {hasAdminAccess ? (
-              <>
-                <Divider sx={{ my: 0.5 }} />
-                <Stack spacing={1} sx={{ pl: 1 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    관리자 메뉴
-                  </Typography>
-                  {currentAdminNavItems.map((item) => {
-                    const active = isActivePath(pathname, item.href);
-
-                    return (
-                      <Button
-                        key={item.href}
-                        component={Link}
-                        href={item.href}
-                        onClick={closeMobileNav}
-                        sx={{ justifyContent: "flex-start" }}
-                        variant={active ? "contained" : "outlined"}
-                      >
-                        {item.label}
-                      </Button>
-                    );
-                  })}
-                </Stack>
-              </>
-            ) : null}
+          <Stack component="nav" aria-label="사이트 메뉴" spacing={1}>
+            <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 700 }}>사이트 공통</Typography>
+            {(activeScope ? navItems.filter(item => item.href !== "/tasks") : navItems).map(item => <Button key={item.href} component={Link} prefetch={false} href={item.href} onClick={closeMobileNav} variant={isActivePath(pathname, item.href) ? "contained" : "outlined"} aria-current={isActivePath(pathname, item.href) ? "page" : undefined}>{activeScope && item.href === "/" ? "사이트 홈" : item.label}</Button>)}
+            <Button component={Link} prefetch={false} href="/guide" onClick={closeMobileNav} variant={isGuideRouteActive ? "contained" : "outlined"} aria-current={isGuideRouteActive ? "page" : undefined}>사용설명서</Button>
+            <Button component={Link} prefetch={false} href="/privacy" onClick={closeMobileNav} variant={isPrivacyRouteActive ? "contained" : "outlined"} aria-current={isPrivacyRouteActive ? "page" : undefined}>개인정보 처리지침</Button>
           </Stack>
-
+          {hasAdminAccess ? <><Divider /><Stack component="nav" aria-label="관리자 메뉴" spacing={1}>
+            <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 700 }}>관리자</Typography>
+            {currentAdminNavItems.map(item => <Button key={item.href} component={Link} prefetch={false} href={item.href} onClick={closeMobileNav} variant={isActivePath(pathname, item.href) ? "contained" : "outlined"}>{item.label}</Button>)}
+          </Stack></> : null}
           <Divider />
-
-          <Stack spacing={1.25}>
-            <Typography variant="body2" color="text.secondary">
-              Theme mode
-            </Typography>
-            <NoSsr>
-              <ToggleButtonGroup
-                exclusive
-                value={selectedMode}
-                onChange={handleModeChange}
-                size="small"
-                color="primary"
-                aria-label="mobile theme mode selector"
-                fullWidth
-              >
-                <ToggleButton value="system">System</ToggleButton>
-                <ToggleButton value="light">Light</ToggleButton>
-                <ToggleButton value="dark">Dark</ToggleButton>
-              </ToggleButtonGroup>
-            </NoSsr>
-            <NoSsr fallback={<Typography variant="body2" color="text.secondary">현재 표시 테마: system</Typography>}>
-              <Typography variant="body2" color="text.secondary">
-                현재 표시 테마: {effectiveMode}
-              </Typography>
-            </NoSsr>
+          <Stack spacing={1.25}><Typography variant="body2" color="text.secondary">화면 표시 모드</Typography>
+            <NoSsr><ToggleButtonGroup exclusive value={selectedMode} onChange={handleModeChange} size="small" color="primary" aria-label="mobile theme mode selector" fullWidth sx={{ "& .MuiToggleButton-root": { minHeight: 44 } }}><ToggleButton value="system">System</ToggleButton><ToggleButton value="light">Light</ToggleButton><ToggleButton value="dark">Dark</ToggleButton></ToggleButtonGroup></NoSsr>
           </Stack>
-
-          <Divider />
-
-          {status === "authenticated" && session?.user ? (
-            <Chip
-              label={sessionChipLabel}
-              title={sessionChipLabel}
-              sx={{ maxWidth: "100%", minWidth: 0 }}
-              color={session.user.isSuperuser ? "primary" : "default"}
-              variant={session.user.isSuperuser ? "filled" : "outlined"}
-            />
-          ) : null}
-
-          <Box onClick={closeMobileNav} sx={{ display: "flex" }}>
-            {authAction}
-          </Box>
+          {status === "authenticated" && session?.user ? <Chip label={sessionChipLabel} title={sessionChipLabel} sx={{ maxWidth: "100%", minWidth: 0, height: "auto", "& .MuiChip-label": { whiteSpace: "normal", overflowWrap: "anywhere", py: 0.5 } }} color={session.user.isSuperuser ? "primary" : "default"} variant={session.user.isSuperuser ? "filled" : "outlined"} /> : null}
+          <Box onClick={closeMobileNav} sx={{ display: "flex" }}>{authAction}</Box>
         </Stack>
       </Drawer>
 
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>{children}</Box>
     </Box>
+    </ScopedNavigationContext.Provider>
   );
 }
