@@ -7,6 +7,9 @@ export async function getTeamPresentation(viewer: ProjectViewer, projectId: numb
   if (result.document === null) return { ...result, document: null };
   try {
     const document = normalizePreparationDocument(result.document, result.team.kind);
-    return { ...result, document, mealQuantities: document.kind === "meal" ? Object.fromEntries(document.entries.map(entry => [entry.id, mealQuantity(entry)])) : {} };
+    return { ...result, document, mealQuantities: document.kind === "meal" ? Object.fromEntries(document.entries.flatMap(entry => {
+      const quantity = mealQuantity(entry);
+      return quantity === null ? [] : [[entry.id, quantity]];
+    })) : {} };
   } catch { throw new ProjectPresentationError("UNAVAILABLE"); }
 }

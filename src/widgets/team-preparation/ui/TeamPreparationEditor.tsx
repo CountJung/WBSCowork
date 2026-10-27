@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Alert, Box, Button, Checkbox, Chip, FormControlLabel, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import { activityKindLabels, type ActivityKind } from "@/src/shared/config/activity-kinds";
-import { createPreparationEntry, normalizePreparationDocument, PREPARATION_MAX_ENTRIES, type PreparationDocument, type PreparationEntry, type PreparationStatus } from "@/src/entities/team-preparation";
+import { createPreparationEntry, mealQuantity, normalizePreparationDocument, PREPARATION_MAX_ENTRIES, type PreparationDocument, type PreparationEntry, type PreparationStatus } from "@/src/entities/team-preparation";
 import { formatAppDateTime } from "@/src/shared/lib/date";
 import FieldLabel from "@/src/shared/ui/field-label";
 
@@ -13,38 +13,45 @@ type Props = { initialSheet: Sheet; initialHistory: History[]; defaultDate: stri
 const statuses: Record<PreparationStatus, string> = { planned: "예정", in_progress: "진행", done: "완료" };
 const meals = { breakfast: "아침", lunch: "점심", dinner: "저녁", snack: "간식" };
 const titleLabels: Record<ActivityKind, string> = { meal: "메뉴", facility: "점검·작업 내용", senior_care: "돌봄 활동", child_care: "돌봄 활동", recreation: "프로그램", media: "촬영·편집 준비", other: "준비 내용" };
-const numberValue = (value: number) => Number.isFinite(value) ? value : "";
+const numberValue = (value: number | null) => value !== null && Number.isFinite(value) ? value : "";
+const statusLabel = (status: PreparationStatus, kind: ActivityKind) => kind === "meal" && status === "planned" ? "준비전" : statuses[status];
 
 function EntrySummary({ entry, kind, quantity }: { entry: PreparationEntry; kind: ActivityKind; quantity?: number }) {
-  return <Stack spacing={1}>
-    <Stack direction="row" useFlexGap spacing={1} sx={{ flexWrap: "wrap", alignItems: "center" }}><Typography component="h3" variant="h6" sx={{ overflowWrap: "anywhere" }}>{entry.title}</Typography><Chip size="small" label={statuses[entry.status]} color={entry.status === "done" ? "success" : "default"} /></Stack>
-    <Typography>{entry.date}{"meal" in entry ? ` · ${meals[entry.meal]}` : "time" in entry && entry.time ? ` · ${entry.time}` : ""}</Typography>
-    {"meal" in entry ? <Typography>예상 {entry.expectedPeople}명 · 1인 기준 {entry.amountPerPerson} {entry.unit} · 준비 수량 {quantity} {entry.unit}</Typography> : null}
+  const extra = <>
+    {"meal" in entry ? <>
+      {entry.expectedPeople !== null ? <Typography>예상 {entry.expectedPeople}명</Typography> : null}
+      {entry.amountPerPerson !== null ? <Typography>1인 기준 {entry.amountPerPerson} {entry.unit}</Typography> : entry.unit ? <Typography>단위: {entry.unit}</Typography> : null}
+      <Typography>준비 수량: {typeof quantity === "number" && Number.isFinite(quantity) ? `${quantity} ${entry.unit}` : "미입력"}</Typography>
+    </> : null}
     {"order" in entry ? <Typography>순서 {entry.order} · 소요 {entry.durationMinutes}분</Typography> : null}
     {"role" in entry && entry.role ? <Typography sx={{ whiteSpace: "pre-wrap" }}>담당 역할: {entry.role}</Typography> : null}
     {"materials" in entry && entry.materials ? <Typography sx={{ whiteSpace: "pre-wrap" }}>준비물·자재: {entry.materials}</Typography> : null}
     {"tools" in entry && entry.tools ? <Typography sx={{ whiteSpace: "pre-wrap" }}>도구: {entry.tools}</Typography> : null}
     {entry.notes ? <Typography sx={{ whiteSpace: "pre-wrap" }}>{entry.notes}</Typography> : null}
     {entry.checks.length ? <Box component="ul" sx={{ pl: 2.5, m: 0 }}>{entry.checks.map((check, index) => <li key={index}>{check.done ? "완료" : "준비 필요"} · {check.label}</li>)}</Box> : <Typography color="text.secondary">{kind === "meal" ? "장보기" : "준비"} 체크 항목이 없습니다.</Typography>}
+  </>;
+  return <Stack spacing={1}>
+    <Stack direction="row" useFlexGap spacing={1} sx={{ flexWrap: "wrap", alignItems: "center" }}><Typography component="h3" variant="h6" sx={{ overflowWrap: "anywhere" }}>{entry.title}</Typography><Chip size="small" label={statusLabel(entry.status, kind)} color={entry.status === "done" ? "success" : "default"} /></Stack>
+    <Typography>{entry.date}{"meal" in entry ? entry.meal ? ` · ${meals[entry.meal]}` : "" : "time" in entry && entry.time ? ` · ${entry.time}` : ""}</Typography>
+    {kind === "meal" ? <details><summary>상세 정보 · 선택</summary><Stack spacing={1} sx={{ pt: 1 }}>{extra}</Stack></details> : extra}
   </Stack>;
 }
 
-function EntryFields({ entry, kind, disabled, update }: { entry: PreparationEntry; kind: ActivityKind; disabled: boolean; update: (patch: Partial<PreparationEntry>) => void }) {
+function EntryFields({ entry, kind, disabled, invalid, update }: { entry: PreparationEntry; kind: ActivityKind; disabled: boolean; invalid: boolean; update: (patch: Partial<PreparationEntry>) => void }) {
+  const details = useRef<HTMLDetailsElement>(null);
+  useEffect(() => { if (invalid && details.current) details.current.open = true; }, [invalid]);
   const text = (field: "materials" | "tools" | "role", label: string, maxLength: number) => field in entry ? <TextField fullWidth label={<FieldLabel>{label}</FieldLabel>} value={String((entry as unknown as Record<string, unknown>)[field] ?? "")} onChange={event => update({ [field]: event.target.value })} disabled={disabled} multiline={field !== "role"} minRows={field !== "role" ? 2 : undefined} slotProps={{ htmlInput: { maxLength } }} /> : null;
-  return <Stack spacing={2} sx={{ minWidth: 0, "& .MuiFormControl-root": { minWidth: 0 } }}>
-    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-      <TextField label={<FieldLabel requirement="required">날짜</FieldLabel>} type="date" required fullWidth value={entry.date} onChange={event => update({ date: event.target.value })} disabled={disabled} slotProps={{ inputLabel: { shrink: true } }} />
-      <TextField select label={<FieldLabel requirement="required">진행 상태</FieldLabel>} required fullWidth value={entry.status} onChange={event => update({ status: event.target.value as PreparationStatus })} disabled={disabled}>{Object.entries(statuses).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
-    </Stack>
-    <TextField label={<FieldLabel requirement="required">{titleLabels[kind]}</FieldLabel>} required fullWidth value={entry.title} onChange={event => update({ title: event.target.value })} disabled={disabled} slotProps={{ htmlInput: { maxLength: 120 } }} />
+  let quantity: number | null = null;
+  if ("meal" in entry) { try { quantity = mealQuantity(entry); } catch { /* Invalid drafts remain visible until the normal save validation. */ } }
+  const extra = <>
     {"meal" in entry ? <>
-      <TextField select fullWidth required label={<FieldLabel requirement="required">끼니</FieldLabel>} value={entry.meal} onChange={event => update({ meal: event.target.value as keyof typeof meals })} disabled={disabled}>{Object.entries(meals).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
+      <TextField select fullWidth label={<FieldLabel>끼니</FieldLabel>} value={entry.meal ?? ""} onChange={event => update({ meal: event.target.value === "" ? null : event.target.value as keyof typeof meals })} disabled={disabled} slotProps={{ inputLabel: { shrink: true }, select: { displayEmpty: true } }}><MenuItem value="">선택 안 함</MenuItem>{Object.entries(meals).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "repeat(3, minmax(0, 1fr))" }, gap: 2 }}>
-        <TextField fullWidth required type="number" label={<FieldLabel requirement="required">예상 인원</FieldLabel>} value={numberValue(entry.expectedPeople)} onChange={event => update({ expectedPeople: event.target.value === "" ? NaN : Number(event.target.value) })} disabled={disabled} slotProps={{ htmlInput: { min: 0, max: 10000, step: 1, inputMode: "numeric" } }} />
-        <TextField fullWidth required type="number" label={<FieldLabel requirement="required">1인 기준량</FieldLabel>} value={numberValue(entry.amountPerPerson)} onChange={event => update({ amountPerPerson: event.target.value === "" ? NaN : Number(event.target.value) })} disabled={disabled} slotProps={{ htmlInput: { min: 0, max: 10000, step: 0.001, inputMode: "decimal" } }} helperText="직접 지정한 기준량 × 예상 인원으로 계산합니다." />
-        <TextField fullWidth required label={<FieldLabel requirement="required">단위</FieldLabel>} value={entry.unit} onChange={event => update({ unit: event.target.value })} disabled={disabled} slotProps={{ htmlInput: { maxLength: 20 } }} helperText="예: g, 개, 인분" />
+        <TextField fullWidth type="number" label={<FieldLabel>예상 인원</FieldLabel>} value={numberValue(entry.expectedPeople)} onChange={event => update({ expectedPeople: event.target.value === "" ? null : Number(event.target.value) })} disabled={disabled} slotProps={{ htmlInput: { min: 0, max: 10000, step: 1, inputMode: "numeric" } }} />
+        <TextField fullWidth type="number" label={<FieldLabel>1인 기준량</FieldLabel>} value={numberValue(entry.amountPerPerson)} onChange={event => update({ amountPerPerson: event.target.value === "" ? null : Number(event.target.value) })} disabled={disabled} slotProps={{ htmlInput: { min: 0, max: 10000, step: 0.001, inputMode: "decimal" } }} helperText="직접 지정한 기준량 × 예상 인원으로 계산합니다." />
+        <TextField fullWidth label={<FieldLabel>단위</FieldLabel>} value={entry.unit} onChange={event => update({ unit: event.target.value })} disabled={disabled} slotProps={{ htmlInput: { maxLength: 20 } }} helperText="예: g, 개, 인분" />
       </Box>
-      <Typography role="status">예상 준비 수량: {Number.isFinite(entry.amountPerPerson) && Number.isFinite(entry.expectedPeople) && entry.amountPerPerson >= 0 && entry.expectedPeople >= 0 ? Math.round(entry.amountPerPerson * 1000) * entry.expectedPeople / 1000 : "—"} {entry.unit} · 저장 시 서버에서 검증·계산합니다.</Typography>
+      <Typography role="status">예상 준비 수량: {quantity === null ? "미입력" : `${quantity} ${entry.unit}`} · 인원·기준량·단위를 모두 입력하면 계산합니다. 저장 시 서버에서 검증·계산합니다.</Typography>
     </> : null}
     {"order" in entry ? <Stack direction={{ xs: "column", sm: "row" }} spacing={2}><TextField fullWidth required label={<FieldLabel requirement="required">프로그램 순서</FieldLabel>} type="number" value={numberValue(entry.order)} disabled={disabled} onChange={event => update({ order: event.target.value === "" ? NaN : Number(event.target.value) })} slotProps={{ htmlInput: { min: 1, max: 1000, step: 1, inputMode: "numeric" } }} /><TextField fullWidth required label={<FieldLabel requirement="required">소요 시간 · 분</FieldLabel>} type="number" value={numberValue(entry.durationMinutes)} disabled={disabled} onChange={event => update({ durationMinutes: event.target.value === "" ? NaN : Number(event.target.value) })} slotProps={{ htmlInput: { min: 0, max: 1440, step: 1, inputMode: "numeric" } }} /></Stack> : null}
     {"time" in entry ? <TextField type="time" fullWidth label={<FieldLabel>시작 시각</FieldLabel>} value={entry.time} disabled={disabled} onChange={event => update({ time: event.target.value })} slotProps={{ inputLabel: { shrink: true } }} /> : null}
@@ -53,10 +60,18 @@ function EntryFields({ entry, kind, disabled, update }: { entry: PreparationEntr
     <Typography component="h4" variant="subtitle1">{kind === "meal" ? "장보기" : "준비"} 체크 · 선택</Typography>
     {entry.checks.map((check, index) => <Stack key={index} spacing={1} direction={{ xs: "column", md: "row" }} sx={{ minWidth: 0, alignItems: { md: "center" }, borderLeft: "2px solid", borderColor: "divider", pl: 1.5 }}>
       <FormControlLabel sx={{ flexShrink: 0, minHeight: 44, m: 0, alignSelf: "flex-start" }} label="완료" control={<Checkbox disabled={disabled} checked={check.done} onChange={event => update({ checks: entry.checks.map((value, i) => i === index ? { ...value, done: event.target.checked } : value) })} />} />
-      <TextField fullWidth required label={<FieldLabel requirement="required">체크 {index + 1} 내용</FieldLabel>} value={check.label} disabled={disabled} onChange={event => update({ checks: entry.checks.map((value, i) => i === index ? { ...value, label: event.target.value } : value) })} slotProps={{ htmlInput: { maxLength: 120 } }} />
+      <TextField fullWidth required={kind !== "meal"} label={<FieldLabel requirement={kind === "meal" ? "optional" : "required"}>체크 {index + 1} 내용</FieldLabel>} value={check.label} disabled={disabled} onChange={event => update({ checks: entry.checks.map((value, i) => i === index ? { ...value, label: event.target.value } : value) })} slotProps={{ htmlInput: { maxLength: 120 } }} />
       <Button type="button" disabled={disabled} sx={{ alignSelf: { xs: "stretch", md: "center" } }} onClick={() => update({ checks: entry.checks.filter((_, i) => i !== index) })} aria-label={`체크 ${index + 1} 제거`}>제거</Button>
     </Stack>)}
     <Button type="button" variant="outlined" sx={{ alignSelf: "flex-start" }} disabled={disabled || entry.checks.length >= 20} onClick={() => update({ checks: [...entry.checks, { label: "", done: false }] })}>체크 항목 추가</Button>
+  </>;
+  return <Stack spacing={2} sx={{ minWidth: 0, "& .MuiFormControl-root": { minWidth: 0 } }}>
+    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+      <TextField label={<FieldLabel requirement="required">날짜</FieldLabel>} type="date" required fullWidth value={entry.date} onChange={event => update({ date: event.target.value })} disabled={disabled} slotProps={{ inputLabel: { shrink: true } }} />
+      <TextField select label={<FieldLabel requirement="required">진행 상태</FieldLabel>} required fullWidth value={entry.status} onChange={event => update({ status: event.target.value as PreparationStatus })} disabled={disabled}>{Object.entries(statuses).map(([value]) => <MenuItem key={value} value={value}>{statusLabel(value as PreparationStatus, kind)}</MenuItem>)}</TextField>
+    </Stack>
+    <TextField label={<FieldLabel requirement="required">{titleLabels[kind]}</FieldLabel>} required fullWidth value={entry.title} onChange={event => update({ title: event.target.value })} disabled={disabled} slotProps={{ htmlInput: { maxLength: 120 } }} />
+    {kind === "meal" ? <details ref={details} onInvalidCapture={event => { event.currentTarget.open = true; }}><summary>상세 정보 · 선택</summary><Stack spacing={2} sx={{ pt: 2 }}>{extra}</Stack></details> : extra}
   </Stack>;
 }
 
@@ -113,7 +128,7 @@ export default function TeamPreparationEditor({ initialSheet, initialHistory, de
     <Box component="form" onSubmit={save} aria-busy={pending}><Stack spacing={2}>
       {!draft.entries.length ? <Paper sx={{ p: 3 }}><Typography>준비 항목이 없습니다.{sheet.canEdit ? " 편집을 눌러 첫 항목을 추가하세요." : " 팀장에게 준비표 작성을 요청하세요."}</Typography></Paper> : null}
       {draft.entries.map((entry, index) => <Paper component="section" key={entry.id} sx={{ p: { xs: 2, sm: 3 }, minWidth: 0, border: invalidRow === entry.id ? "2px solid" : "1px solid", borderColor: invalidRow === entry.id ? "error.main" : "divider" }} aria-describedby={invalidRow === entry.id ? `entry-error-${entry.id}` : undefined}>
-        <Stack spacing={2}>{editing ? <><Typography component="h2" variant="h6">준비 항목 {index + 1}</Typography><EntryFields entry={entry} kind={sheet.kind} disabled={pending} update={patch => updateEntry(entry.id, patch)} />{invalidRow === entry.id ? <Typography id={`entry-error-${entry.id}`} color="error">날짜·제목·필수값과 입력 범위를 확인해 주세요.</Typography> : null}<Button type="button" color="error" disabled={pending} sx={{ alignSelf: "flex-end" }} onClick={() => { if (window.confirm("이 항목을 현재 준비표에서 제거할까요? 이전 저장 버전의 이력은 보존됩니다.")) setDraft(value => ({ ...value, entries: value.entries.filter(item => item.id !== entry.id) })); }}>항목 제거</Button></> : <EntrySummary entry={entry} kind={sheet.kind} quantity={sheet.mealQuantities[entry.id]} />}</Stack>
+        <Stack spacing={2}>{editing ? <><Typography component="h2" variant="h6">준비 항목 {index + 1}</Typography><EntryFields entry={entry} kind={sheet.kind} disabled={pending} invalid={invalidRow === entry.id} update={patch => updateEntry(entry.id, patch)} />{invalidRow === entry.id ? <Typography id={`entry-error-${entry.id}`} color="error">날짜·제목·필수값과 입력 범위를 확인해 주세요.</Typography> : null}<Button type="button" color="error" disabled={pending} sx={{ alignSelf: "flex-end" }} onClick={() => { if (window.confirm("이 항목을 현재 준비표에서 제거할까요? 이전 저장 버전의 이력은 보존됩니다.")) setDraft(value => ({ ...value, entries: value.entries.filter(item => item.id !== entry.id) })); }}>항목 제거</Button></> : <EntrySummary entry={entry} kind={sheet.kind} quantity={sheet.mealQuantities[entry.id]} />}</Stack>
       </Paper>)}
       <Stack direction={{ xs: "column", sm: "row" }} spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
         {editing ? <><Button type="button" variant="outlined" disabled={pending || draft.entries.length >= PREPARATION_MAX_ENTRIES} onClick={() => setDraft(value => ({ ...value, entries: [...value.entries, createPreparationEntry(sheet.kind, defaultDate)] }))}>준비 항목 추가 · {draft.entries.length}/{PREPARATION_MAX_ENTRIES}</Button><Button type="submit" variant="contained" disabled={pending}>{pending ? "저장 중…" : "준비표 저장"}</Button><Button type="button" disabled={pending} onClick={() => { if (!dirty || window.confirm("저장하지 않은 입력을 취소할까요?")) { setDraft(sheet.document); setEditing(false); setError(""); setInvalidRow(null); attempt.current = null; } }}>편집 취소</Button></> : sheet.canEdit ? <Button type="button" variant="contained" onClick={() => { setEditing(true); setSuccess(""); }}>준비표 편집</Button> : null}

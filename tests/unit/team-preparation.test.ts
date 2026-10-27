@@ -38,7 +38,7 @@ test("all seven activity documents round trip without unrelated fields", () => {
 test("draft defaults have an explicit empty date and become valid only after required inputs", () => {
   const draft = createPreparationEntry("meal") as MealPreparationEntry;
   assert.equal(draft.date, ""); assert.equal(draft.title, "");
-  assert.equal(draft.unit, "인분"); assert.equal(draft.amountPerPerson, 1); assert.equal(draft.expectedPeople, 0);
+  assert.equal(draft.meal, null); assert.equal(draft.unit, ""); assert.equal(draft.amountPerPerson, null); assert.equal(draft.expectedPeople, null);
   assert.notEqual(draft.id, createPreparationEntry("meal").id);
   assert.throws(() => normalizePreparationDocument({ ...emptyPreparationDocument("meal"), entries: [draft] }, "meal"));
   draft.title = "식단 준비"; draft.date = "2026-10-23";
@@ -93,8 +93,7 @@ test("text limits accept Unicode codepoints and reject blank required labels", (
   rejects(doc => { doc.entries[0].title = "😀".repeat(121); });
   rejects(doc => { doc.entries[0].title = "  "; });
   rejects(doc => { doc.entries[0].notes = "x".repeat(1001); });
-  rejects(doc => { doc.entries[0].checks[0].label = " "; });
-  rejects(doc => { (doc.entries[0] as MealPreparationEntry).unit = " "; });
+  rejects(doc => { doc.entries[0].checks[0].label = " "; }, "facility");
   rejects(doc => { (doc.entries[0] as MealPreparationEntry).unit = "x".repeat(21); });
 });
 test("controls are rejected except notes LF and TAB, and malformed Unicode is rejected", () => {
@@ -114,6 +113,7 @@ test("statuses and checklist booleans require their exact types", () => {
 });
 test("meal numbers enforce finite bounds and thousandths without floating point drift", () => {
   const doc = fixture(), meal = doc.entries[0] as MealPreparationEntry;
+  meal.unit = "kg";
   meal.expectedPeople = 3; meal.amountPerPerson = 0.1;
   assert.equal(mealQuantity(meal), 0.3);
   meal.amountPerPerson = 1.001; assert.equal(mealQuantity(meal), 3.003);
@@ -144,6 +144,72 @@ test("normalization returns independent entry/check objects and does not mutate 
   assert.equal(normalized.entries[0].title, "준비"); assert.equal(doc.entries[0].title, "  준비  ");
   normalized.entries[0].checks[0].done = true;
   assert.equal(doc.entries[0].checks[0].done, false);
-  const invalid = structuredClone(doc); delete (invalid.entries[0] as Partial<PreparationEntry>).notes;
-  assert.throws(() => normalizePreparationDocument(invalid, "meal"));
+  const optional = structuredClone(doc); delete (optional.entries[0] as Partial<PreparationEntry>).notes;
+  assert.equal(normalizePreparationDocument(optional, "meal").entries[0].notes, "");
+  const invalid = fixture("facility"); delete (invalid.entries[0] as Partial<PreparationEntry>).notes;
+  assert.throws(() => normalizePreparationDocument(invalid, "facility"));
+});
+
+test("meal accepts only date and menu with omitted optional fields and default planned status", () => {
+  const minimal = { id: crypto.randomUUID(), date: "2026-10-27", title: "비빔밥" };
+  const document = normalizePreparationDocument({ schemaVersion: 1, kind: "meal", entries: [minimal] }, "meal");
+  assert.deepEqual(document.entries[0], { ...minimal, status: "planned", notes: "", checks: [], meal: null, expectedPeople: null, amountPerPerson: null, unit: "" });
+  assert.equal(mealQuantity(document.entries[0]), null);
+  assert.deepEqual(normalizePreparationDocument(document, "meal"), document);
+});
+
+test("meal omitted, null and empty optional numbers become unspecified without coercion", () => {
+  for (const empty of [undefined, null, ""]) {
+    const doc = fixture();
+    Object.assign(doc.entries[0], { meal: empty, expectedPeople: empty, amountPerPerson: empty, unit: "", notes: "", checks: [] });
+    const normalized = normalizePreparationDocument(doc, "meal").entries[0] as MealPreparationEntry;
+    assert.equal(normalized.meal, null); assert.equal(normalized.expectedPeople, null); assert.equal(normalized.amountPerPerson, null);
+    assert.equal(mealQuantity(normalized), null);
+  }
+  for (const invalid of ["0", "3", "  ", true, [], {}]) {
+    rejects(doc => { Object.assign(doc.entries[0], { expectedPeople: invalid }); });
+    rejects(doc => { Object.assign(doc.entries[0], { amountPerPerson: invalid }); });
+  }
+  rejects(doc => { Object.assign(doc.entries[0], { meal: "brunch" }); });
+});
+
+test("meal quantity distinguishes missing inputs from a legitimate zero", () => {
+  const meal = fixture().entries[0] as MealPreparationEntry;
+  meal.expectedPeople = 12; meal.amountPerPerson = 150;
+  assert.equal(mealQuantity(meal), null);
+  meal.unit = "g"; assert.equal(mealQuantity(meal), 1800);
+  meal.expectedPeople = null; assert.equal(mealQuantity(meal), null);
+  meal.expectedPeople = 0; assert.equal(mealQuantity(meal), 0);
+  meal.amountPerPerson = null; assert.equal(mealQuantity(meal), null);
+  meal.amountPerPerson = 0; assert.equal(mealQuantity(meal), 0);
+});
+
+test("only omitted meal status defaults; explicit invalid status never passes", () => {
+  for (const status of [null, "", undefined, false, "invalid"]) rejects(doc => { Object.assign(doc.entries[0], { status }); });
+  const omitted = fixture(); delete (omitted.entries[0] as Partial<PreparationEntry>).status;
+  assert.equal(normalizePreparationDocument(omitted, "meal").entries[0].status, "planned");
+  for (const kind of activityKinds.filter(kind => kind !== "meal")) {
+    const other = fixture(kind); delete (other.entries[0] as Partial<PreparationEntry>).status;
+    assert.throws(() => normalizePreparationDocument(other, kind));
+  }
+});
+
+test("meal skips blank shopping rows after validating text and boolean types", () => {
+  const doc = fixture(); doc.entries[0].checks = [{ label: " ", done: false }, { label: " 쌀 ", done: true }, { label: "", done: false }];
+  assert.deepEqual(normalizePreparationDocument(doc, "meal").entries[0].checks, [{ label: "쌀", done: true }]);
+  rejects(doc => { Object.assign(doc.entries[0], { checks: [{ label: "", done: "false" }] }); });
+  rejects(doc => { Object.assign(doc.entries[0], { checks: [{ label: 0, done: false }] }); });
+  rejects(doc => { doc.entries[0].checks = [{ label: "\u0000", done: false }]; });
+  rejects(doc => { doc.entries[0].checks = Array.from({ length: 21 }, () => ({ label: "", done: false })); });
+  for (const kind of activityKinds.filter(kind => kind !== "meal")) rejects(doc => { doc.entries[0].checks = [{ label: "", done: false }]; }, kind);
+});
+
+test("meal expansion preserves complete legacy v1 values and all other kind required keys", () => {
+  const legacy = fixture(); Object.assign(legacy.entries[0], { meal: "lunch", expectedPeople: 12, amountPerPerson: 150, unit: "g" });
+  assert.deepEqual(normalizePreparationDocument(legacy, "meal"), legacy);
+  for (const kind of activityKinds.filter(kind => kind !== "meal")) {
+    const doc = fixture(kind); delete (doc.entries[0] as Partial<PreparationEntry>).checks;
+    assert.throws(() => normalizePreparationDocument(doc, kind));
+  }
+  rejects(doc => { Object.assign(doc.entries[0], { secret: "unknown" }); });
 });

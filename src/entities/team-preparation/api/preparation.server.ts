@@ -62,7 +62,10 @@ export async function getTeamPreparation(viewer: ProjectViewer, projectId: numbe
   const result = meta(rows[0]);
   try {
     const document = result.version === 0 ? emptyPreparationDocument(result.kind) : normalizePreparationDocument(JSON.parse(String(rows[0].document_json)), result.kind);
-    const mealQuantities = document.kind === "meal" ? Object.fromEntries(document.entries.map(entry => [entry.id, mealQuantity(entry)])) : {};
+    const mealQuantities = document.kind === "meal" ? Object.fromEntries(document.entries.flatMap(entry => {
+      const quantity = mealQuantity(entry);
+      return quantity === null ? [] : [[entry.id, quantity]];
+    })) : {};
     return { ...result, document, mealQuantities };
   } catch { throw new PreparationError("UNAVAILABLE"); }
 }
