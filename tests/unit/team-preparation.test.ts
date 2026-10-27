@@ -22,11 +22,13 @@ function rejects(change: (doc: PreparationDocument) => void, kind: ActivityKind 
 }
 
 test("activity kinds retain the existing order, labels and project public exports", () => {
-  assert.deepEqual(activityKinds, ["meal", "facility", "senior_care", "child_care", "recreation", "other"]);
+  assert.deepEqual(activityKinds.slice(0, 6), ["meal", "facility", "senior_care", "child_care", "recreation", "other"]);
+  assert.deepEqual(activityKinds.slice(6), ["media"]);
+  assert.equal(activityKindLabels.media, "미디어");
   assert.equal(legacyKinds, activityKinds); assert.equal(legacyLabels, activityKindLabels);
   assert.equal(activityKindLabels.child_care, "아동 돌봄");
 });
-test("all six activity documents round trip without unrelated fields", () => {
+test("all seven activity documents round trip without unrelated fields", () => {
   for (const kind of activityKinds) {
     const doc = fixture(kind);
     assert.deepEqual(normalizePreparationDocument(doc, kind), doc);

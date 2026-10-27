@@ -12,7 +12,7 @@ type History = { version: number; changedAt: string; changedBy: number };
 type Props = { initialSheet: Sheet; initialHistory: History[]; defaultDate: string; projectName: string };
 const statuses: Record<PreparationStatus, string> = { planned: "예정", in_progress: "진행", done: "완료" };
 const meals = { breakfast: "아침", lunch: "점심", dinner: "저녁", snack: "간식" };
-const titleLabels: Record<ActivityKind, string> = { meal: "메뉴", facility: "점검·작업 내용", senior_care: "돌봄 활동", child_care: "돌봄 활동", recreation: "프로그램", other: "준비 내용" };
+const titleLabels: Record<ActivityKind, string> = { meal: "메뉴", facility: "점검·작업 내용", senior_care: "돌봄 활동", child_care: "돌봄 활동", recreation: "프로그램", media: "촬영·편집 준비", other: "준비 내용" };
 const numberValue = (value: number) => Number.isFinite(value) ? value : "";
 
 function EntrySummary({ entry, kind, quantity }: { entry: PreparationEntry; kind: ActivityKind; quantity?: number }) {
