@@ -12,6 +12,11 @@ export async function queueObjectCleanup(key: string, delayMs = 0) {
     .bind(key,scheduled,delayMs>0?scheduled:null).run();
 }
 export async function objectIsReferenced(key: string) {
+  if (key.startsWith("project-media/")) {
+    const row = await getHostedDatabase().prepare("SELECT EXISTS(SELECT 1 FROM project_media_items WHERE file_path=?) AS live").bind(key).first<{live:number}>();
+    if (!row) throw new Error("Media reference status unavailable.");
+    return Boolean(row.live);
+  }
   const row = await getHostedDatabase().prepare("SELECT EXISTS(SELECT 1 FROM submission_attachments WHERE file_path = ? UNION ALL SELECT 1 FROM submissions WHERE file_path = ? UNION ALL SELECT 1 FROM submission_revisions WHERE file_path = ? UNION ALL SELECT 1 FROM bug_report_screenshots WHERE file_path = ?) AS live").bind(key, key, key, key).first<{live:number}>();
   if(!row)throw new Error("Attachment reference status unavailable.");
   return Boolean(row.live);

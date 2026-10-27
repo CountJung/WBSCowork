@@ -29,6 +29,6 @@ export default async function TeamPreparationPage({ params }: { params: Promise<
     if (error instanceof PreparationError && error.status === 404) notFound();
     if (!(error instanceof PreparationError) || error.status !== 503) throw error;
   }
-  if (!data) return <Container component="main" sx={{ py: 3 }}><Stack spacing={2}><Alert severity="warning">준비표를 사용할 수 없습니다. 추가 마이그레이션과 연결 상태를 확인해 주세요.</Alert><Button href={`/projects/${projectId}/teams`}>팀 준비표 목록으로</Button></Stack></Container>;
-  return <Container component="main" sx={{ py: 3, minWidth: 0 }}><TeamPreparationEditor initialSheet={data.sheet} initialHistory={data.history} defaultDate={data.defaultDate} projectName={project.name} /></Container>;
+  if (!data) return <Container component="div" sx={{ py: 3 }}><Stack spacing={2}><Alert severity="warning">준비표를 사용할 수 없습니다. 추가 마이그레이션과 연결 상태를 확인해 주세요.</Alert><Button href={`/projects/${projectId}/teams`}>팀 준비표 목록으로</Button></Stack></Container>;
+  return <Container component="div" sx={{ py: 3, minWidth: 0 }}><TeamPreparationEditor initialSheet={data.sheet} initialHistory={data.history} defaultDate={data.defaultDate} projectName={project.name} /></Container>;
 }

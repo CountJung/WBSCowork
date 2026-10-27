@@ -98,6 +98,7 @@ function ProjectEditCard({ project,workspace,users,accessPreview }: { project: P
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ justifyContent: "space-between", alignItems: { sm: "flex-start" } }}>
           <Stack spacing={0.5}>
             <Typography variant="h6">{project.name}</Typography>
+            <Button component="a" href={`/projects/${project.id}`} size="small" sx={{ alignSelf: "flex-start" }}>프로젝트 홈</Button>
             <Button component="a" href={`/admin/projects/${project.id}/reports`} size="small" sx={{ alignSelf: "flex-start" }}>활동 보고서</Button>
             {project.projectType==="volunteering"?<Button component="a" href={`/projects/${project.id}/teams`} size="small" sx={{alignSelf:"flex-start"}}>팀 준비표</Button>:null}
             <Typography variant="body2" color="text.secondary">

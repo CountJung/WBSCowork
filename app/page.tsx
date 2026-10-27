@@ -100,11 +100,13 @@ export default async function Home({ searchParams }: HomePageProps) {
   return <Container component="main" sx={{py:{xs:3,md:5},minWidth:0,overflowWrap:'anywhere','& .MuiChip-root':{maxWidth:'100%',height:'auto'},'& .MuiChip-label':{whiteSpace:'normal',overflowWrap:'anywhere',py:0.5}}}>
     <Stack spacing={3}>
       <Stack spacing={1}><Typography component="h1" variant="h4">프로젝트</Typography><Typography color="text.secondary">프로젝트의 목표와 일정을 확인하고, 업무와 제출 상세로 이어집니다.</Typography><Stack direction="row" spacing={1} useFlexGap sx={{flexWrap:'wrap'}}><Chip size="small" label={`현재 권한 ${getUserRoleLabel(session.user.role,session.user.isSuperuser)}`} variant="outlined"/><Chip size="small" label={`프로젝트 ${projects.length}`} variant="outlined"/></Stack></Stack>
+      <Button href="/projects" variant="contained" sx={{alignSelf:"flex-start"}}>내 프로젝트 홈으로</Button>
       <Stack direction="row" spacing={1} useFlexGap sx={{flexWrap:'wrap'}} aria-label="프로젝트 선택">{projects.map(project=><Button key={project.id} href={`/?projectId=${project.id}`} variant={project.id===selectedProject?.id?'contained':'outlined'} aria-current={project.id===selectedProject?.id?'page':undefined} sx={{textAlign:'left',overflowWrap:'anywhere',maxWidth:'100%'}}>{project.name}</Button>)}</Stack>
       {selectedProject?<>
         <Paper component="section" elevation={0} data-testid="project-overview" sx={{p:{xs:2,sm:3},borderRadius:3,minWidth:0}}><Stack spacing={1.5}>
           <Typography component="h2" variant="h5">{selectedProject.name}</Typography><Stack direction="row" spacing={0.75} useFlexGap sx={{flexWrap:'wrap'}}><Chip size="small" variant="outlined" label={selectedProject.projectType==='volunteering'?'봉사활동':'업무 협업'}/><Chip size="small" variant="outlined" label={`업무 ${orderedTasks.length} · 하위 포함`}/></Stack>
           <Typography sx={{whiteSpace:'pre-wrap'}}>목표: {selectedProject.goal||'목표를 정리하고 첫 업무를 추가해 보세요.'}</Typography><Typography variant="body2" color="text.secondary">{formatDate(selectedProject.startDate)} ~ {formatDate(selectedProject.endDate)}</Typography>
+          <Button href={`/projects/${selectedProject.id}`} variant="outlined" sx={{alignSelf:'flex-start'}}>프로젝트 홈 · 소속 필요</Button>
           <Button href={`/tasks?projectId=${selectedProject.id}`} variant="contained" sx={{alignSelf:'flex-start'}}>프로젝트 작업 공간</Button>
         </Stack></Paper>
         <ProjectGanttChart project={selectedProject} tasks={orderedTasks}/>

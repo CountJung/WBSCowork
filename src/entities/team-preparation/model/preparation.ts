@@ -72,6 +72,7 @@ const extraKeys: Record<ActivityKind, string[]> = {
   senior_care: ["time", "role", "materials"],
   child_care: ["time", "role", "materials"],
   recreation: ["order", "time", "durationMinutes", "materials"],
+  media: ["materials"],
   other: ["materials"],
 };
 
@@ -97,6 +98,7 @@ function entry(value: unknown, activityKind: ActivityKind): PreparationEntry {
     case "senior_care":
     case "child_care": return { ...base, time: time(input.time), role: text(input.role, 120), materials: text(input.materials, 1000) };
     case "recreation": return { ...base, order: integer(input.order, 1, 1000), time: time(input.time), durationMinutes: integer(input.durationMinutes, 0, 1440), materials: text(input.materials, 1000) };
+    case "media":
     case "other": return { ...base, materials: text(input.materials, 1000) };
   }
 }
@@ -129,6 +131,7 @@ export function createPreparationEntry(activityKind: ActivityKind, initialDate =
     case "senior_care":
     case "child_care": return { ...base, time: "", role: "", materials: "" };
     case "recreation": return { ...base, order: 1, time: "", durationMinutes: 0, materials: "" };
+    case "media":
     case "other": return { ...base, materials: "" };
   }
 }
