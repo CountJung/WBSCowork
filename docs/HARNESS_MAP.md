@@ -662,7 +662,15 @@ PRD-066/QLT-035의 meal optional/null 정규화·기본 planned/준비 전·edit
 
 entry `b736356a4d0f1ce192f9484dece6d8bc634528f3bb634762caf96c4cb54fa7c9`, snapshot `af660ffbd268b0852ae9352c789cb0193f6958c3d6ecedfcbf34296c9f893e1d`(416files/6,004,032bytes)은 전후 불변이다. 증거는 `.test-artifacts/project-portal-http/final-evidence.json`(SHA256 `21fee1ba102e0ee213c4c4826609fea7ed6cad4294911de23b6746e1206e7f85`)·`source-review.json`이다. Chrome controller 없음/helper 제약이 그대로여서 실제 toggle/submit·모바일 렌더/조작은 미실행이며 이전v24 부모 QA를 새 식단 artifact 인수로 재사용하지 않는다.
 
-게시 전 fresh D1은35표537행 complete·env revision11/5keys·public policy revision2·live24다. 아직 commit/게시 전이며 새 version을 추정하지 않는다. NAS/MariaDB 실행 사용자 담당·가이드 이미지 수신0/전송 재시도0·보고서 미리보기 원인 미확정·정상 비인가404 종료를 유지한다. 원본 docs-canon checker 미실행이며 저장소 대체 검사를 적용한다.
+게시 전 fresh D1은35표537행 complete·env revision11/5keys·public policy revision2·live24다. 이는 commit/게시 전 baseline이며 실제 version25 게시 결과는 아래에서 구분한다. NAS/MariaDB 실행 사용자 담당·가이드 이미지 수신0/전송 재시도0·보고서 미리보기 원인 미확정·정상 비인가404 종료를 유지한다. 원본 docs-canon checker 미실행이며 저장소 대체 검사를 적용한다.
+
+### version25 식단 간소화 게시
+
+2026-10-27T04:15:33.089804Z(한국13:15:33)에 기존 public Sites version25가 succeeded다. 기능 main `cd0566612cdd36e787ad4a4ce6dc87247a304e41`/sites·공식 source `81996494edd9694f8ef07f8e38ce392bca37ad72`의 원격 푸시와 get_site active/latest25·저장 version source/deployment·env revision11 일치를 확인했다. 검증 source342 runtime 입력 bytes가 모두 일치하고 package 키 순서만 의미상 같은지 확인해 복사했으며 entry `b736356a…`는 불변이다. 양 SHA의 CI statuses[]는 통과가 아니다. 고유 version/deployment·archive는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다.
+
+SQL schema/migration0이다. fresh D1 baseline35표537행→542행이며 모든 page가 완전하다. 업무34표는 전체 행이 같고 기존 준비표 head4/revision4·공유0도 그대로다. 실제 project5/task7/submission5/attachment7 및 합성 project6 자료 metadata를 보존했다. audit504행은 전부 불변/삭제0이며 두 read 사이 instrumentation INFO5(id731~735)가 추가됐다. id731의04:11:17.812Z는 게시 전,732~735의04:16:12~20Z는 게시 후이므로 전부 배포로 생겼다고 단정하지 않는다. env revision11/5keys 값·public policy revision2·auth_client·automations[]는 전후 동일하다. 실제 R2 bytes 독립 검증은 미실행이다. 공식 Worker 최근5분 errors_only1건은 robots.txt404/outcome=ok이고 반환된 앱 예외0은 표본 범위이며 사용자 UI PASS가 아니다.
+
+부모에게 project6/team1 준비표의 읽기/상세정보 열기·취소(저장 없이) 검토 가능 상태를 전달했으나 아직 운영 UI 결과 대기다. 실제 client toggle/save는 미검증이며 이전v24 QA로 식단v25 인수를 대신하지 않는다. v24 source/archive 참조는 유지하되 새 nullable 저장 후 구validator로 단순 rollback할 수 없고 호환 reader가 필요하다. 자동 rollback0, 이미지 전달 차단/재시도0·보고서 미리보기 원인 미확정·NAS 검증 사용자 담당을 유지한다.
 
 ## 문서 정리 검증
 
