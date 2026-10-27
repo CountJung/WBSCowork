@@ -558,6 +558,35 @@ getversions의 v21 deployment null/v20 기존 deployment와 v20 status succeeded
 
 목차 Enter 이동·뒤로가기, 누락 anchor0·가로 넘침 없음, 신규 앱 console/hydration 오류 없음을 확인했다. 기존 실제/합성 자료·권한·캡처 변경은 없었고 사용자에게05:48 텍스트 가이드 사용 가능과 이미지 포함 전체 미완료를 안내했다. 좁은 모바일·실제 타역할 로그인·비로그인 운영 공개 접근·신규 Google OAuth는 미검증이다. 이미지0장/준비 중·전체 strict 이미지 gate 실패는 유지하며 이번 브라우저 PASS로 이미지 인수를 대체하지 않는다. 이미지 확보에는 사용자 추가 자료나 지원되는 전달 경로가 필요하고 같은 실패한 Library 전송을 반복하지 않는다.
 
+## 독립 프로젝트 포털 검증 계획
+
+PRD-060~064/QLT-033의 소스·D1/Worker 인수와 실제 Chrome/모바일·운영 인수를 구분한다. 사용자의 “시놀로지 나스 검증은 내 몫으로 하고 구현만 완료하는 범위로만 진행해줘” 요청에 따라 **NAS/MariaDB 실행 검증은 사용자 담당이며 이번 완료·Sites 게시 게이트에서 제외**한다. 이후 Native DB 준비·접속 복구·실행 검증은 하지 않는다. Native 호환 소스·기존 build 근거는 보존하되 실제 NAS 인수를 뜻하지 않는다.
+
+| 게이트 | 필요한 근거/별도 미검증 |
+| --- | --- |
+| 엄격 portal/기존 호환 | 합성 A/B 프로젝트·계정·팀의 목록/직접URL/API/집계·현재 소속/role·거짓SU·회수 후 거부. 새 strict gate와 legacy WBS/private 제출물 호환 |
+| UI/준비표 | 독립 홈·유형/layout·사이드바·프로젝트 복귀·기존 식사량/레크 일정·현재 팀 편집/불변 이력. 실제 좁은 화면/키보드·실패 초안 조작은 브라우저 인수로 별도 유지 |
+| 미디어/저장 | D1 합성 회귀와 원본 bytes·서버 종류/크기/개수·현재 권한·자료 보존. 사진8MiB/영상20MiB·1파일·private 기본/선택 revision 공유·프로젝트 전출·삭제API0·미디어만 작성자 예외 |
+| 게시/운영 | D1/Worker 인수와 호환 build→기존 Sites 정확 version/deployment/source·자료/public/env 보존 대조→부모 허용 브라우저의 실제 확인 범위. NAS 실행은 사용자 담당이며 실계정 배정/실제 자료 변경·제한 우회0 |
+
+| 확인된 현재 범위 | 실제 결과/경계 |
+| --- | --- |
+| `npm run test:project:portal` | D1 source64 PASS, `.test-artifacts/project-presentation/d1-result.json`. compiled/브라우저 결과와 별도 |
+| `npm run test:project:media` | D1/R2 source46 PASS, `.test-artifacts/project-media-d1/result.json`. I/O 후 재인가·range 오류 reader 정리 반영 |
+| `npm run test:project:portal:http` | 최종 compiled Worker45조건/66요청 PASS(HTTP/API/SSR/RSC), entry `06ff3648…` 전후 불변. 증거 `.test-artifacts/project-portal-http/final-evidence.json`(SHA-256 `314dec9253d4a71b98f839c5378ac17e05e8fd138e4020c900966d29a470aa63`). 실제 Chrome/모바일 실행이 아님 |
+| build/정적/schema 등록 | 최종 Native·Worker build 및 lint/typecheck/FSD PASS. Native v16/v17 manifest·D1 journal19/20·db/schema 신규7표 등록. v15 runner의 검사를15이하 명세로 제한해 미래 표 검사 오판을 보완했으며 기존 migration checksum은 불변 |
+| 범위 변경 전 참고 결과 | 환경 복구 뒤 `npm test -- --require-db` action33/unit259/MariaDB visibility34, 총326 PASS·fail/skip0. 로그 `.test-artifacts/project-portal-full-required-final-tests.log`. 별도 portal Native70·media Native39 PASS도 변경 전 로컬 합성 참고이며 실제 NAS 인수나 현재 필수 게이트가 아님 |
+
+compiled Worker 최초 media415는 독립 echo로 global FormData를 Miniflare dispatchFetch에 직접 전달했을 때 text/plain `[object FormData]`가 된 하네스 직렬화 문제임을 확인했다. Request 직렬화 보정 후 위 최종 회귀가 통과했으며 제품 수정 근거로 삼지 않았다. 검증 cwd의 과거 user-guide 이름과 관계없이 이번 포털 소스를 빌드한 결과다. private 준비표/공유 snapshot의 과거 editor를 미디어 author 예외로 취급하지 않으며 프로젝트 전출은 양쪽 모두 차단한다.
+
+범위 변경 전 환경 이력: 최초에는 MariaDB binary/3307 listener가 없고 apt-cache가 보호 설정 `/etc/apt/apt.conf.d/80-applied-apt-retries` EACCES로 중단됐으며 공식 MariaDB11.4.13 archive HEAD도 proxy CONNECT403/curl56으로 실패 후 중지했다. 이때 test 명령은 action33/unit259의292 PASS 뒤 DB suite ECONNREFUSED로 **전체 exit1**이었다. 이후 당시 사용자 진단 요청 범위에서 Docker28.4·캐시 MariaDB11.4 image를 확인하고 저장소 `npm run test:db:up`으로 tmpfs의 새 자체 `wbs-mariadb-test`를 준비해 위326 PASS를 얻었다. 미러/다운로드403 재시도·보안 설정 변경·기존 nobody datadir 접근은 없었다. 이 과거 준비/실행을 새 범위 변경 이후의 계속 실행 승인으로 해석하지 않는다.
+
+현재 tool catalog에 browser/controller가 없고 기존 Chromium helper는 nobody/4755 제한 상태다. launch·설정 변경/우회0이며 실제 모바일/키보드 조작은 미검증이다. 부모의 별도 허용 운영 브라우저 인수와 구분한다. 기존 PRD-059/QLT-032 이미지 첨부/최종 가이드 미완료도 별도 유지한다.
+
+게시 전 fresh 공식 D1 baseline은 **28표376행**이며 전체 페이지 projection truncation/omission0이다. schedules/runs/artifacts와 project_members는0행, env revision11/5keys·public policy revision2·live version22를 확인했다. 과거 version22 게시 때의350행을 이번 대조 기준으로 재사용하지 않고 게시 후 보존 결과는 후속 기록한다. 이 사전 확인은 게시 성공을 뜻하지 않는다.
+
+docs-canon 본체 읽기는 성공했으나 원본 checker 리소스 읽기1회 실패로 원본 실행0이며 저장소 대체 검사와 내용 검토만 적용한다. 새 문서/보고서는 추가하지 않는다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.

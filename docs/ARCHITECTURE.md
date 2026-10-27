@@ -239,7 +239,7 @@ account 파기 기능은 현재 없으며 향후 author cascade 전에 선택 �
 
 ### 활동팀 공통 준비표 설계
 
-PRD-058/QLT-031의 **소스 구현 계약**이며 실제 화면 인수/운영 반영을 뜻하지 않는다. 현재 `meal/facility/senior_care/child_care/recreation/other`6종 분류와 실제 활동팀을 재사용한다. 팀당 공통 준비표 하나에 종류별 JSON entry를 저장하고 날짜별 복수행을 지원한다. 전체 최대50행·행당 체크20개·UTF-8 직렬화 JSON64KiB를 서버에서도 제한하며 현재 팀의 kind와 필드를 검증한다. WBS 업무/제출물이나 완료 조건을 대체하지 않는다.
+PRD-058/QLT-031의 **소스 구현 계약**이며 실제 화면 인수/운영 반영을 뜻하지 않는다. 도입 당시 `meal/facility/senior_care/child_care/recreation/other`6종 분류와 실제 활동팀을 재사용한다. 팀당 공통 준비표 하나에 종류별 JSON entry를 저장하고 날짜별 복수행을 지원한다. 전체 최대50행·행당 체크20개·UTF-8 직렬화 JSON64KiB를 서버에서도 제한하며 현재 팀의 kind와 필드를 검증한다. WBS 업무/제출물이나 완료 조건을 대체하지 않는다.
 
 | 종류 | 준비표 항목/처리 |
 | --- | --- |
@@ -360,3 +360,18 @@ client 진입점은 `"use client"` 지시문 또는 `*.client.ts(x)` 파일이�
 D0–D4의 소스·양 DB·compiled 인수와 실제 화면/운영 외부 게이트를 구분하며 [계획](PROJECT_DIGEST_REPORT_PLAN.md)은 단계/인수 조건, [지도](PROJECT_MAP.md#프로젝트-보고서-구현-진입점)는 실제 경로를 소유한다. 현재 권한 ∩ 프로젝트 scope ∩ 원본 visibility를 수집·snapshot 저장·render 후 commit·다운로드 전후에 재검사한다. 같은 versioned snapshot만 DOCX/PPTX renderer에 전달하고 renderer는 DB/첨부 bytes를 조회하지 않는다. 외부 이미지/링크를 fetch하거나 embed하지 않는다.
 
 생성은 짧은 CAS/lease·idempotency claim과 별도 파일 IO를 사용하고 불확정 run 상태를 성공으로 바꾸지 않는다. 파일 IO 전에 key/hash/size의 durable staged 예약을 남기고 검증된 저장 성공 뒤 ready로 CAS한다. staged는 다운로드/완료에 포함하지 않으며 쓰기 결과 불명에서 무조건 quarantine하거나 임의 overwrite하지 않는다. private Native/R2 저장은8MiB 상한·size/SHA를 검사하며 download는 만료 즉시404다. retry는 검증된 기존 bytes를 재사용하며 없는 파일의 재렌더가 예약 fingerprint와 다르면 fail-closed다. OOXML 비결정성에 따른 복구 한계를 숨기지 않고 stale Native tmp/lock을 자동 삭제하지 않는다. retention은 staged도 확인 후 가역 quarantine 대상으로 삼되 물리 파일이 없으면 실패로 남기고 영구 삭제하지 않는다. report의 project/user FK는 RESTRICT여서 기록이 있는 대상의 영구 삭제를 별도 보존 정책 전 차단하며 자동 cascade하지 않는다. scheduler/artifact opt-in과 운영 활성화·실제 NAS 디렉터리/DDL 권한 검증 여부는 [TODO](TODO.md)와 [하네스](HARNESS_MAP.md#남은-품질과-digest-구현-진행)를 따른다. 코드 존재나 게시가 자동 예약 활성화·외부 발송 승인이 아니다.
+
+
+## 독립 프로젝트 포털 설계
+
+PRD-060~064/QLT-033의 **구현 중 계약**이며 최종 인수/게시 완료가 아니다. 새 portal 진입은 로그인한 현재 DB 사용자와 활성 project_members 또는 검증된 env SU를 요구한다. 지정 admin도 해당 프로젝트 범위만 관리하고 SU의 기존 검증 신원/전역 권한은 유지한다. 기존 legacy_authenticated WBS 읽기를 이 새 gate로 소급 차단하거나 실제 계정/소속을 자동 배정하지 않는다. 기존 private 제출물/댓글/첨부·revision 인가는 변경하지 않는다.
+
+프로젝트 홈과 유형별 layout·봉사활동 presentation 요약, 사이드바의 팀/업무 이동을 제공하고 현재 식사/레크 준비표의 검증·CAS/불변 이력과 편집 권한을 재사용한다. UI 목록뿐 아니라 직접 URL/API·파일 bytes/metadata·count·요약/미리보기에서 같은 프로젝트 scope와 현재 역할/소속을 재검사한다. 소속/팀 회수 후 열린 화면의 다음 보호 요청도 검사한다.
+
+보수적 MVP의 `media`는7번째 activity kind로 추가하고 기존6종 문자열/자료는 바꾸지 않는다. 식사/레크의 편집기는 재사용하되 새 publication은 **선택한 불변 준비표 revision의 snapshot**만 공유한다. 기본은 private이며 이후 비공개 준비표 편집이 공유본을 자동 갱신/공개하지 않는다.
+
+새 publication/미디어의 ‘공개’는 **현재 프로젝트 참여자 내부**이며 인터넷/익명 공개가 아니다. strict portal 접근을 먼저 통과한 현재 해당 팀의 member/admin·지정 프로젝트 admin·검증된 env SU가 team private를 읽는다. **작성자 예외는 created_by가 있는 새 미디어에만** 적용하며 현재 프로젝트 접근이 남아 있어야 한다. 준비표/private snapshot은 과거 편집자라는 이유로 팀 탈퇴 후 접근권을 부여하지 않고 기존 현재 팀 인가를 재사용한다. 프로젝트 활성 소속을 잃으면 양쪽 모두 작성/편집 이력과 무관하게 다음 portal 요청에서 차단한다. 다른 팀을 임의로 골라 공유하는 UI·전역 역할 승격·기존 private 제출물 계약 변경은 없다. 기존 자료를 새 공개 데이터로 자동 이전하지 않는다.
+
+사진은 JPEG/PNG/WebP8MiB, 영상은 MP4/WebM20MiB 이내이며 기존 설정 한도가 더 작으면 그 값을 따른다. 한 번에1파일·전체 요청 약21MiB로 bounded 처리하고 서버가 실제 bytes/종류·크기를 검사한다. 목록은 pagination, 기본 private·매 요청 현재 권한 검사를 적용하고 기존 비공개 R2/Native 저장을 재사용한다. 미디어 파일 I/O 뒤에도 현재 인가를 재검사하고 range 오류의 reader도 정리한다. 삭제 API/영구 삭제는 추가하지 않고 기록·CAS/권한 회수 근거를 보존한다.
+
+Native v16/v17·D1 0019/0020의 additive 추가 표와 같은 논리 모델·기존 파일 저장 체계를 우선 재사용하고 schema 전체 DDL을 문서에 복제하지 않는다. Native는 호환 구현을 유지하되 사용자의 범위 변경에 따라 NAS/MariaDB 실행 검증은 사용자 담당이다. 추가 DB 준비·접속 복구·실행 검증을 하지 않으며 과거 로컬 Native 결과나 호환 build를 실제 NAS 인수로 해석하지 않는다. 합성 자료로 검증하며 실제 사용자 자료/계정 역할·소속/예약·보안 설정·NAS 변경이나 영구 삭제를 이 계획으로 승인하지 않는다. 현재 단계와 완료 게이트는 [TODO](TODO.md), [MASTER_PLAN](MASTER_PLAN.html#project-portal), 실제/미검증은 [HARNESS_MAP](HARNESS_MAP.md#독립-프로젝트-포털-검증-계획)을 따른다.
