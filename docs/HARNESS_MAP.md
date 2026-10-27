@@ -648,6 +648,22 @@ schema/migration 변경0이다. 직전 fresh D1 baseline35표474행에서 게시
 
 저장 없이 모두 취소하고 창 크기/100% zoom을 복원했다. 수집된 console errors/warnings93건은 확장 metadata뿐이고 앱 출처0이며 전체 기간 무오류로 확대하지 않는다. media팀이 없어 업로드 form 실UI는 미검증이고 실제 touch/Safari·저장/실패 초안·신규 로그인/다른 역할도 이번 인수가 아니다. 부모 캡처는 코딩 실행기 수신/픽셀 검토가 아니며 전송 시도0이다. 가이드 이미지 차단·보고서 미리보기 원인 미확정·NAS 검증 사용자 담당을 유지한다. source110f4ec/version24는 그대로이며 이번 문서 동기화는 코드 변경/재게시가 아니다.
 
+## 식단 간소화 구현 검증
+
+PRD-066/QLT-035의 meal optional/null 정규화·기본 planned/준비 전·editor/read/공유의 기본 접힌 선택 상세를 구현했다. 수량 불완전값은 map에서 생략/미입력으로 표시하고 실제0은 유지한다. 다른 kind strict·서버 인가/CAS·명시 immutable snapshot 공유와 기존 상세/버전은 보존한다. schemaVersion1 표현 확장이며 SQL schema/migration·기존 JSON 자동변환0이다. 새 nullable 저장 뒤 v24 구validator로 단순 code rollback하면 조회503이 가능하므로 새 reader를 유지한 수정 복구가 필요하다. 자동 rollback/삭제/down은 하지 않는다.
+
+| 실제 실행 | 결과/범위 |
+| --- | --- |
+| `npm test -- --unit` | action33/unit269,총302 PASS·fail/skip0. guide unit14 포함·중복 합산 금지, DB suite 명시 미실행 |
+| backend/UI | backend unit21·UI SSR14 PASS. 필수3/선택required0·기본 닫힘/null 안전·실제0/1800g·recreation 비교. 실제 client toggle/submit 조작이 아님 |
+| D1 source workflow | 최종91 PASS(직전64 대체). 저장/재조회·idempotent/CAS·명시 공유와 private 새 draft·legacy full bytes 보존·invalid400 |
+| 최종 compiled Worker | 69조건/88요청(GET57/PUT29/POST1/PATCH1) PASS, 직전47/66 대체. 최소2행v3→재조회의 nullable/planned·선택v3 공유/guest/SSR·날짜/메뉴/상태·가짜 끼니/0수량 출력 없음·접힌 상세, invalid meal12개/recreation400·v1/v2 원문/공유 receipt 보존. unexpected500/503/403 없음 |
+| build/정적 | 최종 Worker·Next 호환 build·typecheck/FSD/global lint PASS. 기존 Native trace13·module mock experimental·Vinext 안내 유지 |
+
+entry `b736356a4d0f1ce192f9484dece6d8bc634528f3bb634762caf96c4cb54fa7c9`, snapshot `af660ffbd268b0852ae9352c789cb0193f6958c3d6ecedfcbf34296c9f893e1d`(416files/6,004,032bytes)은 전후 불변이다. 증거는 `.test-artifacts/project-portal-http/final-evidence.json`(SHA256 `21fee1ba102e0ee213c4c4826609fea7ed6cad4294911de23b6746e1206e7f85`)·`source-review.json`이다. Chrome controller 없음/helper 제약이 그대로여서 실제 toggle/submit·모바일 렌더/조작은 미실행이며 이전v24 부모 QA를 새 식단 artifact 인수로 재사용하지 않는다.
+
+게시 전 fresh D1은35표537행 complete·env revision11/5keys·public policy revision2·live24다. 아직 commit/게시 전이며 새 version을 추정하지 않는다. NAS/MariaDB 실행 사용자 담당·가이드 이미지 수신0/전송 재시도0·보고서 미리보기 원인 미확정·정상 비인가404 종료를 유지한다. 원본 docs-canon checker 미실행이며 저장소 대체 검사를 적용한다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.

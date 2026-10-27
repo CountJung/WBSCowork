@@ -243,11 +243,13 @@ PRD-058/QLT-031의 **소스 구현 계약**이며 실제 화면 인수/운영 �
 
 | 종류 | 준비표 항목/처리 |
 | --- | --- |
-| meal | 날짜·끼니·메뉴·예상 인원·1인 기준량·단위·장보기 체크. 준비량은 서버가 인원×1인 기준량을 fixed-point로 계산. UI 수량은 검증된 입력의 미리보기이며 저장 본문의 total 필드는 거부 |
+| meal | 날짜·메뉴·진행상태 필수(planned=준비 전 기본). 끼니·예상 인원·1인 기준량·단위·메모·장보기는 선택/기본 접힌 상세. 인원/기준량이 갖춰진 경우만 fixed-point 계산하며 미입력은 생략/미입력 표시·실제0은 보존. 저장 본문의 total 필드는 거부 |
 | facility | 날짜별 작업·자재/도구·진행 상태 |
 | senior_care / child_care | 돌봄 일정·역할·준비 체크. 대상자의 개인정보·어르신/아동 개별정보를 수집하지 않음 |
 | recreation | 프로그램 순서·시간·준비물 |
 | other | 공통 일정/준비 항목을 사용하며 새로운 활동 종류나 권한을 임의 생성하지 않음 |
+
+meal의 canonical JSON은 meal/people/amount nullable, unit/notes 빈문자열, checks 빈배열을 허용하고 id/date/title은 필수다. status 누락은 planned이며 잘못 제공한 상태는 거부한다. 선택값 누락/null/빈문자와 빈 체크 typed 행은 허용/정규화하지만 unknown 필드·날짜/제목·크기·잘못된 수치 범위/다른 kind의 strict 검증은 유지한다. editor/read/공유 presentation의 선택 상세는 native details로 기본 접고 오류 대상은 열어 표시한다. SQL migration/기존 JSON 자동변환 없이 schemaVersion1 표현만 확장하므로 새 nullable 문서 저장 후 구validator 앱으로 단순 복귀하면 조회503이 가능하다. 데이터 삭제/down 대신 호환 reader를 유지한 수정 복구를 사용하며 자동 rollback하지 않는다.
 
 읽기는 현재 프로젝트 접근과 활성 프로젝트/팀 소속을 갖춘 해당 팀원 또는 지정 프로젝트 admin/검증된 env SU, 편집은 현재 canonical 팀장 또는 지정 프로젝트 admin/검증된 env SU로 제한한다. 매 요청마다 현재 DB 역할·프로젝트 scope·명단/팀장 pointer를 확인하고 타팀/타프로젝트 ID나 소속 회수 후 열린 화면의 재요청을 거부한다. 팀 소속/준비표 역할을 전역 계정 승격이나 비공개 제출물 공유로 해석하지 않는다.
 

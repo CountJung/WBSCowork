@@ -13,9 +13,9 @@ export type PreparationEntryBase = {
   checks: PreparationCheck[];
 };
 export type MealPreparationEntry = PreparationEntryBase & {
-  meal: "breakfast" | "lunch" | "dinner" | "snack";
-  expectedPeople: number;
-  amountPerPerson: number;
+  meal: "breakfast" | "lunch" | "dinner" | "snack" | null;
+  expectedPeople: number | null;
+  amountPerPerson: number | null;
   unit: string;
 };
 export type FacilityPreparationEntry = PreparationEntryBase & { materials: string; tools: string };
@@ -30,10 +30,10 @@ function kind(value: unknown): ActivityKind {
   if (typeof value !== "string" || !activityKinds.includes(value as ActivityKind)) fail();
   return value as ActivityKind;
 }
-function record(value: unknown, keys: readonly string[]): Record<string, unknown> {
+function record(value: unknown, keys: readonly string[], optionalKeys: readonly string[] = []): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) fail();
   const actual = Reflect.ownKeys(value);
-  if (actual.length !== keys.length || actual.some(key => typeof key !== "string" || !keys.includes(key))) fail();
+  if (keys.some(key => !Object.hasOwn(value, key)) || actual.some(key => typeof key !== "string" || (!keys.includes(key) && !optionalKeys.includes(key)))) fail();
   return value as Record<string, unknown>;
 }
 function text(value: unknown, max: number, required = false, multiline = false): string {
@@ -77,23 +77,34 @@ const extraKeys: Record<ActivityKind, string[]> = {
 };
 
 function entry(value: unknown, activityKind: ActivityKind): PreparationEntry {
-  const input = record(value, [...commonKeys, ...extraKeys[activityKind]]);
+  const isMeal = activityKind === "meal";
+  const input = isMeal
+    ? record(value, ["id", "date", "title"], ["notes", "status", "checks", ...extraKeys.meal])
+    : record(value, [...commonKeys, ...extraKeys[activityKind]]);
   if (typeof input.id !== "string" || input.id.length !== 36 || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.id)) fail();
-  if (!["planned", "in_progress", "done"].includes(input.status as string)) fail();
-  if (!Array.isArray(input.checks) || input.checks.length > 20) fail();
-  const checks = Array.from(input.checks, value => {
+  const status = isMeal && !Object.hasOwn(input, "status") ? "planned" : input.status;
+  if (!["planned", "in_progress", "done"].includes(status as string)) fail();
+  const rawChecks = isMeal && (input.checks === undefined || input.checks === null) ? [] : input.checks;
+  if (!Array.isArray(rawChecks) || rawChecks.length > 20) fail();
+  const checks = Array.from(rawChecks, value => {
     const check = record(value, ["label", "done"]);
     if (typeof check.done !== "boolean") fail();
-    return { label: text(check.label, 120, true), done: check.done };
-  });
+    const label = text(check.label, 120, !isMeal);
+    return { label: label.trim(), done: check.done };
+  }).filter(check => !isMeal || check.label !== "");
   const base: PreparationEntryBase = {
     id: input.id.toLowerCase(), date: date(input.date), title: text(input.title, 120, true),
-    notes: text(input.notes, 1000, false, true), status: input.status as PreparationStatus, checks,
+    notes: text(isMeal && (input.notes === undefined || input.notes === null) ? "" : input.notes, 1000, false, true), status: status as PreparationStatus, checks,
   };
   switch (activityKind) {
     case "meal":
-      if (!["breakfast", "lunch", "dinner", "snack"].includes(input.meal as string)) fail();
-      return { ...base, meal: input.meal as MealPreparationEntry["meal"], expectedPeople: integer(input.expectedPeople, 0, 10_000), amountPerPerson: amount(input.amountPerPerson), unit: text(input.unit, 20, true) };
+      if (input.meal !== undefined && input.meal !== null && input.meal !== "" && !["breakfast", "lunch", "dinner", "snack"].includes(input.meal as string)) fail();
+      return {
+        ...base, meal: input.meal == null || input.meal === "" ? null : input.meal as MealPreparationEntry["meal"],
+        expectedPeople: input.expectedPeople == null || input.expectedPeople === "" ? null : integer(input.expectedPeople, 0, 10_000),
+        amountPerPerson: input.amountPerPerson == null || input.amountPerPerson === "" ? null : amount(input.amountPerPerson),
+        unit: text(input.unit == null ? "" : input.unit, 20).trim(),
+      };
     case "facility": return { ...base, materials: text(input.materials, 1000), tools: text(input.tools, 1000) };
     case "senior_care":
     case "child_care": return { ...base, time: time(input.time), role: text(input.role, 120), materials: text(input.materials, 1000) };
@@ -126,7 +137,7 @@ export function createPreparationEntry(activityKind: ActivityKind, initialDate =
   if (initialDate !== "") date(initialDate);
   const base: PreparationEntryBase = { id: crypto.randomUUID(), date: initialDate, title: "", notes: "", status: "planned", checks: [] };
   switch (activityKind) {
-    case "meal": return { ...base, meal: "breakfast", expectedPeople: 0, amountPerPerson: 1, unit: "인분" };
+    case "meal": return { ...base, meal: null, expectedPeople: null, amountPerPerson: null, unit: "" };
     case "facility": return { ...base, materials: "", tools: "" };
     case "senior_care":
     case "child_care": return { ...base, time: "", role: "", materials: "" };
@@ -137,8 +148,9 @@ export function createPreparationEntry(activityKind: ActivityKind, initialDate =
 }
 
 /** Display-only derived quantity: fixed thousandths avoid binary rounding drift. */
-export function mealQuantity(value: PreparationEntry): number {
+export function mealQuantity(value: PreparationEntry): number | null {
   if (!("expectedPeople" in value) || !("amountPerPerson" in value)) fail();
+  if (value.expectedPeople === null || value.amountPerPerson === null || !value.unit.trim()) return null;
   const people = integer(value.expectedPeople, 0, 10_000);
   const thousandths = Math.round(amount(value.amountPerPerson) * 1000);
   return people * thousandths / 1000;

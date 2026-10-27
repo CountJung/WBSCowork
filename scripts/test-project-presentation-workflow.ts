@@ -26,6 +26,7 @@ const {createPreparationEntry}=await import("../src/entities/team-preparation");
 const {runWithHostedBindings}=await import("../src/shared/server/hosted-runtime/index.server");
 const {GET:portalGET,PUT:portalPUT}=await import("../app/api/projects/[projectId]/presentation/route");
 const {GET:teamGET,PUT:teamPUT}=await import("../app/api/projects/[projectId]/presentation/teams/[teamId]/route");
+const {GET:preparationGET,PUT:preparationPUT}=await import("../app/api/projects/[projectId]/teams/[teamId]/preparation/route");
 const people = [
   [1,TEST_SUPERUSER_EMAIL,"guest"],[2,"portal-admin@example.test","admin"],[3,"portal-other-admin@example.test","admin"],
   [4,"portal-leader@example.test","member"],[5,"portal-team-member@example.test","member"],[6,"portal-only-member@example.test","member"],
@@ -177,6 +178,42 @@ try {
 
     check(JSON.stringify(await q("SELECT * FROM submissions"))===preserved,"pre-existing private WBS submission content and visibility remain byte-for-byte unchanged");
     check((await q("SELECT role FROM users WHERE id=1"))[0].role==='guest'&&Number((await q("SELECT COUNT(*) n FROM project_members WHERE user_id=1"))[0].n)===0,"env SU test identity remains guest/unassigned without data privilege migration");
+
+    const originalPreparationRevisions=JSON.stringify(await q("SELECT * FROM team_preparation_revisions WHERE team_id=111 AND version<=2 ORDER BY version"));
+    const preparationContext=()=>({params:Promise.resolve({projectId:'101',teamId:'111'})});
+    const prepRoute='/api/projects/101/teams/111/preparation', presentationRoute='/api/projects/101/presentation/teams/111';
+    const minimalEntry={id:randomUUID(),date:'2026-10-27',title:'날짜와 메뉴만 있는 합성 식단'};
+    const sparse={schemaVersion:1,kind:'meal',entries:[minimalEntry]};
+    const sparseInput={version:2,mutationKey:randomUUID(),document:sparse};
+    const minimalResponse=await preparationPUT(request(prepRoute,sparseInput),preparationContext());
+    const minimalBody=await minimalResponse.json();
+    check(minimalResponse.status===200&&minimalBody.sheet.version===3,"scoped administrator saves meal date/menu with all optional fields omitted through JSON handler");
+    check(JSON.stringify(minimalBody.sheet.document.entries[0])===JSON.stringify({id:minimalEntry.id,date:minimalEntry.date,title:minimalEntry.title,notes:'',status:'planned',checks:[],meal:null,expectedPeople:null,amountPerPerson:null,unit:''}),"minimal saved meal has canonical null quantity fields and planned status without fake defaults");
+    check(Object.keys(minimalBody.sheet.mealQuantities).length===0,"incomplete meal omits derived quantity rather than reporting a misleading zero");
+    const minimalFresh=await preparationGET(request(prepRoute),preparationContext());
+    const minimalFreshBody=await minimalFresh.json();
+    check(minimalFresh.status===200&&JSON.stringify(minimalFreshBody.sheet.document)===JSON.stringify(minimalBody.sheet.document),"minimal meal persists across fresh authenticated GET and history read");
+    const beforeReplay=Number((await q("SELECT COUNT(*) n FROM team_preparation_revisions WHERE team_id=111"))[0].n);
+    check((await preparationPUT(request(prepRoute,sparseInput),preparationContext())).status===200&&Number((await q("SELECT COUNT(*) n FROM team_preparation_revisions WHERE team_id=111"))[0].n)===beforeReplay,"minimal input replay preserves existing CAS receipt without duplicate revisions");
+    check((await preparationPUT(request(prepRoute,{...sparseInput,mutationKey:randomUUID()}),preparationContext())).status===409,"minimal meal cannot bypass stale-version CAS");
+    const minimalPublish={version:5,mutationKey:randomUUID(),audience:'project',preparationVersion:3};
+    check((await teamPUT(request(presentationRoute,minimalPublish),tc())).status===200,"explicit publication accepts a saved meal with missing optional quantities");
+    const sharedMinimal=await getTeamPresentation(viewer(8),101,111);
+    check(sharedMinimal.sourceVersion===3&&sharedMinimal.document?.entries[0].title===minimalEntry.title&&Object.keys(sharedMinimal.mealQuantities).length===0,"project member reads immutable minimal meal snapshot with unspecified quantity");
+    await denied(()=>getTeamPresentation(viewer(9),101,111),404,"minimal publication never expands outsider access");
+    const blankInput={version:3,mutationKey:randomUUID(),document:{schemaVersion:1,kind:'meal',entries:[{...minimalEntry,title:'수량 없는 합성 변경',meal:'',expectedPeople:'',amountPerPerson:null,unit:'',notes:'',checks:[{label:' ',done:false},{label:' 쌀 ',done:true}]}]}};
+    const blankResponse=await preparationPUT(request(prepRoute,blankInput),preparationContext());const blankBody=await blankResponse.json();
+    check(blankResponse.status===200&&blankBody.sheet.version===4&&blankBody.sheet.document.entries[0].checks.length===1&&blankBody.sheet.document.entries[0].checks[0].label==='쌀',"empty optional fields and blank shopping rows save without discarding valid checklist rows");
+    check((await getTeamPresentation(viewer(8),101,111)).document?.entries[0].title===minimalEntry.title,"new nullable private edits do not automatically replace the published snapshot");
+    check((await teamPUT(request(presentationRoute,{...minimalPublish,version:6,mutationKey:randomUUID()}),tc())).status===409,"stale selected preparation version still cannot be republished after optional-field edits");
+    check((await teamPUT(request(presentationRoute,{...minimalPublish,version:6,preparationVersion:4,mutationKey:randomUUID()}),tc())).status===200,"explicit republish selects the new immutable optional-field preparation revision");
+    const invalidBefore=JSON.stringify(await q("SELECT * FROM team_preparation_sheets WHERE team_id=111"));
+    for(const patch of [{date:''},{title:' '},{status:''},{status:null},{status:'invalid'},{expectedPeople:'12'},{expectedPeople:-1},{amountPerPerson:'1.5'},{amountPerPerson:0.0001},{unit:20},{checks:[{label:'',done:'false'}]},{extra:'unknown'}]){
+      const invalidInput={version:4,mutationKey:randomUUID(),document:{schemaVersion:1,kind:'meal',entries:[{...minimalEntry,...patch}]}};
+      check((await preparationPUT(request(prepRoute,invalidInput),preparationContext())).status===400,"optional meal expansion preserves provided type/bounds, status, date/title and unknown-key validation");
+    }
+    check(JSON.stringify(await q("SELECT * FROM team_preparation_sheets WHERE team_id=111"))===invalidBefore,"rejected optional-field requests preserve saved head/version");
+    check(JSON.stringify(await q("SELECT * FROM team_preparation_revisions WHERE team_id=111 AND version<=2 ORDER BY version"))===originalPreparationRevisions,"legacy complete preparation revision bytes remain unchanged after sparse meal saves/publication");
   };
   if(runtime==='native')await execute();else await runWithHostedBindings({DB:db} as unknown as Parameters<typeof runWithHostedBindings>[0],execute);
   await mkdir('.test-artifacts/project-presentation',{recursive:true});await writeFile(`.test-artifacts/project-presentation/${runtime}-result.json`,JSON.stringify({complete:true,runtime,checks,assertions:labels,nativeExecuted:runtime==='native',nativeServerVersion,nativeLimitation:runtime==='native'?null:'D1-only execution; separate Native result required.',syntheticSchemasRetained:runtime==='native'?[database,upgradeDatabase]:[],productionAccess:false,browserExecuted:false},null,2));

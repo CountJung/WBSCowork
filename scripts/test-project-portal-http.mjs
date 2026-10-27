@@ -97,6 +97,47 @@ try{
  const stablePublication=await json(teamApi(mealTeam),"guestA"),sharedHome=await page(base,"guestA");check(JSON.stringify(stablePublication.value).includes(initialMarker)&&!JSON.stringify(stablePublication.value).includes(draftMarker)&&sharedHome.html.includes(initialMarker)&&!sharedHome.html.includes(draftMarker)&&!sharedHome.html.includes(privateMarker),"shared portal snapshot stays at immutable v1 and never exposes new private draft or other-team private content");
  check((await request(prepApi(mealTeam),"guestA")).status===404,"project-shared presentation does not expand guest access to the existing private preparation API");
  const privateDetail=await page(base+`/activities/${privateTeam}`,"memberA");check(privateDetail.status===404&&!privateDetail.html.includes(privateMarker),"other team private activity direct URL denies404 without content");
+ // PRD066: new meal rows can start with date/title alone. Keep old snapshots
+ // before the new save/publication so compatibility is checked against real bytes.
+ const originalMealRows=JSON.stringify((await db.prepare("SELECT * FROM team_preparation_revisions WHERE team_id=1101 AND version IN (1,2) ORDER BY version").all()).results);
+ const originalPublication=JSON.stringify((await db.prepare("SELECT * FROM team_presentation_revisions WHERE team_id=1101 AND version=1").all()).results);
+ const minimalRow={id:randomUUID(),date:"2026-11-02",title:"PORTAL_MINIMAL_MEAL_한글"},blankRow={id:randomUUID(),date:"2026-11-03",title:"PORTAL_BLANK_OPTIONAL_MEAL",status:"planned",meal:"",expectedPeople:"",amountPerPerson:null,unit:"",notes:null,checks:[{label:"",done:false}]};
+ const minimalDocument={schemaVersion:1,kind:"meal",entries:[minimalRow,blankRow]};
+ const expectedMinimal={schemaVersion:1,kind:"meal",entries:[minimalRow,blankRow].map(row=>({id:row.id,date:row.date,title:row.title,status:"planned",meal:null,expectedPeople:null,amountPerPerson:null,unit:"",notes:"",checks:[]}))};
+ const minimalSave=await json(prepApi(mealTeam),"leaderA",input(minimalDocument,2));
+ check(minimalSave.response.status===200&&minimalSave.value.sheet.version===3,"meal date/title-only and explicitly blank optional rows save through the compiled preparation PUT as version3");
+ assert.deepEqual(minimalSave.value.sheet.document,expectedMinimal);assert.deepEqual(minimalSave.value.sheet.mealQuantities,{});
+ const minimalRead=await json(prepApi(mealTeam),"leaderA");
+ check(minimalRead.response.status===200&&minimalRead.value.sheet.version===3&&JSON.stringify(minimalRead.value.sheet.document)===JSON.stringify(minimalSave.value.sheet.document)&&Object.keys(minimalRead.value.sheet.mealQuantities).length===0,"fresh GET persists planned defaults, null optional numbers/meal, empty text/checks and no invented zero quantity");
+ const beforeMinimalShare=await json(teamApi(mealTeam),"guestA");
+ check(beforeMinimalShare.response.status===200&&JSON.stringify(beforeMinimalShare.value).includes(initialMarker)&&!JSON.stringify(beforeMinimalShare.value).includes(minimalRow.title),"saving a minimal private draft does not change the previously selected public version1");
+ const minimalShare=await json(teamApi(mealTeam),"leaderA",{version:1,mutationKey:randomUUID(),audience:"project",preparationVersion:3});
+ check(minimalShare.response.status===200&&minimalShare.value.presentation.sourceVersion===3&&minimalShare.value.presentation.team.publicationVersion===2,"canonical leader can explicitly share the selected minimal meal version3 despite omitted optional fields");
+ const guestMinimal=await json(teamApi(mealTeam),"guestA");
+ assert.deepEqual(guestMinimal.value.presentation.document,expectedMinimal);
+ check(guestMinimal.response.status===200&&guestMinimal.value.presentation.sourceVersion===3&&Object.keys(guestMinimal.value.presentation.mealQuantities).length===0&&!JSON.stringify(guestMinimal.value).includes(draftMarker),"project guest reads the exact normalized selected minimal snapshot without private version2 or fabricated quantities");
+ const minimalHome=await page(base,"guestA"),minimalDetail=await page(base+`/activities/${mealTeam}`,"guestA"),minimalEditorSummary=await page(base+`/teams/${mealTeam}/preparation`,"leaderA");
+ check([minimalHome,minimalDetail,minimalEditorSummary].every(row=>row.status===200&&[minimalRow.title,blankRow.title,minimalRow.date,"준비전","미입력"].every(value=>text(row.html).includes(value))&&!/예상 0명|준비 수량:? 0|1인 기준 0|NaN|undefined|\bnull\b|점심|아침|저녁|간식/.test(text(row.html)))&&!minimalHome.html.includes(privateMarker),"shared home/detail and existing preparation editor summary SSR show date/menu/preparation status without invented meal, zero, null or undefined output");
+ check([minimalHome,minimalDetail,minimalEditorSummary].every(row=>{const details=[...row.html.matchAll(/<details\b([^>]*)>\s*<summary\b[^>]*>상세 정보 · 선택<\/summary>/g)];return details.length===2&&details.every(match=>!/(?:^|\s)open(?:\s|=|$)/.test(match[1]));}),"meal SSR uses two native optional-details summaries without an initial open attribute; toggling/editor input DOM are not exercised");
+ const invalidMealRows=[
+  ["missing date",{...minimalRow,date:undefined}],
+  ["missing menu",{...minimalRow,title:undefined}],
+  ["impossible date",{...minimalRow,date:"2026-02-30"}],
+  ["invalid status",{...minimalRow,status:"unknown"}],
+  ["null status",{...minimalRow,status:null}],
+  ["invalid provided meal",{...minimalRow,meal:"midnight"}],
+  ["negative people",{...minimalRow,expectedPeople:-1}],
+  ["numeric string people",{...minimalRow,expectedPeople:"3"}],
+  ["overprecision amount",{...minimalRow,amountPerPerson:0.0001}],
+  ["negative amount",{...minimalRow,amountPerPerson:-1}],
+  ["invalid provided unit",{...minimalRow,unit:1}],
+  ["invalid checkbox type",{...minimalRow,checks:[{label:"",done:"false"}]}],
+ ];
+ for(const[label,row]of invalidMealRows)check((await request(prepApi(mealTeam),"leaderA",input({schemaVersion:1,kind:"meal",entries:[row]},3))).status===400,`compiled meal validation rejects ${label} without saving a new revision`);
+ check((await request(prepApi(privateTeam),"otherTeamA",input({schemaVersion:1,kind:"recreation",entries:[{id:randomUUID(),date:"2026-11-02",title:"INVALID_MINIMAL_RECREATION"}]},1))).status===400,"meal-only optional defaults do not relax required fields for recreation preparations");
+ const afterInvalidMeals=await json(prepApi(mealTeam),"leaderA");
+ check(afterInvalidMeals.response.status===200&&afterInvalidMeals.value.sheet.version===3&&Number((await db.prepare("SELECT COUNT(*) n FROM team_preparation_revisions WHERE team_id=1101").first()).n)===3&&Number((await db.prepare("SELECT COUNT(*) n FROM team_preparation_revisions WHERE team_id=1102").first()).n)===1,"all malformed meal/recreation requests leave current sheets and revision counts unchanged");
+ check(originalMealRows===JSON.stringify((await db.prepare("SELECT * FROM team_preparation_revisions WHERE team_id=1101 AND version IN (1,2) ORDER BY version").all()).results)&&originalPublication===JSON.stringify((await db.prepare("SELECT * FROM team_presentation_revisions WHERE team_id=1101 AND version=1").all()).results)&&JSON.parse((await db.prepare("SELECT document_json FROM team_preparation_revisions WHERE team_id=1101 AND version=1").first()).document_json).entries[0].amountPerPerson===0.125,"existing detailed version1, private version2 and original publication receipt remain byte-for-byte unchanged after minimal meal sharing");
  const png=Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=","base64"),form=new FormData();
  for(const[key,value]of Object.entries({title:"PORTAL_MEDIA_PRIVATE",caption:"합성 사진만 사용",visibility:"team_private",mutationKey:randomUUID()}))form.set(key,value);form.set("file",new File([png],"synthetic.png",{type:"image/png"}));
  const upload=await json(mediaApi,"leaderA",form,{method:"POST"});check(upload.response.status===201&&upload.value.item?.fileUrl,"compiled media endpoint accepts one actual bounded synthetic PNG upload");
@@ -107,7 +148,7 @@ try{
  const guestFile=await request(item.fileUrl,"guestA"),guestBytes=new Uint8Array(await guestFile.arrayBuffer());check(guestFile.status===200&&sha(guestBytes)===sha(png)&&(await request(item.fileUrl,"nonmember")).status===404,"project-public media stays inside current portal membership and preserves original bytes");
  const mediaRow=await db.prepare("SELECT file_path,content_hash FROM project_media_items WHERE id=?").bind(item.id).first();const object=await bucket.get(mediaRow.file_path);check(object&&sha(new Uint8Array(await object.arrayBuffer()))===sha(png)&&mediaRow.content_hash===sha(png),"R2 original PNG content hash agrees with compiled download and D1 metadata");mediaProof.push({id:item.id,sha256:sha(png),bytes:png.length});
  await db.prepare("UPDATE activity_team_members SET role='member' WHERE team_id=1101 AND user_id=4").run();await db.prepare("UPDATE activity_team_members SET role='leader' WHERE team_id=1101 AND user_id=5").run();await db.prepare("UPDATE activity_team_leaders SET user_id=5 WHERE team_id=1101").run();
- check((await request(teamApi(mealTeam),"leaderA",{version:1,mutationKey:randomUUID(),audience:"team_private",preparationVersion:2})).status===404&&(await request(prepApi(mealTeam),"leaderA",input(preparation("FORBIDDEN_OLD_LEADER"),2))).status===404,"leader replacement immediately denies old signed session publication and preparation edits");
+ check((await request(teamApi(mealTeam),"leaderA",{version:2,mutationKey:randomUUID(),audience:"team_private",preparationVersion:3})).status===404&&(await request(prepApi(mealTeam),"leaderA",input(preparation("FORBIDDEN_OLD_LEADER"),3))).status===404,"leader replacement immediately denies old signed session publication and preparation edits");
  const replacedPage=await page(base+`/activities/${mealTeam}`,"leaderA");check(replacedPage.status===200&&!replacedPage.html.includes("식단표 편집"),"former leader can still read allowed snapshot but editing controls disappear");
  await db.prepare("UPDATE project_members SET active=0 WHERE project_id=1001 AND user_id=5").run();check((await request(api,"memberA")).status===404&&(await request(item.fileUrl,"memberA")).status===404&&(await page(base,"memberA")).status===404,"project membership revocation blocks next portal/API/media request using an existing signed session");await db.prepare("UPDATE project_members SET active=1 WHERE project_id=1001 AND user_id=5").run();
  const rscRoute=base+"/activities",rscHeaders={RSC:"1",Accept:"text/x-component"};let rsc=await request(rscRoute,"adminA",undefined,{headers:rscHeaders});let rscText=await rsc.text();if(rsc.status===307){check(rsc.headers.get("location")===rscRoute+"?_rsc","RSC canonicalization stays on the same scoped portal route");rsc=await request(rscRoute+"?_rsc","adminA",undefined,{headers:rscHeaders});rscText=await rsc.text();}
