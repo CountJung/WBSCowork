@@ -558,6 +558,14 @@ getversions의 v21 deployment null/v20 기존 deployment와 v20 status succeeded
 
 목차 Enter 이동·뒤로가기, 누락 anchor0·가로 넘침 없음, 신규 앱 console/hydration 오류 없음을 확인했다. 기존 실제/합성 자료·권한·캡처 변경은 없었고 사용자에게05:48 텍스트 가이드 사용 가능과 이미지 포함 전체 미완료를 안내했다. 좁은 모바일·실제 타역할 로그인·비로그인 운영 공개 접근·신규 Google OAuth는 미검증이다. 이미지0장/준비 중·전체 strict 이미지 gate 실패는 유지하며 이번 브라우저 PASS로 이미지 인수를 대체하지 않는다. 이미지 확보에는 사용자 추가 자료나 지원되는 전달 경로가 필요하고 같은 실패한 Library 전송을 반복하지 않는다.
 
+### v23 가이드 캡처 ZIP 소비자 전달 차단
+
+새 사용자 승인으로 캡처를 재개했고 부모는 v23 합성 화면20JPG·한국어 캡션 README·오프라인 index HTML을 포함한 `WBSCowork-v23-screenshot-guide-20261027.zip`(안내 크기1,412,534bytes)을 Library에 저장했다고 전달했다. 이는 부모 측 캡처/픽셀 검토 근거이며 코딩 소비자의 파일 수신·무결성 검증이 아니다. 과거11JPG와 이번20JPG를 합산하거나 같은 자료로 취급하지 않는다.
+
+이번에는 현재 Library skill·materialization 참조와 공식 helper2종 리소스를 확보해 변경 없이 설치했다. 새로 확인된 자료의 prepare_materialize1회와 소비자 목적지 변경 bounded retry1회는 도구상 성공했으나 모두 workspace_path:null/signed transfer였다. 공식 `library_file_transfer.py materialize`는2회 모두 exit1 `library file transfer failed: download failed`로 끝났다. 목적지 `/workspace/wbs-guide-screenshots-20261027/WBSCowork-v23-screenshot-guide-20261027.zip`와 `/workspace/WBSCowork-v23-screenshot-guide-20261027.zip`의 실존 검사도 false다. HTTP 상태·상세 사유가 없어 정책/접근 거부나 별도 Library 원인을 단정하지 않는다. 추가 재시도·우회는0이다. Library ID·signed URL·token은 저장소에 기록하지 않는다.
+
+코딩 소비자 실제 bytes0·ZIP 무결성/숨긴 내용/픽셀 검토0·이미지 삽입/게시0이다. 새 ZIP을 **현재 WBSCowork 코딩 작업 채팅에 로컬파일로 직접 첨부**해야 하며 메인 대화 링크나 다른 실행기 경로는 수신을 보장하지 않는다. PRD-059/QLT-032와 이미지 strict gate는 미완료로 유지한다. 별도 보고서 미리보기 조사는 이 전달 차단과 구분한다.
+
 ## 독립 프로젝트 포털 검증 계획
 
 PRD-060~064/QLT-033의 소스·D1/Worker 인수와 실제 Chrome/모바일·운영 인수를 구분한다. 사용자의 “시놀로지 나스 검증은 내 몫으로 하고 구현만 완료하는 범위로만 진행해줘” 요청에 따라 **NAS/MariaDB 실행 검증은 사용자 담당이며 이번 완료·Sites 게시 게이트에서 제외**한다. 이후 Native DB 준비·접속 복구·실행 검증은 하지 않는다. Native 호환 소스·기존 build 근거는 보존하되 실제 NAS 인수를 뜻하지 않는다.
