@@ -591,7 +591,13 @@ compiled Worker 최초 media415는 독립 echo로 global FormData를 Miniflare d
 
 D1 0019/0020은 신규7표를 추가했고 모두0행이다. 전체는35표379행이며 게시 전28표376행과 **전표 동일하지 않다**. 기존 업무27표는 전체 행이 같고 실제 project5/task7/submission5/attachment7 및 합성 project6/task8/submission6/attachment8 metadata·역할을 보존했다. audit_logs는343→346행이다. 기존 INFO id223~226(2026-10-21T23:30:48~51Z)4건이 만료 정리됐고 instrumentation INFO id566~572가7건 추가됐다. `logging.server.ts`의 logEvent/auditCutoff와 runtime-env 기본5일 정책은 기준 sites 대비 변경0이며 명시 retention env도 없다. 이번 구현이 새 보존 정책을 도입하거나 감사로그까지 전부 보존했다고 해석하지 않는다.
 
-public policy revision2·auth_client·env revision11의5entries·automations[]는 전후 동일하다. 실제 R2 bytes/inventory 독립 조회·운영 Chrome/모바일 인수는 미실행이며 부모의 별도 허용 브라우저 결과를 기다린다. 코딩 실행기의 운영 GET 재시도/우회0, NAS 실행0이며 NAS/MariaDB 검증은 사용자 담당이다. 기존 가이드 이미지·최종 인수 미완료는 이번 게시로 닫지 않는다. version22 source7178471과 archive를 복귀 참조로 유지했고 schema down은 하지 않았다. 공식 Worker logs의 최근5분 errors_only 반환2건은 crawler의 `/robots.txt`·`/sitemap.xml` 404/outcome=ok였고 반환된 앱5xx/exception은 없었다. 이 표본을 사용자 탐색 인수로 확대하지 않는다. 게시 증거는 `.test-artifacts/project-portal-http/publication-result.json`에 있다.
+public policy revision2·auth_client·env revision11의5entries·automations[]는 전후 동일하다. 게시 직후 실제 R2 bytes/inventory 독립 조회·운영 Chrome/모바일 인수는 미실행이었다. 이후 부모 클라우드 브라우저의 읽기 부분 관측은 아래에서 별도 구분한다. 코딩 실행기의 운영 GET 재시도/우회0, NAS 실행0이며 NAS/MariaDB 검증은 사용자 담당이다. 기존 가이드 이미지·최종 인수 미완료는 이번 게시로 닫지 않는다. version22 source7178471과 archive를 복귀 참조로 유지했고 schema down은 하지 않았다. 공식 Worker logs의 최근5분 errors_only 반환2건은 crawler의 `/robots.txt`·`/sitemap.xml` 404/outcome=ok였고 반환된 앱5xx/exception은 없었다. 이 표본을 사용자 탐색 인수로 확대하지 않는다. 게시 증거는 `.test-artifacts/project-portal-http/publication-result.json`에 있다.
+
+### version23 부모 클라우드 Chrome 읽기 검토
+
+부모의 별도 허용 클라우드 Chrome에서 v23 데스크톱 읽기 검토를 수행한 관측 근거다. `/projects/5` 업무협업과 `/projects/6` 봉사활동의 유형별 홈·사이드바,4개 팀 presentation/유형별 편집기 열기·취소(저장 안 함), 설정의 유형2개 선택지를 확인했다. Enter·skip-to-content 포커스, Back/Forward·반복 이동, projectId6의 WBS 연결/복귀가 PASS다. 팀 private 상태에서 프로젝트 공유 화면이 노출되지 않았고 앱 기원 console 오류0이었다. 확장 metadata 오류는 앱 오류와 구분한다. 이번 검토의 정확한 시각·viewport 폭·신규 로그인/역할은 제공되지 않아 과거1180px/SU 관측을 이번 실측으로 복사하지 않는다.
+
+실제 저장·권한 변경·자료 변경은0이다. viewport 조절 API가 없어 모바일은 미검증이며 project6에 media팀이 없어 실제 브라우저 업로드도 미검증이다. 미디어 서버 회귀 통과를 이 UI 인수로 바꾸지 않는다. 실제 다른 역할/소속 회수·실패 초안·관측하지 않은 키보드 조작, R2 원본 bytes 대조·가이드 이미지 미완료는 유지한다. NAS/MariaDB 실행 검증은 사용자 담당이며 코딩 실행기에서 운영 접속이나 제품 테스트를 재실행한 결과가 아니다.
 
 docs-canon 본체 읽기는 성공했으나 원본 checker 리소스 읽기1회 실패로 원본 실행0이며 저장소 대체 검사와 내용 검토만 적용한다. 새 문서/보고서는 추가하지 않는다.
 

@@ -11,7 +11,7 @@
 | PRD-058, 2026-10-23 | 기존6종 활동팀의 공통 준비표·서버 식사량·현재 팀 권한·CAS/불변 이력·UI 진입 경로와 양 DB additive 저장 구현, 소스/실DB·실제 Native/Worker compiled HTTP 인수 완료. [구현·게시 구분](#활동팀-공통-준비표-소스-구현), 실제 화면/운영 인수는 QLT-031 유지 |
 | OPS-039, 2026-10-23 | 최초 v20 자동 승인 거부를 보존. 새 직접 승인 뒤 같은 저장v20 미실행 확인→배포1회 재시도 succeeded/active/latest20·0018 신규2표·기존 행/설정 보존 확인. [승인/배포 범위](HARNESS_MAP.md#version20-승인과-운영-배포), 후속 envSU 화면 부분 인수 후 QLT-031 잔여 유지 |
 | OPS-040, 2026-10-25 | 최초 텍스트 중간v21 자동 배포 거부 보존. 새 승인 후1회 재시도 succeeded·28표337행/설정 동일 확인. [게시/실검토 범위](HARNESS_MAP.md#version21-승인과-텍스트-중간-배포), PRD-059/QLT-032 이미지/최종 게이트는 열린 상태 |
-| PRD-060~064 소스/게시 범위, 2026-10-27 | 엄격 소속 포털·유형별 홈/사이드바·기존 준비표 revision 공유·미디어 도구 구현과 D1/compiled HTTP 인수 후 version23 게시 완료. [실제 결과·보존 차이](HARNESS_MAP.md#version23-독립-프로젝트-포털-게시). Chrome/모바일 잔여는 QLT-033, NAS 실행 검증은 사용자 담당이며 기능 전체 화면 인수 완료로 확대하지 않음 |
+| PRD-060~064 소스/게시 범위, 2026-10-27 | 엄격 소속 포털·유형별 홈/사이드바·기존 준비표 revision 공유·미디어 도구 구현과 D1/compiled HTTP 인수 후 version23 게시 완료. [실제 결과·보존 차이](HARNESS_MAP.md#version23-독립-프로젝트-포털-게시). 부모 클라우드 Chrome 데스크톱 읽기 부분 PASS, 저장/미디어 업로드·모바일 등 잔여는 QLT-033. NAS 실행 검증은 사용자 담당이며 기능 전체 화면 인수로 확대하지 않음 |
 | QLT-001/002, 2026-08 | ESLint 기준선, FSD M0~M5 완료. root app 조립과 public API로 이동하고 components/lib/models 호환층 제거. URL/권한/SQL 변경과 구조 이동을 분리 |
 | QLT-003~007, 2026-09 | private 파생 댓글/첨부 props 유출, ownership 없는 mutation, unscoped 단건, 경로 로그, task route의 project 관리 권한을 수정. SQL viewer/IdScope·상위 관계·작성자/admin·canonical project 경로를 강제 |
 | QLT-008/009 | node --import tsx로 loader 경고 정리, 실제 인가 경로의 node:test visibility fixture 도입. synthetic session은 실제 OAuth가 아님 |
@@ -114,7 +114,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 20 · 2026-10-23 15:06:43.558919(반환) | 69e1fb92a88371d96c95f30078a1ec08d07f7b86 | 최초 자동 거부 후 새 직접 승인·동일 저장v20 배포1회 재시도 terminal succeeded, appgdep_6adb77f8a28881919ade7c049e008ecd. active/latest20·0018 새2표 각0행, 기존25표 동일·audit 기존279행 보존+INFO5/설정 동일. 실제 브라우저 미검증 |
 | 21 · 2026-10-25 05:27:08.650286 | 570b0c6526835e6865ed8327057c940c3b52c639 | 최초 자동 거부 후 새 승인·단1회 재시도 succeeded, appgdep_6add932312c4819192c91350c59a9f24.28표337행/설정 동일·migration0. 부모 envSU1180px 부분 검토 PASS, 이미지/최종 가이드는 미완료 |
 | 22 · 2026-10-25 05:43:24.285730 | 717847138879815506d3d4ae3a692b6deb0619e6 | succeeded, appgdep_6add96f04cc48191b6bbb5e68465525f. active/latest22·exact deployment 일치, 이번28표350행/설정 동일·migration0. 문구 보완 텍스트 중간 게시이며 새 실제 브라우저·이미지는 미검증 |
-| 23 · 2026-10-27 02:02:05.793555 | d8bcb3952d8aa4d2f80d3e624425993020681553 | terminal succeeded, appgdep_6ae00611cdd08191a4f06fa4b6c6c402. active/latest23·exact deployment 일치·D1 신규7표 각0행, 업무27표 동일·audit 만료4건/추가7건·설정 동일. 실제 브라우저 인수 대기 |
+| 23 · 2026-10-27 02:02:05.793555 | d8bcb3952d8aa4d2f80d3e624425993020681553 | terminal succeeded, appgdep_6ae00611cdd08191a4f06fa4b6c6c402. active/latest23·exact deployment 일치·D1 신규7표 각0행, 업무27표 동일·audit 만료4건/추가7건·설정 동일. 후속 부모 클라우드 Chrome 데스크톱 읽기 부분 PASS, 저장/미디어 업로드·모바일 잔여 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -141,7 +141,7 @@ version22 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_57a98e2c07cc81
 
 
 
-version23 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_3f53802bfff0819186724e91019b506c`다. 기존 URL https://wbscowork.cometgnome.chatgpt.site 에 source `d8bcb3952d8aa4d2f80d3e624425993020681553`를 게시했고 기능 main65b06d2와 후속 문서 HEAD를 구분한다. 업무 자료 보존과 기존 감사 보존 정책에 따른 차이·설정 대조는 [하네스](HARNESS_MAP.md#version23-독립-프로젝트-포털-게시)가 소유한다. 실제 Chrome/모바일은 대기 중이며 사용자 담당 NAS 실행 검증을 이번 완료 조건에 추가하지 않는다.
+version23 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_3f53802bfff0819186724e91019b506c`다. 기존 URL https://wbscowork.cometgnome.chatgpt.site 에 source `d8bcb3952d8aa4d2f80d3e624425993020681553`를 게시했고 기능 main65b06d2와 후속 문서 HEAD를 구분한다. 업무 자료 보존과 기존 감사 보존 정책에 따른 차이·설정 대조는 [하네스](HARNESS_MAP.md#version23-독립-프로젝트-포털-게시)가 소유한다. 후속 부모 클라우드 Chrome의 유형별 홈·탐색/편집기 열기·취소·관측된 키보드/복귀 읽기 부분 PASS는 [별도 운영 관측](HARNESS_MAP.md#version23-부모-클라우드-chrome-읽기-검토)을 따른다. 저장/미디어 업로드·모바일 등은 미검증이며 사용자 담당 NAS 실행 검증을 이번 완료 조건에 추가하지 않는다.
 
 ### package와 복구 근거
 
