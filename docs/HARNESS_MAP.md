@@ -670,7 +670,15 @@ entry `b736356a4d0f1ce192f9484dece6d8bc634528f3bb634762caf96c4cb54fa7c9`, snapsh
 
 SQL schema/migration0이다. fresh D1 baseline35표537행→542행이며 모든 page가 완전하다. 업무34표는 전체 행이 같고 기존 준비표 head4/revision4·공유0도 그대로다. 실제 project5/task7/submission5/attachment7 및 합성 project6 자료 metadata를 보존했다. audit504행은 전부 불변/삭제0이며 두 read 사이 instrumentation INFO5(id731~735)가 추가됐다. id731의04:11:17.812Z는 게시 전,732~735의04:16:12~20Z는 게시 후이므로 전부 배포로 생겼다고 단정하지 않는다. env revision11/5keys 값·public policy revision2·auth_client·automations[]는 전후 동일하다. 실제 R2 bytes 독립 검증은 미실행이다. 공식 Worker 최근5분 errors_only1건은 robots.txt404/outcome=ok이고 반환된 앱 예외0은 표본 범위이며 사용자 UI PASS가 아니다.
 
-부모에게 project6/team1 준비표의 읽기/상세정보 열기·취소(저장 없이) 검토 가능 상태를 전달했으나 아직 운영 UI 결과 대기다. 실제 client toggle/save는 미검증이며 이전v24 QA로 식단v25 인수를 대신하지 않는다. v24 source/archive 참조는 유지하되 새 nullable 저장 후 구validator로 단순 rollback할 수 없고 호환 reader가 필요하다. 자동 rollback0, 이미지 전달 차단/재시도0·보고서 미리보기 원인 미확정·NAS 검증 사용자 담당을 유지한다.
+게시 직후 부모에게 project6/team1 준비표 읽기/상세정보 열기·취소(저장 없이) 검토를 요청했다. 후속 v25 식단 관측은 아래 별도로 기록하며 이전v24 QA로 대신하지 않는다. 실제 save/share는 미검증이다. v24 source/archive 참조는 유지하되 새 nullable 저장 후 구validator로 단순 rollback할 수 없고 호환 reader가 필요하다. 자동 rollback0, 이미지 전달 차단/재시도0·보고서 미리보기 원인 미확정·NAS 검증 사용자 담당을 유지한다.
+
+### version25 부모 식단 읽기와 상세 토글 검토
+
+부모의 project6 QA 식사팀 읽기 검토에서 편집 date/state backing input/menu는 required=true, 끼니·people/amount/unit/notes·장보기 checkbox는 required=false를 확인했다. 상태는 준비 전이며 선택 상세는 기본 닫힘이다. presentation과 editor의 상세 열기/닫기·키보드 Space/Enter, 기존12명/150g/1800g·합성 메모/체크 내용 유지가 PASS다. 취소 후 다시 열면 상세는 다시 기본 닫힘이며 저장v1(2026-10-24 00:18 KST)·표시값은 그대로다.
+
+일반 Chrome 창 resize의768px/100%·390/360px/150% CSS 화면에서 scrollWidth=clientWidth·1열·하단 버튼·펼친 선택정보 줄바꿈을 확인했다. 이번 viewport 높이/dpr·검토 시각·별도 계정 로그인은 제공되지 않아 과거v24 수치를 복사하지 않는다. 창 크기/100% zoom을 복원했다. 실제 phone touch/Safari 인수가 아니다.
+
+운영 save/share/create·권한 변경0이다. 최소입력 저장/공유 PASS는 앞선 로컬 D1/compiled 서버 회귀이며 이번 브라우저에서 저장한 것이 아니다. 실제 submit·최소입력 저장/공유 UI·touch/Safari는 미검증으로 유지한다. source8199649/version25는 그대로이고 이번 문서 후속에서 새 코드/파일 수신·전송·재게시0, 가이드 수신 차단·보고서 미리보기 원인 미확정·NAS 사용자 담당·구v24 reader rollback 제약도 유지한다.
 
 ## 문서 정리 검증
 

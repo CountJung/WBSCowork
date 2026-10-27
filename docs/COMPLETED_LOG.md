@@ -13,7 +13,7 @@
 | OPS-040, 2026-10-25 | 최초 텍스트 중간v21 자동 배포 거부 보존. 새 승인 후1회 재시도 succeeded·28표337행/설정 동일 확인. [게시/실검토 범위](HARNESS_MAP.md#version21-승인과-텍스트-중간-배포), PRD-059/QLT-032 이미지/최종 게이트는 열린 상태 |
 | PRD-060~064 소스/게시 범위, 2026-10-27 | 엄격 소속 포털·유형별 홈/사이드바·기존 준비표 revision 공유·미디어 도구 구현과 D1/compiled HTTP 인수 후 version23 게시 완료. [실제 결과·보존 차이](HARNESS_MAP.md#version23-독립-프로젝트-포털-게시). 부모 클라우드 Chrome 데스크톱 읽기 부분 PASS, 저장/미디어 업로드·모바일 등 잔여는 QLT-033. NAS 실행 검증은 사용자 담당이며 기능 전체 화면 인수로 확대하지 않음 |
 | PRD-065 소스/게시 범위, 2026-10-27 | 상단 통합 메뉴·현재 프로젝트/전체폭 본문·모바일 팀 도구 배치 구현, 지원 소스/SSR·unit·compiled47/66·호환 build 후 version24 게시 완료. [검증·게시 경계](HARNESS_MAP.md#모바일-우선-탐색-구현-검증), 부모 Chrome resize/확대의360/390/768 CSS 화면·메뉴/키보드 관측 범위 PASS. 실제 touch/Safari·미디어 업로드 등 QLT-034 잔여를 전체 모바일 인수로 확대하지 않음 |
-| PRD-066 소스/게시 범위, 2026-10-27 | meal 최소 입력/nullable·선택 상세 기본 접힘과 계산/표시를 정합화하고 기존 원문/공유·다른 kind 검증 보존, unit/SSR·D1 source/compiled69·88요청 후 version25 게시 완료. [실제 범위](HARNESS_MAP.md#식단-간소화-구현-검증), 실제 식단 토글/저장 UI는 QLT-035 대기·단순 구앱 rollback 제한 유지 |
+| PRD-066 소스/게시 범위, 2026-10-27 | meal 최소 입력/nullable·선택 상세 기본 접힘과 계산/표시를 정합화하고 기존 원문/공유·다른 kind 검증 보존, unit/SSR·D1 source/compiled69·88요청 후 version25 게시 완료. [실제 범위](HARNESS_MAP.md#식단-간소화-구현-검증), 부모의 식단 읽기/상세 토글·키보드·좁은 CSS 화면 부분 PASS, 실제 저장/공유·touch/Safari는 QLT-035 잔여·단순 구앱 rollback 제한 유지 |
 | QLT-001/002, 2026-08 | ESLint 기준선, FSD M0~M5 완료. root app 조립과 public API로 이동하고 components/lib/models 호환층 제거. URL/권한/SQL 변경과 구조 이동을 분리 |
 | QLT-003~007, 2026-09 | private 파생 댓글/첨부 props 유출, ownership 없는 mutation, unscoped 단건, 경로 로그, task route의 project 관리 권한을 수정. SQL viewer/IdScope·상위 관계·작성자/admin·canonical project 경로를 강제 |
 | QLT-008/009 | node --import tsx로 loader 경고 정리, 실제 인가 경로의 node:test visibility fixture 도입. synthetic session은 실제 OAuth가 아님 |
@@ -118,7 +118,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 22 · 2026-10-25 05:43:24.285730 | 717847138879815506d3d4ae3a692b6deb0619e6 | succeeded, appgdep_6add96f04cc48191b6bbb5e68465525f. active/latest22·exact deployment 일치, 이번28표350행/설정 동일·migration0. 문구 보완 텍스트 중간 게시이며 새 실제 브라우저·이미지는 미검증 |
 | 23 · 2026-10-27 02:02:05.793555 | d8bcb3952d8aa4d2f80d3e624425993020681553 | terminal succeeded, appgdep_6ae00611cdd08191a4f06fa4b6c6c402. active/latest23·exact deployment 일치·D1 신규7표 각0행, 업무27표 동일·audit 만료4건/추가7건·설정 동일. 후속 부모 클라우드 Chrome 데스크톱 읽기 부분 PASS, 저장/미디어 업로드·모바일 잔여 |
 | 24 · 2026-10-27 03:25:17.100610 | 110f4ec2e0c86ae94c0fe59e58b04adbac1ab59d | succeeded, appgdep_6ae01988985481918a40315bd63093b0. active/latest24·exact source/deployment 일치·schema/migration0, 업무34표 동일·기존 audit441행 보존/INFO8 추가·설정 동일. 후속 부모 Chrome의 좁은 CSS 화면/메뉴 관측 부분 PASS·touch/Safari/미디어 업로드 잔여 |
-| 25 · 2026-10-27 04:15:33.089804 | 81996494edd9694f8ef07f8e38ce392bca37ad72 | succeeded, appgdep_6ae025515d408191a4979e888f8c1866. active/latest25·exact source/deployment 일치·schema/migration0, 업무34표 동일·기존 audit504행 보존/두 read 사이 INFO5 추가·설정 동일. 실제 식단 UI 검토 대기 |
+| 25 · 2026-10-27 04:15:33.089804 | 81996494edd9694f8ef07f8e38ce392bca37ad72 | succeeded, appgdep_6ae025515d408191a4979e888f8c1866. active/latest25·exact source/deployment 일치·schema/migration0, 업무34표 동일·기존 audit504행 보존/두 read 사이 INFO5 추가·설정 동일. 후속 식단 읽기/토글·360/390/768 CSS 화면 부분 PASS, 실제 저장/공유·touch/Safari 잔여 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -149,7 +149,7 @@ version23 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_3f53802bfff081
 
 version24 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_0b9c384eed7c8191bfa13399a9bb9f17`다. 기존 URL에 source `110f4ec2e0c86ae94c0fe59e58b04adbac1ab59d`를 게시했고 기능 main36b8352와 후속 문서 HEAD를 구분한다. 게시/자료·설정 대조와 미검증은 [하네스](HARNESS_MAP.md#version24-모바일-우선-ui-게시)를 따른다. 부모 Chrome의 resize/확대 기반 메뉴·키보드/360·390·768 화면 부분 PASS는 [별도 운영 관측](HARNESS_MAP.md#version24-부모-chrome-좁은-화면과-메뉴-검토)을 따르며 실제 touch/Safari 인수로 확대하지 않는다.
 
-version25 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_f8f2e75bd2108191b330ba26a9592537`다. 기존 URL에 source `81996494edd9694f8ef07f8e38ce392bca37ad72`를 게시했고 기능 maincd05666과 후속 문서 HEAD를 구분한다. 자료/설정 대조·감사로그 추가 시점·운영 UI 미검증은 [하네스](HARNESS_MAP.md#version25-식단-간소화-게시)를 따른다.
+version25 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_f8f2e75bd2108191b330ba26a9592537`다. 기존 URL에 source `81996494edd9694f8ef07f8e38ce392bca37ad72`를 게시했고 기능 maincd05666과 후속 문서 HEAD를 구분한다. 자료/설정 대조·감사로그 추가 시점은 [게시 근거](HARNESS_MAP.md#version25-식단-간소화-게시), 후속 부모의 식단 필수/선택 표시·기존 값 보존·토글/좁은 화면 부분 PASS와 실제 저장/공유 미검증은 [별도 관측](HARNESS_MAP.md#version25-부모-식단-읽기와-상세-토글-검토)을 따른다.
 
 ### package와 복구 근거
 
