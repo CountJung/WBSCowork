@@ -1,7 +1,8 @@
 import { Alert, Button, Chip, Paper, Stack, Typography, Box } from "@mui/material";
 import type { PortalTeam } from "@/src/entities/project-presentation/index.server";
 import type { TeamPresentationView } from "@/src/features/project-presentation/index.server";
-import type { PreparationEntry } from "@/src/entities/team-preparation";
+import type { PreparationEntry, RecreationPreparationEntry } from "@/src/entities/team-preparation";
+import { RecreationTimetable } from "@/src/features/recreation-timetable";
 import { activityKindLabels } from "@/src/shared/config/activity-kinds";
 import { formatDate } from "@/src/shared/lib/date";
 
@@ -32,8 +33,8 @@ export function TeamPresentationContent({ presentation, preview = false }: { pre
   const shown = preview ? entries.slice(0, 3) : entries;
   return <Stack spacing={2} sx={{ minWidth: 0, maxWidth: "100%", overflowWrap: "anywhere", "& .MuiChip-root": { maxWidth: "100%", height: "auto" }, "& .MuiChip-label": { whiteSpace: "normal", py: 0.5 }, "& li": { overflowWrap: "anywhere" }, "& summary": { minHeight: 44, py: 1, cursor: "pointer" } }} data-testid={`team-presentation-${team.id}`}>
     <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}><Chip size="small" label={activityKindLabels[team.kind]} /><Chip size="small" color={presentation.published ? "primary" : "default"} label={presentation.published ? `구성원 공유 · v${presentation.sourceVersion}` : "팀 비공개 · 현재 준비표"} /></Stack>
-    {!shown.length ? <Alert severity="info">아직 표시할 준비 항목이 없습니다. 해당 팀장이나 지정 관리자가 준비표에서 내용을 저장할 수 있습니다.</Alert> : null}
-    {shown.map(entry => <Paper key={entry.id} variant="outlined" component="section" sx={{ p: { xs: 2, sm: 3 }, minWidth: 0 }}><Stack spacing={1}>
+    {!shown.length && (team.kind !== "recreation" || preview) ? <Alert severity="info">아직 표시할 준비 항목이 없습니다. 해당 팀장이나 지정 관리자가 준비표에서 내용을 저장할 수 있습니다.</Alert> : null}
+    {team.kind === "recreation" && !preview ? <RecreationTimetable entries={entries.filter((entry): entry is RecreationPreparationEntry => "order" in entry && "durationMinutes" in entry)} today={new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date())} /> : shown.map(entry => <Paper key={entry.id} variant="outlined" component="section" sx={{ p: { xs: 2, sm: 3 }, minWidth: 0 }}><Stack spacing={1}>
       <Typography variant="overline">{formatDate(new Date(entry.date))}{"meal" in entry && entry.meal ? ` · ${({ breakfast: "아침", lunch: "점심", dinner: "저녁", snack: "간식" })[entry.meal]}` : ""}{"time" in entry && entry.time ? ` · ${entry.time}` : ""}{"order" in entry ? ` · 순서 ${entry.order}` : ""}</Typography>
       <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap", alignItems: "center" }}><Typography component={preview ? "h3" : "h2"} variant="h6">{entry.title}</Typography>{team.kind === "meal" ? <Chip size="small" label={{ planned: "준비전", in_progress: "진행", done: "완료" }[entry.status]} color={entry.status === "done" ? "success" : "default"} /> : null}</Stack>
       {team.kind === "meal" ? <details><summary>상세 정보 · 선택</summary><Stack spacing={1} sx={{ pt: 1 }}><PresentationExtra entry={entry} quantity={mealQuantities[entry.id]} /></Stack></details> : <PresentationExtra entry={entry} quantity={mealQuantities[entry.id]} />}

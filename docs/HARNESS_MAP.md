@@ -680,6 +680,16 @@ SQL schema/migration0이다. fresh D1 baseline35표537행→542행이며 모든 
 
 운영 save/share/create·권한 변경0이다. 최소입력 저장/공유 PASS는 앞선 로컬 D1/compiled 서버 회귀이며 이번 브라우저에서 저장한 것이 아니다. 실제 submit·최소입력 저장/공유 UI·touch/Safari는 미검증으로 유지한다. source8199649/version25는 그대로이고 이번 문서 후속에서 새 코드/파일 수신·전송·재게시0, 가이드 수신 차단·보고서 미리보기 원인 미확정·NAS 사용자 담당·구v24 reader rollback 제약도 유지한다.
 
+## 레크레이션 시간표 구현 검증
+
+기존 recreation 모델/normalizer·API/SQL·package/lock·현재 권한을 유지하고 순수 파생 helper와 draft/read/상세 presentation 시간표를 추가했다. model14 PASS는 날짜/월요일 주간·빈시각/0분·자정 segment·실제 겹침/50lane·원문 불변과 UTC/Seoul/NY 동일 결과를 포함한다. 기존 preparation21은 이전 모델 검증이며 새 시간표 UI 인수로 합산하지 않는다.
+
+최종 `npm run test:unit` action33/unit283,총316 PASS·fail/skip0이며 DB는 미실행이다. 기존 guide 읽기 안내는6단계 안에서 보완해 guide14 PASS다. 최초7단계의 guide 회귀1건 실패 후 안내를 기존6단계로 통합한 것이며 실패 로그를 보존한다. 최종 Worker/Next 호환 build·typecheck/lint/FSD PASS, 이후 표시3줄 수정의 focused lint/최종 양 build도 PASS다. 기존 Native filesystem trace13·Vinext 분류 안내·experimental module mock/npm 공지는 숨기지 않는다.
+
+최종 UI SSR31 PASS(이전 회차31과 중복 합산 금지), exact compiled Worker81조건/104요청 PASS(기존69/88에 신규 레크12/16 포함)다. GET70/PUT32/POST1/PATCH1, status200:51/404:33/400:14/307:2/401:2/409:1/201:1이며 예상외500/503/403은 없다. 신규 레크v2 정확 저장/GET·팀 밖 private404·명시 공유 guest 읽기 전용·v3 새 private 본문 누출0·소속 회수 다음404·v1 원문/receipt 보존을 확인했다. 지정 admin/SU는 기존 회귀에 포함된다.
+
+entry SHA256 `7896ba68ac38e46d5c57599e5c46ade79a909bee8c1fff1b3b6f7b50ea182d5f`, dist snapshot `57910b4a661f1540e5ae9078741c3093e31a86571ab53bb8a94a1f0dd945431c`(420files/6,056,459bytes)은 전후 동일하다. 증거는 `.test-artifacts/recreation-timetable/`의 `unit.log`·`ssr-result.json`·`compiled-http`·`worker-build.log`·`native-compat-build.log`다. 양 브랜치 소스 반영은 운영 게시가 아니며 현재 운영은version25·재게시0이다. 실제 브라우저 controller/Playwright 실행 바이너리가 없고 system Chromium sandbox 제한 변경 근거도 없어 실제 viewport360/390/768·touch·날짜/주/오늘 이동·Dialog click/키보드/focus·submit·client console은 미실행이다. 소스의44px·Dialog/aria·지역 scroll/전체목록 계약과 실제 화면 인수를 구분한다. 새 라이브러리/schema/운영 자료 변경0이며 이번 작업은 지원 검증/양 브랜치 커밋·푸시 후 게시 전 보고까지다. 운영 재게시 금지·NAS/MariaDB 사용자 담당·이미지 전송 차단/재시도0·보고서 미리보기 원인 미확정은 유지한다. 원본 docs-canon checker 리소스는 기존 미가용으로 미실행이다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.

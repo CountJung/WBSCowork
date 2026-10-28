@@ -257,6 +257,12 @@ meal의 canonical JSON은 meal/people/amount nullable, unit/notes 빈문자열, 
 
 저장은 version 기반 optimistic CAS와 actor에 결합된 UUID 재시도 token/SHA-256 내용 fingerprint로 원자적 현재값·immutable revision을 남긴다. 같은 요청의 중복 저장과 오래된 편집 덮어쓰기를 막고 과거 이력을 보존한다. 삭제 endpoint는 추가하지 않으며 표에서 행을 제외하는 새 version도 과거 revision을 지우지 않는다. Native v15와 D1 0018은 현재표·revision표2개만 additive로 추가하고 기존 migration/checksum을 보존한다. Native MariaDB/main과 D1/sites의 같은 논리 저장 모델을 지원하되 이번 범위는 로컬 합성 검증·커밋/푸시이며 운영 migration·게시·NAS·실제 자료/계정 권한 변경은 하지 않는다. 현재 진행/완료 조건은 [TODO](TODO.md#열린-항목)가 소유한다.
 
+### 레크레이션 시간표 표시 계약
+
+PRD-067은 기존 recreation 문서의 date/time/durationMinutes/order를 읽는 순수 파생 view이며 normalizer·API·SQL/schema·서버 권한을 바꾸지 않는다. Gregorian0001~9999 날짜/월요일 시작 주간·범위 clamp·엄격5자리 시각을 사용하고 빈 시각은 미지정 일정,0분은 시점으로 표시한다. 자정 넘김은 날짜별 segment와 전일/익일 표시로 나누며 원본을 변경하지 않는다. 실제 구간 겹침과0분 시점 판정으로 겹침 문구를 표시하고 최소60분의 시각적 label 공간을 위한 lane 배치가 원래 소요시간/실제 겹침을 늘리지는 않는다.
+
+편집 draft·준비표 읽기·프로젝트 상세 presentation에서 같은 시간표를 재사용하고 홈3개 요약은 유지한다. 좁은 화면은 day 기본·넓은 화면은 수화 후 week, native 날짜/이전다음/오늘/첫일정·지역 내부 max720px scroll/전체목록과 읽기 전용 MUI Dialog를 제공한다. 날짜 input은 저장 form 밖이며 드래그/캘린더 클릭 저장은 없다. 편집 초안은 미리보기만 하며 기존 저장·취소/CAS·명시한 공유 snapshot/권한은 그대로다. 실제 화면/초점/키보드 인수와 소스/SSR 검증은 [하네스](HARNESS_MAP.md#레크레이션-시간표-구현-검증)에서 구분한다.
+
 ### 업무별 완료 방식
 
 - 사용자 확정: **새 봉사활동 업무는 직접 완료·제출물/파일 선택**이며 직접 완료 가능자는 **현재 담당자·현재 해당 팀장·지정 프로젝트 관리자/SU**다. `submission_required`는 담당자 제출·산출물·완료 근거와 선택 검토 계약을 유지한다. 두 경로의 조건 판정을 분리해 기존 업무의 제출 의무를 완화하지 않는다.
