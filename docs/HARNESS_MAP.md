@@ -785,7 +785,17 @@ entry `fc457f857f1f7964ef4f7d8891e8858ba560b7d0693821b39fffd503241937ba`, dist s
 
 Fresh D1은35표504→520행이다. 업무34표35행 모두 동일하고 기존 audit469행도 모두 불변이다. 저장된 pre/post row에서 projects.id5/tasks.id7/submissions.id5/submission_attachments.id7이 각각 양쪽에 존재하며 같은 row임도 대조했다. 두 read 사이 INFO16(id883~898,12:21:42.011~12:24:21.710 UTC) 추가만 있었고 삭제/수정0이며 전부 배포 때문이라고 단정하지 않는다. projection은 완전하고 env revision11/5entries·public policy/auth_client·automations0도 동일하다. schema/의존성/env/auth/실제 권한·자료 변경0이며 R2 원본 bytes 독립 대조는 미실행이다.
 
-부모에게 v28 media 링크/빈팀 관리CTA·SU 안내의 실제 브라우저 확인 가능 상태를 전달했으나 아직 결과 대기다. QLT038은 source/compiled 인수·게시 확인과 실제 UI 인수를 구분해 열린 상태로 유지한다. 이전v27 복귀 tar를 보존했고 구validator rollback/자동 down은 하지 않았다. 기존 이미지 수신 차단·다른 ! 항목·사용자 담당 NAS/MariaDB와 원본 canon checker 미실행을 유지한다. 이번 문서 후속은 앱/제품 검사·운영 쓰기·재게시가 아니다.
+게시 직후 부모에게 실제 브라우저 확인을 요청했고 후속 SU 관측은 아래에서 구분한다. QLT038은 source/compiled·게시와 실제 SU 부분 인수/나머지 역할 UI 미검증을 구분해 열린 상태로 유지한다. 이전v27 복귀 tar를 보존했고 구validator rollback/자동 down은 하지 않았다. 기존 이미지 수신 차단·다른 ! 항목·사용자 담당 NAS/MariaDB와 원본 canon checker 미실행을 유지한다. 이번 문서 후속은 앱/제품 검사·운영 쓰기·재게시가 아니다.
+
+### version28 부모 SU 미디어 인수와 합성 자료 보존
+
+부모의 실제 SU(PM0) 브라우저에서 합성 project6에 정상 UI로 media팀5 `QA-V28-SYNTHETIC`(팀장 없음)을 만들고 private PNG media1을 업로드했다. 제목/캡션 편집v2·새로고침 후 유지·다운로드 바이트 비교가 PASS다. 원본/다운로드는3,194bytes·PNG320×160·SHA256 `a2db7cc3159f6fedb08de3f7b2dd9af4d5bef14cd7ae9d52bcaa59b967de3054`로 같았다. 이는 특정 합성 PNG의 실제 비교이며 전역 R2 inventory/기존 사용자 원본 파일의 독립 비교가 아니다.
+
+관리 프로젝트/프로젝트 홈/활동 media카드는 모두 `/projects/6/media?teamId=5`로 정상 이동했고404가 없으며 `/teams`에도 media를 준비표로 잘못 연결한 링크가 없었다. 기존 실제 role/소속/공개범위를 바꾸지 않았고 project5 사용자 자료는 그대로이며 이번 변경은 부모의 합성 QA 자료뿐이다. QLT038의 실제 UI PASS는 SU 한 팀/PNG 관측 범위다. 일반 admin/다른 계정 UI는 미검증(서버 회귀만 PASS), 이번 모바일·새 Google OAuth·다른 형식/소속 회수·새 공유/다른 ! 인수는 닫지 않는다.
+
+**합성 project6/team5 `QA-V28-SYNTHETIC`·private media1v2를 보존한다.** root의 읽기 조사상 media collection은 GET/POST·item은 PATCH·file은 GET, repository는 list/get/create/update만 있고 가역 삭제/복원은 없다. 팀 관련 workspace 명령은 create/member이며 team archive/remove/restore는 없다. 프로젝트 관리의 파기는 영구 삭제이며 object cleanup은 실패/미참조 업로드만 대상으로 live project_media 참조를 보호한다. 따라서 DB 직접 삭제·팀/미디어 영구 삭제·새 삭제 기능 추가로 정리하지 않는다. 이 자료 보존 결정은 실제 역할/권한·기존 사용자 자료 변경 승인이 아니다.
+
+배포 직전후35표504→520행 동일/추가 대조는 게시 시점의 근거다. 이후 합성 팀/미디어 생성·v2 편집 후 전체 DB가 그때와 같다고 재사용하지 않는다. 기존 QLT037 저장/복원 완료·가이드 이미지 차단·R2 전역 비교 미검증·NAS 사용자 담당은 유지하며 이 문서 후속은 코드/제품 검사·운영 읽기/쓰기·전송·재게시를 실행하지 않았다.
 
 ## 문서 정리 검증
 
