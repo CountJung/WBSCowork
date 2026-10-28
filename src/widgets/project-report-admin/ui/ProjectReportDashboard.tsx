@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Alert, Button, Checkbox, Chip, FormControlLabel, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import FieldLabel from "@/src/shared/ui/field-label";
 import { formatAppDateTime } from "@/src/shared/lib/date";
-import { reportTextLines, validateDigestSnapshot, type DigestSnapshot } from "@/src/entities/project-report";
+import { getDigestPeriodIssue, reportTextLines, validateDigestSnapshot, type DigestPeriodIssue, type DigestSnapshot } from "@/src/entities/project-report";
 
 type Run = { runId: number; projectId: number; status: string; dryRun: boolean; errorCode: string; expiresAt: string; artifacts: { id: number; format: string; state: string; sizeBytes: number; downloadUrl: string }[] };
 type Schedule = { id: number; enabled: boolean; lookbackHours: number; timeZone: string; formats: string[] };
@@ -45,17 +45,43 @@ function retentionResult(value: unknown) {
   if (typeof row.dryRun !== "boolean") throw new DashboardError("보관 대상 목록을 읽을 수 없습니다.");
   return { candidates: ids(row.candidates), quarantined: ids(row.quarantined), failed: ids(row.failed) };
 }
+/** Only a known public error code is consumed; internal messages are never displayed. */
+async function isInvalidPeriodResponse(response: Response): Promise<boolean> {
+  const limit = 4096;
+  if (response.status !== 400 || !/^application\/json(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "") || !response.body || Number(response.headers.get("content-length")) > limit) {
+    await response.body?.cancel().catch(() => undefined); return false;
+  }
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = []; let size = 0, completed = false;
+  try {
+    while (true) {
+      const result = await reader.read();
+      if (result.done) { completed = true; break; }
+      size += result.value.byteLength;
+      if (size > limit) return false;
+      chunks.push(result.value);
+    }
+    const bytes = new Uint8Array(size); let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    const value: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    return record(value) && value.code === "INVALID_PERIOD";
+  } catch { return false; }
+  finally { if (!completed) await reader.cancel().catch(() => undefined); reader.releaseLock(); }
+}
 export default function ProjectReportDashboard(props: Props) {
   const [start, setStart] = useState(props.defaultStart), [end, setEnd] = useState(props.defaultEnd), [timeZone, setTimeZone] = useState("Asia/Seoul");
   const [audienceMode, setAudience] = useState("public_only"), [formats, setFormats] = useState(["docx", "pptx"]), [requestId, setRequestId] = useState(props.requestId);
   const [runs, setRuns] = useState(props.initialRuns), [schedules, setSchedules] = useState(props.initialSchedules), [preview, setPreview] = useState<DigestSnapshot | null>(null);
   const [pending, setPending] = useState(false), [message, setMessage] = useState(""), [error, setError] = useState("");
+  const [periodIssue, setPeriodIssue] = useState<DigestPeriodIssue | null>(null);
+  const inputId = useId(), startInput = useRef<HTMLInputElement>(null), endInput = useRef<HTMLInputElement>(null);
   const [lookbackHours, setLookbackHours] = useState(168), [retentionIds, setRetentionIds] = useState<number[] | null>(null);
   const active = useRef<AbortController | null>(null), inFlight = useRef(false), form = useRef<HTMLFormElement>(null);
   useEffect(() => () => active.current?.abort(), []);
+  useEffect(() => { if (periodIssue && !pending) (periodIssue.field === "start" ? startInput : endInput).current?.focus(); }, [periodIssue, pending]);
   const instant = (value: string) => `${value.length === 16 ? `${value}:00` : value}Z`;
   function inputChanged() {
-    setPreview(null); setRequestId(crypto.randomUUID()); setMessage(""); setError("");
+    setPreview(null); setPeriodIssue(null); setRequestId(crypto.randomUUID()); setMessage(""); setError("");
   }
   async function operation(run: (signal: AbortSignal) => Promise<void>) {
     if (inFlight.current) return;
@@ -68,14 +94,21 @@ export default function ProjectReportDashboard(props: Props) {
   async function api<T>(path: string, signal: AbortSignal, parse: (value: unknown) => T, body?: unknown): Promise<T> {
     const response = await fetch(path, { method: body === undefined ? "GET" : "POST", cache: "no-store", credentials: "same-origin", signal, ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }) });
     if (!response.ok) {
-      await response.body?.cancel().catch(() => undefined);
+      if (await isInvalidPeriodResponse(response)) {
+        const issue = getDigestPeriodIssue(instant(start), instant(end), new Date()) ?? { code: "INVALID_END" as const, field: "end" as const, message: "기간을 확인해 주세요. UTC 기준으로 끝은 시작보다 늦고 현재 시각 이하여야 하며, 기간은 최대 31일입니다." };
+        setPeriodIssue(issue); setPreview(null); throw new DashboardError(issue.message);
+      }
       throw new DashboardError(response.status === 401 ? "로그인 상태를 확인하고 다시 시도해 주세요." : response.status === 404 ? "보고서 또는 프로젝트에 접근할 수 없습니다. 권한을 확인해 주세요." : response.status === 409 ? "기존 요청과 충돌했습니다. 실행 기록을 확인한 뒤 입력을 변경하거나 다시 시도해 주세요." : "요청을 처리하지 못했습니다. 입력과 현재 권한을 확인해 주세요.");
     }
     try { const value: unknown = await response.json(); return parse(value); }
     catch (error) { if (error instanceof DashboardError) throw error; throw new DashboardError("응답을 확인할 수 없습니다. 실행 기록을 새로고침해 주세요."); }
   }
   function valid() {
-    if (!form.current?.reportValidity()) return false;
+    const nativeValid = form.current?.reportValidity() ?? false;
+    const issue = getDigestPeriodIssue(instant(start), instant(end), new Date());
+    if (issue) { setPeriodIssue(issue); setPreview(null); setError(issue.message); return false; }
+    if (!nativeValid) return false;
+    setPeriodIssue(null);
     if (!formats.length) { setError("DOCX 또는 PPTX 형식을 선택해 주세요."); return false; }
     return true;
   }
@@ -102,13 +135,13 @@ export default function ProjectReportDashboard(props: Props) {
     {!props.storageConfigured ? <Alert severity="warning">보고서 파일 저장소가 준비되지 않았습니다. 미리보기만 사용할 수 있습니다.</Alert> : null}
     {error ? <Alert severity="error" role="alert">{error}</Alert> : null}{message ? <Alert severity="success" role="status">{message}</Alert> : null}
     <Paper component="section" elevation={0} sx={{ p: { xs: 2, sm: 3 } }}>
-      <Stack component="form" ref={form} onSubmit={generate} spacing={2} aria-busy={pending}>
+      <Stack component="form" ref={form} onSubmit={generate} onInvalidCapture={() => { const issue = getDigestPeriodIssue(instant(start), instant(end), new Date()); if (issue) { setPeriodIssue(issue); setPreview(null); setError(issue.message); } }} spacing={2} aria-busy={pending}>
         <Typography component="h2" variant="h6">기간과 열람 범위</Typography>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-          <TextField type="datetime-local" required label={<FieldLabel requirement="required">기간 시작 · UTC</FieldLabel>} value={start} onChange={event => { setStart(event.target.value); inputChanged(); }} disabled={pending} slotProps={{ inputLabel: { shrink: true } }} fullWidth />
-          <TextField type="datetime-local" required label={<FieldLabel requirement="required">기간 끝 · UTC</FieldLabel>} value={end} onChange={event => { setEnd(event.target.value); inputChanged(); }} disabled={pending} slotProps={{ inputLabel: { shrink: true } }} fullWidth />
+          <TextField id={`${inputId}-start`} inputRef={startInput} type="datetime-local" required label={<FieldLabel requirement="required">기간 시작 · UTC</FieldLabel>} error={periodIssue?.field === "start"} helperText={periodIssue?.field === "start" ? periodIssue.message : "UTC 기준 시작 시각"} value={start} onChange={event => { setStart(event.target.value); inputChanged(); }} disabled={pending} slotProps={{ inputLabel: { shrink: true } }} fullWidth />
+          <TextField id={`${inputId}-end`} inputRef={endInput} type="datetime-local" required label={<FieldLabel requirement="required">기간 끝 · UTC</FieldLabel>} error={periodIssue?.field === "end"} helperText={periodIssue?.field === "end" ? periodIssue.message : "UTC 기준 끝 시각 · 현재 시각까지"} value={end} onChange={event => { setEnd(event.target.value); inputChanged(); }} disabled={pending} slotProps={{ inputLabel: { shrink: true } }} fullWidth />
         </Stack>
-        <Typography variant="caption">기간은 UTC로 입력합니다. 한국 시각에서 9시간을 빼 주세요(한국 09:00 = UTC 00:00). 시작 이상·끝 미만, 최대 31일입니다. 아래 시간대는 보고서의 일정 날짜 기준이며 입력 시각을 변환하지 않습니다.</Typography>
+        <Typography variant="caption">기간은 UTC로 입력합니다. 한국 시각에서 9시간을 빼 주세요(한국 09:00 = UTC 00:00). 시작 이상·끝 미만, 최대 31일이며 끝은 현재 UTC 시각을 넘을 수 없습니다. 아래 시간대는 보고서의 일정 날짜 기준이며 입력 시각을 변환하지 않습니다.</Typography>
         <TextField select label={<FieldLabel requirement="required">보고서·예약 일정의 날짜 기준 시간대</FieldLabel>} value={timeZone} onChange={event => { setTimeZone(event.target.value); inputChanged(); }} disabled={pending}><MenuItem value="Asia/Seoul">한국 · Asia/Seoul</MenuItem><MenuItem value="UTC">UTC</MenuItem><MenuItem value="America/New_York">뉴욕 · America/New_York</MenuItem></TextField>
         <TextField select label={<FieldLabel requirement="required">제출물 범위</FieldLabel>} value={audienceMode} onChange={event => { setAudience(event.target.value); inputChanged(); }} disabled={pending}><MenuItem value="public_only">공개 제출물만</MenuItem><MenuItem value="requester_scope">현재 요청자가 열람할 수 있는 제출물</MenuItem></TextField>
         <Stack direction="row" useFlexGap sx={{ flexWrap: "wrap" }}>{["docx", "pptx"].map(format => <FormControlLabel key={format} label={format.toUpperCase()} control={<Checkbox checked={formats.includes(format)} disabled={pending} onChange={event => { setFormats(current => event.target.checked ? [...current, format] : current.filter(value => value !== format)); inputChanged(); }} />} />)}</Stack>

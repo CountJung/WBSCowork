@@ -564,7 +564,7 @@ getversions의 v21 deployment null/v20 기존 deployment와 v20 status succeeded
 
 이번에는 현재 Library skill·materialization 참조와 공식 helper2종 리소스를 확보해 변경 없이 설치했다. 새로 확인된 자료의 prepare_materialize1회와 소비자 목적지 변경 bounded retry1회는 도구상 성공했으나 모두 workspace_path:null/signed transfer였다. 공식 `library_file_transfer.py materialize`는2회 모두 exit1 `library file transfer failed: download failed`로 끝났다. 목적지 `/workspace/wbs-guide-screenshots-20261027/WBSCowork-v23-screenshot-guide-20261027.zip`와 `/workspace/WBSCowork-v23-screenshot-guide-20261027.zip`의 실존 검사도 false다. HTTP 상태·상세 사유가 없어 정책/접근 거부나 별도 Library 원인을 단정하지 않는다. 추가 재시도·우회는0이다. Library ID·signed URL·token은 저장소에 기록하지 않는다.
 
-이후 사용자가 같은 이름 ZIP을 현재 대화에 직접 첨부해 사용을 요청했다. 새 첨부의 prepare_materialize1회는 size1,412,534/workspace_path:null/signed transfer였고, 공식 helper2종을 새로 확보한 뒤 전송1회도 exit1 `library file transfer failed: download failed`로 끝나 `/workspace/wbs-guide-direct-attachment-20261027/WBSCowork-v23-screenshot-guide-20261027.zip` 실존 false였다. 추가 재시도0이며 HTTP 상태/상세 원인이 없어 네트워크·정책 거부로 단정하지 않는다. **직접 첨부하면 해결된다는 이전 안내는 더 이상 유효하지 않다.** 재첨부 요청을 반복하지 않고 공식 실행기 파일 전달 경로 복구/새 지원 근거를 기다린다. 실제 bytes·ZIP 무결성/숨긴 내용/픽셀 검토·이미지 삽입/게시0, PRD-059/QLT-032와 이미지 strict gate 미완료를 유지한다. 새 첨부 ID는 기록하지 않으며 별도 보고서 미리보기 조사와도 구분한다.
+이후 사용자가 같은 이름 ZIP을 현재 대화에 직접 첨부해 사용을 요청했다. 새 첨부의 prepare_materialize1회는 size1,412,534/workspace_path:null/signed transfer였고, 공식 helper2종을 새로 확보한 뒤 전송1회도 exit1 `library file transfer failed: download failed`로 끝나 `/workspace/wbs-guide-direct-attachment-20261027/WBSCowork-v23-screenshot-guide-20261027.zip` 실존 false였다. 추가 재시도0이며 HTTP 상태/상세 원인이 없어 네트워크·정책 거부로 단정하지 않는다. **직접 첨부하면 해결된다는 이전 안내는 더 이상 유효하지 않다.** 재첨부 요청을 반복하지 않고 공식 실행기 파일 전달 경로 복구/새 지원 근거를 기다린다. 실제 bytes·ZIP 무결성/숨긴 내용/픽셀 검토·이미지 삽입/게시0, PRD-059/QLT-032와 이미지 strict gate 미완료를 유지한다. 새 첨부 ID는 기록하지 않으며 별도 보고서 미리보기 조사와도 구분한다. 이번 초반 읽기 조사에서도 ZIP prepare 후 공식 helper 전송이 실패했고 개별 이미지 read는 실제 bytes가 아닌 포인터/OCR만 반환했다. 공식 library_download 지원 도구를 확인하는 tools/list도 network 실패해 현재 파일0·view_image 미도달이며 이후 새 전송 시도는 하지 않았다.
 
 ## 독립 프로젝트 포털 검증 계획
 
@@ -689,6 +689,20 @@ SQL schema/migration0이다. fresh D1 baseline35표537행→542행이며 모든 
 최종 UI SSR31 PASS(이전 회차31과 중복 합산 금지), exact compiled Worker81조건/104요청 PASS(기존69/88에 신규 레크12/16 포함)다. GET70/PUT32/POST1/PATCH1, status200:51/404:33/400:14/307:2/401:2/409:1/201:1이며 예상외500/503/403은 없다. 신규 레크v2 정확 저장/GET·팀 밖 private404·명시 공유 guest 읽기 전용·v3 새 private 본문 누출0·소속 회수 다음404·v1 원문/receipt 보존을 확인했다. 지정 admin/SU는 기존 회귀에 포함된다.
 
 entry SHA256 `7896ba68ac38e46d5c57599e5c46ade79a909bee8c1fff1b3b6f7b50ea182d5f`, dist snapshot `57910b4a661f1540e5ae9078741c3093e31a86571ab53bb8a94a1f0dd945431c`(420files/6,056,459bytes)은 전후 동일하다. 증거는 `.test-artifacts/recreation-timetable/`의 `unit.log`·`ssr-result.json`·`compiled-http`·`worker-build.log`·`native-compat-build.log`다. 양 브랜치 소스 반영은 운영 게시가 아니며 현재 운영은version25·재게시0이다. 실제 브라우저 controller/Playwright 실행 바이너리가 없고 system Chromium sandbox 제한 변경 근거도 없어 실제 viewport360/390/768·touch·날짜/주/오늘 이동·Dialog click/키보드/focus·submit·client console은 미실행이다. 소스의44px·Dialog/aria·지역 scroll/전체목록 계약과 실제 화면 인수를 구분한다. 새 라이브러리/schema/운영 자료 변경0이며 이번 작업은 지원 검증/양 브랜치 커밋·푸시 후 게시 전 보고까지다. 운영 재게시 금지·NAS/MariaDB 사용자 담당·이미지 전송 차단/재시도0·보고서 미리보기 원인 미확정은 유지한다. 원본 docs-canon checker 리소스는 기존 미가용으로 미실행이다.
+
+## 보고서 기간 오류 안내 QLT-030
+
+`src/entities/project-report/model/snapshot.ts`의 getDigestPeriodIssue는 기존 private instant parser/31일 상수를 재사용하며 createDigestPeriod·서버 parse를 변경하지 않는다. `ProjectReportDashboard.tsx`는 필드별 error/helper/id/aria·초점과 입력 수정 시 오류 해제·기존 native 검증을 유지하고 미리보기/생성 전에 기간을 검사한다. 서버 응답은4096bytes까지만 읽어 알려진 INVALID_PERIOD400 code에만 고정 안내를 표시하며 원문 message를 노출하지 않는다.401/404/409 기존 문구·현재 권한/collector·schema/package/lock·scheduler 활성화·public/env는 그대로다. 보고서 preview canceled 원인이나 timeout 대책을 수정하지 않았다.
+
+| 실제 실행 범위 | 결과/경계 |
+| --- | --- |
+| 전체 unit | 최종 action33/unit289,총322 PASS. model/request28(기존 model18+새6+request4)는 포함 범위라 중복 합산하지 않음·DB 실행0 |
+| UI 소스/SSR | 구현 담당 exact source/SSR25와 독립 QA 보강16 PASS, 서로 다른 범위이며 실제 브라우저 조작이 아님 |
+| 최종 compiled 보고서 | 40조건/25요청 PASS(기존33+신규7), status307:2/404:6/200:7/401:3/400:6/201:1. 기간오류4005건·invalid 생성 시 ledger0·정상기간 복원 preview200, 기존 OOXML/R2·인가 회귀 보존 |
+| 같은 bundle 포털 | 최종81조건/104요청 PASS, 시간표 포함 기존 회귀이며 보고서 조건과 중복 합산하지 않음 |
+| build/정적 | 최종 Worker/Next 호환 build·lint/type/FSD PASS. 기존 Native trace13·Vinext 분류 안내·experimental module mock 경고 유지 |
+
+entry `079561c0253a893c8b948aab24a0293d2d07cd0144ea9147f98514eac2c31b52`, dist snapshot `0f1baa790dd5be05a5957ee33d95099d0c90b941d266f763ea9f8c72bfc23f8e`(420files/6,061,016bytes)은 전후 불변이다. 증거는 `.test-artifacts/report-period-feedback/`의 `model-tests.log`·`unit.log`·`result.json`·`compiled-report`·`compiled-portal`·build 로그와 `.test-artifacts/report-period-ui/result.log`다. 실제 오류 안내/정상 복구·초점·클릭/키보드 브라우저 인수는 미실행이다. 현재 운영v25이며 시간표+QLT030 묶음의 새 승인에 따른 양 브랜치 커밋/푸시·기존 Sites 게시 후 부모 허용 Chrome 검토를 기다린다. ! 항목 추가 조사/수정0·NAS/MariaDB 실행 사용자 담당·이미지 수신 차단·원본 canon checker 미실행을 유지한다.
 
 ## 문서 정리 검증
 

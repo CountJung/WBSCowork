@@ -69,8 +69,23 @@ try {
   const previewPath = "/api/projects/1001/reports/preview?" + new URLSearchParams(period);
   check((await request(previewPath)).status === 401, "compiled anonymous preview requires login401");
   check((await request(previewPath, cookies[2])).status === 404, "compiled member preview denied404");
+  const badPeriods = [
+    ["reversed", { start: period.end, end: period.start }],
+    ["equal", { start: period.start, end: period.start }],
+    ["over31days", { start: "2026-09-01T00:00:00Z", end: period.end }],
+    ["future", { start: new Date(Date.now() + 3600000).toISOString(), end: new Date(Date.now() + 7200000).toISOString() }],
+    ["invalidCalendar", { start: "2026-02-30T00:00:00Z", end: period.end }],
+  ];
+  for (const [label, changed] of badPeriods) {
+    const response = await request("/api/projects/1001/reports/preview?" + new URLSearchParams({ ...period, ...changed }), cookies[1]);
+    const error = await response.json();
+    check(response.status === 400 && error.code === "INVALID_PERIOD" && error.message.includes("31일") && !/SELECT |INSERT |storage|exception|COMPILED_PRIVATE/.test(error.message) && response.headers.get("cache-control") === "private, no-store", `compiled ${label} preview safely returns known INVALID_PERIOD400 without internal details`);
+  }
+  const invalidGeneration = await request("/api/project-reports", cookies[1], { projectId: 1001, requestId: randomUUID(), ...period, start: period.end, end: period.start, formats: ["docx"], dryRun: false });
+  check(invalidGeneration.status === 400 && (await invalidGeneration.json()).code === "INVALID_PERIOD" && Number((await db.prepare("SELECT COUNT(*) n FROM project_report_runs").first()).n) === 0, "invalid generation period creates no run or file before correction");
   const preview = await request(previewPath, cookies[1]), snapshot = await preview.json();
   check(preview.status === 200 && JSON.stringify(snapshot).includes("COMPILED_PUBLIC_한글") && !JSON.stringify(snapshot).includes("COMPILED_PRIVATE_MUST_NOT_LEAK"), "compiled assigned admin preview excludes private data");
+  check(snapshot.period.start === period.start && snapshot.period.end === period.end && Number((await db.prepare("SELECT COUNT(*) n FROM project_report_runs").first()).n) === 0, "restoring a valid UTC period immediately previews successfully with unchanged period and no generated records");
   const input = { projectId: 1001, requestId: randomUUID(), ...period, formats: ["docx", "pptx"], dryRun: false };
   const created = await request("/api/project-reports", cookies[1], input), body = await created.json();
   check(created.status === 201 && body.status === "rendered" && body.artifacts?.length === 2, `compiled isolate renders DOCX and PPTX (${created.status}/${body.code ?? body.status})`);
