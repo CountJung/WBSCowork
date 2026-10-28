@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthSession, getUserByEmail } from "@/src/entities/user/index.server";
 import { getProjectPortal, listPortalTeams, saveProjectPortalSettings, saveTeamPublication, ProjectPresentationError, type SavePortalSettingsInput, type SaveTeamPublicationInput } from "@/src/entities/project-presentation/index.server";
-import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
+import { assertBrowserOrigin, BrowserOriginError } from "@/src/shared/server/request-origin/index.server";
 import type { ProjectViewer } from "@/src/shared/server/project-portal-scope/index.server";
 import { getTeamPresentation } from "./presentation";
 export class ProjectPortalRequestError extends Error { constructor(readonly status: number, readonly code: string) { super(code); } }
@@ -21,10 +21,8 @@ export function portalHttpError(error: unknown) {
   return json({ code, message: status === 401 ? "로그인 후 다시 시도해 주세요." : status === 404 ? "프로젝트 자료를 찾을 수 없습니다." : status === 409 ? "저장된 내용이 달라졌습니다. 입력을 보관하고 최신 내용을 확인해 주세요." : status === 400 ? "입력 형식과 필수 항목을 확인해 주세요." : status === 413 ? "입력 용량이 너무 큽니다." : status === 403 ? "요청한 화면에서 다시 시도해 주세요." : "프로젝트 자료를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요." }, status);
 }
 async function body(request: Request, allowed: string[]) {
-  let canonical: URL;
-  try { canonical = new URL(getRuntimeEnv().auth.nextAuthUrl ?? request.url); } catch { throw new ProjectPortalRequestError(503, "INVALID_CONFIGURATION"); }
-  if (!["http:", "https:"].includes(canonical.protocol) || canonical.username || canonical.password) throw new ProjectPortalRequestError(503, "INVALID_CONFIGURATION");
-  if (request.headers.get("Origin") !== canonical.origin) throw new ProjectPortalRequestError(403, "INVALID_ORIGIN");
+  try { assertBrowserOrigin(request); }
+  catch (error) { if (error instanceof BrowserOriginError) throw new ProjectPortalRequestError(error.status, error.code); throw error; }
   if ((request.headers.get("Content-Type") ?? "").split(";")[0].trim().toLowerCase() !== "application/json") throw new ProjectPortalRequestError(415, "JSON_REQUIRED");
   const limit = 12 * 1024; if (Number(request.headers.get("Content-Length")) > limit) throw new ProjectPortalRequestError(413, "REQUEST_TOO_LARGE");
   const reader = request.body?.getReader(); if (!reader) throw new ProjectPortalRequestError(400, "INVALID_INPUT");

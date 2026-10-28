@@ -215,7 +215,7 @@ try {
     check(JSON.stringify(await q("SELECT * FROM team_preparation_sheets WHERE team_id=111"))===invalidBefore,"rejected optional-field requests preserve saved head/version");
     check(JSON.stringify(await q("SELECT * FROM team_preparation_revisions WHERE team_id=111 AND version<=2 ORDER BY version"))===originalPreparationRevisions,"legacy complete preparation revision bytes remain unchanged after sparse meal saves/publication");
   };
-  if(runtime==='native')await execute();else await runWithHostedBindings({DB:db} as unknown as Parameters<typeof runWithHostedBindings>[0],execute);
+  if(runtime==='native')await execute();else await runWithHostedBindings({DB:db} as unknown as Parameters<typeof runWithHostedBindings>[0],execute,{requestUrl:'http://127.0.0.1:3000/',publicOrigin:'http://127.0.0.1:3000',projectId:'appgprj_syntheticOrigin',expectedProjectId:'appgprj_syntheticOrigin'});
   await mkdir('.test-artifacts/project-presentation',{recursive:true});await writeFile(`.test-artifacts/project-presentation/${runtime}-result.json`,JSON.stringify({complete:true,runtime,checks,assertions:labels,nativeExecuted:runtime==='native',nativeServerVersion,nativeLimitation:runtime==='native'?null:'D1-only execution; separate Native result required.',syntheticSchemasRetained:runtime==='native'?[database,upgradeDatabase]:[],productionAccess:false,browserExecuted:false},null,2));
   console.log(`PASS ${checks} ${runtime} source/handler checks; real browser is a separate gate.`);
 } finally {setSession(null);if(native){const {closeDatabasePool}=await import('../src/shared/server/database/index.server');await closeDatabasePool();await native.end();}if(mf)await mf.dispose();}

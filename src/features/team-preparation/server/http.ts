@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuthSession, getUserByEmail } from "@/src/entities/user/index.server";
 import { PreparationError, getTeamPreparation, getTeamPreparationHistory, saveTeamPreparation } from "@/src/entities/team-preparation/index.server";
 import type { ProjectViewer } from "@/src/shared/server/project-scope/index.server";
-import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
+import { assertBrowserOrigin, BrowserOriginError } from "@/src/shared/server/request-origin/index.server";
 
 export class PreparationRequestError extends Error {
   constructor(readonly status: number, readonly code: string) { super(code); }
@@ -11,7 +11,7 @@ export const preparationHeaders = { "Cache-Control": "private, no-store", "X-Con
 export function preparationJson(value: unknown, status = 200) { return NextResponse.json(value, { status, headers: preparationHeaders }); }
 export function preparationHttpError(error: unknown) {
   if (error instanceof PreparationError || error instanceof PreparationRequestError) {
-    const message = error.status === 401 ? "로그인 후 다시 시도해 주세요." : error.status === 404 ? "준비표를 찾을 수 없습니다." : error.status === 409 ? "다른 변경이 저장되었습니다. 입력을 복사한 뒤 최신 준비표를 불러와 주세요." : error.status === 400 ? "입력 형식과 필수 항목을 확인해 주세요." : error.status === 413 ? "준비표는 50개 항목, 64KiB 이내로 작성해 주세요." : "준비표를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+    const message = error.status === 401 ? "로그인 후 다시 시도해 주세요." : error.status === 404 ? "준비표를 찾을 수 없습니다." : error.status === 409 ? "다른 변경이 저장되었습니다. 입력을 복사한 뒤 최신 준비표를 불러와 주세요." : error.status === 400 ? "입력 형식과 필수 항목을 확인해 주세요." : error.status === 413 ? "준비표는 50개 항목, 64KiB 이내로 작성해 주세요." : error.status === 403 ? "현재 사이트 주소에서 요청했는지 확인해 주세요. 입력을 보관한 뒤 새로고침해 주세요." : "준비표를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
     return preparationJson({ code: error.code, message }, error.status);
   }
   return preparationJson({ code: "UNAVAILABLE", message: "준비표를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." }, 503);
@@ -28,16 +28,8 @@ export async function getPreparationViewer(): Promise<ProjectViewer> {
   return { userId: user.id, email: session.user.email, isSuperuser: !!session.user.isSuperuser };
 }
 async function bodyJson(request: Request): Promise<Record<string, unknown>> {
-  // Native NextRequest normalizes loopback hosts and a reverse proxy can expose a
-  // different public origin. The existing server-owned OAuth URL is authoritative;
-  // request Host/X-Forwarded-Host must never choose the accepted browser origin.
-  let expectedOrigin: string;
-  try {
-    const canonical = new URL(getRuntimeEnv().auth.nextAuthUrl ?? request.url);
-    if (!["http:", "https:"].includes(canonical.protocol) || canonical.username || canonical.password) throw new Error("Invalid canonical origin");
-    expectedOrigin = canonical.origin;
-  } catch { throw new PreparationRequestError(503, "INVALID_CONFIGURATION"); }
-  if (request.headers.get("Origin") !== expectedOrigin) throw new PreparationRequestError(403, "INVALID_ORIGIN");
+  try { assertBrowserOrigin(request); }
+  catch (error) { if (error instanceof BrowserOriginError) throw new PreparationRequestError(error.status, error.code); throw error; }
   if ((request.headers.get("Content-Type") ?? "").split(";")[0].trim().toLowerCase() !== "application/json") throw new PreparationRequestError(415, "JSON_REQUIRED");
   const limit = 66 * 1024;
   if (Number(request.headers.get("Content-Length")) > limit) throw new PreparationRequestError(413, "REQUEST_TOO_LARGE");

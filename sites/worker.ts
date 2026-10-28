@@ -3,6 +3,9 @@ import handler from "vinext/server/fetch-handler";
 import { runWithHostedBindings, type HostedBindings } from "../src/shared/server/hosted-runtime/index.server";
 import { retryObjectCleanup } from "../src/shared/server/object-cleanup/index.server";
 import { boundRequestBody, createMultipartAdmission, declaredContentLength } from "./multipart-admission";
+import publicOrigin from "./public-origin.json";
+
+declare const __WBSCOWORK_SITE_PROJECT_ID__: string;
 
 const MAX_REQUEST_BYTES = 22 * 1024 * 1024;
 const multipartAdmission = createMultipartAdmission();
@@ -37,7 +40,7 @@ const worker = {
       } finally {
         permit?.release();
       }
-    });
+    }, { requestUrl: request.url, publicOrigin: publicOrigin.origin, projectId: publicOrigin.project_id, expectedProjectId: __WBSCOWORK_SITE_PROJECT_ID__ });
   },
 };
 export default worker;

@@ -11,6 +11,8 @@ import { activityKinds, type ActivityKind } from "../src/shared/config/activity-
 import { createPreparationEntry, emptyPreparationDocument, mealQuantity, type PreparationDocument } from "../src/entities/team-preparation";
 
 const output = path.resolve(".test-artifacts/team-preparation-workflow"); await mkdir(output, { recursive: true });
+const args = process.argv.slice(2), d1Only = args.length === 1 && args[0] === "--d1";
+assert(args.length === 0 || d1Only, "Use --d1 for D1-only validation or no arguments for both runtimes.");
 const database = `wbs_team_preparation_${Date.now().toString(36)}_${randomBytes(3).toString("hex")}_test`; assertTestDatabaseName(database);
 assert(["127.0.0.1", "localhost", "::1"].includes(testDatabaseEnv.host) && Number(testDatabaseEnv.port) === 3307);
 process.env.DB_NAME = database;
@@ -23,6 +25,7 @@ const people = {
   staleAdmin: { id: 9, email: "preparation-stale-admin@example.test", role: "member" }, outsider: { id: 10, email: "preparation-outsider@example.test", role: "member" },
 } as const;
 type Actor = keyof typeof people;
+const preparationKinds = activityKinds.filter(kind => kind !== "media");
 type Query = (sql: string, values?: unknown[]) => Promise<Record<string, unknown>[]>;
 const viewer = (who: Actor) => ({ userId: people[who].id, email: people[who].email, isSuperuser: who === "su" });
 function session(who: Actor | null, stale = false) { setSession(who === null ? null : { user: { email: people[who].email, name: who, role: stale ? "admin" : people[who].role, isSuperuser: stale }, expires: new Date(Date.now() + 3600000).toISOString() }); }
@@ -30,7 +33,7 @@ const repo = await import("../src/entities/team-preparation/index.server");
 const routes = await import("../app/api/projects/[projectId]/teams/[teamId]/preparation/route");
 const { runNativeMigrations } = await import("../src/shared/server/database-admin/native-migrations.server");
 const { runWithHostedBindings } = await import("../src/shared/server/hosted-runtime/index.server");
-const native = await createConnection({ host: testDatabaseEnv.host, port: Number(testDatabaseEnv.port), user: testDatabaseEnv.user, password: testDatabaseEnv.password, connectTimeout: 5000, bigIntAsNumber: true, insertIdAsNumber: true });
+const native = d1Only ? null : await createConnection({ host: testDatabaseEnv.host, port: Number(testDatabaseEnv.port), user: testDatabaseEnv.user, password: testDatabaseEnv.password, connectTimeout: 5000, bigIntAsNumber: true, insertIdAsNumber: true });
 const mf = new Miniflare({ cf: false, modules: true, script: "export default {fetch(){return new Response('synthetic team preparation DB only');}}", d1Databases: { DB: "team-preparation-workflow" }, compatibilityDate: "2026-05-15", compatibilityFlags: ["nodejs_compat"], log: new Log(LogLevel.ERROR) });
 const results: { runtime: string; checks: number; assertions: string[]; requests: { method: string; status: number }[] }[] = [];
 function document(kind: ActivityKind, title = "합성 준비 항목"): PreparationDocument {
@@ -42,7 +45,7 @@ async function seed(query: Query) {
   for (const user of Object.values(people)) await query("INSERT INTO users(id,email,name,role) VALUES(?,?,?,?)", [user.id, user.email, user.email.split("@")[0], user.role]);
   for (const id of [1001, 1002]) await query("INSERT INTO projects(id,name,project_type,access_mode,start_date,end_date) VALUES(?,?,'volunteering','members_only','2026-10-01','2026-12-01')", [id, `Synthetic preparation ${id}`]);
   for (const [project, user] of [[1001,2],[1002,3],[1001,4],[1001,5],[1001,6],[1001,7],[1001,8],[1001,9]]) await query("INSERT INTO project_members(project_id,user_id) VALUES(?,?)", [project,user]);
-  for (const [index, kind] of activityKinds.entries()) {
+  for (const [index, kind] of preparationKinds.entries()) {
     const teamId = 1101 + index;
     await query("INSERT INTO activity_teams(id,project_id,activity_kind,name) VALUES(?,1001,?,?)", [teamId,kind,`Synthetic ${kind}`]);
     for (const user of [4,5]) await query("INSERT INTO activity_team_members(project_id,team_id,user_id,role,active) VALUES(1001,?,?,?,1)",[teamId,user,user===4?"leader":"member"]);
@@ -83,7 +86,7 @@ async function run(runtime: "native" | "d1", query: Query) {
   const listBefore = await repo.listTeamPreparations(viewer("member"),1001);
   check(listBefore.length === 6 && listBefore.every(row => !Object.hasOwn(row,"document")),"member directory lists only six own teams with bounded summaries and no document payload");
   check((await repo.listTeamPreparations(viewer("otherTeam"),1001)).length === 1,"other-team member directory is restricted to their own team");
-  for (const [index, kind] of activityKinds.entries()) {
+  for (const [index, kind] of preparationKinds.entries()) {
     const teamId = 1101+index, doc = document(kind), saved = await save("leader",input(doc,0),teamId), refreshed = await read("member",teamId);
     check(saved.version === 1 && JSON.stringify(refreshed.document) === JSON.stringify(doc) && refreshed.document.kind === kind,`${kind} two-date structured entries persist across fresh repository read`);
     check(saved.updatedBy !== null && saved.updatedAt !== null,`${kind} save records actor and timestamp`);
@@ -196,12 +199,15 @@ async function run(runtime: "native" | "d1", query: Query) {
   const result={runtime,checks:checks.length,assertions:checks,requests};results.push(result);await writeFile(path.join(output,`${runtime}-result.json`),JSON.stringify(result,null,2));
 }
 try{
-  await native.query(`CREATE DATABASE \`${database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);await native.query(`USE \`${database}\``);await runNativeMigrations(native,database);
-  const nativeQuery:Query=async(sql,values=[])=>native.query(sql,values);await seed(nativeQuery);await run("native",nativeQuery);
+  if (native) {
+    await native.query(`CREATE DATABASE \`${database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);await native.query(`USE \`${database}\``);await runNativeMigrations(native,database);
+    const connection = native;
+    const nativeQuery:Query=async(sql,values=[])=>connection.query(sql,values);await seed(nativeQuery);await run("native",nativeQuery);
+  }
   const db=await mf.getD1Database("DB");
   for(const file of (await readdir("drizzle")).filter(name=>name.endsWith(".sql")).sort())for(const sql of (await readFile("drizzle/"+file,"utf8")).split("--> statement-breakpoint").map(s=>s.trim()).filter(Boolean))await db.prepare(sql).run();
   const d1Query:Query=async(sql,values=[])=>(await db.prepare(sql).bind(...values as (string|number|null)[]).all()).results as Record<string,unknown>[];await seed(d1Query);
   // Miniflare's host proxy and Workers binding use distinct Headers types; explicit synthetic binding boundary only.
-  await runWithHostedBindings({DB:db} as unknown as Parameters<typeof runWithHostedBindings>[0],()=>run("d1",d1Query));
-  await writeFile(path.join(output,"result.json"),JSON.stringify({complete:true,checks:results.reduce((n,r)=>n+r.checks,0),runtimes:results,database,scriptSha256:createHash("sha256").update(await readFile(import.meta.filename)).digest("hex"),limits:"Source repository and route handlers with real isolated MariaDB/D1 only. No compiled artifact, browser hydration/interaction, production access, real account changes, deletion, or publication."},null,2));
-}finally{session(null);const {closeDatabasePool}=await import("../src/shared/server/database/index.server");await closeDatabasePool();await native.end();await mf.dispose();}
+  await runWithHostedBindings({DB:db} as unknown as Parameters<typeof runWithHostedBindings>[0],()=>run("d1",d1Query),{requestUrl:origin+"/",publicOrigin:origin,projectId:'appgprj_syntheticOrigin',expectedProjectId:'appgprj_syntheticOrigin'});
+  await writeFile(path.join(output,"result.json"),JSON.stringify({complete:true,checks:results.reduce((n,r)=>n+r.checks,0),runtimes:results,database:d1Only?null:database,nativeExecuted:!d1Only,scriptSha256:createHash("sha256").update(await readFile(import.meta.filename)).digest("hex"),limits:d1Only?"Source repository and route handlers with real isolated D1 only; Native/MariaDB not executed. No compiled artifact, browser, production, real account changes or publication.":"Source repository and route handlers with real isolated MariaDB/D1 only. No compiled artifact, browser hydration/interaction, production access, real account changes, deletion, or publication."},null,2));
+}finally{session(null);const {closeDatabasePool}=await import("../src/shared/server/database/index.server");await closeDatabasePool();if(native)await native.end();await mf.dispose();}

@@ -3,7 +3,7 @@ import { getAuthSession, getUserByEmail } from "@/src/entities/user/index.server
 import { createProjectMedia, getProjectMediaFileForViewer, listProjectMedia, updateProjectMedia } from "@/src/entities/project-media/index.server";
 import { MEDIA_REQUEST_MAX_BYTES, mediaId, mediaMutationKey, mediaMimeTypes, normalizeMediaFields, ProjectMediaError } from "@/src/entities/project-media";
 import type { ProjectViewer } from "@/src/shared/server/project-scope/index.server";
-import { getRuntimeEnv } from "@/src/shared/server/runtime-env/index.server";
+import { assertBrowserOrigin, BrowserOriginError } from "@/src/shared/server/request-origin/index.server";
 import { readPrivateFile } from "@/src/shared/server/private-files/index.server";
 
 const headers = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Cross-Origin-Resource-Policy": "same-origin", Vary: "Cookie" };
@@ -19,9 +19,8 @@ export async function getMediaViewer(): Promise<ProjectViewer> {
   return { userId: user.id, email: session.user.email, isSuperuser: !!session.user.isSuperuser };
 }
 function origin(request: Request) {
-  const url = new URL(getRuntimeEnv().auth.nextAuthUrl ?? request.url);
-  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw new MediaRequestError(503);
-  if (request.headers.get("Origin") !== url.origin) throw new MediaRequestError(403);
+  try { assertBrowserOrigin(request); }
+  catch (error) { if (error instanceof BrowserOriginError) throw new MediaRequestError(error.status); throw error; }
 }
 /** Streaming bound before formData/JSON parsing, including missing or misleading Content-Length. */
 function bounded(request: Request, limit: number) {
