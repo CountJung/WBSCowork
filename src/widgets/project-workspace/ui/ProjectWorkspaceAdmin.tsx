@@ -58,7 +58,7 @@ export default function ProjectWorkspaceAdmin({workspace,users,action,accessPrev
       {workspace.teams.map(team=><Stack key={team.id} spacing={1.5} data-testid={`activity-team-${team.id}`} sx={{p:2,border:1,borderColor:"divider",borderRadius:2}}>
         <Typography variant="subtitle1">{team.name}</Typography><Chip label={activityKindLabels[team.activityKind]} size="small" sx={{alignSelf:"flex-start"}}/>
         <Typography>팀장: {team.leaderUserId?userName(team.leaderUserId):"미지정"}</Typography>
-        <Button href={`/projects/${workspace.projectId}/teams/${team.id}/preparation`} variant="outlined" sx={{alignSelf:"flex-start"}}>팀 준비표 · 메뉴·활동 준비</Button>
+        <Button href={team.activityKind==="media"?`/projects/${workspace.projectId}/media?teamId=${team.id}`:`/projects/${workspace.projectId}/teams/${team.id}/preparation`} variant="outlined" sx={{alignSelf:"flex-start"}}>{team.activityKind==="media"?"사진첩·영상 관리":"팀 준비표 · 메뉴·활동 준비"}</Button>
         {workspace.teamMembers.filter(m=>m.teamId===team.id&&m.active).map(member=><Stack key={member.userId} component="form" action={action} direction={{xs:"column",sm:"row"}} spacing={1} sx={{justifyContent:"space-between"}}>
           <Fields workspace={workspace} kind="team_member"/><input type="hidden" name="active" value="0"/><input type="hidden" name="teamId" value={team.id}/><input type="hidden" name="userId" value={member.userId}/><input type="hidden" name="role" value={member.role}/>
           <Typography>{userName(member.userId)} · {member.userId===team.leaderUserId?"팀장":"팀원"}</Typography><Button type="submit" size="small">팀에서 제외</Button>

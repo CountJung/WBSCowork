@@ -2,7 +2,7 @@
 
 이 문서는 **지금 어디까지 왔고 다음 무엇을 해야 하는가**를 소유한다. 단계/완료 게이트는 [MASTER_PLAN](MASTER_PLAN.html), 과거 근거는 [COMPLETED_LOG](COMPLETED_LOG.md), 상세 digest 설계는 [계획](PROJECT_DIGEST_REPORT_PLAN.md)에 있다.
 
-최종 검토: 2026-10-28 · 다음 번호: **QLT-038 / RPT-021 / OPS-041 / PRD-068**
+최종 검토: 2026-10-28 · 다음 번호: **QLT-039 / RPT-021 / OPS-041 / PRD-068**
 
 ## 현재 상태
 
@@ -17,6 +17,7 @@
 | 레크레이션 시간표 | PRD-067 소스 구현·기초 검증 완료, QLT-036 지원 로컬 인수 완료·version26 게시·부모의 day/week·날짜/겹침/5분/자정·키보드/기존 좁은 CSS 화면과 v27 합성 저장/재조회·원본 복원 범위 PASS | 기존 날짜/시각/소요/순서의 파생 일간·주간 UI·읽기 전용 상세. 새 라이브러리/schema/API·서버 권한 변경0, 부모 CSS359/390/768·Dialog 초점/Escape 부분 PASS·실제 phone touch/Safari·다른 역할 인수는 잔여. 시간표 소스 양 브랜치 푸시 완료. 새 명시 승인으로 기존 게시 보류를 해제했으며 QLT030과 통합해 같은 siteID의 version26 게시 완료·관측 외 실기기/역할 인수는 QLT036 잔여 |
 | 보고서 기간 안내 | QLT-030 소스·지원 로컬 검증 완료, version26 게시·부모의 구체 오류/aria·초점/정상 preview 인수 PASS | 역전/31일 초과의 구체 입력 안내와 정상기간 복원 경로를 보완. 관측 범위 인수 완료·생성/별도 취소 원인과 구분, 보고서 미리보기 취소 원인을 해결한 것이 아님 |
 | 준비표 저장403 | QLT-037 source/합성 GREEN·version27 게시 후 부모의 합성 레크 저장/재조회·원본 버전 편집 복원/이력 보존 인수 완료 | 추가 합성행은 일반 버전 편집으로 제외했으며 영구삭제가 아님. 원본 값·v1/v2 이력/공개범위 보존, 운영 저장 인수는 [완료 근거](COMPLETED_LOG.md#완료-색인) 참조·다른 역할/실기기·R2 bytes는 별도 잔여 |
+| 프로젝트·팀 관리 접근 감사 | QLT-038 감사/최소 탐색 수정·지원 로컬 검증 완료·부모 검토/게시 승인 대기, 운영version27 유지 | 누락된 관리자 인가 발견 없이 기존 정책 유지. 미디어팀의 준비표404 링크를 gallery로 수정하고 관리 가능한 빈 화면/읽기 전용/권한 차이를 안내. 실제 브라우저 인수·운영 save/deploy는 미실행 |
 | 최근 검증 | QLT-021 핵심 삭제 오판은 실제 Google 세션의 운영 UI 인수 PASS | [검증 기준선](HARNESS_MAP.md#검증-기준선). 신규 업로드는 통과했으나 추가 첨부·운영 파일 삭제는 미검증이며 QLT-022와 다른 열린 항목 유지 |
 | 선행 로컬 구현 | QLT-016/029와 RPT-015/017은 독립 로컬 검증 완료 이관. QLT-028/020·OPS-032와 RPT-016/018/019의 외부 인수 게이트 유지 | 구현 소스·추가 compiled33·main/sites 푸시와 기존 Sites v19 게시 완료. 최초 거부와 새 승인 후1회 배포·보존 확인은 [승인/게시 이력](HARNESS_MAP.md#version19-승인과-운영-배포)을 따른다. D5 외부 발송·운영 예약 활성화·NAS/실계정/보안/영구 삭제는 제외 |
 | 팀별 공통 준비표 | PRD-058 소스·양 DB·compiled HTTP 완료, QLT-031 운영 envSU/1165px 부분 인수 PASS·모바일/실제 팀장 등 잔여 | exact 게시 checkout build/compiled30·34HTTP 후 같은 저장v20 배포 완료. [최초 거부·새 승인/배포](HARNESS_MAP.md#version20-승인과-운영-배포), 기존 실제 사용자 기록/권한·NAS 변경 없음. 부모가 만든 합성 project6/팀1~4/준비표v1은 보존하며 실제 화면 잔여는 QLT-031로 유지 |
@@ -53,6 +54,7 @@
 | QLT-035 | [!] | P1·F2: full unit302(action33/unit269),backend21/UI SSR14·D1 source91·최종 compiled69조건88요청·호환 build/정적 PASS(범위 중복 합산 금지). 최소 저장/재조회/공유·선택 유무·invalid400·기존 상세/공유 receipt 보존은 합성 인수. 부모의 v25 식단 읽기·상세 toggle/Space·Enter·취소/재열기·360/390/768 CSS 화면 부분 PASS. 실제 submit/최소입력 저장·공유/create·phone touch/Safari는 미검증이며 최소저장/공유 PASS는 로컬 서버 근거와 구분. main/sites 푸시·version25 게시 및 fresh35표537→542행 보존 대조 완료(업무34표/기존 audit504행 동일·INFO5 추가), 기존 표시값/저장v1 보존 관측·운영 저장/권한변경0. NAS/MariaDB 실행은 사용자 담당 | [검증·복구 한계](HARNESS_MAP.md#식단-간소화-구현-검증) |
 | PRD-067 | [~] | P1·T0/T1 소스 완료: recreation 파생 일간/월요일 시작 주간·날짜/이전다음오늘/첫일정·미지정시간/0분/자정넘김·lane/실제겹침 텍스트와 읽기전용 Dialog. 좁은 화면 day 기본·넓은 화면 수화 후 week, 내부 bounded scroll/전체목록·편집 draft/읽기/상세 presentation 재사용·홈3개 요약 유지. 원문/normalizer/API·권한·package/lock/schema 변경0, 후속 부모의 시간표 클릭/Dialog 초점·좁은 CSS 화면 및 v27 레크 저장/복원은 관측 범위 PASS·실제 phone/Safari/타역할 등 QLT036 잔여 | [표시 계약](ARCHITECTURE.md#레크레이션-시간표-표시-계약) |
 | QLT-036 | [!] | P1·T2: pure model14·기존 guide14·full unit316(action33/unit283)·최종 Worker/Native 호환 build·lint/type/FSD PASS(DB 미실행). 최종 SSR31·compiled Worker81조건104요청 PASS, 부모의 실제 day/week/date·겹침/5분/자정·Dialog 키보드/초점/Escape·CSS359/390/768 가로넘침0 부분 PASS. 후속v27 합성 일정 저장/재조회·주간/익일 상세·키보드와 원본 복원 관측 PASS, 저장 실패 QLT037은 해소. 실제 phone/Safari·다른 역할·관측 외 인수는 미검증. 지원 로컬 게이트/양 브랜치 반영·시간표 포함version26 게시 완료, 기존v26 CSS359/390/768 읽기 관측과 이번v27 저장 인수를 구분하고 미관측 화면/역할·기존 주소 라우팅은 별도 확인. NAS/MariaDB 실행 사용자 담당·이미지 전송0 | [검증 경계](HARNESS_MAP.md#레크레이션-시간표-구현-검증) |
+| QLT-038 | [~] | P1 코드/지원 검증 완료: envSU전역·지정admin팀소속 없이 프로젝트 모든팀·팀장ownteam/일반역할/미지정admin 기존정책 유지, authSQL/API 변경0. 확인된 media→prep404 탐색 링크만 gallery로 수정·서버 canManage 기반 빈 미디어 관리CTA/관리카드anchor·읽기전용 안내 보완. SSR4/unit334·D1 prep211/media82/presentation104·compiled123/176·최종 호환 build/정적 PASS. 실제 브라우저/수화·모바일/새OAuth는 미검증, main/sites 커밋/푸시 후 부모 검토/게시 승인 대기·이번 save/deploy 금지 | [실제 역할행렬/한계](HARNESS_MAP.md#프로젝트팀-관리-접근-감사-qlt-038) |
 | OPS-021 | [~] | NAS 소스/업데이트 절차는 준비됨. 실제 플랫폼·백업·기본 build·대상 릴리스 migration 적용·기동·자료/역할/수동 인수는 운영자가 수행. 기존 NFT warning도 유지 | [운영 안내](NAS_UPDATE_GUIDE.md) |
 | OPS-031 | [!] | Native bug purge 포함 전체 수명주기/두 isolation-level 경합 검증은 별도 승인 대기. 비파괴16조건·Sites 삭제 완료와 구분 | [완료 범위](COMPLETED_LOG.md#실환경-qa와-삭제-승인-경계) |
 | OPS-032 | [!] | PPTX 하위 image-size2.0.4 scoped override·호환 검사/양 build 후 production audit0, 전체23(high18/moderate4/low1) 잔여 검토. 최종 전체294·양 build/호환·compiled OOXML18 PASS·전체 취약점 해소 아님. Native trace13경고·NAS 포장 게이트 미확인 | [보안 근거](COMPLETED_LOG.md#보안-패치와-활성-decoder) |

@@ -214,6 +214,34 @@ try {
     }
     check(JSON.stringify(await q("SELECT * FROM team_preparation_sheets WHERE team_id=111"))===invalidBefore,"rejected optional-field requests preserve saved head/version");
     check(JSON.stringify(await q("SELECT * FROM team_preparation_revisions WHERE team_id=111 AND version<=2 ORDER BY version"))===originalPreparationRevisions,"legacy complete preparation revision bytes remain unchanged after sparse meal saves/publication");
+    // Independent recreation hierarchy block, after all existing publication receipts were checked.
+    const recreationContext=()=>({params:Promise.resolve({projectId:'101',teamId:'112'})});
+    const recreationPrep='/api/projects/101/teams/112/preparation',recreationPublication='/api/projects/101/presentation/teams/112';
+    check(Number((await q("SELECT COUNT(*) n FROM activity_team_members WHERE user_id IN (1,2)"))[0].n)===0,"recreation hierarchy managers have no team membership or canonical leader assignment");
+    for(const actor of [1,2]){
+      setSession({user:{email:people[actor-1][1],role:actor===1?'guest':'admin',isSuperuser:false},expires:'2099-01-01T00:00:00.000Z'});
+      const current=await getTeamPreparation(viewer(actor),101,112);
+      const nextDoc:PreparationDocument={schemaVersion:1,kind:'recreation',entries:[{...createPreparationEntry('recreation','2026-11-02'),title:`Hierarchy recreation actor${actor}`,time:'10:00',durationMinutes:30,order:1,materials:'Synthetic props'}]};
+      const savedResponse=await preparationPUT(request(recreationPrep,{version:current.version,mutationKey:randomUUID(),document:nextDoc}),recreationContext());const saved=await savedResponse.json();
+      const privateRead=await teamGET(request(recreationPublication),recreationContext());const privateBody=await privateRead.json();
+      check(savedResponse.status===200&&privateRead.status===200&&privateBody.presentation.team.canEdit&&privateBody.presentation.document.entries[0].title===nextDoc.entries[0].title,`actor${actor} refreshed identity edits and reads another team's private recreation preparation without team membership`);
+      const previousVersion=privateBody.presentation.team.publicationVersion;
+      const sharedResponse=await teamPUT(request(recreationPublication,{version:previousVersion,mutationKey:randomUUID(),audience:'project',preparationVersion:saved.sheet.version}),recreationContext());const sharedBody=await sharedResponse.json();
+      check(sharedResponse.status===200&&sharedBody.presentation.published&&(await getTeamPresentation(viewer(8),101,112)).document?.entries[0].title===nextDoc.entries[0].title,`actor${actor} explicitly shares the selected recreation revision with the current project guest`);
+      const closedResponse=await teamPUT(request(recreationPublication,{version:sharedBody.presentation.team.publicationVersion,mutationKey:randomUUID(),audience:'team_private',preparationVersion:saved.sheet.version}),recreationContext());
+      check(closedResponse.status===200&&(await getTeamPresentation(viewer(actor),101,112)).team.canEdit,`actor${actor} can return recreation publication to team-private while retaining manager access`);
+      await denied(()=>getTeamPresentation(viewer(8),101,112),404,`project guest loses private recreation access after actor${actor} explicitly closes sharing`);
+    }
+    setSession({user:{email:people[2][1],role:'admin',isSuperuser:true},expires:'2099-01-01T00:00:00.000Z'});
+    check((await preparationGET(request(recreationPrep),recreationContext())).status===404&&(await teamGET(request(recreationPublication),recreationContext())).status===404&&(await teamPUT(request(recreationPublication,{version:0,mutationKey:randomUUID(),audience:'project',preparationVersion:1}),recreationContext())).status===404,"unrelated administrator cannot enter, edit or publish recreation by claiming elevated session flags");
+    setSession({user:{email:people[1][1],role:'admin',isSuperuser:false},expires:'2099-01-01T00:00:00.000Z'});await q("UPDATE project_members SET active=0 WHERE project_id=101 AND user_id=2");
+    try{
+      check((await preparationGET(request(recreationPrep),recreationContext())).status===404&&(await teamGET(request(recreationPublication),recreationContext())).status===404&&(await teamPUT(request(recreationPublication,{version:0,mutationKey:randomUUID(),audience:'project',preparationVersion:1}),recreationContext())).status===404,"administrator project revocation closes the next preparation/private-presentation/publication requests without changing the old session");
+      setSession({user:{email:people[0][1],role:'guest',isSuperuser:false},expires:'2099-01-01T00:00:00.000Z'});
+      check((await preparationGET(request(recreationPrep),recreationContext())).status===200&&(await teamGET(request(recreationPublication),recreationContext())).status===200,"verified guest-role env SU remains able to read private recreation without project or team assignment");
+    }finally{await q("UPDATE project_members SET active=1 WHERE project_id=101 AND user_id=2");}
+    check((await q("SELECT role FROM users WHERE id=1"))[0].role==='guest'&&Number((await q("SELECT COUNT(*) n FROM project_members WHERE user_id=1"))[0].n)===0&&Number((await q("SELECT COUNT(*) n FROM activity_team_members WHERE user_id IN (1,2)"))[0].n)===0&&JSON.stringify(await q("SELECT * FROM submissions"))===preserved,"hierarchy tests preserve env SU identity, manager team nonmembership and all pre-existing private WBS rows");
+
   };
   if(runtime==='native')await execute();else await runWithHostedBindings({DB:db} as unknown as Parameters<typeof runWithHostedBindings>[0],execute,{requestUrl:'http://127.0.0.1:3000/',publicOrigin:'http://127.0.0.1:3000',projectId:'appgprj_syntheticOrigin',expectedProjectId:'appgprj_syntheticOrigin'});
   await mkdir('.test-artifacts/project-presentation',{recursive:true});await writeFile(`.test-artifacts/project-presentation/${runtime}-result.json`,JSON.stringify({complete:true,runtime,checks,assertions:labels,nativeExecuted:runtime==='native',nativeServerVersion,nativeLimitation:runtime==='native'?null:'D1-only execution; separate Native result required.',syntheticSchemasRetained:runtime==='native'?[database,upgradeDatabase]:[],productionAccess:false,browserExecuted:false},null,2));

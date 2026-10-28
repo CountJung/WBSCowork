@@ -6,7 +6,7 @@ import { mediaMimeTypes, type MediaFields, type MediaTeam, type ProjectMediaItem
 import FieldLabel from "@/src/shared/ui/field-label";
 import { formatAppDateTime } from "@/src/shared/lib/date";
 
-export type ProjectMediaGalleryProps = { projectId: number; teams: MediaTeam[]; initialItems?: ProjectMediaItem[]; initialTeamId?: number; initialNextAfter?: number | null };
+export type ProjectMediaGalleryProps = { projectId: number; canManageTeams?: boolean; teams: MediaTeam[]; initialItems?: ProjectMediaItem[]; initialTeamId?: number; initialNextAfter?: number | null };
 async function readResult(response: Response) {
   let value: { message?: string; item?: ProjectMediaItem; items?: ProjectMediaItem[]; nextAfter?: number | null };
   try { value = await response.json(); } catch { throw new Error("서버 응답을 읽지 못했습니다. 입력을 보관하고 목록을 다시 확인해 주세요."); }
@@ -51,7 +51,7 @@ function MediaCard({ item, saved }: { item: ProjectMediaItem; saved: () => void 
   </Stack></Paper>;
 }
 
-export default function ProjectMediaGallery({ projectId, teams, initialItems = [], initialTeamId, initialNextAfter = null }: ProjectMediaGalleryProps) {
+export default function ProjectMediaGallery({ projectId, canManageTeams = false, teams, initialItems = [], initialTeamId, initialNextAfter = null }: ProjectMediaGalleryProps) {
   const [teamId, setTeamId] = useState(initialTeamId ?? teams[0]?.id ?? 0), [items, setItems] = useState(initialItems), [after, setAfter] = useState(initialNextAfter);
   const [title, setTitle] = useState(""), [caption, setCaption] = useState(""), [visibility, setVisibility] = useState<MediaFields["visibility"]>("team_private"), [file, setFile] = useState<File | null>(null);
   const [pending, setPending] = useState(false), [loading, setLoading] = useState(teams.length > 0), [error, setError] = useState(""), [success, setSuccess] = useState("");
@@ -84,9 +84,10 @@ export default function ProjectMediaGallery({ projectId, teams, initialItems = [
     finally { uploadBusy.current = false; if (mounted.current && !abort.signal.aborted) setPending(false); }
   }
   return <Stack spacing={3} sx={{ minWidth: 0, maxWidth: "100%", overflowWrap: "anywhere", "& .MuiFormControl-root, & .MuiInputBase-root": { minWidth: 0, maxWidth: "100%" }, "& input, & textarea": { minWidth: 0 }, "& .MuiSelect-select": { whiteSpace: "normal", overflowWrap: "anywhere" }, "& .MuiButton-root": { minHeight: 44, maxWidth: "100%", whiteSpace: "normal", overflowWrap: "anywhere" }, "& .MuiChip-root": { maxWidth: "100%" }, "& h1": { fontSize: { xs: "1.65rem", sm: "2.125rem" } } }} data-testid="project-media-gallery">
-    <Stack spacing={1}><Typography component="h1" variant="h4">사진첩·영상</Typography><Typography>미디어팀이 사진과 영상을 정리합니다. 프로젝트 내부 공개와 비공개를 구분하며 인터넷 전체에 공개하지 않습니다.</Typography></Stack>
-    <Alert severity="info">비공개는 작성자·현재 해당 팀원·지정 프로젝트 관리자·슈퍼관리자가 읽습니다. 모든 요청에서 현재 프로젝트 소속을 다시 검사하며 소속 해제 후 과거 링크도 차단됩니다. 실제 인물의 사진·영상은 게시 동의를 확인하고 건강정보·아동 개별정보를 적지 마세요.</Alert>
-    {!teams.length ? <Typography>등록된 미디어팀이 없습니다. 해당 프로젝트 관리자에게 미디어팀 구성을 요청하세요.</Typography> : <TextField select label={<FieldLabel requirement="required">미디어팀</FieldLabel>} value={teamId} disabled={pending} onChange={event => { if (!dirty || window.confirm("현재 업로드 초안을 보관한 뒤 다른 팀으로 이동할까요? 선택하면 초안을 비웁니다.")) { setLoading(true); setError(""); setTeamId(Number(event.target.value)); setTitle(""); setCaption(""); setVisibility("team_private"); setFile(null); setItems([]); setAfter(null); setSuccess(""); attempt.current = null; if (fileInput.current) fileInput.current.value = ""; } }} fullWidth>{teams.map(value => <MenuItem sx={{ whiteSpace: "normal", overflowWrap: "anywhere", minHeight: 44 }} key={value.id} value={value.id}>{value.name}{value.canUpload ? " · 편집 가능" : " · 읽기"}</MenuItem>)}</TextField>}
+    <Stack spacing={1}><Typography component="h1" variant="h4">사진첩·영상</Typography><Typography>미디어 팀장·지정 프로젝트 관리자·슈퍼관리자가 사진과 영상을 올리고 관리합니다. 프로젝트 내부 공개와 비공개를 구분하며 인터넷 전체에 공개하지 않습니다.</Typography></Stack>
+    <Alert severity="info">비공개는 작성자·현재 해당 팀원·지정 프로젝트 관리자·슈퍼관리자가 읽습니다. 관리자는 배정된 프로젝트의 모든 팀을 관리하며 슈퍼관리자는 소속 배정 없이 관리합니다. 다른 구성원은 프로젝트 소속이 해제되면 과거 링크도 열 수 없습니다. 실제 인물의 사진·영상은 게시 동의를 확인하고 건강정보·아동 개별정보를 적지 마세요.</Alert>
+    {!teams.length ? <Stack spacing={1}><Typography>등록된 미디어팀이 없어 업로드할 위치가 없습니다.</Typography>{canManageTeams ? <><Typography>권한 오류가 아닙니다. 프로젝트 관리의 이 프로젝트에서 활동 종류를 ‘미디어’로 선택해 팀을 추가하세요. 관리자·슈퍼관리자는 팀장으로 배정하지 않아도 업로드할 수 있습니다.</Typography><Button component="a" href={`/admin/projects#project-${projectId}`} sx={{ alignSelf: "flex-start" }}>미디어팀 구성하러 가기</Button></> : <Typography>해당 프로젝트 관리자에게 미디어팀 구성을 요청하세요.</Typography>}</Stack> : <TextField select label={<FieldLabel requirement="required">미디어팀</FieldLabel>} value={teamId} disabled={pending} onChange={event => { if (!dirty || window.confirm("현재 업로드 초안을 보관한 뒤 다른 팀으로 이동할까요? 선택하면 초안을 비웁니다.")) { setLoading(true); setError(""); setTeamId(Number(event.target.value)); setTitle(""); setCaption(""); setVisibility("team_private"); setFile(null); setItems([]); setAfter(null); setSuccess(""); attempt.current = null; if (fileInput.current) fileInput.current.value = ""; } }} fullWidth>{teams.map(value => <MenuItem sx={{ whiteSpace: "normal", overflowWrap: "anywhere", minHeight: 44 }} key={value.id} value={value.id}>{value.name}{value.canUpload ? " · 편집 가능" : " · 읽기"}</MenuItem>)}</TextField>}
+    {team && !team.canUpload ? <Alert severity="info">현재 이 팀은 읽기 전용입니다. 업로드·편집은 해당 팀장·지정 프로젝트 관리자·슈퍼관리자가 할 수 있습니다.</Alert> : null}
     {team?.canUpload ? <Paper component="form" variant="outlined" onSubmit={upload} sx={{ p: { xs: 2, sm: 3 }, minWidth: 0 }}><Stack spacing={2}>
       <Typography component="h2" variant="h6">사진·영상 올리기</Typography><TextField label={<FieldLabel requirement="required">제목</FieldLabel>} value={title} onChange={event => setTitle(event.target.value)} required fullWidth disabled={pending} slotProps={{ htmlInput: { maxLength: 120 } }} />
       <TextField label={<FieldLabel>설명</FieldLabel>} value={caption} onChange={event => setCaption(event.target.value)} multiline minRows={3} disabled={pending} fullWidth slotProps={{ htmlInput: { maxLength: 2000 } }} />

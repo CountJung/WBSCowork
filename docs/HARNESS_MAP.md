@@ -756,6 +756,29 @@ Fresh pre/post D1은35표485→485행이며 **모든 표의 모든 row canonical
 
 QLT036의 위 저장/키보드 관측과 기존v26의 day/week/date·미지정/겹침/5분/자정·CSS359/390/768 가로넘침0은 회차별로 구분한다. QLT030의 기간별 구체 안내/aria-invalid/초점·정상 preview 관측도 기존 근거를 유지한다. 실제 phone touch/Safari·다른 역할/관측 외 흐름·원본 R2 bytes 비교·가이드 이미지·사용자 담당 NAS와 다른 ! 항목은 완료로 확대하지 않는다. source1747737/version27는 그대로며 이번 후속은 코드 변경/제품 검사/재게시가 아니다.
 
+## 프로젝트/팀 관리 접근 감사 QLT-038
+
+감사에서 누락된 privileged SQL/UI guard는 확인하지 않았고 기존 권한 정책을 유지했다. 소스로 확정한 탐색 결함은 `ProjectWorkspaceAdmin`이 media팀도 준비표(의도적404)로 연결하던 것이다. media만 `/projects/{projectId}/media?teamId={teamId}`로 수정했고 나머지6종 준비표 경로는 그대로다. 운영 사용자의 차단을 실제 재현했거나 권한 부족을 확인한 결과는 아니다.
+
+빈 gallery는 서버 portal.canManage를 전달해 관리 가능한 경우만 실제 `/admin/projects#project-{projectId}` 카드의 미디어팀 생성 CTA를 표시한다. 일반 사용자에게 이 관리CTA를 노출하지 않고 빈 팀/읽기 전용/권한 상태를 구분한다. SU 전역/신규 배정 제외 안내도 기존 정책의 설명이며 권한 부여가 아니다. 제품4 TSX·실제 component SSR 회귀/runner 등록·source/compiled harness만 바뀌었고 authSQL/API/schema/env/실제 계정 role·자료 변경0이다.
+
+| 합성 역할/현재 상태 | 확인한 기존 허용·거부 범위 |
+| --- | --- |
+| 검증된 envSU, DBguest·PM0/TM0 | 전역 프로젝트/팀 도구 허용·DBrole/명단으로 강등되지 않음·신규 배정 제외 유지 |
+| 해당 프로젝트 지정 admin, TM0 | 프로젝트의 모든 팀 관리 도구 허용, 팀 소속 요구하지 않음 |
+| 현재 canonical 팀장 | 현재 own-team 도구 범위 유지, 타팀/프로젝트 scope 확대 없음 |
+| 일반 member/guest·미지정/타프로젝트 admin | 기존 읽기/visibility 조건 유지·허용되지 않은 관리 쓰기/다른 scope 거부 |
+| 현재 프로젝트 소속 회수 | 다음 보호 요청 거부, envSU 전역 예외는 영향 없음 |
+
+| 실제 실행 범위 | 결과/경계 |
+| --- | --- |
+| 소스/정적·SSR | real component SSR4 PASS, `npm test -- --unit` action33/unit301,총334 PASS·DB probe0. lint/type/FSD PASS. SSR은 브라우저 클릭/수화 인수가 아님 |
+| D1 실제 소스 회귀 | prep211/media82/presentation104,합계397조건 PASS. 최초 media hierarchy fixture는 이미 회수한 guest7을 읽기 허용으로 기대해 실패했고 독립 합성 guest10을 추가해 재검증, guest7 active0은 보존했다. 제품 인가를 완화한 것이 아님 |
+| exact compiled Worker | 123조건/176요청 PASS. actual PNG multipart201·PATCH·file bytes, 재조회된 SU(DBguest/PM0/TM0)/지정admin(TM0)의 도구 조작과 다른 프로젝트 admin·일반역할/PM회수의 거부를 검증했다. 기존 read/write 구분·SU 유지와 원본 보존을 확인 |
+| build | 최종 Worker/Next Native 호환 build PASS. 기존 Native trace13/정적 분류·Worker proxy env 안내/PLUGIN_TIMINGS 진단 유지, 경고 suppression 없음 |
+
+entry `fc457f857f1f7964ef4f7d8891e8858ba560b7d0693821b39fffd503241937ba`, dist snapshot `c5624033b66677c2ef3aa7d33ead43b6c00f3c4dfc0192a4ec691e9490f5ed1e`(421files/6,064,447bytes)은 전후 불변이다. 운영은version27 그대로이고 실제 브라우저/수화·모바일·새 Google OAuth/NAS는 미실행이다. 지원 로컬 인수와 main/sites 선별 반영은 운영 게시와 별개다. 운영은 부모 검토/게시 승인 게이트이며 이번 save/deploy는0이다. 이미지 전달 차단/다른 ! 항목·사용자 담당 NAS/MariaDB·원본 canon checker 미실행을 유지한다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.
