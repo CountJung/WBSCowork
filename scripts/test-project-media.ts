@@ -123,7 +123,7 @@ try {
     const consumer = routes.mediaRangeStream(endless, 0, 100).getReader(); await consumer.read(); await consumer.cancel();
     check(consumerCanceled && !endless.locked, "consumer cancellation cancels storage and releases the reader once");
 
-  });
+  }, { requestUrl: origin + "/", publicOrigin: origin, projectId: "appgprj_syntheticOrigin", expectedProjectId: "appgprj_syntheticOrigin" });
   await writeFile(path.join(out, "result.json"), JSON.stringify({ complete: true, runtime: "d1-r2", checks: assertions.length, assertions, nativeExecuted: false, nativeBlocker: "Selected environment has no MariaDB binary/service; unsupported install paths are not retried.", browserExecuted: false, productionChanged: false }, null, 2));
   console.log(JSON.stringify({ complete: true, checks: assertions.length, runtime: "d1-r2", nativeExecuted: false }));
 } finally { session(null); await mf.dispose(); }

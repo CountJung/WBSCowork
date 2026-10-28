@@ -714,6 +714,34 @@ entry `079561c0253a893c8b948aab24a0293d2d07cd0144ea9147f98514eac2c31b52`, dist s
 
 public policy revision2·auth_client·automations[]와 env revision11/5entries 값은 이전과 같다. R2 원본 bytes 독립 비교는 미실행이다. 실행기 transport disconnected/status unavailable 뒤 같은 `/workspace`에서 pwd1회 성공으로 재연결을 확인했으며 다른 환경 이동/우회는 없었다. QLT030의 실제 오류 표시/정상 복구·초점과 QLT036의 시간표 클릭/모바일·Dialog focus는 아직 부모 브라우저 결과 대기다. 이미지 수신 차단·별도 report canceled 원인 미확정·NAS 사용자 담당은 유지하며 게시 성공을 해당 ! 인수 완료로 확대하지 않는다.
 
+## QLT-037 운영 준비표 저장403 조사
+
+부모의 v26 실제 브라우저 QA에서 정상 재로그인 후 합성 project6/team4(QA 레크팀)의 기존 준비표v1(2026-10-24 “QA 합성 이름 없는 게임”, 시작 시각 미지정)을 남기고 겹침2개·5분 일정·자정 넘김 등 합성4항목을 추가해 저장1회 클릭하자 “준비표를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.”가 표시됐다. 읽기 확인상 sheet/revision은v1·기존1항목 그대로이며 운영 저장을 반복하지 않았다.
+
+공식 로그의2026-10-28T11:09:29.483Z requestId `f2539d54db5cba362dfa699b89de2eb4`는 `PUT /api/projects/6/teams/4/preparation` HTTP403/outcome=ok(wall102/cpu4)다. Origin/Host는 새 count-sungjin 호스트, sec-fetch-site는 same-origin이었다. 메시지와 소스의 origin403 경로가 일치해 새 호스트와 기대 origin 불일치가 **원인 후보**이나 정확한 합성 RED 전 확정하지 않는다. NEXTAUTH_URL 실값은 열람하지 않았다.
+
+새 명시 승인에 따라 먼저 합성 재현·최소 guard 수정/보존·forgery 회귀를 진행한다. 안전 설계안은 Worker 최초 request URL origin의 별도 불변 context와 같은 projectID에 고정된 확인된 공개 origin metadata/build 일치 검사이며 임의 Host/XFH 자동 신뢰·old/new 교차 Origin 허용은 하지 않는다. context/metadata 누락·오류는 fail-closed, Native는 기존 명시 canonical을 유지한다. 동일 guard 결함의 준비표/portal/media 경로만 다루고 현재 scope/CAS/본문 한도·자료/권한은 보존한다. 공개403 안내는 주소 확인/입력 보관으로 개선할 계획이다. 이 최초 조사 당시에는 수정/검증·게시 전이었으며 후속 소스 보강/합성 검증은 아래에서 구분한다. 운영 신규 version 저장은 수정 게시 후 부모 인수 단계다. env/OAuth/계정·보안 설정 변경·원본 삭제/재생성·영구 삭제0, 다른 ! 과제/보고서 취소 원인·이미지 전송은 별도 상태로 유지한다.
+
+### v26 부모 시간표와 보고서 기간 안내 인수
+
+부모 실제 QA에서 시간표 day/week/date·겹침2개·5분 일정·자정 넘김·상세 Dialog 키보드/초점/Escape와 CSS359/390/768 가로넘침0을 확인했다. 실제 기기/touch 인수는 아니다. 편집 draft는 취소했고11:19:37 새로고침/11:23:12 이력에서 기존v1/1항목을 확인했다. 저장 실패는 QLT037로 별도 유지한다.
+
+QLT030은 역전기간/31일 초과/future-end의 구체 안내·aria-invalid/종료일 초점 PASS, 정상기간 preview는11:26:10~47에 업무1/제출1/댓글0/첨부1로 통과했다. 최종 생성은 하지 않았고 별도 preview canceled 원인을 해결했다는 뜻이 아니다. 이 관측 범위의 QLT030 인수는 완료 이관하며 다른 ! 항목/주소 라우팅·실제 touch/Safari 인수를 닫지 않는다.
+
+### QLT037 소스 보강과 최종 합성 GREEN
+
+Worker 최초 ingress의 불변 ALS/공개 origin pin·동일 siteID build 검증·공통 guard를 준비표/presentation/media에 적용했고 Native canonical은 유지했다. actual env 값은 미열람이며 env/OAuth/계정·scope/CAS/본문 budget 변경0이다. 준비표403 공개 안내는 현재 주소 확인/입력 보관으로 보완했다. origin metadata 위치·호스트 변경 시 회복 절차는 [계약](ARCHITECTURE.md#활동팀-공통-준비표-설계)이 소유한다.
+
+| 실제 실행 범위 | 결과/경계 |
+| --- | --- |
+| 일반 `npm test` | action33/unit297,총330 PASS. 기본 runner가 localhost3307 probe를 시도해 ECONNREFUSED였으며 DB suite는 미실행·재시도0이다. 전체 DB 검증으로 주장하지 않으며 이후에는 `--unit`을 명시한다 |
+| D1 소스 | prep135/portal91/media46 PASS. 최초 prep fixture는 새 media 종류를 준비표 대상에 포함한 오류였고 preparationKinds에서 media 제외 후 재실행했다. 제품 normalizer를 완화한 것이 아님 |
+| exact Worker GREEN | 34조건/27요청 PASS. 옛 NEXTAUTH_URL과 현재 logical ingress/Origin 조합에서5행 PUT200→v2 fresh GET, idempotent/stale409·역할401/404·cross-alias/missing/null/unknown/spoof403. outbound0·운영 저장 아님 |
+| 같은 final bundle 회귀 | 포털81조건/104요청·보고서40조건/25요청 PASS |
+| build/정적 | 최종 Worker/Native 호환 build·lint/type/FSD PASS, 기존 Native trace13/정적 분류 경고 유지 |
+
+entry `16c63028bd55604088b037ac7202fff6ad767da9514f6851d238d12c7524da7e`, dist snapshot `2e940dd62f9bf7f98b4d748a792976c9a1ad56b1457669d09ced98bf85fa77ea`(421files/6,062,397bytes)은 전후 동일하다. 게시 전 공식 preflight는 현재 live origin이 고정한 count-sungjin과 일치하고 version26/public·env revision11/5entries·automations0, D1 fresh35표485행의 완전 projection을 확인했다. 현 운영v26의 저장1회403/v1 보존과 합성 GREEN을 구분하며 양 브랜치 커밋/푸시·수정 게시·부모 Chrome의 실제 저장 재검증은 아직 대기다. 합성 원문 외 실제 자료/권한 변경·운영 반복 저장/삭제·NAS 실행·이미지 전송은0이며 게시/실UI 인수 완료로 확대하지 않는다. 원본 canon checker는 미실행이다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.

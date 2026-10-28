@@ -71,7 +71,9 @@
     "test:user-guide:native-http": "node scripts/test-user-guide-native-http.mjs",
     "test:project:portal": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-presentation-workflow.ts --d1",
     "test:project:media": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-media.ts",
-    "test:project:portal:http": "node scripts/test-project-portal-http.mjs"
+    "test:project:portal:http": "node scripts/test-project-portal-http.mjs",
+    "test:team-preparation:workflow:d1": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-team-preparation-workflow.ts --d1",
+    "test:sites:preparation-origin": "node scripts/test-preparation-origin-http.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
