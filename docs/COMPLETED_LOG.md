@@ -14,6 +14,7 @@
 | PRD-060~064 소스/게시 범위, 2026-10-27 | 엄격 소속 포털·유형별 홈/사이드바·기존 준비표 revision 공유·미디어 도구 구현과 D1/compiled HTTP 인수 후 version23 게시 완료. [실제 결과·보존 차이](HARNESS_MAP.md#version23-독립-프로젝트-포털-게시). 부모 클라우드 Chrome 데스크톱 읽기 부분 PASS, 저장/미디어 업로드·모바일 등 잔여는 QLT-033. NAS 실행 검증은 사용자 담당이며 기능 전체 화면 인수로 확대하지 않음 |
 | PRD-065 소스/게시 범위, 2026-10-27 | 상단 통합 메뉴·현재 프로젝트/전체폭 본문·모바일 팀 도구 배치 구현, 지원 소스/SSR·unit·compiled47/66·호환 build 후 version24 게시 완료. [검증·게시 경계](HARNESS_MAP.md#모바일-우선-탐색-구현-검증), 부모 Chrome resize/확대의360/390/768 CSS 화면·메뉴/키보드 관측 범위 PASS. 실제 touch/Safari·미디어 업로드 등 QLT-034 잔여를 전체 모바일 인수로 확대하지 않음 |
 | PRD-066 소스/게시 범위, 2026-10-27 | meal 최소 입력/nullable·선택 상세 기본 접힘과 계산/표시를 정합화하고 기존 원문/공유·다른 kind 검증 보존, unit/SSR·D1 source/compiled69·88요청 후 version25 게시 완료. [실제 범위](HARNESS_MAP.md#식단-간소화-구현-검증), 부모의 식단 읽기/상세 토글·키보드·좁은 CSS 화면 부분 PASS, 실제 저장/공유·touch/Safari는 QLT-035 잔여·단순 구앱 rollback 제한 유지 |
+| PRD-067/QLT-030 소스·게시 범위, 2026-10-28 | 기존 레크레이션의 파생 시간표와 보고서 기간별 안전한 오류 안내 구현·지원 로컬/compiled 회귀 후 version26 게시/업무 자료·설정 보존 확인. [게시·호스트 차이](HARNESS_MAP.md#version26-시간표와-기간-안내-게시). 실제 UI/초점·새/기존 주소 인수는 QLT030/036 잔여이며 전체 완료로 확대하지 않음 |
 | QLT-001/002, 2026-08 | ESLint 기준선, FSD M0~M5 완료. root app 조립과 public API로 이동하고 components/lib/models 호환층 제거. URL/권한/SQL 변경과 구조 이동을 분리 |
 | QLT-003~007, 2026-09 | private 파생 댓글/첨부 props 유출, ownership 없는 mutation, unscoped 단건, 경로 로그, task route의 project 관리 권한을 수정. SQL viewer/IdScope·상위 관계·작성자/admin·canonical project 경로를 강제 |
 | QLT-008/009 | node --import tsx로 loader 경고 정리, 실제 인가 경로의 node:test visibility fixture 도입. synthetic session은 실제 OAuth가 아님 |
@@ -91,7 +92,7 @@ Node ESM은 NextAuth4 Babel CJS provider를 `{default: 함수}`로, Next/Vite in
 
 ## Sites 게시 원장
 
-Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.cometgnome.chatgpt.site . 기존 public/환경 revision11을 유지했다. 아래는 저장소에 보존된 확인 결과이며 문서 편집이 새 게시를 만들지 않는다.
+Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`. 과거 origin은 https://wbscowork.cometgnome.chatgpt.site 이며 version26 도구 반환 URL은 https://wbscowork.count-sungjin.chatgpt.site 이다. 호스트 변경 이유/기존 주소 라우팅은 미확인이고 siteID·public/환경 revision11은 유지했다. 아래는 저장소에 보존된 확인 결과이며 문서 편집이 새 게시를 만들지 않는다.
 
 | version/시각(UTC) | 실제 게시 source | 결과/고유 근거 |
 | --- | --- | --- |
@@ -119,6 +120,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`, origin https://wbscowork.com
 | 23 · 2026-10-27 02:02:05.793555 | d8bcb3952d8aa4d2f80d3e624425993020681553 | terminal succeeded, appgdep_6ae00611cdd08191a4f06fa4b6c6c402. active/latest23·exact deployment 일치·D1 신규7표 각0행, 업무27표 동일·audit 만료4건/추가7건·설정 동일. 후속 부모 클라우드 Chrome 데스크톱 읽기 부분 PASS, 저장/미디어 업로드·모바일 잔여 |
 | 24 · 2026-10-27 03:25:17.100610 | 110f4ec2e0c86ae94c0fe59e58b04adbac1ab59d | succeeded, appgdep_6ae01988985481918a40315bd63093b0. active/latest24·exact source/deployment 일치·schema/migration0, 업무34표 동일·기존 audit441행 보존/INFO8 추가·설정 동일. 후속 부모 Chrome의 좁은 CSS 화면/메뉴 관측 부분 PASS·touch/Safari/미디어 업로드 잔여 |
 | 25 · 2026-10-27 04:15:33.089804 | 81996494edd9694f8ef07f8e38ce392bca37ad72 | succeeded, appgdep_6ae025515d408191a4979e888f8c1866. active/latest25·exact source/deployment 일치·schema/migration0, 업무34표 동일·기존 audit504행 보존/두 read 사이 INFO5 추가·설정 동일. 후속 식단 읽기/토글·360/390/768 CSS 화면 부분 PASS, 실제 저장/공유·touch/Safari 잔여 |
+| 26 · 2026-10-28 10:49:29.599137 | 7649ad3c284873ce1b3b727be61fd084262db069 | succeeded, appgdep_6ae1d32e84188191982aebd6b3712a30. active/latest26·exact source/deployment 일치·업무34표 동일/audit 만료13·INFO20 추가·설정 동일. 새 반환 호스트/기존 주소 라우팅과 실제 UI는 부모 확인 대기 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -151,6 +153,8 @@ version24 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_0b9c384eed7c81
 
 version25 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_f8f2e75bd2108191b330ba26a9592537`다. 기존 URL에 source `81996494edd9694f8ef07f8e38ce392bca37ad72`를 게시했고 기능 maincd05666과 후속 문서 HEAD를 구분한다. 자료/설정 대조·감사로그 추가 시점은 [게시 근거](HARNESS_MAP.md#version25-식단-간소화-게시), 후속 부모의 식단 필수/선택 표시·기존 값 보존·토글/좁은 화면 부분 PASS와 실제 저장/공유 미검증은 [별도 관측](HARNESS_MAP.md#version25-부모-식단-읽기와-상세-토글-검토)을 따른다.
 
+version26 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_fcfaeecd9b3c819181d99a7895cb0262`다. source `7649ad3c284873ce1b3b727be61fd084262db069`에 시간표와QLT030이 포함되고 기능 mainfb325de와 후속 문서 HEAD를 구분한다. 도구 반환 호스트 변경·자료/설정 대조와 실제 UI 미인수는 [하네스](HARNESS_MAP.md#version26-시간표와-기간-안내-게시)를 따른다.
+
 ### package와 복구 근거
 
 - version10 archive342files/5,171,200bytes, SHA256 `06997bc7a76194663eb25874f91ec23bffca2d7b92773d816e8042420c228fd0`; version11은343files/5,171,200bytes, normalized hash `0a8936cab053f800b53e056f47abf6b4b3d2795338181bb58115707fc8e99e1a`.
@@ -169,6 +173,7 @@ version25 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_f8f2e75bd21081
 - version23 입력 `/workspace/wbscowork-project-portal-d8bcb39.tar`는7,864,320bytes, SHA256 `19ff2d3406f0b8c7803d8eb9d44227153bea356569f940b96c63d7681677cb5f`다. 별도 서비스 정규화 archive는7,362,560bytes, SHA256 `0600f03bf1be2f8c19aa5563951a622cc5c4ecd0b4d0f345061a98f5d49c7eea`이며 입력 tar와 같은 container/bytes로 주장하지 않는다. version22 source7178471/archive를 복귀 참조로 보존했고 자동 down/실제 복원은 하지 않았다.
 - version24 입력 `/workspace/wbscowork-mobile-110f4ec.tar`는7,874,560bytes, SHA256 `3d69ca9f5b24631569b70604c7ef12cb5beb74c0d31ee051d7a246b536468ee4`다. 별도 서비스 정규화 archive는7,372,800bytes/hash `a0454b9e6462c68a19a461fd6930567fe01e6985c3ae0d0e0efc3ab324645869`이며 입력 tar와 같은 container/bytes로 주장하지 않는다. 이전v23 source d8bcb39/archive를 복귀 참조로 유지했고 자동 rollback은 하지 않았다.
 - version25 입력 `/workspace/wbscowork-meal-8199649.tar`는7,874,560bytes/SHA256 `675e09fec4833462eea70d4c56727ef7e7b3d29b8fe832cfff4d1987052244bf`다. 별도 서비스 정규화 archive는7,383,040bytes/hash `a71864b4ad04d4515fa3c2c13146dd802b5c288bea21249ee66185e1c6a2c644`이며 입력 tar와 같은 container/bytes로 주장하지 않는다. v24 source/archive 참조는 보존하나 새 nullable 문서 저장 뒤 구validator로 단순 복귀하면 조회503이 가능하므로 호환 reader를 유지한 수정 복구가 필요하다. 자동 rollback은 하지 않았다.
+- version26 입력 `/workspace/wbscowork-report-period-7649ad3.tar`는7,946,240bytes/SHA256 `418a30b099b95596bde9d9274fff102498b0575de0b3290e007146302be41e02`다. 서비스 정규화 archive는463files/7,444,480bytes/hash `3eb28982f8bb4a3fdfffb560bbcc87d85902b2e7bb3da46273d641d53a84eedf`이며 두 container의 bytes/hash를 같다고 주장하지 않는다. 기존 nullable reader를 유지한 수정 복구 제약은 계속 적용하며 이번 자동 rollback/down은 없다.
 - [Cloudflare의 D1 Time Travel 문서](https://developers.cloudflare.com/d1/reference/time-travel/)는 production backend의 시점 복원을 설명한다. 현재 Sites 도구에는 bookmark/export/restore가 노출되지 않아 이 사이트의 실제 bookmark 확보나 복원은 검증하지 않았다. 메모리의 사전 표본 비교는 전체 DB/R2 백업이 아니다. 새 봉사 기능이 사용된 뒤 version14 앱으로 writable rollback하면 새 팀 범위/완료 계약을 깨뜨릴 수 있으므로 forward fix를 우선하고 자동 down은 하지 않는다.
 - 모든 row 비교는 기록된 표/complete page 범위이며 audit전체/R2 bucket inventory 동일성을 보장한 것이 아니다. additive 이력/선후행 도입 후 구형 writable 앱으로 rollback하면 계약을 깰 수 있어 forward fix가 기본이다.
 

@@ -702,7 +702,17 @@ entry SHA256 `7896ba68ac38e46d5c57599e5c46ade79a909bee8c1fff1b3b6f7b50ea182d5f`,
 | 같은 bundle 포털 | 최종81조건/104요청 PASS, 시간표 포함 기존 회귀이며 보고서 조건과 중복 합산하지 않음 |
 | build/정적 | 최종 Worker/Next 호환 build·lint/type/FSD PASS. 기존 Native trace13·Vinext 분류 안내·experimental module mock 경고 유지 |
 
-entry `079561c0253a893c8b948aab24a0293d2d07cd0144ea9147f98514eac2c31b52`, dist snapshot `0f1baa790dd5be05a5957ee33d95099d0c90b941d266f763ea9f8c72bfc23f8e`(420files/6,061,016bytes)은 전후 불변이다. 증거는 `.test-artifacts/report-period-feedback/`의 `model-tests.log`·`unit.log`·`result.json`·`compiled-report`·`compiled-portal`·build 로그와 `.test-artifacts/report-period-ui/result.log`다. 실제 오류 안내/정상 복구·초점·클릭/키보드 브라우저 인수는 미실행이다. 현재 운영v25이며 시간표+QLT030 묶음의 새 승인에 따른 양 브랜치 커밋/푸시·기존 Sites 게시 후 부모 허용 Chrome 검토를 기다린다. ! 항목 추가 조사/수정0·NAS/MariaDB 실행 사용자 담당·이미지 수신 차단·원본 canon checker 미실행을 유지한다.
+entry `079561c0253a893c8b948aab24a0293d2d07cd0144ea9147f98514eac2c31b52`, dist snapshot `0f1baa790dd5be05a5957ee33d95099d0c90b941d266f763ea9f8c72bfc23f8e`(420files/6,061,016bytes)은 전후 불변이다. 증거는 `.test-artifacts/report-period-feedback/`의 `model-tests.log`·`unit.log`·`result.json`·`compiled-report`·`compiled-portal`·build 로그와 `.test-artifacts/report-period-ui/result.log`다. 실제 오류 안내/정상 복구·초점·클릭/키보드 브라우저 인수는 미실행이다. 이 로컬 검증 당시 운영은v25였고 시간표+QLT030의 새 승인에 따른 version26 게시/보존 대조는 아래에서 구분한다. 부모 허용 Chrome의 실제 UI 결과는 대기다. ! 항목 추가 조사/수정0·NAS/MariaDB 실행 사용자 담당·이미지 수신 차단·원본 canon checker 미실행을 유지한다.
+
+### version26 시간표와 기간 안내 게시
+
+2026-10-28T10:49:29.599137Z에 같은 siteID의 version26 배포가 succeeded다. 기능 main `fb325de10a4ab39c9a13c99dffc314fb7b37cf59`/sites·공식 source `7649ad3c284873ce1b3b727be61fd084262db069`에 시간표+QLT030이 포함되며 get_site active/latest26·get_site_version의 source/deployment/env revision11 일치를 확인했다. source345 build 입력은 검증 checkout과 같고 entry `079561c0…`는 위 final checks의 불변 bundle이다. package/lock/drizzle/db/.openai는v25 source8199649 대비 변경0이며 migration0이다. 양 기능 SHA의 combined statuses[]는 CI 통과가 아니다. 고유 version/deployment·archive는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다.
+
+**도구가 반환한 live URL은 https://wbscowork.count-sungjin.chatgpt.site 로 배포 전 cometgnome 호스트와 달라졌다.** get_site도 같은 새 주소를 반환했지만 siteID/slug/audience/auth/env를 수정하지 않았고 플랫폼 호스트 변경 이유는 미상이다. 기존 https://wbscowork.cometgnome.chatgpt.site 의 라우팅/인증과 새 주소의 실제 UI는 부모 허용 Chrome 확인 대기다. 코딩 실행기에서 운영 HTTP 재시도/신규 호스트 우회는 하지 않았다.
+
+이번 fresh D1은35표440행(audit407+업무33행)→447행(audit414+업무33행)이다. 업무34표 모든 row의 canonical 멀티셋은 같고 실제 project5/task7/submission5/attachment7·합성 project6/task8/submission6/attachment8 metadata를 보존했다. audit는 INFO20(id800~819,2026-10-28T10:50:06.946~10:50:51.791Z) 추가·기존 INFO13(id393~405,2026-10-23T10:41:43.292~10:50:31.038Z) 부재다. 부재13건은 비교 기준2026-10-28T10:50:50.363Z의5일 만료에 해당하며 변경 없는 runtime-env 기본 LOG_RETENTION_DAYS5/logging cleanup 정책과 시각이 일치하는 관측이다. 실 env에도 LOG_RETENTION_DAYS는 없고 기존 hosted logEvent는 log마다 batch에서 auditCutoff 이전 최대500행 DELETE와 INSERT를 수행한다. cutoff는 Date.now에서5일을 뺀 ISO다. 감사 정리 코드·보관 설정 변경/수동 삭제/migration은0이고 감사로그 전체 불변으로 주장하지 않는다. 모든 페이지는 서버가 반환한 offset으로 끝까지 읽었고 projection omission/truncation0이다.
+
+public policy revision2·auth_client·automations[]와 env revision11/5entries 값은 이전과 같다. R2 원본 bytes 독립 비교는 미실행이다. 실행기 transport disconnected/status unavailable 뒤 같은 `/workspace`에서 pwd1회 성공으로 재연결을 확인했으며 다른 환경 이동/우회는 없었다. QLT030의 실제 오류 표시/정상 복구·초점과 QLT036의 시간표 클릭/모바일·Dialog focus는 아직 부모 브라우저 결과 대기다. 이미지 수신 차단·별도 report canceled 원인 미확정·NAS 사용자 담당은 유지하며 게시 성공을 해당 ! 인수 완료로 확대하지 않는다.
 
 ## 문서 정리 검증
 
