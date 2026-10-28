@@ -777,7 +777,15 @@ QLT036의 위 저장/키보드 관측과 기존v26의 day/week/date·미지정/�
 | exact compiled Worker | 123조건/176요청 PASS. actual PNG multipart201·PATCH·file bytes, 재조회된 SU(DBguest/PM0/TM0)/지정admin(TM0)의 도구 조작과 다른 프로젝트 admin·일반역할/PM회수의 거부를 검증했다. 기존 read/write 구분·SU 유지와 원본 보존을 확인 |
 | build | 최종 Worker/Next Native 호환 build PASS. 기존 Native trace13/정적 분류·Worker proxy env 안내/PLUGIN_TIMINGS 진단 유지, 경고 suppression 없음 |
 
-entry `fc457f857f1f7964ef4f7d8891e8858ba560b7d0693821b39fffd503241937ba`, dist snapshot `c5624033b66677c2ef3aa7d33ead43b6c00f3c4dfc0192a4ec691e9490f5ed1e`(421files/6,064,447bytes)은 전후 불변이다. 운영은version27 그대로이고 실제 브라우저/수화·모바일·새 Google OAuth/NAS는 미실행이다. 지원 로컬 인수와 main/sites 선별 반영은 운영 게시와 별개다. 운영은 부모 검토/게시 승인 게이트이며 이번 save/deploy는0이다. 이미지 전달 차단/다른 ! 항목·사용자 담당 NAS/MariaDB·원본 canon checker 미실행을 유지한다.
+entry `fc457f857f1f7964ef4f7d8891e8858ba560b7d0693821b39fffd503241937ba`, dist snapshot `c5624033b66677c2ef3aa7d33ead43b6c00f3c4dfc0192a4ec691e9490f5ed1e`(421files/6,064,447bytes)은 전후 불변이다. 이 로컬 인수 당시 운영은version27이고 게시 전 부모 검토 게이트가 있었다. 이후 새 직접 승인에 따른version28 게시 결과는 아래에서 별도 구분한다. 실제 v28 브라우저/수화·모바일·새 Google OAuth/NAS는 미실행이다. 이미지 전달 차단/다른 ! 항목·사용자 담당 NAS/MariaDB·원본 canon checker 미실행을 유지한다.
+
+### version28 관리팀 탐색 보완 게시
+
+부모의 새 명시 승인으로 기존 게시 전 검토 게이트를 해제한 뒤 version28이 succeeded다(updated_at2026-10-28T12:23:29.878304+00:00). 이번 게시는 자동 승인 거부 후 재시도가 아니다. 기능 main `77d8d4da8803be3b5d27f5db2bc558158b30068b`/sites·공식 source `707a9f35f20a38b6c32c619e3adbddc7010cadd4`를 반영했고 공식 source는1747737에서 fast-forward했다. 반환 URL https://wbscowork.count-sungjin.chatgpt.site 은 고정 origin과 같다.353 build 입력을 exact source와 대조했고 entry `fc457f85…`/snapshot `c5624033…`는 위 검증 bundle 그대로·추가 build0이다. 양 SHA CI statuses[]는 CI 통과가 아니다. version/deployment·archive는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다.
+
+Fresh D1은35표504→520행이다. 업무34표35행 모두 동일하고 기존 audit469행도 모두 불변이다. 저장된 pre/post row에서 projects.id5/tasks.id7/submissions.id5/submission_attachments.id7이 각각 양쪽에 존재하며 같은 row임도 대조했다. 두 read 사이 INFO16(id883~898,12:21:42.011~12:24:21.710 UTC) 추가만 있었고 삭제/수정0이며 전부 배포 때문이라고 단정하지 않는다. projection은 완전하고 env revision11/5entries·public policy/auth_client·automations0도 동일하다. schema/의존성/env/auth/실제 권한·자료 변경0이며 R2 원본 bytes 독립 대조는 미실행이다.
+
+부모에게 v28 media 링크/빈팀 관리CTA·SU 안내의 실제 브라우저 확인 가능 상태를 전달했으나 아직 결과 대기다. QLT038은 source/compiled 인수·게시 확인과 실제 UI 인수를 구분해 열린 상태로 유지한다. 이전v27 복귀 tar를 보존했고 구validator rollback/자동 down은 하지 않았다. 기존 이미지 수신 차단·다른 ! 항목·사용자 담당 NAS/MariaDB와 원본 canon checker 미실행을 유지한다. 이번 문서 후속은 앱/제품 검사·운영 쓰기·재게시가 아니다.
 
 ## 문서 정리 검증
 
