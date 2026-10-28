@@ -93,7 +93,7 @@ function ProjectCreateForm({
 
 function ProjectEditCard({ project,workspace,users,accessPreview }: { project: Project;workspace:ProjectWorkspace;users:User[];accessPreview:ProjectAccessPreview|null }) {
   return (
-    <Paper data-testid={`project-card-${project.id}`} elevation={0} sx={{ p: 3, borderRadius: 4, border: "1px solid", borderColor: "divider" }}>
+    <Paper id={`project-${project.id}`} data-testid={`project-card-${project.id}`} elevation={0} sx={{ p: 3, borderRadius: 4, border: "1px solid", borderColor: "divider", scrollMarginTop: 88 }}>
       <Stack spacing={2}>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ justifyContent: "space-between", alignItems: { sm: "flex-start" } }}>
           <Stack spacing={0.5}>

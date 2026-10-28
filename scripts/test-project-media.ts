@@ -1,7 +1,7 @@
 /** Real ephemeral D1/R2 and route/repository tests. Native execution remains a separately reported gate. */
 import { setSession } from "../tests/helpers/bootstrap";
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -122,8 +122,54 @@ try {
     const endless = new ReadableStream<Uint8Array>({ pull(controller) { controller.enqueue(new Uint8Array([1])); }, cancel() { consumerCanceled = true; } });
     const consumer = routes.mediaRangeStream(endless, 0, 100).getReader(); await consumer.read(); await consumer.cancel();
     check(consumerCanceled && !endless.locked, "consumer cancellation cancels storage and releases the reader once");
+    // Independent hierarchy regression: no changes to the preceding upload/version assertions.
+    // Keep the earlier revoked guest7 revoked; this block has its own active project guest.
+    const hierarchyGuestEmail="media-hierarchy-guest@example.test";
+    await query("INSERT INTO users(id,email,name,role) VALUES(10,?,'Synthetic hierarchy guest','guest')",[hierarchyGuestEmail]);
+    await query("INSERT INTO project_members(project_id,user_id) VALUES(1001,10)");
+    const hierarchyGuest=()=>setSession({user:{email:hierarchyGuestEmail,role:"guest",isSuperuser:false},expires:"2099-01-01T00:00:00.000Z"});
+    const digest=(bytes:Uint8Array)=>createHash("sha256").update(bytes).digest("hex");
+    const hierarchySession=(id:number)=>{const actor=people.find(person=>person.id===id)!;setSession({user:{email:actor.email,role:actor.role,isSuperuser:false},expires:"2099-01-01T00:00:00.000Z"});};
+    const mediaForm=(label:string)=>{const body=new FormData();body.set("file",new File([pngBytes],"hierarchy-synthetic.png",{type:"image/png"}));body.set("title",label);body.set("caption","Synthetic manager hierarchy");body.set("visibility","team_private");body.set("mutationKey",randomUUID());return body;};
+    const post=(body:FormData)=>new Request(origin+"/api/media",{method:"POST",headers:{Origin:origin},body});
+    const patch=(body:unknown)=>new Request(origin+"/api/media",{method:"PATCH",headers:{Origin:origin,"Content-Type":"application/json"},body:JSON.stringify(body)});
+    let hierarchyItem:Awaited<ReturnType<typeof repo.getProjectMediaForViewer>>|null=null;
+    check(Number((await query("SELECT COUNT(*) n FROM activity_team_members WHERE user_id IN (1,2)"))[0].n)===0,"media hierarchy managers have no team memberships or canonical leader assignments");
+    for(const actor of [1,2]){
+      hierarchySession(actor);
+      check((await repo.listMediaTeams(view(actor),1001)).length===2&&(await repo.listMediaTeams(view(actor),1001)).every(team=>team.canUpload),`actor${actor} can manage both assigned-project media teams without team membership`);
+      for(const teamId of [1101,1102]){
+        const uploadResponse=await routes.uploadMedia(post(mediaForm(`Hierarchy actor${actor} team${teamId}`)),context(undefined,1001,teamId));const uploadBody=await uploadResponse.json();
+        check(uploadResponse.status===201&&uploadBody.item?.canEdit&&uploadBody.item.visibility==="team_private",`actor${actor} refreshed-auth multipart PNG uploads privately to media team${teamId}`);
+        let item=uploadBody.item as Awaited<ReturnType<typeof repo.getProjectMediaForViewer>>;
+        const listing=await routes.readMedia(new Request(origin+"/api/media"),context(undefined,1001,teamId));const listingBody=await listing.json();
+        const download=await routes.serveMedia(new Request(origin+item.fileUrl+"?download=1"),context(item.id,1001,teamId));
+        check(listing.status===200&&listingBody.items.some((row:{id:number})=>row.id===item.id)&&download.status===200&&digest(new Uint8Array(await download.arrayBuffer()))===digest(pngBytes)&&download.headers.get("cache-control")==="private, no-store",`actor${actor} reads fresh private listing and exact protected PNG bytes for team${teamId}`);
+        const shared=await routes.editMedia(patch({title:item.title,caption:item.caption,visibility:"project",version:item.version,mutationKey:randomUUID()}),context(item.id,1001,teamId));const sharedBody=await shared.json();
+        check(shared.status===200&&sharedBody.item.version===2&&sharedBody.item.visibility==="project",`actor${actor} can explicitly share media team${teamId} through guarded PATCH`);
+        hierarchyGuest();const guest=await routes.serveMedia(new Request(origin+item.fileUrl),context(item.id,1001,teamId));check(guest.status===200&&digest(new Uint8Array(await guest.arrayBuffer()))===digest(pngBytes),`project guest reads only actor${actor}'s explicitly shared media team${teamId}`);
+        hierarchySession(actor);const privateAgain=await routes.editMedia(patch({title:item.title,caption:"Private again",visibility:"team_private",version:2,mutationKey:randomUUID()}),context(item.id,1001,teamId));const privateBody=await privateAgain.json();
+        check(privateAgain.status===200&&privateBody.item.version===3&&privateBody.item.visibility==="team_private",`actor${actor} can restore media team${teamId} private visibility without replacing bytes`);
+        item=privateBody.item;hierarchyGuest();check((await routes.serveMedia(new Request(origin+item.fileUrl),context(item.id,1001,teamId))).status===404,`project guest is denied on next private-file request for actor${actor} team${teamId}`);
+        hierarchySession(actor);const privateFile=await routes.serveMedia(new Request(origin+item.fileUrl),context(item.id,1001,teamId));check(privateFile.status===200&&digest(new Uint8Array(await privateFile.arrayBuffer()))===digest(pngBytes)&&(await repo.getProjectMediaForViewer(view(actor),1001,teamId,item.id)).version===3,`actor${actor} retains fresh private metadata/file access after closing media sharing`);
+        hierarchyItem=item;
+      }
+    }
+    assert(hierarchyItem);const protectedItem=hierarchyItem;
+    hierarchySession(3);
+    check((await routes.readMedia(new Request(origin+"/api/media"),context(undefined,1001,protectedItem.teamId))).status===404&&(await routes.serveMedia(new Request(origin+protectedItem.fileUrl),context(protectedItem.id,1001,protectedItem.teamId))).status===404&&(await routes.editMedia(patch({title:"Forbidden",caption:"",visibility:"project",version:3,mutationKey:randomUUID()}),context(protectedItem.id,1001,protectedItem.teamId))).status===404&&(await routes.uploadMedia(post(mediaForm("Forbidden unrelated admin")),context(undefined,1001,protectedItem.teamId))).status===404,"other-project administrator cannot list/download/edit/upload another project's media even with valid files and versions");
+    hierarchySession(2);await query("UPDATE project_members SET active=0 WHERE project_id=1001 AND user_id=2");
+    try{
+      const before=Number((await query("SELECT COUNT(*) n FROM project_media_items"))[0].n);
+      check((await routes.readMedia(new Request(origin+"/api/media"),context(undefined,1001,protectedItem.teamId))).status===404&&(await routes.serveMedia(new Request(origin+protectedItem.fileUrl),context(protectedItem.id,1001,protectedItem.teamId))).status===404&&(await routes.editMedia(patch({title:"Revoked",caption:"",visibility:"project",version:3,mutationKey:randomUUID()}),context(protectedItem.id,1001,protectedItem.teamId))).status===404&&(await routes.uploadMedia(post(mediaForm("Revoked admin")),context(undefined,1001,protectedItem.teamId))).status===404&&Number((await query("SELECT COUNT(*) n FROM project_media_items"))[0].n)===before,"old administrator session loses all media actions immediately after project revocation without creating records");
+      hierarchySession(1);const suFile=await routes.serveMedia(new Request(origin+protectedItem.fileUrl),context(protectedItem.id,1001,protectedItem.teamId));const suUpload=await routes.uploadMedia(post(mediaForm("SU after admin project revocation")),context(undefined,1001,1102));
+      check(suFile.status===200&&digest(new Uint8Array(await suFile.arrayBuffer()))===digest(pngBytes)&&suUpload.status===201,"unassigned guest-role env SU still reads private original bytes and uploads while administrator membership is revoked");
+    }finally{await query("UPDATE project_members SET active=1 WHERE project_id=1001 AND user_id=2");}
+    check(Number((await query("SELECT active FROM project_members WHERE project_id=1001 AND user_id=7"))[0].active)===0,"earlier revoked guest fixture stays revoked throughout the independent hierarchy block");
+    check((await query("SELECT role FROM users WHERE id=1"))[0].role==="guest"&&Number((await query("SELECT COUNT(*) n FROM project_members WHERE user_id=1"))[0].n)===0&&Number((await query("SELECT COUNT(*) n FROM activity_team_members WHERE user_id IN (1,2)"))[0].n)===0,"media hierarchy verification never assigns managers to teams or upgrades the configured SU account role");
+
 
   }, { requestUrl: origin + "/", publicOrigin: origin, projectId: "appgprj_syntheticOrigin", expectedProjectId: "appgprj_syntheticOrigin" });
-  await writeFile(path.join(out, "result.json"), JSON.stringify({ complete: true, runtime: "d1-r2", checks: assertions.length, assertions, nativeExecuted: false, nativeBlocker: "Selected environment has no MariaDB binary/service; unsupported install paths are not retried.", browserExecuted: false, productionChanged: false }, null, 2));
+  await writeFile(path.join(out, "result.json"), JSON.stringify({ complete: true, runtime: "d1-r2", checks: assertions.length, assertions, nativeExecuted: false, nativeBlocker: "Native/NAS execution is outside this D1-only hierarchy regression and remains user-owned.", browserExecuted: false, productionChanged: false }, null, 2));
   console.log(JSON.stringify({ complete: true, checks: assertions.length, runtime: "d1-r2", nativeExecuted: false }));
 } finally { session(null); await mf.dispose(); }

@@ -196,6 +196,32 @@ async function run(runtime: "native" | "d1", query: Query) {
   check(JSON.stringify(await query("SELECT * FROM team_preparation_revisions WHERE team_id=1101 AND version=6"))===preservedRevision && (await repo.getTeamPreparationHistory(viewer("member"),1001,1101)).length===7,"row removal preserves the complete previous immutable revision");
   check(Number((await query("SELECT COUNT(*) n FROM users"))[0].n)===10 && Number((await query("SELECT COUNT(*) n FROM projects"))[0].n)===2 && Number((await query("SELECT COUNT(*) n FROM activity_teams"))[0].n)===8,"synthetic users/projects/teams preserved without deletes");
   check((await query("SELECT role FROM users WHERE id=1"))[0].role==="guest" && Number((await query("SELECT COUNT(*) n FROM project_members WHERE user_id=1"))[0].n)===0,"environment SU fixture remains guest and unbound; no account privilege mutations");
+  // Independent hierarchy regression: preserve all preceding fixed-version/count evidence.
+  check(Number((await query("SELECT COUNT(*) n FROM activity_team_members WHERE user_id IN (1,2)"))[0].n)===0,"hierarchy managers have no team memberships or team-leader assignments");
+  for(const who of ["su","admin"] as const){
+    session(who,false); // Auth must refresh env SU from a guest session with a false SU flag.
+    const directory=await repo.listTeamPreparations(viewer(who),1001);
+    check(preparationKinds.every((_,index)=>directory.some(row=>row.teamId===1101+index&&row.canEdit)),`${who} directory grants management of all six assigned-project preparation kinds without team membership`);
+    for(const [index,kind] of preparationKinds.entries()){
+      const teamId=1101+index,current=await read(who,teamId),beforeHistory=await repo.getTeamPreparationHistory(viewer(who),1001,teamId);
+      check(current.canEdit&&beforeHistory.length>0,`${who} reads current ${kind} preparation and immutable history without a team assignment`);
+      const nextDocument=document(kind,`Hierarchy ${who} ${kind}`),savedResponse=await call("PUT",routeRequest(input(nextDocument,current.version)),routeContext("1001",String(teamId))),saved=await savedResponse.json();
+      const refreshedResponse=await call("GET",routeRequest(),routeContext("1001",String(teamId))),refreshed=await refreshedResponse.json();
+      check(savedResponse.status===200&&refreshedResponse.status===200&&saved.sheet.version===current.version+1&&refreshed.sheet.canEdit===true&&JSON.stringify(refreshed.sheet.document)===JSON.stringify(nextDocument)&&refreshed.history.some((row:{version:number})=>row.version===saved.sheet.version),`${who} refreshed-auth ${kind} PUT/GET persists exact content, edit permission and new revision`);
+    }
+  }
+  session("otherAdmin");
+  for(const [index,kind] of preparationKinds.entries()){
+    const ctx=routeContext("1001",String(1101+index));
+    check((await call("GET",routeRequest(),ctx)).status===404&&(await call("PUT",routeRequest(input(document(kind),0)),ctx)).status===404,`other-project administrator cannot read or write ${kind} tools`);
+  }
+  session("admin");await query("UPDATE project_members SET active=0 WHERE project_id=1001 AND user_id=2");
+  try{
+    check((await call("GET",routeRequest())).status===404&&(await call("PUT",routeRequest(input(document("meal"),0)))).status===404,"existing administrator session loses preparation read/write on the next request after project revocation");
+    session("su",false);const suCurrent=await read("su"),suSaved=await call("PUT",routeRequest(input(document("meal","SU after admin project revocation"),suCurrent.version)));
+    check(suSaved.status===200&&(await call("GET",routeRequest())).status===200,"unassigned env SU with guest session retains preparation writes while administrator project access is revoked");
+  }finally{await query("UPDATE project_members SET active=1 WHERE project_id=1001 AND user_id=2");}
+  check((await query("SELECT role FROM users WHERE id=1"))[0].role==="guest"&&Number((await query("SELECT COUNT(*) n FROM project_members WHERE user_id=1"))[0].n)===0&&Number((await query("SELECT COUNT(*) n FROM activity_team_members WHERE user_id IN (1,2)"))[0].n)===0,"hierarchy verification preserves env SU guest identity/unassigned state and both managers' absence from teams");
   const result={runtime,checks:checks.length,assertions:checks,requests};results.push(result);await writeFile(path.join(output,`${runtime}-result.json`),JSON.stringify(result,null,2));
 }
 try{

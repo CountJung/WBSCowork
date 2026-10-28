@@ -11,5 +11,5 @@ export default async function ProjectMediaPage({ params, searchParams }: { param
   const teamId = team === undefined ? undefined : Number(team);
   const [teams, initial] = await Promise.all([listMediaTeams(viewer, portal.project.id), listProjectMedia(viewer, portal.project.id, teamId)]);
   if (teamId !== undefined && !teams.some(row => row.id === teamId)) notFound();
-  return <ProjectMediaGallery projectId={portal.project.id} teams={teams} initialItems={initial.items} initialTeamId={teamId} initialNextAfter={initial.nextAfter} />;
+  return <ProjectMediaGallery projectId={portal.project.id} canManageTeams={portal.canManage} teams={teams} initialItems={initial.items} initialTeamId={teamId} initialNextAfter={initial.nextAfter} />;
 }
