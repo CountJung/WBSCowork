@@ -746,7 +746,15 @@ entry `16c63028bd55604088b037ac7202fff6ad767da9514f6851d238d12c7524da7e`, dist s
 
 기능 main `5405b3ea7648d541fe55f66ed6e6b3dc11473116`/sites·공식 source `1747737e649533aee47cc29e35c82289c30dee6d` 원격 반영 후 version27 배포 succeeded를 확인했다(updated_at2026-10-28T11:40:58.187789+00:00). 반환 URL https://wbscowork.count-sungjin.chatgpt.site 은 고정 공개 origin과 일치하며 env revision11이다. 같은 Sites의353 build 입력을 모두 대조했고 package 객체 키 순서만 의미상 동일함을 정규화 확인해 사용했으며 추가 build 없이 위 final entry/snapshot을 유지했다. 양 SHA CI statuses[]는 CI 통과가 아니다. 고유 version/deployment·archive는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다.
 
-Fresh pre/post D1은35표485→485행이며 **모든 표의 모든 row canonical 멀티셋이 동일**하고 projection은 완전하다. public policy/auth_client·env revision11/5entries·automations0도 같다. schema/의존성/env/실제 권한 변경0이며 R2 실제 bytes 독립 비교는 여전히 미실행이다. 부모 Chrome의 실제 준비표 저장·새로고침·재조회/복원 확인은 대기여서 QLT037 운영 인수를 닫지 않는다. 원본 v1 실패와 합성 GREEN·이번 배포 확인을 구분하고 이전 오류/브라우저·NAS·이미지 전달 제한은 유지한다. 이 문서 후속은 코드/운영 저장·재게시를 수행하지 않는다.
+Fresh pre/post D1은35표485→485행이며 **모든 표의 모든 row canonical 멀티셋이 동일**하고 projection은 완전하다. public policy/auth_client·env revision11/5entries·automations0도 같다. schema/의존성/env/실제 권한 변경0이며 R2 실제 bytes 독립 비교는 여전히 미실행이다. 배포 직후에는 부모 Chrome의 실제 저장/복원 인수가 대기였으며 후속 관측은 아래에서 별도 기록한다. 원본 v1 실패와 합성 GREEN·이번 배포 확인을 구분하고 이전 오류/브라우저·NAS·이미지 전달 제한은 유지한다. 이 문서 후속은 코드/운영 저장·재게시를 수행하지 않는다.
+
+### version27 부모 저장과 버전 편집 복원 인수
+
+부모의 실제 project6/team4 QA에서 원본1행+추가 합성4행을 정확히5행으로 저장해v2(20:49 KST)가 됐고11:50:04 UTC 새로고침에도5행/시각이 유지됐다. 저장v2의 주간5개·다음날1개, 자정 넘김 상세30분·긴 제목/준비물/메모, Enter/Tab/Escape와 초점 관측이 PASS다.
+
+추가4행은 **일반 버전 편집으로 제외**해 원본1행의v3(20:53 KST)를 저장했고11:54:22 UTC 재조회에서도v3/원본1행을 확인했다. 영구 삭제가 아니며 원본2026-10-24/제목 “QA 합성 이름 없는 게임”·순서1·소요15분·빈시각·준비물 합성 색종이·빈메모·planned·체크0이 보존됐다. v1/v2 이력과 공개범위도 유지했다. QLT037은 이 실제 저장/재조회·복원 인수 범위에서 완료 이관한다. 이는 부모의 승인된 합성자료 QA이며 문서 담당의 운영 저장이나 실제 사용자 자료 변경이 아니다.
+
+QLT036의 위 저장/키보드 관측과 기존v26의 day/week/date·미지정/겹침/5분/자정·CSS359/390/768 가로넘침0은 회차별로 구분한다. QLT030의 기간별 구체 안내/aria-invalid/초점·정상 preview 관측도 기존 근거를 유지한다. 실제 phone touch/Safari·다른 역할/관측 외 흐름·원본 R2 bytes 비교·가이드 이미지·사용자 담당 NAS와 다른 ! 항목은 완료로 확대하지 않는다. source1747737/version27는 그대로며 이번 후속은 코드 변경/제품 검사/재게시가 아니다.
 
 ## 문서 정리 검증
 
