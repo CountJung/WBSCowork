@@ -16,7 +16,7 @@
 | PRD-066 소스/게시 범위, 2026-10-27 | meal 최소 입력/nullable·선택 상세 기본 접힘과 계산/표시를 정합화하고 기존 원문/공유·다른 kind 검증 보존, unit/SSR·D1 source/compiled69·88요청 후 version25 게시 완료. [실제 범위](HARNESS_MAP.md#식단-간소화-구현-검증), 부모의 식단 읽기/상세 토글·키보드·좁은 CSS 화면 부분 PASS, 실제 저장/공유·touch/Safari는 QLT-035 잔여·단순 구앱 rollback 제한 유지 |
 | PRD-067/QLT-030 소스·게시 범위, 2026-10-28 | 기존 레크레이션의 파생 시간표와 보고서 기간별 안전한 오류 안내 구현·지원 로컬/compiled 회귀 후 version26 게시/업무 자료·설정 보존 확인. [게시·호스트 차이](HARNESS_MAP.md#version26-시간표와-기간-안내-게시). 후속 QLT030 관측 인수 완료·시간표 읽기/키보드·좁은 CSS 화면 부분 PASS, 저장403은 QLT037·다른 화면/주소 잔여는 별도로 유지 |
 | QLT-030, 2026-10-28 | 기간별 고정 안내/aria·초점/입력 수정 오류 해제 구현·지원 회귀/version26 게시 후 부모의 역전/31일 초과/future-end 안내와 정상 preview 관측 인수 완료. [실제 범위](HARNESS_MAP.md#v26-부모-시간표와-보고서-기간-안내-인수), 최종 생성/별도 canceled 원인·다른 ! 인수는 포함하지 않음 |
-| QLT-037 소스/게시 범위, 2026-10-28 | 불변 ingress context·같은 site 고정 origin/build 검증·공통 exact Origin guard의 합성 GREEN과 기존 회귀 후 version27 배포 succeeded·35표485행 전후 동일 확인. [게시/미확인](HARNESS_MAP.md#version27-origin-보강-게시), 실제 브라우저 저장 인수는 열린 상태 |
+| QLT-037, 2026-10-28 | 불변 ingress context·고정 origin/build 검증·공통 exact Origin guard의 합성 GREEN/version27 게시 후 부모의5행v2 저장/재조회·일반 버전 편집의 원본1행v3 복원·v1/v2 이력/공개범위 보존 인수 완료. [실제 인수/한계](HARNESS_MAP.md#version27-부모-저장과-버전-편집-복원-인수). 영구 삭제가 아니며 다른 역할/실제 phone/Safari는 별도 |
 | QLT-001/002, 2026-08 | ESLint 기준선, FSD M0~M5 완료. root app 조립과 public API로 이동하고 components/lib/models 호환층 제거. URL/권한/SQL 변경과 구조 이동을 분리 |
 | QLT-003~007, 2026-09 | private 파생 댓글/첨부 props 유출, ownership 없는 mutation, unscoped 단건, 경로 로그, task route의 project 관리 권한을 수정. SQL viewer/IdScope·상위 관계·작성자/admin·canonical project 경로를 강제 |
 | QLT-008/009 | node --import tsx로 loader 경고 정리, 실제 인가 경로의 node:test visibility fixture 도입. synthetic session은 실제 OAuth가 아님 |
@@ -123,7 +123,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`. 과거 origin은 https://wbs
 | 24 · 2026-10-27 03:25:17.100610 | 110f4ec2e0c86ae94c0fe59e58b04adbac1ab59d | succeeded, appgdep_6ae01988985481918a40315bd63093b0. active/latest24·exact source/deployment 일치·schema/migration0, 업무34표 동일·기존 audit441행 보존/INFO8 추가·설정 동일. 후속 부모 Chrome의 좁은 CSS 화면/메뉴 관측 부분 PASS·touch/Safari/미디어 업로드 잔여 |
 | 25 · 2026-10-27 04:15:33.089804 | 81996494edd9694f8ef07f8e38ce392bca37ad72 | succeeded, appgdep_6ae025515d408191a4979e888f8c1866. active/latest25·exact source/deployment 일치·schema/migration0, 업무34표 동일·기존 audit504행 보존/두 read 사이 INFO5 추가·설정 동일. 후속 식단 읽기/토글·360/390/768 CSS 화면 부분 PASS, 실제 저장/공유·touch/Safari 잔여 |
 | 26 · 2026-10-28 10:49:29.599137 | 7649ad3c284873ce1b3b727be61fd084262db069 | succeeded, appgdep_6ae1d32e84188191982aebd6b3712a30. active/latest26·exact source/deployment 일치·업무34표 동일/audit 만료13·INFO20 추가·설정 동일. 새 반환 호스트/기존 주소 라우팅과 실제 UI는 부모 확인 대기 |
-| 27 · 2026-10-28 11:40:58.187789(updated_at) | 1747737e649533aee47cc29e35c82289c30dee6d | succeeded, appgdep_6ae1df405d188191b5f45129ba13e9f8. 반환 count-sungjin URL=고정 origin,35표485행 모든 canonical row 동일·설정 불변. 실제 브라우저 저장/재조회 인수 대기 |
+| 27 · 2026-10-28 11:40:58.187789(updated_at) | 1747737e649533aee47cc29e35c82289c30dee6d | succeeded, appgdep_6ae1df405d188191b5f45129ba13e9f8. 반환 count-sungjin URL=고정 origin,35표485행 모든 canonical row 동일·설정 불변. 후속 부모의v2 저장/재조회·버전 편집v3 원본 복원/이력 보존 인수 PASS |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -158,7 +158,7 @@ version25 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_f8f2e75bd21081
 
 version26 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_fcfaeecd9b3c819181d99a7895cb0262`다. source `7649ad3c284873ce1b3b727be61fd084262db069`에 시간표와QLT030이 포함되고 기능 mainfb325de와 후속 문서 HEAD를 구분한다. 도구 반환 호스트 변경·자료/설정 대조와 실제 UI 미인수는 [하네스](HARNESS_MAP.md#version26-시간표와-기간-안내-게시)를 따른다.
 
-version27 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_54d5a6e7d9d48191bb89d0cdd8a8d997`다. 고정 origin 보강 source `1747737e649533aee47cc29e35c82289c30dee6d`와 기능 main5405b3e·후속 문서 HEAD를 구분한다. exact bundle 게시·전체 D1/설정 보존과 실제 저장 미인수는 [하네스](HARNESS_MAP.md#version27-origin-보강-게시)를 따른다.
+version27 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_54d5a6e7d9d48191bb89d0cdd8a8d997`다. 고정 origin 보강 source `1747737e649533aee47cc29e35c82289c30dee6d`와 기능 main5405b3e·후속 문서 HEAD를 구분한다. exact bundle 게시·배포 직전후 D1/설정 보존은 [게시 근거](HARNESS_MAP.md#version27-origin-보강-게시), 부모의 후속 실제 저장·버전 편집 복원 인수는 [별도 관측](HARNESS_MAP.md#version27-부모-저장과-버전-편집-복원-인수)을 따른다. 배포 전후485행 대조를 이후 합성 버전 편집 후 전체 DB 불변으로 재사용하지 않는다.
 
 ### package와 복구 근거
 
