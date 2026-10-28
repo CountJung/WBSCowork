@@ -742,6 +742,12 @@ Worker 최초 ingress의 불변 ALS/공개 origin pin·동일 siteID build 검�
 
 entry `16c63028bd55604088b037ac7202fff6ad767da9514f6851d238d12c7524da7e`, dist snapshot `2e940dd62f9bf7f98b4d748a792976c9a1ad56b1457669d09ced98bf85fa77ea`(421files/6,062,397bytes)은 전후 동일하다. 게시 전 공식 preflight는 현재 live origin이 고정한 count-sungjin과 일치하고 version26/public·env revision11/5entries·automations0, D1 fresh35표485행의 완전 projection을 확인했다. 현 운영v26의 저장1회403/v1 보존과 합성 GREEN을 구분하며 양 브랜치 커밋/푸시·수정 게시·부모 Chrome의 실제 저장 재검증은 아직 대기다. 합성 원문 외 실제 자료/권한 변경·운영 반복 저장/삭제·NAS 실행·이미지 전송은0이며 게시/실UI 인수 완료로 확대하지 않는다. 원본 canon checker는 미실행이다.
 
+### version27 Origin 보강 게시
+
+기능 main `5405b3ea7648d541fe55f66ed6e6b3dc11473116`/sites·공식 source `1747737e649533aee47cc29e35c82289c30dee6d` 원격 반영 후 version27 배포 succeeded를 확인했다(updated_at2026-10-28T11:40:58.187789+00:00). 반환 URL https://wbscowork.count-sungjin.chatgpt.site 은 고정 공개 origin과 일치하며 env revision11이다. 같은 Sites의353 build 입력을 모두 대조했고 package 객체 키 순서만 의미상 동일함을 정규화 확인해 사용했으며 추가 build 없이 위 final entry/snapshot을 유지했다. 양 SHA CI statuses[]는 CI 통과가 아니다. 고유 version/deployment·archive는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다.
+
+Fresh pre/post D1은35표485→485행이며 **모든 표의 모든 row canonical 멀티셋이 동일**하고 projection은 완전하다. public policy/auth_client·env revision11/5entries·automations0도 같다. schema/의존성/env/실제 권한 변경0이며 R2 실제 bytes 독립 비교는 여전히 미실행이다. 부모 Chrome의 실제 준비표 저장·새로고침·재조회/복원 확인은 대기여서 QLT037 운영 인수를 닫지 않는다. 원본 v1 실패와 합성 GREEN·이번 배포 확인을 구분하고 이전 오류/브라우저·NAS·이미지 전달 제한은 유지한다. 이 문서 후속은 코드/운영 저장·재게시를 수행하지 않는다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.
