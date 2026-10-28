@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Alert, Box, Button, Checkbox, Chip, FormControlLabel, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import { activityKindLabels, type ActivityKind } from "@/src/shared/config/activity-kinds";
-import { createPreparationEntry, mealQuantity, normalizePreparationDocument, PREPARATION_MAX_ENTRIES, type PreparationDocument, type PreparationEntry, type PreparationStatus } from "@/src/entities/team-preparation";
+import { createPreparationEntry, mealQuantity, normalizePreparationDocument, PREPARATION_MAX_ENTRIES, type PreparationDocument, type PreparationEntry, type PreparationStatus, type RecreationPreparationEntry } from "@/src/entities/team-preparation";
 import { formatAppDateTime } from "@/src/shared/lib/date";
+import { RecreationTimetable } from "@/src/features/recreation-timetable";
 import FieldLabel from "@/src/shared/ui/field-label";
 
 type Sheet = { projectId: number; teamId: number; teamName: string; kind: ActivityKind; canEdit: boolean; version: number; document: PreparationDocument; updatedAt: string | null; updatedBy: number | null; mealQuantities: Record<string, number> };
@@ -125,15 +126,17 @@ export default function TeamPreparationEditor({ initialSheet, initialHistory, de
     <Alert severity="info">팀 활동에 필요한 일정과 준비만 기록하세요. 건강정보·아동 등 대상자의 개별 개인정보는 입력하지 않습니다. 준비표 저장은 WBS 업무의 완료 상태를 변경하지 않습니다.</Alert>
     {!sheet.canEdit ? <Alert severity="info">읽기 전용입니다. 편집은 현재 팀장 또는 이 프로젝트 관리자에게 요청하세요.</Alert> : null}
     {error ? <Alert severity="error" role="alert">{error}</Alert> : null}{success ? <Alert severity="success" role="status">{success}</Alert> : null}
+    {sheet.kind === "recreation" && !editing ? <Stack direction={{ xs: "column", sm: "row" }} spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>{sheet.canEdit ? <Button type="button" variant="contained" onClick={() => { setEditing(true); setSuccess(""); }}>준비표 편집</Button> : null}<Button type="button" disabled={pending} onClick={reload}>최신 준비표 불러오기</Button></Stack> : null}
+    {sheet.kind === "recreation" ? <RecreationTimetable entries={draft.entries.filter((entry): entry is RecreationPreparationEntry => "order" in entry && "durationMinutes" in entry)} today={defaultDate} draft={editing} /> : null}
     <Box component="form" onSubmit={save} aria-busy={pending}><Stack spacing={2}>
-      {!draft.entries.length ? <Paper sx={{ p: 3 }}><Typography>준비 항목이 없습니다.{sheet.canEdit ? " 편집을 눌러 첫 항목을 추가하세요." : " 팀장에게 준비표 작성을 요청하세요."}</Typography></Paper> : null}
-      {draft.entries.map((entry, index) => <Paper component="section" key={entry.id} sx={{ p: { xs: 2, sm: 3 }, minWidth: 0, border: invalidRow === entry.id ? "2px solid" : "1px solid", borderColor: invalidRow === entry.id ? "error.main" : "divider" }} aria-describedby={invalidRow === entry.id ? `entry-error-${entry.id}` : undefined}>
+      {!draft.entries.length && sheet.kind !== "recreation" ? <Paper sx={{ p: 3 }}><Typography>준비 항목이 없습니다.{sheet.canEdit ? " 편집을 눌러 첫 항목을 추가하세요." : " 팀장에게 준비표 작성을 요청하세요."}</Typography></Paper> : null}
+      {(editing || sheet.kind !== "recreation") ? draft.entries.map((entry, index) => <Paper component="section" key={entry.id} sx={{ p: { xs: 2, sm: 3 }, minWidth: 0, border: invalidRow === entry.id ? "2px solid" : "1px solid", borderColor: invalidRow === entry.id ? "error.main" : "divider" }} aria-describedby={invalidRow === entry.id ? `entry-error-${entry.id}` : undefined}>
         <Stack spacing={2}>{editing ? <><Typography component="h2" variant="h6">준비 항목 {index + 1}</Typography><EntryFields entry={entry} kind={sheet.kind} disabled={pending} invalid={invalidRow === entry.id} update={patch => updateEntry(entry.id, patch)} />{invalidRow === entry.id ? <Typography id={`entry-error-${entry.id}`} color="error">날짜·제목·필수값과 입력 범위를 확인해 주세요.</Typography> : null}<Button type="button" color="error" disabled={pending} sx={{ alignSelf: "flex-end" }} onClick={() => { if (window.confirm("이 항목을 현재 준비표에서 제거할까요? 이전 저장 버전의 이력은 보존됩니다.")) setDraft(value => ({ ...value, entries: value.entries.filter(item => item.id !== entry.id) })); }}>항목 제거</Button></> : <EntrySummary entry={entry} kind={sheet.kind} quantity={sheet.mealQuantities[entry.id]} />}</Stack>
-      </Paper>)}
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+      </Paper>) : null}
+      {(editing || sheet.kind !== "recreation") ? <Stack direction={{ xs: "column", sm: "row" }} spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
         {editing ? <><Button type="button" variant="outlined" disabled={pending || draft.entries.length >= PREPARATION_MAX_ENTRIES} onClick={() => setDraft(value => ({ ...value, entries: [...value.entries, createPreparationEntry(sheet.kind, defaultDate)] }))}>준비 항목 추가 · {draft.entries.length}/{PREPARATION_MAX_ENTRIES}</Button><Button type="submit" variant="contained" disabled={pending}>{pending ? "저장 중…" : "준비표 저장"}</Button><Button type="button" disabled={pending} onClick={() => { if (!dirty || window.confirm("저장하지 않은 입력을 취소할까요?")) { setDraft(sheet.document); setEditing(false); setError(""); setInvalidRow(null); attempt.current = null; } }}>편집 취소</Button></> : sheet.canEdit ? <Button type="button" variant="contained" onClick={() => { setEditing(true); setSuccess(""); }}>준비표 편집</Button> : null}
         <Button type="button" disabled={pending} onClick={reload}>최신 준비표 불러오기</Button>
-      </Stack>
+      </Stack> : null}
     </Stack></Box>
     <details><summary>최근 저장 이력 · 최대 10개</summary><Box component="ul" sx={{ pl: 3 }}>{history.map(item => <li key={item.version}>v{item.version} · {formatAppDateTime(new Date(item.changedAt))} · 저장자 #{item.changedBy}</li>)}</Box>{!history.length ? <Typography>저장 이력이 없습니다.</Typography> : null}<Typography variant="body2" color="text.secondary">이전 저장 내용은 보존됩니다. 자동 복원·영구 삭제 기능은 제공하지 않습니다.</Typography></details>
   </Stack>;

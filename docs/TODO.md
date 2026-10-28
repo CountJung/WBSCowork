@@ -2,7 +2,7 @@
 
 이 문서는 **지금 어디까지 왔고 다음 무엇을 해야 하는가**를 소유한다. 단계/완료 게이트는 [MASTER_PLAN](MASTER_PLAN.html), 과거 근거는 [COMPLETED_LOG](COMPLETED_LOG.md), 상세 digest 설계는 [계획](PROJECT_DIGEST_REPORT_PLAN.md)에 있다.
 
-최종 검토: 2026-10-27 · 다음 번호: **QLT-036 / RPT-021 / OPS-041 / PRD-067**
+최종 검토: 2026-10-28 · 다음 번호: **QLT-037 / RPT-021 / OPS-041 / PRD-068**
 
 ## 현재 상태
 
@@ -14,6 +14,7 @@
 | 독립 프로젝트 포털 | PRD-060~063 소스 구현·D1 source64/미디어D1·R2 source46·compiled Worker45조건/66요청 PASS. 양 build·lint/type/FSD PASS, version23 게시 완료·부모 클라우드 데스크톱 읽기 부분 PASS | 새 포털만 엄격 소속 격리·독립 홈/유형별 표시/사이드바, 기존 준비표 재사용과 프로젝트 내부 미디어 도구. 기존 legacy WBS/private·실계정·실제 자료 보존. NAS/MariaDB 실행 검증은 사용자 담당으로 이번 게이트에서 제외하며 실제 저장/미디어 업로드·touch/Safari 미검증·가이드 이미지 미완료는 별도 유지. 좁은 Chrome 화면의 후속 부분 관측은 QLT034 참조. 프로젝트 생성→관리자 지정→팀 구성→공유 자료 준비의 시작 체크리스트는 미확정 제안이며 계획/구현으로 확정하지 않음 |
 | 모바일 우선 탐색 | PRD-065 소스 구현·QLT-034 지원 로컬 검사/최종 build 통과, version24 게시·부모 Chrome의360/390/768 CSS 화면과 메뉴 관측 범위 PASS | 기본 닫힌 상단 햄버거·본문 전체폭·메뉴 중복 축소와360/390/768px 도구 배치 구현. compiled47조건/66요청과 Chrome 창 resize/확대 기반 메뉴·키보드/좁은 화면 부분 PASS, 실제 touch/Safari/미디어 업로드는 미검증으로 구분하고 실제 자료/권한/공개범위/schema 변경0·NAS 검증은 사용자 담당 |
 | 식단 간소화 | PRD-066 소스·지원 로컬 검사/최종 build 완료, version25 게시·부모의 식단 읽기/토글·좁은 CSS 화면 부분 PASS, QLT-035 저장/공유 등 잔여 | 날짜·메뉴·진행상태 필수(planned=준비 전 기본)로 시작, 나머지는 선택/상세정보 기본 접힘. 기존 자료/버전·공유·권한 보존·meal nullable 정규화/SQL migration0.새 문서 저장 후 구validator로 단순 복귀 시 조회503 가능·호환 reader 유지 필요 |
+| 레크레이션 시간표 | PRD-067 소스 구현·기초 검증 완료, QLT-036 지원 로컬 인수 완료·실제 화면 인수 대기·운영version25 유지 | 기존 날짜/시각/소요/순서의 파생 일간·주간 UI·읽기 전용 상세. 새 라이브러리/schema/API·서버 권한 변경0, 실제 브라우저/모바일·Dialog 초점은 미검증. 지원 검증·양 브랜치 커밋/푸시 후 운영 게시 전 보고·재게시 금지 |
 | 최근 검증 | QLT-021 핵심 삭제 오판은 실제 Google 세션의 운영 UI 인수 PASS | [검증 기준선](HARNESS_MAP.md#검증-기준선). 신규 업로드는 통과했으나 추가 첨부·운영 파일 삭제는 미검증이며 QLT-022와 다른 열린 항목 유지 |
 | 선행 로컬 구현 | QLT-016/029와 RPT-015/017은 독립 로컬 검증 완료 이관. QLT-028/020·OPS-032와 RPT-016/018/019의 외부 인수 게이트 유지 | 구현 소스·추가 compiled33·main/sites 푸시와 기존 Sites v19 게시 완료. 최초 거부와 새 승인 후1회 배포·보존 확인은 [승인/게시 이력](HARNESS_MAP.md#version19-승인과-운영-배포)을 따른다. D5 외부 발송·운영 예약 활성화·NAS/실계정/보안/영구 삭제는 제외 |
 | 팀별 공통 준비표 | PRD-058 소스·양 DB·compiled HTTP 완료, QLT-031 운영 envSU/1165px 부분 인수 PASS·모바일/실제 팀장 등 잔여 | exact 게시 checkout build/compiled30·34HTTP 후 같은 저장v20 배포 완료. [최초 거부·새 승인/배포](HARNESS_MAP.md#version20-승인과-운영-배포), 기존 실제 사용자 기록/권한·NAS 변경 없음. 부모가 만든 합성 project6/팀1~4/준비표v1은 보존하며 실제 화면 잔여는 QLT-031로 유지 |
@@ -47,6 +48,8 @@
 | QLT-034 | [!] | P0·M2: unit296(action33/unit263)·focused18/SSR7/event AST4·lint/type/FSD·Worker/Native 호환 build와 compiled Worker47조건/66요청 PASS(범위 중복 합산 금지). 부모 Chrome 창 resize/확대 기반360/390/768 CSS 화면·메뉴 열기/닫기/outside/Escape·focus 복원/양방향 trap·프로젝트 전환/BackForward 관측 PASS. 실제 touch/Safari·미디어 업로드 UI·저장/실패 초안 등은 미검증이며 전체 모바일 PASS로 확대하지 않음. version24/source·deployment와 fresh35표474행 기준 보존 대조 완료(업무34표 동일·audit INFO8 추가). 앱 출처 console 오류/경고0은 수집 표본에 한정하며 새 로그인/역할 인수는 아님. NAS/MariaDB 실행은 사용자 담당 | [검증·한계](HARNESS_MAP.md#모바일-우선-탐색-구현-검증) |
 | PRD-066 | [~] | P1·F0/F1 소스 완료: 날짜/메뉴/상태(planned=준비 전 기본)·식단 선택 상세 기본 접힘을 editor/read/공유 presentation에 적용. meal/people/amount nullable·unit/notes 빈문자·checks 빈배열, 미입력 수량은 계산/출력 생략하되 실제0 유지. 다른 kind strict/현재 권한·CAS/선택 snapshot·기존 원문/버전 보존. SQL migration/기존 JSON 자동변환0, version25 게시·부모의 필수/선택 표시·상세 toggle/키보드·좁은 화면 읽기 부분 PASS, 실제 submit/최소저장·공유는 QLT035 잔여 | [식단 계약](ARCHITECTURE.md#활동팀-공통-준비표-설계) |
 | QLT-035 | [!] | P1·F2: full unit302(action33/unit269),backend21/UI SSR14·D1 source91·최종 compiled69조건88요청·호환 build/정적 PASS(범위 중복 합산 금지). 최소 저장/재조회/공유·선택 유무·invalid400·기존 상세/공유 receipt 보존은 합성 인수. 부모의 v25 식단 읽기·상세 toggle/Space·Enter·취소/재열기·360/390/768 CSS 화면 부분 PASS. 실제 submit/최소입력 저장·공유/create·phone touch/Safari는 미검증이며 최소저장/공유 PASS는 로컬 서버 근거와 구분. main/sites 푸시·version25 게시 및 fresh35표537→542행 보존 대조 완료(업무34표/기존 audit504행 동일·INFO5 추가), 기존 표시값/저장v1 보존 관측·운영 저장/권한변경0. NAS/MariaDB 실행은 사용자 담당 | [검증·복구 한계](HARNESS_MAP.md#식단-간소화-구현-검증) |
+| PRD-067 | [~] | P1·T0/T1 소스 완료: recreation 파생 일간/월요일 시작 주간·날짜/이전다음오늘/첫일정·미지정시간/0분/자정넘김·lane/실제겹침 텍스트와 읽기전용 Dialog. 좁은 화면 day 기본·넓은 화면 수화 후 week, 내부 bounded scroll/전체목록·편집 draft/읽기/상세 presentation 재사용·홈3개 요약 유지. 원문/normalizer/API·권한·package/lock/schema 변경0, 실제 클릭·Dialog 초점·모바일 인수는 QLT036 잔여 | [표시 계약](ARCHITECTURE.md#레크레이션-시간표-표시-계약) |
+| QLT-036 | [!] | P1·T2: pure model14·기존 guide14·full unit316(action33/unit283)·최종 Worker/Native 호환 build·lint/type/FSD PASS(DB 미실행). 최종 SSR31·compiled Worker81조건104요청 PASS, 실제360/390/768 렌더/touch/날짜·주·Dialog 클릭/키보드·focus·submit 미실행. 지원 로컬 게이트 완료·양 브랜치 소스 반영과 운영 게시를 구분하며 실제 화면 인수는 별도다. 운영 재게시 금지. NAS/MariaDB 실행 사용자 담당·이미지 전송0 | [검증 경계](HARNESS_MAP.md#레크레이션-시간표-구현-검증) |
 | OPS-021 | [~] | NAS 소스/업데이트 절차는 준비됨. 실제 플랫폼·백업·기본 build·대상 릴리스 migration 적용·기동·자료/역할/수동 인수는 운영자가 수행. 기존 NFT warning도 유지 | [운영 안내](NAS_UPDATE_GUIDE.md) |
 | OPS-031 | [!] | Native bug purge 포함 전체 수명주기/두 isolation-level 경합 검증은 별도 승인 대기. 비파괴16조건·Sites 삭제 완료와 구분 | [완료 범위](COMPLETED_LOG.md#실환경-qa와-삭제-승인-경계) |
 | OPS-032 | [!] | PPTX 하위 image-size2.0.4 scoped override·호환 검사/양 build 후 production audit0, 전체23(high18/moderate4/low1) 잔여 검토. 최종 전체294·양 build/호환·compiled OOXML18 PASS·전체 취약점 해소 아님. Native trace13경고·NAS 포장 게이트 미확인 | [보안 근거](COMPLETED_LOG.md#보안-패치와-활성-decoder) |
