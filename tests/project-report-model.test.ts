@@ -1,7 +1,50 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { canonicalRunKey, canonicalSnapshotJson, createDigestPeriod, createDigestSnapshot, hashDigestSnapshot, hashReportRunKey, reportTextLines, validateDigestSnapshot, REPORT_MAX_ROWS, REPORT_MAX_TEXT } from "../src/entities/project-report";
+import { canonicalRunKey, canonicalSnapshotJson, createDigestPeriod, createDigestSnapshot, getDigestPeriodIssue, hashDigestSnapshot, hashReportRunKey, reportTextLines, validateDigestSnapshot, REPORT_MAX_ROWS, REPORT_MAX_TEXT } from "../src/entities/project-report";
 import { reportFixture } from "./helpers/project-report-fixture";
+
+const feedbackNow = "2026-10-28T10:00:00Z";
+test("period feedback identifies missing/impossible start and end beside the matching field", () => {
+  for (const start of ["", "2026-02-30T00:00:00Z", "2026-10-27T24:00:00Z", "2026-10-27T00:00:00"]) {
+    assert.equal(getDigestPeriodIssue(start, feedbackNow, feedbackNow)?.code, "INVALID_START");
+    assert.equal(getDigestPeriodIssue(start, feedbackNow, feedbackNow)?.field, "start");
+  }
+  assert.equal(getDigestPeriodIssue("2026-10-27T00:00:00Z", "", feedbackNow)?.code, "INVALID_END");
+  assert.equal(getDigestPeriodIssue("2026-10-27T00:00:00Z", "2026-02-30T00:00:00Z", feedbackNow)?.field, "end");
+});
+test("period feedback explains reversed and equal instants without relaxing server rejection", () => {
+  for (const end of ["2026-10-27T00:00:00Z", "2026-10-28T00:00:00Z"]) {
+    const issue = getDigestPeriodIssue("2026-10-28T00:00:00Z", end, feedbackNow);
+    assert.equal(issue?.code, "END_NOT_AFTER_START"); assert.equal(issue?.field, "end");
+    assert.match(issue!.message, /시작보다 늦/);
+    assert.throws(() => createDigestPeriod("2026-10-28T00:00:00Z", end, feedbackNow, "Asia/Seoul"));
+  }
+});
+test("period feedback accepts exactly 31 UTC days and rejects even one millisecond more", () => {
+  const start = "2026-09-27T10:00:00Z";
+  assert.equal(getDigestPeriodIssue(start, feedbackNow, feedbackNow), null);
+  const issue = getDigestPeriodIssue("2026-09-27T09:59:59.999Z", feedbackNow, feedbackNow);
+  assert.equal(issue?.code, "PERIOD_TOO_LONG"); assert.match(issue!.message, /31일/);
+});
+test("future-end feedback uses instants, not the selected display timezone or local day", () => {
+  const issue = getDigestPeriodIssue("2026-10-28T09:00:00Z", "2026-10-28T19:00:00.001+09:00", feedbackNow);
+  assert.equal(issue?.code, "END_IN_FUTURE"); assert.equal(issue?.field, "end"); assert.match(issue!.message, /UTC/);
+  assert.equal(getDigestPeriodIssue("2026-10-28T09:00:00Z", "2026-10-28T19:00:00+09:00", feedbackNow), null);
+});
+test("correcting an invalid period immediately produces valid feedback and unchanged server period", () => {
+  const start = "2026-10-28T08:00:00Z";
+  assert.notEqual(getDigestPeriodIssue(start, "2026-10-28T07:00:00Z", feedbackNow), null);
+  const end = "2026-10-28T09:00:00Z";
+  assert.equal(getDigestPeriodIssue(start, end, feedbackNow), null);
+  const period = createDigestPeriod(start, end, feedbackNow, "Asia/Seoul");
+  assert.equal(period.start, "2026-10-28T08:00:00.000Z"); assert.equal(period.end, "2026-10-28T09:00:00.000Z");
+});
+test("public period feedback never echoes untrusted input or internal exception text", () => {
+  const sensitive = "<script>private_sql_storage_path</script>";
+  const issue = getDigestPeriodIssue(sensitive, feedbackNow, feedbackNow);
+  assert(issue); assert.doesNotMatch(JSON.stringify(issue), /private_sql|storage_path|<script>|Error:/);
+  assert.deepEqual(Object.keys(issue).sort(), ["code", "field", "message"]);
+});
 
 test("public-only reports exclude private parent body, comments and attachment metadata", () => {
   const snapshot = createDigestSnapshot(reportFixture()), serialized = JSON.stringify(snapshot);

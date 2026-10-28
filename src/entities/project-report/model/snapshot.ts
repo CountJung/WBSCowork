@@ -73,6 +73,22 @@ export function createDigestPeriod(start: string | Date, end: string | Date, sna
   const part = (type: string) => parts.find(p => p.type === type)?.value ?? fail();
   return { start: s, end: e, snapshotAt: at, timeZone: formatter.resolvedOptions().timeZone, localDate: `${part("year")}-${part("month")}-${part("day")}` };
 }
+export type DigestPeriodIssue = {
+  code: "INVALID_START" | "INVALID_END" | "END_NOT_AFTER_START" | "PERIOD_TOO_LONG" | "END_IN_FUTURE";
+  field: "start" | "end";
+  message: string;
+};
+/** Public input feedback shares the server's instant parser and limits. It never authorizes a request. */
+export function getDigestPeriodIssue(start: string | Date, end: string | Date, snapshotAt: string | Date): DigestPeriodIssue | null {
+  let s: string, e: string;
+  try { s = instant(start); } catch { return { code: "INVALID_START", field: "start", message: "기간 시작을 실제로 존재하는 UTC 날짜와 시각으로 입력해 주세요." }; }
+  try { e = instant(end); } catch { return { code: "INVALID_END", field: "end", message: "기간 끝을 실제로 존재하는 UTC 날짜와 시각으로 입력해 주세요." }; }
+  const at = instant(snapshotAt);
+  if (s >= e) return { code: "END_NOT_AFTER_START", field: "end", message: "기간 끝은 시작보다 늦어야 합니다." };
+  if (Date.parse(e) - Date.parse(s) > REPORT_MAX_PERIOD_DAYS * 86_400_000) return { code: "PERIOD_TOO_LONG", field: "end", message: `기간은 최대 ${REPORT_MAX_PERIOD_DAYS}일입니다. 시작 또는 끝 시각을 조정해 주세요.` };
+  if (e > at) return { code: "END_IN_FUTURE", field: "end", message: "기간 끝은 현재 시각보다 늦을 수 없습니다. UTC 입력인지 확인해 주세요." };
+  return null;
+}
 /** Parent rows may predate the period so a recent comment can retain its authorized context. */
 export function createDigestSnapshot(input: DigestSnapshotInput): DigestSnapshot {
   if (!input || typeof input !== "object") fail();
