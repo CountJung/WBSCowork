@@ -42,6 +42,8 @@
 | QLT-019, 2026-10-23 | Node ESM과 bundler의 실제 GoogleProvider default export 형태 차이를 정규화하고 테스트 Google 설정을 합성 값으로 고정. 원인/완료 경계는 [아래](#qlt-019-google-provider-import), 실행 결과는 [하네스](HARNESS_MAP.md#봉사활동-저장-기반과-auth-import-검증) |
 | QLT-021, 2026-10-21 | D1 총 변경 수를 부모 삭제 수로 오인. DELETE RETURNING의 요청 id rowset과 commit 후 followup 분리. main ddcedd6/sites c1c55da, DB109/action8/unit119/visibility33/Worker257, 양쪽 build/lint/types/FSD PASS. 후속 version13의 핵심 삭제 오판 운영 인수는 아래 별도 기록. NAS 적용·첨부 인수는 포함하지 않음 |
 
+2026-10-29 열린 큐 재검토에서 PRD060~063·065~067의 구현/게시 완료는 위 기존 색인으로 통합하고 TODO의 중복7행을 제거했다. 이는 실제 역할/실기기 인수 완료가 아니며 잔여는 QLT032~036/038 및 사용자 담당 OPS021에 보존한다. 새 코드 결함·미구현 항목은 확인되지 않아 앱 수정/재게시 없이 문서 상태만 정합화했다. [검토·검사 범위](HARNESS_MAP.md#열린-항목-즉시-처리-범위-재검토).
+
 과거 네트워크 기록의 제목 QLT-020은 당시 잘못 중복 사용된 표기다. 현재 TODO의 QLT-020은 native 첨부 bug 파일 정리를 뜻하며 번호를 다시 발급하지 않는다. QLT-015, OPS-021/031/032/033/034/035는 이 완료 색인으로 닫히지 않는다. QLT-019의 과거 실패는 보존하며 후속 수정은 아래 별도 근거다.
 
 ## 품질 원인 수정과 digest snapshot 기반
