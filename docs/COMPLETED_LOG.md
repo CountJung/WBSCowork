@@ -11,7 +11,7 @@
 | PRD-058, 2026-10-23 | 기존6종 활동팀의 공통 준비표·서버 식사량·현재 팀 권한·CAS/불변 이력·UI 진입 경로와 양 DB additive 저장 구현, 소스/실DB·실제 Native/Worker compiled HTTP 인수 완료. [구현·게시 구분](#활동팀-공통-준비표-소스-구현), 실제 화면/운영 인수는 QLT-031 유지 |
 | OPS-039, 2026-10-23 | 최초 v20 자동 승인 거부를 보존. 새 직접 승인 뒤 같은 저장v20 미실행 확인→배포1회 재시도 succeeded/active/latest20·0018 신규2표·기존 행/설정 보존 확인. [승인/배포 범위](HARNESS_MAP.md#version20-승인과-운영-배포), 후속 envSU 화면 부분 인수 후 QLT-031 잔여 유지 |
 | OPS-040, 2026-10-25 | 최초 텍스트 중간v21 자동 배포 거부 보존. 새 승인 후1회 재시도 succeeded·28표337행/설정 동일 확인. [게시/실검토 범위](HARNESS_MAP.md#version21-승인과-텍스트-중간-배포), PRD-059/QLT-032 이미지/최종 게이트는 열린 상태 |
-| PRD-059 이미지 통합/로컬 범위, 2026-10-29 | 검수된 Git 원본 캡처·버전 차이/원본 확대·media 설명을 통합하고 새 Worker strict 이미지/공개 페이지 gate를 완료. [새 검증/과거 전송 이력](HARNESS_MAP.md#가이드-스크린샷-git-수신과-검수), 게시·실제 이미지/모바일 브라우저는 QLT032 잔여이며 전체 인수 완료가 아님 |
+| PRD-059 이미지 통합/로컬·게시 범위, 2026-10-29 | 검수된 Git 원본 캡처·버전 차이/원본 확대·media 설명을 통합하고 새 Worker strict 이미지/공개 페이지 gate와version29 게시를 완료. [새 검증/과거 전송 이력](HARNESS_MAP.md#가이드-스크린샷-git-수신과-검수), 실제 이미지/모바일 브라우저는 QLT032 잔여이며 전체 인수 완료가 아님 |
 | PRD-060~064 소스/게시 범위, 2026-10-27 | 엄격 소속 포털·유형별 홈/사이드바·기존 준비표 revision 공유·미디어 도구 구현과 D1/compiled HTTP 인수 후 version23 게시 완료. [실제 결과·보존 차이](HARNESS_MAP.md#version23-독립-프로젝트-포털-게시). 부모 클라우드 Chrome 데스크톱 읽기 부분 PASS, 저장/미디어 업로드·모바일 등 잔여는 QLT-033. NAS 실행 검증은 사용자 담당이며 기능 전체 화면 인수로 확대하지 않음 |
 | PRD-065 소스/게시 범위, 2026-10-27 | 상단 통합 메뉴·현재 프로젝트/전체폭 본문·모바일 팀 도구 배치 구현, 지원 소스/SSR·unit·compiled47/66·호환 build 후 version24 게시 완료. [검증·게시 경계](HARNESS_MAP.md#모바일-우선-탐색-구현-검증), 부모 Chrome resize/확대의360/390/768 CSS 화면·메뉴/키보드 관측 범위 PASS. 실제 touch/Safari·미디어 업로드 등 QLT-034 잔여를 전체 모바일 인수로 확대하지 않음 |
 | PRD-066 소스/게시 범위, 2026-10-27 | meal 최소 입력/nullable·선택 상세 기본 접힘과 계산/표시를 정합화하고 기존 원문/공유·다른 kind 검증 보존, unit/SSR·D1 source/compiled69·88요청 후 version25 게시 완료. [실제 범위](HARNESS_MAP.md#식단-간소화-구현-검증), 부모의 식단 읽기/상세 토글·키보드·좁은 CSS 화면 부분 PASS, 실제 저장/공유·touch/Safari는 QLT-035 잔여·단순 구앱 rollback 제한 유지 |
@@ -127,6 +127,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`. 과거 origin은 https://wbs
 | 26 · 2026-10-28 10:49:29.599137 | 7649ad3c284873ce1b3b727be61fd084262db069 | succeeded, appgdep_6ae1d32e84188191982aebd6b3712a30. active/latest26·exact source/deployment 일치·업무34표 동일/audit 만료13·INFO20 추가·설정 동일. 새 반환 호스트/기존 주소 라우팅과 실제 UI는 부모 확인 대기 |
 | 27 · 2026-10-28 11:40:58.187789(updated_at) | 1747737e649533aee47cc29e35c82289c30dee6d | succeeded, appgdep_6ae1df405d188191b5f45129ba13e9f8. 반환 count-sungjin URL=고정 origin,35표485행 모든 canonical row 동일·설정 불변. 후속 부모의v2 저장/재조회·버전 편집v3 원본 복원/이력 보존 인수 PASS |
 | 28 · 2026-10-28 12:23:29.878304(updated_at) | 707a9f35f20a38b6c32c619e3adbddc7010cadd4 | succeeded, appgdep_6ae1e92fcdf08191a105378815f2a648. 새 명시 승인·반환URL=pin, 업무34표35행/기존audit469행 동일·INFO16 추가·설정 불변. 후속 SU의 한 팀 PNG/탐색 실제 UI 부분 PASS·일반 admin/다른 역할 UI·모바일 잔여 |
+| 29 · 2026-10-29 05:15:45.648621 | 0cc1ee9bb5b862216c402c8c9ec6d68f4b4e0cf5 | succeeded, appgdep_6ae2d67762188191b4c1e72953525ced. 기존URL/siteID/public·업무34표42행/기존audit529행 동일·INFO15 추가·설정 불변. 실제 이미지 가이드 브라우저 인수 대기 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -165,6 +166,8 @@ version27 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_54d5a6e7d9d481
 
 version28 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_69133f9ca08c8191a3ee3697785e3a25`다. source `707a9f35f20a38b6c32c619e3adbddc7010cadd4`·기능 main77d8d4d와 후속 문서 HEAD를 구분한다. 기존 검토 게이트의 새 승인 해제·배포 시점 자료/설정 대조는 [게시 근거](HARNESS_MAP.md#version28-관리팀-탐색-보완-게시), 후속 SU 실제 미디어 부분 인수와 합성 team5/private media1v2 보존·미검증은 [별도 관측](HARNESS_MAP.md#version28-부모-su-미디어-인수와-합성-자료-보존)을 따른다. 가역 정리 경로가 없어 새 합성 자료를 삭제하지 않는다.
 
+version29 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_21a221a105648191bd01f7da9797462a`다. source `0cc1ee9bb5b862216c402c8c9ec6d68f4b4e0cf5`·기능 maind1175ea와 후속 문서 HEAD를 구분한다. strict 통과와 실제 게시/자료·설정 대조·브라우저 미인수는 [하네스](HARNESS_MAP.md#version29-이미지-가이드-게시)를 따른다.
+
 ### package와 복구 근거
 
 - version10 archive342files/5,171,200bytes, SHA256 `06997bc7a76194663eb25874f91ec23bffca2d7b92773d816e8042420c228fd0`; version11은343files/5,171,200bytes, normalized hash `0a8936cab053f800b53e056f47abf6b4b3d2795338181bb58115707fc8e99e1a`.
@@ -186,6 +189,7 @@ version28 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_69133f9ca08c81
 - version26 입력 `/workspace/wbscowork-report-period-7649ad3.tar`는7,946,240bytes/SHA256 `418a30b099b95596bde9d9274fff102498b0575de0b3290e007146302be41e02`다. 서비스 정규화 archive는463files/7,444,480bytes/hash `3eb28982f8bb4a3fdfffb560bbcc87d85902b2e7bb3da46273d641d53a84eedf`이며 두 container의 bytes/hash를 같다고 주장하지 않는다. 기존 nullable reader를 유지한 수정 복구 제약은 계속 적용하며 이번 자동 rollback/down은 없다.
 - version27 입력 `/workspace/wbscowork-origin-fix-1747737.tar`는7,946,240bytes/hash `fe51cf599049e939d4389723eb9441adfc2443cf35dc27788b0d038cc4e13d6f`다. 별도 서비스 정규화 archive는464files/7,444,480bytes/SHA256 `8158990a7c3b1875a91eca85ff68471caf80566c130c6dda71e2b4518c7d0101`이며 두 container의 bytes/hash를 같다고 주장하지 않는다. 고정 origin/호환 reader를 유지한 수정 복구 제약을 적용하며 자동 rollback은 하지 않았다.
 - version28 입력 `/workspace/wbscowork-team-manager-707a9f3.tar`는7,946,240bytes/SHA256 `07c8bcb7952ca9882422f23bef6ee1d5d84a79b28b2ec0d11a81e288e451633d`다. 별도 서비스 정규화 archive는464files/7,444,480bytes/hash `39b0a74f6ac9e045c98e6a0ebb95d989df8e1ae76ae0cd2dcb264e79bc10337e`이며 두 container의 bytes/hash를 같다고 주장하지 않는다. 이전v27 복귀 tar를 유지했고 구validator rollback/자동 down은 하지 않았다.
+- version29 입력 tar는9,738,240bytes/SHA256 `7c1ad939549893f630c0b7f5c328224dc666b22cda7ac2ff6cdb34b017ca595b`다. 별도 서비스 정규화 archive는485files/9,205,760bytes/hash `844a234e99c0354b08d110dceae239669cdfc28aaa0ee8a40ec63e9939b14650`이며 두 container의 bytes/hash를 같다고 주장하지 않는다.
 - [Cloudflare의 D1 Time Travel 문서](https://developers.cloudflare.com/d1/reference/time-travel/)는 production backend의 시점 복원을 설명한다. 현재 Sites 도구에는 bookmark/export/restore가 노출되지 않아 이 사이트의 실제 bookmark 확보나 복원은 검증하지 않았다. 메모리의 사전 표본 비교는 전체 DB/R2 백업이 아니다. 새 봉사 기능이 사용된 뒤 version14 앱으로 writable rollback하면 새 팀 범위/완료 계약을 깨뜨릴 수 있으므로 forward fix를 우선하고 자동 down은 하지 않는다.
 - 모든 row 비교는 기록된 표/complete page 범위이며 audit전체/R2 bucket inventory 동일성을 보장한 것이 아니다. additive 이력/선후행 도입 후 구형 writable 앱으로 rollback하면 계약을 깰 수 있어 forward fix가 기본이다.
 

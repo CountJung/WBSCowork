@@ -572,7 +572,7 @@ getversions의 v21 deployment null/v20 기존 deployment와 v20 status succeeded
 
 과거 Library/ZIP 직접 첨부 실패·그 당시 파일0/strict 이미지 누락 실패는 위 이력으로 보존한다. 현재는 이 Git 자산의 실제 수신/검수로 전달 차단을 해소했고 추가 Library/파일전송 재시도는0이다. v23 과거 화면을 현재 모바일/식단 UI로 오인하지 않도록 캡처 버전·차이 캡션/역할 안내·원본 확대를 통합한다. 공개 예시의 envSU 캡처가 다른 역할의 실제 접근 성공 근거는 아니다.
 
-media는 설명 기능만 추가했고 최종 모델은5역할/12기능/50조합·공개56페이지다. 원본20장/1,693,230bytes는 그대로이며 서버/계정·권한/DB/env/migration 변경0이다. 실제 운영은version28·새 가이드 게시는 대기다.
+media는 설명 기능만 추가했고 최종 모델은5역할/12기능/50조합·공개56페이지다. 원본20장/1,693,230bytes는 그대로이며 서버/계정·권한/DB/env/migration 변경0이다. 이 사전검증 당시 운영은version28·새 가이드 게시 대기였으며 이후version29 결과는 아래에서 구분한다.
 
 | 새 artifact 실제 실행 | 결과/경계 |
 | --- | --- |
@@ -582,7 +582,7 @@ media는 설명 기능만 추가했고 최종 모델은5역할/12기능/50조합
 
 새 Worker entry는 `20cc4e07a30f0fa1e1571e041b31c2f6a008d07d40ce4a9c322939333c4aa02f`이며 HTTP 검사 전후 bundle은 동일하다. 증거는 `.test-artifacts/guide-images/worker-result.json`과 같은 폴더의 unit/build 로그다. 기존 Native trace13·Worker PLUGIN_TIMINGS/proxy 안내·experimental module mock/npm version 공지 유형은 유지한다. **전체 strict 이미지 gate를 이번 새 근거로 통과**했으며 과거 이미지 누락 실패는 당시 사실로 보존한다. 기존11기능 텍스트/부모 픽셀 검토만으로 새 gate를 통과시킨 것이 아니다.
 
-실제 브라우저/이미지 원본 새탭·모바일/키보드·수화/콘솔과 운영 게시 인수는 아직 미실행이다. main/sites 푸시·기존 Site 게시 후 부모 검증 결과를 별도로 남기며 기존 v21/v22 텍스트 UI PASS를 재사용하지 않는다. 원본 canon 검사기는 기존 미가용으로 미실행이며 새 문서/보고서를 만들지 않는다.
+실제 브라우저/이미지 원본 새탭·모바일/키보드·수화/콘솔과 운영 게시 인수는 아직 미실행이다. main/sites 푸시·기존 Site 게시 결과와 부모 검증 결과를 별도로 남기며 기존 v21/v22 텍스트 UI PASS를 재사용하지 않는다. 원본 canon 검사기는 기존 미가용으로 미실행이며 새 문서/보고서를 만들지 않는다.
 
 ## 독립 프로젝트 포털 검증 계획
 
@@ -814,6 +814,14 @@ Fresh D1은35표504→520행이다. 업무34표35행 모두 동일하고 기존 
 **합성 project6/team5 `QA-V28-SYNTHETIC`·private media1v2를 보존한다.** root의 읽기 조사상 media collection은 GET/POST·item은 PATCH·file은 GET, repository는 list/get/create/update만 있고 가역 삭제/복원은 없다. 팀 관련 workspace 명령은 create/member이며 team archive/remove/restore는 없다. 프로젝트 관리의 파기는 영구 삭제이며 object cleanup은 실패/미참조 업로드만 대상으로 live project_media 참조를 보호한다. 따라서 DB 직접 삭제·팀/미디어 영구 삭제·새 삭제 기능 추가로 정리하지 않는다. 이 자료 보존 결정은 실제 역할/권한·기존 사용자 자료 변경 승인이 아니다.
 
 배포 직전후35표504→520행 동일/추가 대조는 게시 시점의 근거다. 이후 합성 팀/미디어 생성·v2 편집 후 전체 DB가 그때와 같다고 재사용하지 않는다. 기존 QLT037 저장/복원 완료·가이드 이미지 차단·R2 전역 비교 미검증·NAS 사용자 담당은 유지하며 이 문서 후속은 코드/제품 검사·운영 읽기/쓰기·전송·재게시를 실행하지 않았다.
+
+### version29 이미지 가이드 게시
+
+2026-10-29T05:15:45.648621Z에 version29가 succeeded다. 기능 main `d1175ea3273efdd14787d0d18e92720fce416e53`/sites·공식 source `0cc1ee9bb5b862216c402c8c9ec6d68f4b4e0cf5`를 반영했고 URL https://wbscowork.count-sungjin.chatgpt.site ·기존 siteID/public을 유지했다. 검증된368 runtime 입력이 exact source와 같으며 양 SHA CI statuses[]는 CI 통과가 아니다. source fetch 첫 exit128 때는 push하지 않았고 새 공식 단기 credential의 후속 fetch/push가 성공했다. 거부/우회로 해석하지 않으며 credential 값은 기록하지 않는다. 고유 version/deployment·archive는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다.
+
+Fresh D1은35표571→586행이다. 업무34표42행 모두 같고 기존 audit529행도 불변이며 새 INFO15(id986~1000,05:16:23.877~05:16:58.151 UTC) 추가·삭제/수정0이다. 두 read 사이의 추가를 전부 배포 원인으로 단정하지 않는다. 실제 project5/task7/submission5/attachment7과 합성 team5/media1 row도 동일하다. env revision11/5entries·automations[] 전후 동일, schema/auth/보안 작업은 없으며 R2 원본 bytes는 이번에 검사하지 않았다.
+
+부모에게 이미지 가이드 QA 경로를 전달했으나 실제 브라우저 결과는 아직 대기다. 원본20장 파일 검수·Worker strict63/84HTTP와 version29 게시를 운영 이미지/원본 새탭·모바일/키보드·수화/콘솔 인수로 확대하지 않는다. publication 증거는 `.test-artifacts/guide-images/publication.json`이며 QLT032는 부분 완료/열린 상태다. 기존 자료/권한·다른 ! 항목·NAS 사용자 담당·원본 canon checker 미실행을 유지하며 문서 후속은 제품 검사·재게시가 아니다.
 
 ## 문서 정리 검증
 
