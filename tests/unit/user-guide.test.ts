@@ -1,14 +1,17 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
+import { createHash } from "node:crypto";
+import reviewed from "../../public/guide/screenshots/reviewed-manifest.json";
+import { guideScreenshots } from "../../src/widgets/user-guide/model/screenshots";
 import {
   getGuideFeature, getGuideRole, guideFeatures, guideGettingStarted, guideGlossary, guideRoles,
   type GuideFeatureId, type GuideRoleId,
 } from "../../src/entities/user-guide";
 
 const roleIds: GuideRoleId[] = ["superuser", "project_admin", "team_leader", "member", "guest"];
-const featureIds: GuideFeatureId[] = ["projects", "tasks", "completion", "submissions", "review", "attachments", "preparation", "reports", "personal", "bugs", "administration"];
-const screenshotIds = new Set(["project-overview", "team-directory", "meal-summary", "meal-edit", "facility-preparation", "care-preparation", "recreation-preparation", "report-preview", "attachment-preview", "task-detail", "admin-project"]);
+const featureIds: GuideFeatureId[] = ["media", "projects", "tasks", "completion", "submissions", "review", "attachments", "preparation", "reports", "personal", "bugs", "administration"];
+const screenshotIds = new Set(reviewed.screenshots.map(shot => shot.id));
 
 test("guide has distinct role and feature pages with complete references", () => {
   assert.deepEqual(guideRoles.map(role => role.id), roleIds);
@@ -36,7 +39,7 @@ test("role-feature routing permits only the explicit two-sided intersection", ()
     if (result) assert.strictEqual(result.roles, feature.roles, "Wording changes cannot alter the route permission matrix");
     if (result) validPages++;
   }
-  assert.equal(validPages, 45);
+  assert.equal(validPages, 50);
 });
 
 test("unknown role and feature segments cannot resolve prototype names or near matches", () => {
@@ -63,7 +66,7 @@ test("project administrator and contextual team leader do not gain global menus"
   assert.equal(getGuideFeature("team_leader", "reports"), undefined);
   assert.equal(getGuideFeature("member", "reports"), undefined);
   assert(getGuideFeature("superuser", "administration"));
-  for (const feature of guideFeatures.filter(feature => feature.screenshotIds.includes("admin-project"))) assert.deepEqual(feature.roles, ["superuser"]);
+  for (const feature of guideFeatures.filter(feature => feature.screenshotIds.includes("project-settings"))) assert.deepEqual(feature.roles, ["superuser"]);
   assert.match(getGuideRole("project_admin")!.meaning, /해당 프로젝트.*소속/);
   assert.match(getGuideRole("team_leader")!.meaning, /팀 안의 역할/);
 });
@@ -180,4 +183,34 @@ test("UTC report inputs include a date rollover without converting preparation c
   assert.match(report, /한국 10월 25일 00:00은 UTC 10월 24일 15:00/);
   assert.equal(new Date("2026-10-25T00:00:00+09:00").toISOString(), "2026-10-24T15:00:00.000Z");
   assert.match(report, /준비표의 달력 날짜·24시간제 시각은 그대로 입력/);
+});
+
+
+test("reviewed screenshots retain bytes, version provenance and complete guide coverage", () => {
+  assert.equal(guideScreenshots.length, 20);
+  assert.equal(new Set(guideScreenshots.map(s => s.id)).size, 20);
+  const used = new Set(["main-home", ...guideFeatures.flatMap(f => f.screenshotIds)]);
+  assert.deepEqual([...used].sort(), [...screenshotIds].sort());
+  for (const shot of guideScreenshots) {
+    const source = reviewed.screenshots.find(s => s.id === shot.id)!;
+    const bytes = readFileSync(new URL(`../../public${shot.src}`, import.meta.url));
+    assert.equal(bytes.length, source.bytes);
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), source.sha256);
+    assert.equal(shot.captureRole, "envSU"); assert(shot.synthetic);
+    assert(shot.alt.length >= 8 && shot.caption.includes(`v${shot.captureVersion}`));
+    assert(shot.capturedAt && shot.usageNotes && shot.width > 0 && shot.height > 0);
+    assert.match(shot.src, /^\/guide\/screenshots\/v(?:23|28)-\d{8}\/[a-z0-9-]+\.jpg$/);
+  }
+  for (const excluded of reviewed.excludedSources) assert(!guideScreenshots.some(s => s.src.endsWith(excluded.sourceFilename)));
+});
+
+test("media instructions separate management scope and member or guest reading", () => {
+  for (const role of ["member", "guest"] as const) {
+    const feature = getGuideFeature(role, "media")!;
+    assert(feature.readingOnly); assert.match(feature.title, /읽고 내려받기/);
+    assert.doesNotMatch(feature.steps.map(s => s.body).join(" "), /미디어 저장.*누릅니다/);
+  }
+  const manager = JSON.stringify(getGuideFeature("project_admin", "media"));
+  for (const term of ["지정 프로젝트", "슈퍼관리자", "인터넷 전체 공개", "8 MiB", "20 MiB", "소속이 해제"]) assert(manager.includes(term), term);
+  assert.equal(getGuideFeature("team_leader", "media")?.readingOnly, undefined);
 });

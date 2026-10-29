@@ -566,6 +566,24 @@ getversions의 v21 deployment null/v20 기존 deployment와 v20 status succeeded
 
 이후 사용자가 같은 이름 ZIP을 현재 대화에 직접 첨부해 사용을 요청했다. 새 첨부의 prepare_materialize1회는 size1,412,534/workspace_path:null/signed transfer였고, 공식 helper2종을 새로 확보한 뒤 전송1회도 exit1 `library file transfer failed: download failed`로 끝나 `/workspace/wbs-guide-direct-attachment-20261027/WBSCowork-v23-screenshot-guide-20261027.zip` 실존 false였다. 추가 재시도0이며 HTTP 상태/상세 원인이 없어 네트워크·정책 거부로 단정하지 않는다. **직접 첨부하면 해결된다는 이전 안내는 더 이상 유효하지 않다.** 재첨부 요청을 반복하지 않고 공식 실행기 파일 전달 경로 복구/새 지원 근거를 기다린다. 실제 bytes·ZIP 무결성/숨긴 내용/픽셀 검토·이미지 삽입/게시0, PRD-059/QLT-032와 이미지 strict gate 미완료를 유지한다. 새 첨부 ID는 기록하지 않으며 별도 보고서 미리보기 조사와도 구분한다. 이번 초반 읽기 조사에서도 ZIP prepare 후 공식 helper 전송이 실패했고 개별 이미지 read는 실제 bytes가 아닌 포인터/OCR만 반환했다. 공식 library_download 지원 도구를 확인하는 tools/list도 network 실패해 현재 파일0·view_image 미도달이며 이후 새 전송 시도는 하지 않았다.
 
+### 가이드 스크린샷 Git 수신과 검수
+
+2026-10-29 새 전달은 Library 재시도가 아니라 검수된 자산 branch `assets/user-guide-screenshots-20261029`의 Git 전달이다. commit `b33e457fe766cf7fc5a9a361b67814908c6e85cd`/tree `2b4cf4b5dce729f0da435c4c6143500cc51e9aed`를 fetch해 `public/guide/screenshots`로 복사했다. 실제20장(v23 17+v28 미디어3),총1,693,230bytes의 SHA256/bytes/JPEG dimensions·EXIF 없음과 전부 실제 픽셀 열람을 **루트가** 확인했다. 관측된 개인정보/비밀은 없었으며 제외 대상인 구형 식단 필수 편집·빈 미디어·가이드 준비 중3장은 포함되지 않았다. 문서 담당의 독립 픽셀 검사나 모든 숨긴 내용 부재 보증으로 확대하지 않는다.
+
+과거 Library/ZIP 직접 첨부 실패·그 당시 파일0/strict 이미지 누락 실패는 위 이력으로 보존한다. 현재는 이 Git 자산의 실제 수신/검수로 전달 차단을 해소했고 추가 Library/파일전송 재시도는0이다. v23 과거 화면을 현재 모바일/식단 UI로 오인하지 않도록 캡처 버전·차이 캡션/역할 안내·원본 확대를 통합한다. 공개 예시의 envSU 캡처가 다른 역할의 실제 접근 성공 근거는 아니다.
+
+media는 설명 기능만 추가했고 최종 모델은5역할/12기능/50조합·공개56페이지다. 원본20장/1,693,230bytes는 그대로이며 서버/계정·권한/DB/env/migration 변경0이다. 실제 운영은version28·새 가이드 게시는 대기다.
+
+| 새 artifact 실제 실행 | 결과/경계 |
+| --- | --- |
+| 모델/전체 unit | guide16(기존14+새2)·`npm test -- --unit` action33/unit303,총336 PASS. model16은 포함 범위라 중복합산 금지·DB suite 미실행 |
+| 최종 Worker strict HTTP | 63조건/84HTTP PASS.20image bytes SHA/MIME/decoded dimensions·56공개페이지·SSR/RSC·잘못된 역할404/보호된 업무redirect·날짜별 provenance/v23차이·원본 새탭 링크/native details 검사. 실제 브라우저 열기/수화/초점 검증은 아님 |
+| build/정적 | exact Worker/Next Native 호환 build·scoped ESLint/typecheck/FSD PASS. NAS/MariaDB 실행0, Native 실제 이미지 HTTP/브라우저 인수를 주장하지 않음 |
+
+새 Worker entry는 `20cc4e07a30f0fa1e1571e041b31c2f6a008d07d40ce4a9c322939333c4aa02f`이며 HTTP 검사 전후 bundle은 동일하다. 증거는 `.test-artifacts/guide-images/worker-result.json`과 같은 폴더의 unit/build 로그다. 기존 Native trace13·Worker PLUGIN_TIMINGS/proxy 안내·experimental module mock/npm version 공지 유형은 유지한다. **전체 strict 이미지 gate를 이번 새 근거로 통과**했으며 과거 이미지 누락 실패는 당시 사실로 보존한다. 기존11기능 텍스트/부모 픽셀 검토만으로 새 gate를 통과시킨 것이 아니다.
+
+실제 브라우저/이미지 원본 새탭·모바일/키보드·수화/콘솔과 운영 게시 인수는 아직 미실행이다. main/sites 푸시·기존 Site 게시 후 부모 검증 결과를 별도로 남기며 기존 v21/v22 텍스트 UI PASS를 재사용하지 않는다. 원본 canon 검사기는 기존 미가용으로 미실행이며 새 문서/보고서를 만들지 않는다.
+
 ## 독립 프로젝트 포털 검증 계획
 
 PRD-060~064/QLT-033의 소스·D1/Worker 인수와 실제 Chrome/모바일·운영 인수를 구분한다. 사용자의 “시놀로지 나스 검증은 내 몫으로 하고 구현만 완료하는 범위로만 진행해줘” 요청에 따라 **NAS/MariaDB 실행 검증은 사용자 담당이며 이번 완료·Sites 게시 게이트에서 제외**한다. 이후 Native DB 준비·접속 복구·실행 검증은 하지 않는다. Native 호환 소스·기존 build 근거는 보존하되 실제 NAS 인수를 뜻하지 않는다.

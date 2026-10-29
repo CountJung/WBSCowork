@@ -24,7 +24,7 @@ function Glossary() {
 
 export function UserGuideHome() {
   return <GuideFrame title="WBSCowork 사용설명서" intro="처음 사용하는 분도 프로젝트를 찾고, 맡은 일을 진행하고, 결과를 확인할 수 있도록 차례대로 안내합니다. 먼저 공통 시작 방법을 읽고 자신의 역할에 가까운 안내를 선택하세요." contents={[{ id: "start", label: "처음 시작하기" }, { id: "roles", label: "내 역할 선택하기" }, { id: "terms", label: "헷갈리는 말 알아보기" }, { id: "help", label: "막혔을 때 확인하기" }]}>
-    <GuideSection id="start" title="1. 처음 시작하기"><Steps steps={guideGettingStarted} /><Alert severity="info">이 설명서는 로그인 없이 읽을 수 있습니다. 여기서 역할을 고르는 것은 설명을 골라 보는 일이며 실제 계정 권한은 바뀌지 않습니다.</Alert></GuideSection>
+    <GuideSection id="start" title="1. 처음 시작하기"><Steps steps={guideGettingStarted} /><GuideScreenshots ids={["main-home"]} /><Alert severity="info">이 설명서는 로그인 없이 읽을 수 있습니다. 여기서 역할을 고르는 것은 설명을 골라 보는 일이며 실제 계정 권한은 바뀌지 않습니다.</Alert></GuideSection>
     <GuideSection id="roles" title="2. 내 역할에 맞는 설명 고르기"><Typography>계정의 등급, 프로젝트 소속, 팀장 지정은 서로 다릅니다. 한 사람이 여러 프로젝트에 소속되거나 특정 팀의 팀장을 함께 맡을 수 있습니다. 정확한 역할을 모르겠다면 작업 화면의 ‘현재 권한’ 표시와 현재 프로젝트의 팀장 표시를 확인하고 슈퍼관리자에게 문의하세요.</Typography>
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", lg: "repeat(2, minmax(0, 1fr))" }, gap: 2 }}>{guideRoles.map(role => <Paper component="section" key={role.id} aria-labelledby={`role-${role.id}`} variant="outlined" sx={{ p: 2.5, minWidth: 0 }}><Stack spacing={1.5}><Typography id={`role-${role.id}`} component="h3" variant="h5">{role.label}</Typography><Typography color="text.secondary">{role.subtitle}</Typography><Typography>{role.meaning}</Typography><Button component="a" href={`/guide/${role.id}`} variant="contained" sx={{ alignSelf: "flex-start" }}>{role.label} 안내 보기</Button></Stack></Paper>)}</Box>
     </GuideSection>

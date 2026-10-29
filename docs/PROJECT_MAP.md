@@ -200,9 +200,9 @@ D0–D4의 소스·로컬/compiled 인수와 실제 화면/운영 활성화를 �
 
 ## 역할별 웹 사용설명서
 
-`app/guide/page.tsx` → `[role]/page.tsx` → `[role]/[feature]/page.tsx`는 공통 시작·역할·기능별 공개 정적 설명을 조립한다. `src/entities/user-guide/model/guide.ts`는5역할/11기능/45유효 조합의 단계·예시·저장 확인·오류 대응을 소유한다. `src/widgets/user-guide`의 GuidePages/GuideFrame/GuideScreenshots와 `model/screenshots.ts`가 화면·실제 캡처 manifest를 연결하며 AppShell 상단44px 책 아이콘/Drawer 사용설명서로 진입한다.
+`app/guide/page.tsx` → `[role]/page.tsx` → `[role]/[feature]/page.tsx`는 공통 시작·역할·기능별 공개 정적 설명을 조립한다. `src/entities/user-guide/model/guide.ts`는5역할의 기능별 단계·예시·저장 확인·오류 대응을 소유한다. media를 포함한12기능/50유효 조합·공개56페이지의 안내를 제공한다. `src/widgets/user-guide`의 GuidePages/GuideFrame/GuideScreenshots와 `model/screenshots.ts`가 화면·실제 캡처 manifest를 연결하며 AppShell 상단44px 책 아이콘/Drawer 사용설명서로 진입한다.
 
-설명은 DB/계정 자료를 조회하지 않고 설명용 역할/기능 조합만 검증하며 잘못된 경로는404다. 역할 선택은 실제 계정·소속·자료 권한을 바꾸지 않고 기존 서버 인가/API는 유지한다. 공개 설명의 SU 예시는 다른 역할의 실제 접근 성공 증거가 아니다. 실제 캡처 파일은 아직 전송 실패로0개이며 빈 manifest/미인수 상태를 [TODO](TODO.md)·[하네스](HARNESS_MAP.md#역할별-사용설명서-구현-검증)에서 구분한다. 기존 [팀 업무 안내](TEAM_WORKFLOW_GUIDE.md)와 [교육 자료 제작 안내](manual/USER_MANUAL.md)를 재사용한다.
+설명은 DB/계정 자료를 조회하지 않고 설명용 역할/기능 조합만 검증하며 잘못된 경로는404다. 역할 선택은 실제 계정·소속·자료 권한을 바꾸지 않고 기존 서버 인가/API는 유지한다. 공개 설명의 SU 예시는 다른 역할의 실제 접근 성공 증거가 아니다. 실제 캡처는 검수된 Git 자산에서 `public/guide/screenshots`로 수신했고 `model/screenshots.ts` manifest가 검수된 원본·캡처 버전/alt/caption/크기·역할 예시를 연결한다. 과거 전송 실패와 새 수신·루트 검수/Worker strict 통과와 운영 브라우저 잔여는 [TODO](TODO.md)·[하네스](HARNESS_MAP.md#가이드-스크린샷-git-수신과-검수)에서 구분한다. 기존 [팀 업무 안내](TEAM_WORKFLOW_GUIDE.md)와 [교육 자료 제작 안내](manual/USER_MANUAL.md)를 재사용한다.
 
 
 공통 browser origin guard는 `src/shared/server/request-origin/index.server.ts`, Worker ingress의 불변 ALS context는 `src/shared/server/hosted-runtime/index.server.ts`·`sites/worker.ts`가 소유한다. `sites/public-origin.json`은 공개 siteID/origin pin이며 `vite.config.mts`가 `.openai/hosting.json`과 project ID 일치/정확 HTTPS origin을 검사한다. secret/env 설정 대체가 아니고 [Origin 계약](ARCHITECTURE.md#활동팀-공통-준비표-설계)을 따른다.
