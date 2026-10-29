@@ -10,7 +10,7 @@ import { consumeWorkerResponse } from "./consume-worker-response.mjs";
 import { buildSnapshot } from "./test-project-ux-provenance.mjs";
 
 const roles=["superuser","project_admin","team_leader","member","guest"];
-const features=["projects","tasks","completion","submissions","review","attachments","preparation","reports","personal","bugs","administration"];
+const features=["media","projects","tasks","completion","submissions","review","attachments","preparation","reports","personal","bugs","administration"];
 const errorMarker=text=>/Functions cannot be passed|Only plain objects can be passed|Minified React error|Hydration failed|(?:^|\n)[a-f0-9]+:E\{/m.test(text);
 const sha=bytes=>createHash("sha256").update(bytes).digest("hex");
 function parseHtml(html){
@@ -30,19 +30,19 @@ async function verifyGuideContent(request,out,{runtime,secretSentinel="SYNTHETIC
  const rolePages=[];for(const role of roles)rolePages.push(await page(`/guide/${role}`));
  check(rolePages.every(row=>row.status===200&&row.html.includes('data-testid="user-guide"')),"all five role explanations remain publicly readable without changing account identity");
  check(rolePages.every(row=>row.dom.links.some(link=>link.attrs.href==="/guide")),"role pages provide a real role-selection return link");
- const common=["projects","tasks","submissions","attachments","personal","bugs"];
+ const common=["media","projects","tasks","submissions","attachments","personal","bugs"];
  check(rolePages.every((row,index)=>{const role=roles[index],expected=[...common,...(role==="guest"?[]:["completion","review","preparation"]),...(["superuser","project_admin"].includes(role)?["reports"]:[]),...(role==="superuser"?["administration"]:[])].sort(),actual=[...new Set(row.dom.links.map(link=>link.attrs.href).filter(href=>href?.startsWith(`/guide/${role}/`)).map(href=>href.split("/")[3]))].sort();return JSON.stringify(actual)===JSON.stringify(expected);}),"role feature navigation matches the exact public permission-context matrix");
  const permittedFeatures=role=>features.filter(feature=>common.includes(feature)||(role!=="guest"&&["completion","review","preparation"].includes(feature))||(["superuser","project_admin"].includes(role)&&feature==="reports")||(role==="superuser"&&feature==="administration"));
  const featurePages=[];for(const role of roles)for(const feature of permittedFeatures(role))featurePages.push(await page(`/guide/${role}/${feature}`));
- check(featurePages.length===45&&featurePages.every(row=>row.status===200&&row.html.includes('data-testid="user-guide"')),"all45 permitted role-feature intersections render public SSR200 exactly once");
- check(pages.length===51&&new Set(pages.map(row=>row.route)).size===51,"landing/five roles/all45 features comprise51 distinct valid pages without duplicate GETs");
+ check(featurePages.length===50&&featurePages.every(row=>row.status===200&&row.html.includes('data-testid="user-guide"')),"all50 permitted role-feature intersections render public SSR200 exactly once");
+ check(pages.length===56&&new Set(pages.map(row=>row.route)).size===56,"landing/five roles/all50 features comprise56 distinct valid pages without duplicate GETs");
  check(featurePages.every(row=>["where","steps","example","confirm","errors","limits","related"].every(id=>row.dom.ids.includes(id))),"every feature has menu, ordered instructions, example, save confirmation, error help and scope sections");
  const contextual=featurePages.filter(row=>["/guide/project_admin/projects","/guide/team_leader/preparation","/guide/member/submissions","/guide/guest/bugs"].includes(row.route));
  check(contextual.length===4&&contextual.every(row=>row.status===200),"project-admin/team-leader/member/guest examples resolve their permitted feature intersections");
- check(featurePages.every(row=>row.dom.links.some(link=>link.attrs.href===row.route.split("/").slice(0,3).join("/"))),"all45 feature pages preserve their role-context return links");
- const readingRoutes=[...['projects','tasks','submissions','attachments','personal'].map(feature=>`/guide/guest/${feature}`),"/guide/member/preparation","/guide/member/projects","/guide/team_leader/projects"];
+ check(featurePages.every(row=>row.dom.links.some(link=>link.attrs.href===row.route.split("/").slice(0,3).join("/"))),"all50 feature pages preserve their role-context return links");
+ const readingRoutes=[...['projects','tasks','submissions','attachments','personal'].map(feature=>`/guide/guest/${feature}`),"/guide/member/preparation","/guide/member/projects","/guide/team_leader/projects","/guide/member/media","/guide/guest/media"];
  const readingPages=featurePages.filter(row=>readingRoutes.includes(row.route));
- check(readingPages.length===8&&readingPages.every(row=>["화면에서 확인하는 예시","확인한 내용을 점검하세요","확인 체크리스트"].every(text=>row.dom.text.includes(text))),"all eight read-only variants present viewing examples and confirmation wording instead of writing prompts");
+ check(readingPages.length===10&&readingPages.every(row=>["화면에서 확인하는 예시","확인한 내용을 점검하세요","확인 체크리스트"].every(text=>row.dom.text.includes(text))),"all ten read-only variants present viewing examples and confirmation wording instead of writing prompts");
  check(readingPages.every(row=>!["실제 활동에 맞게 바꿔 입력하세요","수정은 변경 요약과 함께 저장하세요"].some(text=>row.dom.text.includes(text))),"read-only variants omit generic input/save instructions");
  const title=route=>featurePages.find(row=>row.route===route)?.dom.headings.find(heading=>heading.attrs.id==="guide-title")?.text;
  check(title("/guide/guest/submissions")==="제출물·댓글·이력 읽기"&&title("/guide/member/preparation")==="우리 팀 준비표 확인하기","guest submissions and ordinary-member preparation use their precise read-only titles");
@@ -78,9 +78,14 @@ async function verifyGuideContent(request,out,{runtime,secretSentinel="SYNTHETIC
 export async function verifyUserGuide(request,out,options={}){
  const {check,pages,assets,assertions,invalid,runtime}=await verifyGuideContent(request,out,options);
  const images=pages.flatMap(row=>row.dom.images.map(image=>({...image,page:row.route,captions:row.dom.captions})));
- check(images.length>0,"at least one reviewed actual screenshot is rendered; empty placeholders do not count as image proof");
+ check(new Set(images.map(image=>image.src)).size===20,"all twenty reviewed actual screenshots render across the guide; empty placeholders do not count as image proof");
  check(images.every(image=>image.alt?.trim().length>=8&&Number(image.width)>0&&Number(image.height)>0&&image.src?.startsWith("/")&&!image.src.startsWith("//")),"every screenshot has descriptive alt, intrinsic dimensions and a same-site source");
  check(images.every(image=>image.captions.length>0&&image.captions.every(caption=>caption.text.includes("슈퍼관리자")&&caption.text.includes("합성"))),"screenshots carry visible synthetic-superuser provenance captions");
+ check(!pages.some(row=>row.html.includes('data-testid="guide-screenshots-pending"')),"reviewed image release no longer claims all screenshots are pending");
+ check(images.every(image=>image.captions.some(c=>c.text.includes("촬영")&&/v(?:23|28)/.test(c.text))),"image captions identify the capture version and date");
+ check(pages.filter(row=>row.dom.images.some(image=>image.src.includes("v23-"))).every(row=>row.dom.text.includes("구버전 화면")&&row.dom.text.includes("메뉴 열기")&&row.dom.text.includes("상세 정보 · 선택")&&row.dom.text.includes("일간·주간 시간표")),"historical captures explain current mobile navigation, optional meal fields and timetable differences");
+ check(images.every(image=>pages.find(row=>row.route===image.page).dom.links.some(link=>link.attrs.href===image.src&&link.attrs.target==="_blank"&&link.attrs.rel.includes("noopener")&&link.text.includes("원본 화면 확대"))),"every screenshot has a named same-site original-size new-tab link");
+ check(pages.filter(row=>row.dom.images.length).every(row=>(row.html.match(/<details\b/g)??[]).length===row.dom.images.length && (row.html.match(/<summary\b/g)??[]).length===row.dom.images.length),"each screenshot has a native keyboard-operable disclosure without a script dependency");
  const screenshotPages=pages.filter(row=>row.dom.images.length);
  check(screenshotPages.every(row=>row.dom.text.includes("다른 역할")&&row.dom.text.includes("권한")),"screenshot pages distinguish common SU examples from other-role permission acceptance");
  for(const src of [...new Set(images.map(image=>image.src))]){

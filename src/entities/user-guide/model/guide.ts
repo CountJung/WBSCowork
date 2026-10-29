@@ -1,5 +1,5 @@
 export type GuideRoleId = "superuser" | "project_admin" | "team_leader" | "member" | "guest";
-export type GuideFeatureId = "projects" | "tasks" | "completion" | "submissions" | "review" | "attachments" | "preparation" | "reports" | "personal" | "bugs" | "administration";
+export type GuideFeatureId = "projects" | "tasks" | "completion" | "submissions" | "review" | "attachments" | "preparation" | "reports" | "personal" | "bugs" | "administration" | "media";
 export type GuideStep = { title: string; body: string };
 export type GuideRole = {
   id: GuideRoleId; label: string; subtitle: string; meaning: string;
@@ -36,7 +36,7 @@ export const guideRoles: GuideRole[] = [
     ],
     canDo: ["전체 프로젝트 관리와 생성", "프로젝트별 소속·관리자 범위·접근 제한 설정", "활동팀과 팀장 관리, 준비표 편집", "전체 보고서 실행 기록 관리", "사용자 등급·사이트 설정·버그 검토 등 전역 운영"],
     cannotDo: ["로그인이나 서버의 자료 검증을 건너뛰기", "자신이 작성·담당·해당 버전을 편집한 제출물을 스스로 승인하기", "설명서의 역할 선택으로 실제 계정 권한 바꾸기", "새 담당자·팀장·프로젝트 소속 후보에 자신을 추가하기"],
-    featureIds: ["projects", "tasks", "completion", "submissions", "review", "attachments", "preparation", "reports", "personal", "bugs", "administration"],
+    featureIds: ["media", "projects", "tasks", "completion", "submissions", "review", "attachments", "preparation", "reports", "personal", "bugs", "administration"],
   },
   {
     id: "project_admin", label: "프로젝트 관리자", subtitle: "슈퍼관리자가 지정한 프로젝트를 운영합니다.",
@@ -49,7 +49,7 @@ export const guideRoles: GuideRole[] = [
     ],
     canDo: ["지정 프로젝트의 업무·활동팀·팀원·팀장 관리", "지정 프로젝트의 비공개 제출물 관리 범위 열람", "지정 프로젝트 준비표 편집과 완료 조건에 맞는 진행 관리", "지정 프로젝트 보고서 생성 및 자신이 요청한 실행·파일 확인", "본인 버그 제보와 개인 업무·검색·알림 확인"],
     cannotDo: ["미지정 프로젝트를 관리자 권한으로 관리하거나 비공개 자료 열람하기", "프로젝트 생성·프로젝트 소속·접근 제한·사용자 등급을 바꾸기", "다른 관리자가 요청한 보고서 실행을 자신의 기록처럼 열람하기", "검토자 미지정 상태 또는 자기 승인 조건에서 승인하기", "사이트 전체 설정·DB·다른 사람의 버그 제보 검토하기"],
-    featureIds: ["projects", "tasks", "completion", "submissions", "review", "attachments", "preparation", "reports", "personal", "bugs"],
+    featureIds: ["media", "projects", "tasks", "completion", "submissions", "review", "attachments", "preparation", "reports", "personal", "bugs"],
   },
   {
     id: "team_leader", label: "활동팀 팀장", subtitle: "현재 맡은 봉사활동 팀의 준비와 업무를 이끕니다.",
@@ -62,7 +62,7 @@ export const guideRoles: GuideRole[] = [
     ],
     canDo: ["현재 맡은 팀의 업무 생성·수정·배정·진행 관리", "자기 팀 준비표 편집과 현재 팀원에게 허용된 준비표 열람", "해당 팀 업무의 직접 완료 조건 충족 시 완료·재개", "현재 권한이 있는 제출물·첨부 확인과 본인 제출·댓글 작성"],
     cannotDo: ["다른 팀이나 팀이 지정되지 않은 공통 업무를 팀장 권한으로 관리하기", "팀원 소속이나 팀장 임명을 직접 바꾸기", "팀장이라는 이유로 타인의 비공개 제출물·첨부·댓글을 열람하기", "지정 없이 검토 승인하거나 사이트 계정·설정·보고서를 관리하기"],
-    featureIds: ["projects", "tasks", "completion", "submissions", "review", "attachments", "preparation", "personal", "bugs"],
+    featureIds: ["media", "projects", "tasks", "completion", "submissions", "review", "attachments", "preparation", "personal", "bugs"],
   },
   {
     id: "member", label: "구성원", subtitle: "맡은 업무를 진행하고 결과를 제출합니다.",
@@ -75,7 +75,7 @@ export const guideRoles: GuideRole[] = [
     ],
     canDo: ["접근 가능한 프로젝트·업무·공개 제출물 열람", "담당 업무 진행과 조건에 맞는 완료·재개", "현재 범위 안에서 본인 제출물·댓글 작성과 수정", "지정 검토자로서 조건을 충족한 다른 사람의 제출 버전 검토", "자기 팀 준비표 읽기; 업무 협업 프로젝트의 기존 구성원 업무 관리 정책 이용"],
     cannotDo: ["봉사활동에서 팀장 지정 없이 팀 업무를 관리·배정하기", "준비표를 일반 팀원 권한으로 수정하기", "담당자·팀원·검토자라는 이유로 타인의 비공개 자료 열람하기", "프로젝트 소속·팀장·사용자 등급·사이트 설정을 바꾸기", "소속 제한 프로젝트에서 탈퇴 후 본인의 과거 자료에 계속 접근하기"],
-    featureIds: ["projects", "tasks", "completion", "submissions", "review", "attachments", "preparation", "personal", "bugs"],
+    featureIds: ["media", "projects", "tasks", "completion", "submissions", "review", "attachments", "preparation", "personal", "bugs"],
   },
   {
     id: "guest", label: "게스트", subtitle: "허용된 자료를 읽고 본인의 버그를 제보합니다.",
@@ -88,11 +88,27 @@ export const guideRoles: GuideRole[] = [
     ],
     canDo: ["현재 프로젝트 접근과 공개범위가 허용하는 자료 열람", "현재 프로젝트 접근이 남아 있는 본인의 과거 비공개 제출물 열람", "현재 범위의 검색과 본인 알림 확인", "본인 버그 제보·스크린샷 첨부·제보 상세 확인"],
     cannotDo: ["업무·제출물·댓글을 새로 작성하거나 수정하기", "업무 상태 변경·직접 완료·검토 승인하기", "팀 준비표 읽기·편집이나 팀장 역할 수행하기", "소속만으로 구성원·관리자 쓰기 권한 얻기", "다른 사람의 비공개 자료나 버그 제보를 읽기"],
-    featureIds: ["projects", "tasks", "submissions", "attachments", "personal", "bugs"],
+    featureIds: ["media", "projects", "tasks", "submissions", "attachments", "personal", "bugs"],
   },
 ];
 
 export const guideFeatures: GuideFeature[] = [
+  {
+    id: "media", title: "사진첩·영상 올리고 확인하기", summary: "프로젝트의 미디어팀에서 사진과 영상을 모으고, 제목·설명·볼 수 있는 범위를 함께 관리합니다. 미디어팀장과 해당 프로젝트 관리자, 슈퍼관리자가 편집합니다.",
+    menu: "프로젝트 홈 → 메뉴 열기 → 사진첩·영상 → 미디어팀 선택", href: "/tasks", roles: allRoles,
+    steps: [
+      { title: "프로젝트와 미디어팀을 먼저 고르세요", body: "프로젝트 홈의 ‘메뉴 열기’에서 ‘사진첩·영상’을 선택합니다. 미디어팀이 없다면 해당 프로젝트 관리자에게 팀 구성을 요청하세요. 슈퍼관리자는 배정 없이 모든 프로젝트를, 일반 관리자는 지정 프로젝트의 모든 팀을 관리합니다." },
+      { title: "제목과 공개 범위를 확인하세요", body: "편집자는 ‘사진·영상 올리기’에서 제목·공개 범위·파일을 필수로 입력합니다. 설명은 선택입니다. ‘비공개 · 작성자·현재 팀·지정 관리자’와 ‘프로젝트 구성원 공개’를 구분하세요. 프로젝트 구성원 공개도 인터넷 전체 공개는 아닙니다." },
+      { title: "파일을 선택한 뒤 저장하세요", body: "실제 파일을 한 개 선택하고 파일명·크기를 확인한 뒤 ‘미디어 저장’을 한 번 누릅니다. 선택만 한 화면은 업로드 완료가 아닙니다. 본인에게 사용 허락이 있는 자료만 올리고 개인 얼굴·이름·민감정보는 먼저 확인하세요." },
+      { title: "목록과 버전으로 저장 결과를 확인하세요", body: "저장 후 이미지 또는 영상, 제목·설명·공개 범위와 버전을 확인합니다. 화면을 다시 열어 유지되는지도 살펴보세요. 편집 권한이 있다면 ‘설명·공개 범위 편집’으로 바꾸고 ‘설명·공개 범위 저장’ 후 새 버전을 확인합니다." },
+      { title: "필요하면 원본을 내려받으세요", body: "‘원본 다운로드’로 현재 읽을 수 있는 파일을 받습니다. 브라우저가 영상을 재생하지 못하면 지원되는 재생 프로그램으로 원본을 확인하세요. 다운로드 주소를 알아도 로그인·현재 프로젝트 접근과 자료 공개 범위 검사를 거칩니다." },
+    ],
+    example: { title: "개인정보 없는 행사 준비 사진 예", values: [{ field: "미디어팀", value: "행사 기록팀" }, { field: "제목", value: "준비 공간 배치" }, { field: "설명 · 선택", value: "사람·이름이 나오지 않는 안내판과 준비 공간" }, { field: "공개 범위", value: "먼저 비공개로 저장하고 공유할 대상을 확인" }] },
+    checks: ["올바른 프로젝트와 미디어팀을 선택했습니다.", "파일 선택과 실제 저장 완료를 구분했습니다.", "새로고침 뒤 제목·버전·공개 범위가 유지되는지 확인했습니다."],
+    troubleshooting: [{ issue: "업로드할 위치나 버튼이 없어요.", action: "미디어팀이 있는지 먼저 확인하세요. 편집은 해당 미디어팀장·지정 프로젝트 관리자·슈퍼관리자 범위입니다. 일반 팀원·게스트는 읽기만 가능하며, 다른 팀의 팀장이라는 이유로 업로드할 수는 없습니다." }, { issue: "저장에 실패했거나 결과가 불확실해요.", action: "제목·설명을 보관하고 파일 종류·크기와 현재 권한을 확인하세요. 여러 번 누르기 전에 ‘현재 팀 목록 다시 확인’으로 실제 저장 여부를 확인합니다. 충돌 안내가 나오면 최신 버전을 읽고 다시 편집하세요." }],
+    limits: ["PNG·JPEG·WebP 사진은 8 MiB, MP4·WebM 영상은 20 MiB 이하이며 한 번에 파일 한 개입니다. 사이트 한도가 더 작으면 그 한도를 따릅니다.", "비공개는 작성자·현재 해당 팀·지정 프로젝트 관리자·슈퍼관리자 범위입니다. 프로젝트 소속이 해제되면 과거 본인 자료도 다시 열리지 않을 수 있습니다.", "일반 구성원·게스트는 현재 프로젝트 접근과 파일 공개 범위가 허용하는 자료만 읽습니다. 사진을 내려받을 수 있다고 수정·업로드 권한이 생기지는 않습니다.", "실제 인물의 게시 동의를 확인하고 건강정보·아동 개별정보는 기록하지 않습니다. 이 화면에는 복원 가능한 삭제 기능이 없으므로 정리 연습을 위해 프로젝트 영구 파기를 실행하지 마세요."],
+    screenshotIds: ["media-upload", "media-detail", "media-overview"], related: ["projects", "preparation", "attachments"],
+  },
   {
     id: "projects", title: "프로젝트와 활동팀 이해하기", summary: "프로젝트가 큰 목적이라면 활동팀은 그 안에서 함께 일하는 모임입니다. 계정 등급·프로젝트 소속·팀장 역할을 구분하면 메뉴가 다른 이유를 알 수 있습니다.",
     menu: "상단 작업 → 프로젝트 이름 / 관리자는 관리자 → 프로젝트 관리", href: "/tasks", roles: allRoles,
@@ -107,7 +123,7 @@ export const guideFeatures: GuideFeature[] = [
     checks: ["현재 프로젝트 이름과 유형을 확인했습니다.", "관리자 지정 범위와 팀장 지정 범위를 구분했습니다.", "소속 변경 후 목록에 실제 저장 결과가 남는지 확인했습니다."],
     troubleshooting: [{ issue: "관리자인데 프로젝트 설정이 보이지 않아요.", action: "관리자는 지정 프로젝트만 관리합니다. 프로젝트 소속·관리 범위를 슈퍼관리자에게 확인하세요." }, { issue: "프로젝트 소속 해제가 거부돼요.", action: "진행 업무 담당·검토 대기·현재 팀장 역할이 남았는지 확인하고 재배정·인계·해임을 먼저 요청하세요." }],
     limits: ["소속 제한 프로젝트에서 소속이 해제되면 본인의 과거 자료도 접근이 차단되지만 기록은 보존됩니다.", "프로젝트 유형은 참여자·팀·업무가 없는 상태에서만 변경할 수 있습니다.", "프로젝트 종료일이 지났다고 자료가 자동으로 삭제되지 않습니다."],
-    screenshotIds: ["project-overview", "team-directory"], related: ["tasks", "preparation", "administration"],
+    screenshotIds: ["project-directory", "work-project-home", "volunteer-project-home"], related: ["tasks", "preparation", "administration"],
   },
   {
     id: "tasks", title: "프로젝트에서 실제 할 일 찾기", summary: "프로젝트 아래의 업무를 작은 단위로 나눕니다. 제목만 읽고 완료하기보다 담당자·완료 기준·선행 업무를 함께 확인하세요.",
@@ -123,7 +139,7 @@ export const guideFeatures: GuideFeature[] = [
     checks: ["담당자가 현재 업무를 수행할 수 있는 사람인지 확인했습니다.", "다른 프로젝트의 업무를 선행·하위 관계로 연결하지 않았습니다.", "저장 후 상세에서 변경한 값을 확인했습니다."],
     troubleshooting: [{ issue: "다른 팀의 수정 버튼이 안 보여요.", action: "팀장은 현재 맡은 팀만 관리합니다. 해당 팀장이나 지정 프로젝트 관리자에게 요청하세요." }, { issue: "시작이나 완료가 막혀요.", action: "선행 업무의 현재 상태와 담당자·완료 기준을 확인하세요. 단순히 종료일이 지났다고 업무가 완료되지는 않습니다." }],
     limits: ["게스트는 업무를 읽을 수 있는 범위에서도 작성·수정·상태 변경을 할 수 없습니다.", "진행을 시작한 뒤 완료 방식을 마음대로 바꾸지 못합니다.", "삭제 화면에 모든 버전·파일 영구 삭제 경고가 있다면 복구 가능한 취소와 다릅니다. 실제 자료를 연습 삼아 삭제하지 마세요."],
-    screenshotIds: ["project-overview", "task-detail"], related: ["completion", "submissions", "personal"],
+    screenshotIds: ["project-overview"], related: ["completion", "submissions", "personal"],
   },
   {
     id: "completion", title: "제출 필수와 직접 완료 구분하기", summary: "제출물이 필요한 업무와 제출 없이 끝낼 수 있는 업무는 완료 조건이 다릅니다. 직접 완료도 담당자와 기준·선행 조건을 확인합니다.",
@@ -139,7 +155,7 @@ export const guideFeatures: GuideFeature[] = [
     checks: ["제출 필수인지 선택인지 확인했습니다.", "담당·완료 기준·선행 조건을 확인했습니다.", "완료 후 상태와 이력이 실제로 저장됐는지 확인했습니다."],
     troubleshooting: [{ issue: "제출 선택인데 완료가 거부돼요.", action: "현재 담당자·팀장 권한, 완료 기준과 선행 업무를 확인하세요. 파일 선택 여부만의 문제가 아닐 수 있습니다." }, { issue: "완료 방식을 바꿀 수 없어요.", action: "한 번이라도 진행한 업무는 예정으로 되돌려도 방식 변경이 제한됩니다. 기존 기록을 지우지 말고 관리자와 업무 운영 방법을 정하세요." }],
     limits: ["직접 완료와 제출물 검토 필수는 함께 설정할 수 없습니다. 검토가 필요한 업무는 제출 필수 경로로 운영합니다.", "완료 뒤 새 버전 제출이나 재개로 현재 검토 선택·승인이 무효화될 수 있으며 과거 판정은 남습니다.", "계정 등급이나 팀장 소속을 잃으면 열어 둔 화면에서도 다음 상태 변경이 거부될 수 있습니다."],
-    screenshotIds: ["project-overview", "task-detail"], related: ["tasks", "submissions", "review", "preparation"],
+    screenshotIds: ["project-overview"], related: ["tasks", "submissions", "review", "preparation"],
   },
   {
     id: "submissions", title: "제출물·댓글·버전 남기기", summary: "제출물은 업무의 결과 기록입니다. 본문과 파일을 함께 남기고, 변경할 때는 새 버전과 변경 이유로 이전 내용을 구분합니다.",
@@ -156,7 +172,7 @@ export const guideFeatures: GuideFeature[] = [
     checks: ["정확한 프로젝트·업무에 제출했는지 확인했습니다.", "공개범위가 공유 목적에 맞는지 확인했습니다.", "저장 후 본문·버전·첨부와 댓글을 확인했습니다."],
     troubleshooting: [{ issue: "검토자로 지정됐는데 비공개 제출물이 안 열려요.", action: "검토자 지정은 비공개 열람권을 추가하지 않습니다. 작성자나 지정 관리자와 공유 범위·검토 방식을 확인하세요." }, { issue: "다른 사람이 먼저 수정했다는 안내가 나와요.", action: "입력한 본문과 변경 요약을 따로 보관하고 최신 내용을 다시 연 뒤 필요한 변경만 합쳐 저장하세요." }],
     limits: ["과거 버전도 현재 제출물과 당시 버전의 공개범위를 함께 검사합니다.", "소속 제한 프로젝트에서 탈퇴하면 본인 과거 제출물·댓글·첨부도 접근이 막히며 기록은 보존됩니다.", "일반 저장·첨부 제외와 모든 버전·파일의 영구 삭제는 다릅니다. 영구 삭제 확인을 가볍게 진행하지 마세요."],
-    screenshotIds: ["attachment-preview"], related: ["attachments", "review", "completion"],
+    screenshotIds: [], related: ["attachments", "review", "completion"],
   },
   {
     id: "review", title: "검토 요청과 승인·보완 처리하기", summary: "검토는 현재 담당자의 특정 제출 버전에 대한 판단입니다. 관리자나 팀장이라고 자동 승인할 수 없고 지정된 검토자가 조건에 맞게 처리합니다.",
@@ -188,7 +204,7 @@ export const guideFeatures: GuideFeature[] = [
     checks: ["파일을 선택한 뒤 실제 제출 성공까지 확인했습니다.", "미리보기의 잘림·오류 안내를 읽었습니다.", "파일을 읽을 수 있는 사람은 제출물 공개범위와 현재 소속에 따라 결정된다는 점을 확인했습니다."],
     troubleshooting: [{ issue: "한국어가 미리보기에 나오지 않아요.", action: "UTF-8 텍스트인지 확인하세요. EUC-KR·UTF-16 같은 다른 인코딩은 현재 미리보기 대신 원본을 다운로드합니다." }, { issue: "미리보기 버튼이 없거나 이미지가 안 떠요.", action: "지원 형식·실제 내용·크기 검사를 통과해야 합니다. 안내를 읽고 원본 다운로드를 사용하세요. 접근 거부라면 소속·공개범위부터 확인합니다." }],
     limits: ["한 번에 선택하는 파일은 최대 20개이며 개별 파일과 선택한 파일 합계가 모두 현재 용량 한도 이하여야 합니다. 기본 한도는 20 MiB이고 게시 사이트의 상한도 20 MiB입니다. 실제 화면의 안내를 따르세요. 업로드 제한과 미리보기의 형식·내용 검사는 별개입니다.", "텍스트 미리보기는 UTF-8·최대 256 KiB입니다. HTML·SVG·Markdown·코드는 실행하지 않고 글자로만 보여줍니다.", "이미지는 PNG·JPEG·GIF·WebP·AVIF 중 검사에 통과한 파일만 지원하며 최대 8 MiB·각 변 8192px·총 33,554,432픽셀 제한이 있습니다.", "PDF·오디오·영상과 지원하지 않는 형식은 원본 다운로드를 사용합니다. 파일을 외부 뷰어 서비스로 전송하지 않습니다."],
-    screenshotIds: ["attachment-preview"], related: ["submissions", "bugs"],
+    screenshotIds: [], related: ["submissions", "bugs"],
   },
   {
     id: "preparation", title: "팀 종류에 맞는 공통 준비표 쓰기", summary: "식사·시설·돌봄·레크레이션 등 실제 팀마다 하나의 준비표를 함께 봅니다. 날짜별 준비와 체크를 기록하는 기능이며 업무 완료나 개인 건강정보를 관리하는 표가 아닙니다.",
@@ -205,7 +221,7 @@ export const guideFeatures: GuideFeature[] = [
     checks: ["편집 중인 프로젝트·팀과 종류를 확인했습니다.", "날짜·제목·종류별 필수 항목을 채웠습니다.", "개인 건강정보나 아동·돌봄 대상자의 개별정보를 넣지 않았습니다.", "저장 버전과 실제 표시된 수량·체크를 확인했습니다."],
     troubleshooting: [{ issue: "저장할 수 없다는 입력 안내가 나와요.", action: "날짜·제목·진행 상태를 확인하세요. 식사 선택 항목을 비워 두는 것은 괜찮지만 입력한 수치의 범위는 지켜야 합니다. 상세 정보가 열리면 잘못 입력한 값을 확인하세요. 다른 팀의 필수값·빈 체크 제목·수량·시각·행 수 검사는 그대로입니다. 준비물·도구는 한 줄로 적고 긴 설명이나 줄바꿈은 팀 메모에 적습니다." }, { issue: "팀장인데 편집이 안 돼요.", action: "현재 팀장 지정과 프로젝트·팀 활성 소속을 확인하세요. 교체·해제된 이전 팀장의 열린 화면은 다음 저장부터 거부됩니다." }],
     limits: ["팀당 하나의 준비표에 최대 50행, 행당 체크 20개까지 넣을 수 있습니다. 저장할 전체 내용은 64 KiB 이내여야 합니다. 긴 메모·체크가 많아 저장 용량 오류가 나면 내용을 줄여 주세요.", "제목은 120자, 팀 메모는 1000자까지입니다. 날짜는 실제 달력 날짜를 입력합니다. 시각은 선택 항목이며 오후 2시 30분은 14:30처럼 24시간제 HH:mm으로 입력합니다.", "식사 인원·1인 기준량은 선택입니다. 입력하는 경우 인원은 0~10,000 정수, 기준량은 0~10,000·소수 셋째 자리까지이며 서버에서도 검증합니다. 상세 정보를 접어도 기존 값은 유지됩니다.", "준비표 저장·체크 완료는 WBS 업무의 완료 상태를 변경하지 않습니다. 개인 건강정보·아동 개별정보를 수집하거나 AI·외부 서비스에 보내는 기능이 아닙니다."],
-    screenshotIds: ["team-directory", "meal-summary", "meal-edit", "facility-preparation", "care-preparation", "recreation-preparation"], related: ["projects", "tasks", "completion"],
+    screenshotIds: ["team-directory", "activity-directory", "meal-summary", "facility-activity", "facility-preparation", "care-activity", "care-preparation", "recreation-activity", "recreation-preparation", "recreation-edit"], related: ["projects", "tasks", "completion"],
   },
   {
     id: "reports", title: "프로젝트 보고서 미리보기와 파일 받기", summary: "지정 관리자와 슈퍼관리자가 현재 읽을 수 있는 활동 기록을 기간별로 모읍니다. 같은 시점의 내용을 DOCX·PPTX로 만들며 실제 첨부파일 내용을 자동 분석하지 않습니다.",
@@ -222,7 +238,7 @@ export const guideFeatures: GuideFeature[] = [
     checks: ["기간·시간대·공개범위와 포함 자료를 확인했습니다.", "생성 요청과 파일 성공 상태를 구분해 확인했습니다.", "다운로드한 보고서의 공유 범위를 직접 점검했습니다."],
     troubleshooting: [{ issue: "기간을 입력했는데 실행되지 않아요.", action: "시작·종료 순서, 최대 31일, 미래 종료 여부를 확인하고 정상 기간으로 다시 미리보세요. 권한·저장소 오류라면 관리자에게 안내 문구와 발생 시각을 전달하세요." }, { issue: "전에 받은 파일 링크가 안 열려요.", action: "현재 소속·관리 범위·원본 공개범위·파일 만료 상태가 달라졌을 수 있습니다. 실행 기록에서 현재 상태를 확인하고 필요하면 허용된 범위로 새 보고서를 만드세요." }],
     limits: ["기간은 시작 시각을 포함하고 종료 시각은 포함하지 않습니다. 업무·제출물·댓글·첨부 메타데이터를 합쳐 최대 100행, 종류별 최대 20행을 수집하며 설정에 따라 더 적을 수 있습니다. 각 텍스트는 최대 512자까지만 포함합니다.", "비공개 제출물은 현재 요청자 권한과 원본 공개범위를 따릅니다. 보고서가 원본 권한을 우회하지 않습니다.", "첨부파일 원문·OCR·외부 링크·외부 이미지를 읽거나 자동 수집하지 않습니다. 완료율이나 진행률을 추측해 만들지 않습니다.", "운영 예약 활성화와 외부 발송은 별도 절차입니다. 파일 보관·만료 안내를 따르며 다운로드 링크를 공개 공유하지 마세요."],
-    screenshotIds: ["report-preview"], related: ["projects", "submissions", "personal"],
+    screenshotIds: [], related: ["projects", "submissions", "personal"],
   },
   {
     id: "personal", title: "내 업무·검색·알림 활용하기", summary: "내가 담당한 업무, 기여한 기록, 검토 대기를 구분하고 필요한 내용을 검색합니다. 각 목록과 알림은 지금 읽을 수 있는 자료만 보여줍니다.",
@@ -238,7 +254,7 @@ export const guideFeatures: GuideFeature[] = [
     checks: ["목록의 담당·기여·검토를 구분했습니다.", "검색 결과와 원본의 프로젝트·버전을 확인했습니다.", "알림 읽음과 업무 완료를 구분했습니다."],
     troubleshooting: [{ issue: "찾던 자료가 검색되지 않아요.", action: "단어·검색 범위와 현재 소속·공개범위를 확인하세요. 첨부파일 안의 문장이나 이미지 속 글자까지 검색하지는 않습니다." }, { issue: "알림은 있었는데 원본이 열리지 않아요.", action: "소속 해제·공개범위 변경·원본 상태 변경이 있을 수 있습니다. 현재 프로젝트 담당 관리자에게 접근 여부를 문의하세요." }],
     limits: ["목록·검색 결과·알림은 현재 권한에 따라 달라집니다. 소속 제한 프로젝트 탈퇴 후에는 본인 과거 기록도 노출되지 않습니다.", "알림은 앱 안에서 확인하며 외부 메일·메신저 자동 발송을 뜻하지 않습니다.", "검색은 현재 앱에 저장된 허용 텍스트와 메타데이터를 대상으로 하며 외부 웹이나 첨부 원문을 자동 조회하지 않습니다."],
-    screenshotIds: [], related: ["tasks", "review", "bugs"],
+    screenshotIds: ["personal-work-empty"], related: ["tasks", "review", "bugs"],
   },
   {
     id: "bugs", title: "버그와 스크린샷 제보하기", summary: "어느 화면에서 무엇을 했을 때 어떤 결과가 나왔는지 알려주세요. 게스트를 포함한 모든 로그인 역할은 본인의 버그를 제보하고 확인할 수 있습니다.",
@@ -270,7 +286,7 @@ export const guideFeatures: GuideFeature[] = [
     checks: ["현재 대상과 변경할 프로젝트·계정 범위를 확인했습니다.", "영향·인계·복구 가능 범위를 확인했습니다.", "변경 후 목록과 접근 결과를 점검하고 민감정보를 공개하지 않았습니다."],
     troubleshooting: [{ issue: "슈퍼관리자가 배정 후보에 보이지 않아요.", action: "정상 정책입니다. 새 담당자·팀장·소속 지정 없이 전역 관리할 수 있으며 기존 배정 기록은 임의로 지우지 않습니다." }, { issue: "저장 또는 운영 작업이 거부돼요.", action: "대상·현재 권한·확인 절차를 점검하고 운영 담당자와 원인을 확인하세요. 다른 경로나 설정 변경으로 제한을 우회하지 않습니다." }],
     limits: ["일반 관리자는 지정 프로젝트 운영자이며 전역 사용자·역할·DB·로그·사이트 설정·버그 검토 권한은 없습니다.", "모든 버전·파일 영구 삭제는 일반 수정·취소와 다릅니다. 경고와 대상을 확인하고 별도 운영 절차를 따릅니다.", "슈퍼관리자도 검토의 자기 승인 제한이나 파일·입력 검증을 건너뛰지 못합니다."],
-    screenshotIds: ["admin-project"], related: ["projects", "reports", "bugs"],
+    screenshotIds: ["project-settings"], related: ["projects", "reports", "bugs"],
   },
 ];
 
@@ -290,6 +306,19 @@ const projectReading: GuideFeatureWording = {
   troubleshooting: [{ issue: "프로젝트가 목록에 안 보여요.", action: "로그인 상태와 현재 프로젝트 접근·소속을 확인하세요. 소속 설정은 슈퍼관리자에게 요청합니다." }, { issue: "팀 목록이 예상과 달라요.", action: "현재 프로젝트와 실제 팀 소속을 구분해 확인하고 해당 프로젝트 관리자에게 문의하세요. 게스트는 준비표를 읽을 수 없습니다." }],
 };
 
+const mediaReading: GuideFeatureWording = {
+  readingOnly: true, title: "사진첩·영상 읽고 내려받기",
+  summary: "현재 소속 프로젝트에서 공개 범위가 허용하는 사진·영상을 확인합니다. 일반 구성원과 게스트에게 업로드·편집 권한을 주는 안내가 아닙니다.",
+  steps: [
+    { title: "프로젝트의 사진첩을 여세요", body: "프로젝트 홈 → ‘메뉴 열기’ → ‘사진첩·영상’으로 이동하고 미디어팀을 고릅니다. 접근할 수 있는 프로젝트와 자료만 표시됩니다." },
+    { title: "제목과 공개 범위를 읽으세요", body: "‘프로젝트 구성원 공개’는 인터넷 전체 공개가 아닙니다. 비공개 파일은 작성자·현재 해당 팀·지정 관리자에게 허용되는 범위 안에서만 보입니다." },
+    { title: "사진·영상과 설명을 확인하세요", body: "저장된 제목·설명·버전과 내용을 읽습니다. 일반 구성원·게스트는 업로드나 설명 변경을 하지 않으며, 수정 요청은 해당 미디어팀장에게 전달하세요." },
+    { title: "필요하면 원본을 내려받으세요", body: "‘원본 다운로드’를 누릅니다. 영상 재생이 지원되지 않으면 내려받은 파일을 지원 프로그램에서 확인하세요. 내려받은 자료도 공유 허용 범위를 지켜야 합니다." },
+  ],
+  example: { title: "읽을 수 있는 자료 확인 예", values: [{ field: "프로젝트", value: "현재 참여하는 봉사활동" }, { field: "사진", value: "사람이나 이름이 없는 준비 공간" }, { field: "공개 범위", value: "프로젝트 구성원 공개 — 인터넷 공개 아님" }] },
+  checks: ["현재 프로젝트와 미디어팀을 확인했습니다.", "파일의 공개 범위와 버전을 읽었습니다.", "일반 구성원·게스트의 읽기와 편집자 권한을 구분했습니다."],
+};
+
 /** Per-role copy changes the explanation only; the allowed route matrix and server guards remain unchanged. */
 const roleFeatureWording: Partial<Record<GuideRoleId, Partial<Record<GuideFeatureId, GuideFeatureWording>>>> = {
   project_admin: { projects: {
@@ -304,6 +333,7 @@ const roleFeatureWording: Partial<Record<GuideRoleId, Partial<Record<GuideFeatur
   } },
   team_leader: { projects: projectReading },
   member: {
+    media: mediaReading,
     projects: projectReading,
     preparation: {
       readingOnly: true,
@@ -322,6 +352,7 @@ const roleFeatureWording: Partial<Record<GuideRoleId, Partial<Record<GuideFeatur
     },
   },
   guest: {
+    media: mediaReading,
     projects: projectReading,
     tasks: {
       readingOnly: true,
