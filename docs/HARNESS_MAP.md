@@ -835,6 +835,14 @@ Fresh D1은35표571→586행이다. 업무34표42행 모두 같고 기존 audit5
 
 부모 증빙 파일명은 `wbs-v29-guide-home-proof.jpg`, `wbs-v29-media-upload-proof.jpg`, `wbs-v29-media-saved-proof.jpg`, `wbs-v29-narrow-500-proof.jpg`다. 별도 환경에 있는 파일로 이 실행기에서 읽거나 새로 전송하지 않았다. 기존 로컬 Worker63/84HTTP·20개 원본 바이트 검증과 이번 실제 브라우저 결과를 중복 합산하지 않는다. 후속 문서 HEAD는 게시 source와 구분하며 이 동기화는 앱 변경·재게시·테스트 재실행 없이 저장소 문서 검사와 내용 대조만 수행한다. 원본 docs-canon 검사기 미가용/미실행은 유지한다.
 
+### 열린 항목 즉시 처리 범위 재검토
+
+2026-10-29 main6feca211/sites6609f419와 깨끗한 작업 트리, 실제 원격 일치를 확인했다. AGENTS→TODO→PROJECT_MAP과 완료 색인, 가이드 이미지 UI/현재 manifest·이전 Worker 검증 한계를 대조했다. STATUS.md는 없으며 TODO가 현재 상태 정본이다. 열린30개 중20개는 !로 제외했고 진행10개 중7개 PRD는 이미 소스/게시 완료가 기록돼 있어 기존 완료 색인으로 통합했다. 남은 QLT032/038은 관측 외 역할·기기 인수, OPS021은 사용자 담당 NAS로서 이 실행기의 독립 코드 구현 대상이 아니다.
+
+현재 도구 목록에는 브라우저/컴퓨터 제어 도구가 없으며 기존 Chromium sandbox 차단은 변경하지 않았다. 따라서 실제 렌더링·새 역할 로그인·운영/R2 요청을 수행하지 않았다. 부모의 허용 브라우저에서 추가 확인할 경로는 `/guide/team_leader/preparation`, `/guide/member/media`, `/guide/guest/media`, `/projects/6/media?teamId=5`다. 새 계정/권한 부여 없이 가능한 화면만 관측하고 나머지는 대기로 남긴다. 이전 v29 실측과 QLT038 SU 파일 인수를 다시 실행한 결과처럼 표기하지 않는다.
+
+문서 전용 검증 `node scripts/check-docs.mjs --self-test`, `node scripts/check-docs.mjs`, `git diff --check` PASS(문서30·등록16/핵심7·링크370·npm명령147). 원본 docs-canon의 `scripts/check_docs.py` 리소스 읽기는 실패했고 로컬 제공 경로도 없어 원본 검사는 미실행이다. 별도 내용 검토로 완료 색인의 고유 근거/외부 게이트 보존, TODO 중복 제거 및 운영v29 source와 후속 문서 HEAD 구분을 확인했다. 앱/의존성/schema/env/공개범위/사용자 자료/권한 변경0, 새 build/제품 테스트/재게시0이다.
+
 ## 문서 정리 검증
 
 2026-10-21 간소화 당시 기준은 main ddcedd6/sites c1c55da와 미커밋 문서 작업 트리였다. 앱/DB/보안/배포를 바꾸지 않고 문서·필요 참조·검사기만 확인한다. docs-canon 원본은 환경에 없어 실행하지 않았고 외부 PredevGUI 규칙/BOM을 가져오지 않았다. 대체 검사는 등록 역할/읽기 경로, 전체 상대 링크/anchor, 실제 npm script, HTML 내부 링크/외부 CDN, 삭제 전 통합 매핑·untracked 보존과 두 branch의 공통 patch 적용을 확인한다. 실제 결과/파일 수는 검증 후 COMPLETED_LOG의 OPS-037에 남긴다.
