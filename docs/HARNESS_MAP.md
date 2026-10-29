@@ -821,7 +821,19 @@ Fresh D1은35표504→520행이다. 업무34표35행 모두 동일하고 기존 
 
 Fresh D1은35표571→586행이다. 업무34표42행 모두 같고 기존 audit529행도 불변이며 새 INFO15(id986~1000,05:16:23.877~05:16:58.151 UTC) 추가·삭제/수정0이다. 두 read 사이의 추가를 전부 배포 원인으로 단정하지 않는다. 실제 project5/task7/submission5/attachment7과 합성 team5/media1 row도 동일하다. env revision11/5entries·automations[] 전후 동일, schema/auth/보안 작업은 없으며 R2 원본 bytes는 이번에 검사하지 않았다.
 
-부모에게 이미지 가이드 QA 경로를 전달했으나 실제 브라우저 결과는 아직 대기다. 원본20장 파일 검수·Worker strict63/84HTTP와 version29 게시를 운영 이미지/원본 새탭·모바일/키보드·수화/콘솔 인수로 확대하지 않는다. publication 증거는 `.test-artifacts/guide-images/publication.json`이며 QLT032는 부분 완료/열린 상태다. 기존 자료/권한·다른 ! 항목·NAS 사용자 담당·원본 canon checker 미실행을 유지하며 문서 후속은 제품 검사·재게시가 아니다.
+게시 직후 부모에게 이미지 가이드 QA 경로를 전달했고 당시 실제 브라우저 결과는 대기였다. 후속 결과는 아래 별도 실제 인수로 기록한다. 원본20장 파일 검수·Worker strict63/84HTTP와 version29 게시를 운영 이미지/원본 새탭·모바일/키보드·수화/콘솔 인수로 확대하지 않는다. publication 증거는 `.test-artifacts/guide-images/publication.json`이며 QLT032는 부분 완료/열린 상태다. 기존 자료/권한·다른 ! 항목·NAS 사용자 담당·원본 canon checker 미실행을 유지하며 문서 후속은 제품 검사·재게시가 아니다.
+
+
+### version29 부모 브라우저 이미지 가이드 인수
+
+2026-10-29 부모의 허용된 클라우드 브라우저가 게시 source `0cc1ee9bb5b862216c402c8c9ec6d68f4b4e0cf5`의 v29를 검토했다. 이 절은 부모가 전달한 실제 관측이며 실행기의 운영 접속·독립 재현·부모 파일 열람을 뜻하지 않는다. `/guide`, `/guide/team_leader/preparation`, `/guide/superuser/media`, `/guide/member/media`, `/guide/guest/media`와 나머지 캡처6장의 해당 역할 안내를 확인했다.
+
+- 고유 캡처20장(v23 17+v28 3) 모두 `complete=true`, `naturalWidth`1165/1180으로 실제 로딩 PASS. 촬영 날짜·버전·합성 예시·과거 화면 경고·대체 텍스트를 확인했다.
+- Enter로 접기·Space로 펼치기·원본 새 탭 열기 PASS. 구성원/게스트 미디어 페이지는 읽기 전용 설명을 유지했다. 교육용 역할 페이지 확인이며 실제 타역할 로그인 성공 검증은 아니다.
+- 일반 창 리사이즈의 CSS viewport500px에서 캡션·이미지 표시와 가로넘침 없음 PASS. 실제 휴대폰·터치·Safari 검증은 아니며 창은1180×757로 복원했다.
+- 데이터·계정·권한 변경0. 역할별 별도 로그인·영상 재생은 범위 밖이며, 보고되지 않은 콘솔/수화 결과나 다른 폭을 통과로 추정하지 않는다. PRD059 구현/게시·이번 관측 인수는 완료 기록으로 이관하고 QLT032의 관측 외 잔여를 유지한다.
+
+부모 증빙 파일명은 `wbs-v29-guide-home-proof.jpg`, `wbs-v29-media-upload-proof.jpg`, `wbs-v29-media-saved-proof.jpg`, `wbs-v29-narrow-500-proof.jpg`다. 별도 환경에 있는 파일로 이 실행기에서 읽거나 새로 전송하지 않았다. 기존 로컬 Worker63/84HTTP·20개 원본 바이트 검증과 이번 실제 브라우저 결과를 중복 합산하지 않는다. 후속 문서 HEAD는 게시 source와 구분하며 이 동기화는 앱 변경·재게시·테스트 재실행 없이 저장소 문서 검사와 내용 대조만 수행한다. 원본 docs-canon 검사기 미가용/미실행은 유지한다.
 
 ## 문서 정리 검증
 
