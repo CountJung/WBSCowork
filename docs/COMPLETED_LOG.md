@@ -6,6 +6,7 @@
 
 | ID/시기 | 원인·결정·완료 범위 |
 | --- | --- |
+| PRD-068 소스/로컬 인수 범위, 2026-11-03 | 프로젝트 기간제 단일선택·익명 집계/기간 중 변경·마감 후 결과, 현재 구성원 투표·지정admin/SU 생성과 additive D1/Native 호환 구현. unit347/D140·exact Worker투표74/64HTTP·기존portal/guide 회귀·양 build/정적 PASS. [실제 실행/경고/한계](HARNESS_MAP.md#프로젝트-기간제-투표-구현-검증). 소스 인수이며 운영 게시/실제 브라우저·NAS 실행 완료가 아님; 현재 다음 행동은 TODO 유지 |
 | QLT-016/029·RPT-015/017, 2026-10-23 | 동시 요청 admission과 Miniflare 원 Response GC의 별개 원인을 재현·최소 수정하고 각 회귀를 완료. 현재 schema 기반 snapshot·양 DB collector와 동일 snapshot DOCX/PPTX의 compiled 인수. [완료·한계](#품질-원인-수정과-digest-snapshot-기반), 남은 UI/NAS·운영은 TODO 유지 |
 | OPS-038, 2026-10-23 | 최초 배포 자동 승인 거부는 보존. 사용자 새 직접 승인 뒤 같은 저장v19의 미실행 확인→1회 배포 재시도 terminal succeeded·active/latest19와 D1 추가3표/기존23표·설정 보존 확인. [승인/배포 근거](HARNESS_MAP.md#version19-승인과-운영-배포), 운영 UI/새 OAuth는 별도 |
 | PRD-058, 2026-10-23 | 기존6종 활동팀의 공통 준비표·서버 식사량·현재 팀 권한·CAS/불변 이력·UI 진입 경로와 양 DB additive 저장 구현, 소스/실DB·실제 Native/Worker compiled HTTP 인수 완료. [구현·게시 구분](#활동팀-공통-준비표-소스-구현), 실제 화면/운영 인수는 QLT-031 유지 |

@@ -42,6 +42,8 @@
 | `npm run test:sites:quality` | Worker 날짜/계층/가시성/첨부 품질 fixture |
 | `npm run db:migrate` | 기본/--status 읽기 전용; --apply만 별도 schema identity DDL |
 | `npm run test:native:migrations` | loopback3307 새 *_test DB 생성·보존, additive 회귀 |
+| `npm run test:project:votes` | 합성 ephemeral D1의 투표 생성/기간/단일 선택·변경·현재 역할/소속·마감 집계 및 HTTP adapter 계약. Native/NAS·운영 자료를 사용하지 않음 |
+| `npm run test:project:votes:http` | build한 exact Worker와 ephemeral D1의 실제 HTTP/API·SSR/RSC 투표 인수. 실제 브라우저·새 Google 로그인·운영 인수를 대신하지 않음 |
 | `npm run test:sites:workflow` | 팀 업무 실제 Worker 합성 flow; 간헐503 한계 명시 |
 | `npm run test:sites:p1` | 선후행/템플릿/검색/알림 D1 계약 |
 | `npm run build:sites` | Vinext Worker output dist; 배포 자체 아님 |
@@ -842,6 +844,23 @@ Fresh D1은35표571→586행이다. 업무34표42행 모두 같고 기존 audit5
 현재 도구 목록에는 브라우저/컴퓨터 제어 도구가 없으며 기존 Chromium sandbox 차단은 변경하지 않았다. 따라서 실제 렌더링·새 역할 로그인·운영/R2 요청을 수행하지 않았다. 부모의 허용 브라우저에서 추가 확인할 경로는 `/guide/team_leader/preparation`, `/guide/member/media`, `/guide/guest/media`, `/projects/6/media?teamId=5`다. 새 계정/권한 부여 없이 가능한 화면만 관측하고 나머지는 대기로 남긴다. 이전 v29 실측과 QLT038 SU 파일 인수를 다시 실행한 결과처럼 표기하지 않는다.
 
 문서 전용 검증 `node scripts/check-docs.mjs --self-test`, `node scripts/check-docs.mjs`, `git diff --check` PASS(문서30·등록16/핵심7·링크370·npm명령147). 원본 docs-canon의 `scripts/check_docs.py` 리소스 읽기는 실패했고 로컬 제공 경로도 없어 원본 검사는 미실행이다. 별도 내용 검토로 완료 색인의 고유 근거/외부 게이트 보존, TODO 중복 제거 및 운영v29 source와 후속 문서 HEAD 구분을 확인했다. 앱/의존성/schema/env/공개범위/사용자 자료/권한 변경0, 새 build/제품 테스트/재게시0이다.
+
+### 프로젝트 기간제 투표 구현 검증
+
+2026-11-03 main 기준 `bdcdfd4435b8ebd051293db5c70c079909c71a28`/sites `b2319ba134c396644c69b284114e4712b5ad5d56`에서 PRD068 소스를 구현했다. 채택 정책·기간/익명 집계는 ARCHITECTURE가 소유하고 이번 실제 실행은 아래처럼 구분한다.
+
+- 루트의 `npm run test:unit`은347 PASS(action33/unit314), fail0/skip0이며 신규 model4/UI7을 포함한다. KST 날짜 변환·유효성/SSR 오류 표시·실제 radio/생성 UI 계약의 합성 검사이고 실제 브라우저 조작이 아니다.
+- `npm run test:project:votes`는 ephemeral D1에서 최종40 PASS다. 지정 관리자 생성·단일 선택/기간 중 변경·소속 guest 투표·비소속 SU 투표 거부·타 프로젝트/회수 후 거부·마감 전 집계 비노출·마감 후 익명 합계, statement 실행 시 소속/마감 재검사와 동시 요청/저장 실패·actor-bound receipt 등을 확인했다. `.test-artifacts/project-votes/d1.json`과 `d1.log`가 실제 결과를 보존한다.
+- 타입 검사·FSD·변경22파일 scoped lint PASS. 실제 환경 파일을 포함하지 않는 `/workspace/wbs-user-guide-worker` 단계의 Worker build PASS. PLUGIN_TIMINGS·기존 proxy 안내·npm 갱신 notice는 남아 있으며 제품 오류로 추정하거나 숨기지 않는다. Native Next 호환 build도 PASS이며 기존13개 Turbopack 동적 파일시스템 추적 경고가 유지된다. npm notice·experimental module mocks 경고도 기록하며 전체 경고 해소나 실제 NAS 기동으로 확대하지 않는다.
+
+- `node scripts/test-project-vote-http.mjs`는 같은 안전한 Worker 단계에서74조건/64요청 PASS, `.test-artifacts/project-vote-http/result.json`의 complete=true·browserExecuted=false다. 별도 산출물 비교에서 bundle 불변을 확인했다. entry SHA-256 `de644bfd4a694f4b10b9e66a3d03a5c2bed46de8d3f891b461b441455356f037`을 검사했고 마지막 권한 회수 경합 수정 후 최종 재빌드 산출물에서 새 warn/error 없이 통과했다. 실제 compiled HTTP/API·SSR/RSC의 역할/현재 소속·SU 비소속 관리/투표 구분·예정/진행/마감·동시 단일 ballot·선택 변경·마감 전 집계 비노출/후 집계·Origin/body/invalid 검사를 확인했다. 마감 시점 변경은 로컬 fixture에서만 수행했으며 실제 운영 시간 경계 관측·hydration/키보드·실제 모바일 UI 검증이 아니다.
+
+- 같은 불변 compiled Worker의 기존 portal HTTP123조건/176요청 및 guide HTTP63조건/84요청 PASS다. 가이드는 실제20개 이미지 바이트와56페이지를 확인했다. 새 투표 라우트의 서버 회귀와 기존 포털/가이드 회귀의 범위를 중복 합산해 실제 브라우저 인수로 표현하지 않는다.
+- 최종 검토에서 strict 날짜 검증·미확정 DB 오류503·ballot write token/affected-row 판정으로 마감 직전 확정 저장과 불확정 응답을 구분했다. 이어 SU의 소속이 요청 도중 회수됐는데 과거 본인 선택과 요청 선택이 같은 경우에도 zero-write를 성공으로 오판하지 않도록 보완했다. affected0은 성공으로 표시하지 않고 현재 소속 상실404/마감409/충돌409로 구분하며 추가2회귀를 포함한 D1 최종40조건을 통과했다. 이 마지막 소스 수정 후 최종 Worker/Native 재빌드도 PASS이며 기존 경고는 그대로다. 루트가 같은 최종 entry의 투표74/64·portal123/176·guide63/84를 다시 실행해 모두 complete=true와 dist 불변을 확인했으므로 위 entry와 compiled 수치는 이 최종 산출물의 근거다. 현재 역할/소속과 마감 전 집계 비노출 검사는 소스/D1/compiled 근거이며 보안 설정이나 실제 계정 권한을 바꾼 것이 아니다.
+
+QLT032는 기존 v29의 실제20장/500px 관측 인수와 별개로 이번 좁은 화면·콘솔·키보드 새 인수를 아직 수행하지 않았다. QLT038도 기존 SU 한 팀 PNG 인수와 서버 회귀 외 새 역할 로그인/UI 인수는 미실행이다. 이 실행기의 지원 도구에 브라우저 제어가 없고 기존 sandbox/CONNECT403 정책을 바꾸지 않는다. 부모의 허용 브라우저에서 `/guide/team_leader/preparation`, `/guide/member/media`, `/guide/guest/media`, `/projects/6/media?teamId=5`, 새 `/projects/6/votes`를 검토하고 실제 관측한 범위만 후속 기록한다. 실제 역할/소속을 바꿔 인수 계정을 만들지 않는다.
+
+OPS021은 NAS 안내의 구버전1–9/관리표16개 고정 조건을 현재 릴리스 manifest/appliedVersions·pending0/readiness 기준으로 교체한 준비 개선만 수행했다. CLI의 실제 출력 구조를 읽어 대조했으며 MariaDB/NAS 실행·접속·계정·운영 migration은 수행하지 않았다. 원본 docs-canon 검사기 리소스 읽기 실패/로컬 미제공으로 원본 검사는 미실행이며 저장소 검사/self-test·diff 공백 검사와 별도 내용 검토로 대체한다. 내용 검토는 채택 정책/코드·실제 실행 근거·미검증/게시 대기 경계·고유 이력 보존을 확인했다. 이번 소스 인수는 운영 게시·새 Google 교환·실기기/touch/Safari·기존 R2 원본 바이트 대조를 의미하지 않는다.
 
 ## 문서 정리 검증
 

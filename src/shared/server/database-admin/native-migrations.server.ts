@@ -1,3 +1,4 @@
+import { nativeMigrationV18 } from "./native-migration-v18";
 import { nativeMigrationV17 } from "./native-migration-v17";
 import { nativeMigrationV16 } from "./native-migration-v16";
 import { nativeMigrationV15 } from "./native-migration-v15";
@@ -21,7 +22,7 @@ export class NativeMigrationError extends Error {}
 
 export type MigrationConnection = { query(sql: string, values?: unknown[]): Promise<unknown> };
 export type MigrationLedgerRow = { version: number; name: string; checksum: string; appliedAt?: string };
-export const nativeMigrationManifest = [nativeMigrationV1, nativeMigrationV2, nativeMigrationV3, nativeMigrationV4, nativeMigrationV5, nativeMigrationV6, nativeMigrationV7, nativeMigrationV8, nativeMigrationV9, nativeMigrationV10, nativeMigrationV11, nativeMigrationV12, nativeMigrationV13, nativeMigrationV14, nativeMigrationV15, nativeMigrationV16, nativeMigrationV17] as const;
+export const nativeMigrationManifest = [nativeMigrationV1, nativeMigrationV2, nativeMigrationV3, nativeMigrationV4, nativeMigrationV5, nativeMigrationV6, nativeMigrationV7, nativeMigrationV8, nativeMigrationV9, nativeMigrationV10, nativeMigrationV11, nativeMigrationV12, nativeMigrationV13, nativeMigrationV14, nativeMigrationV15, nativeMigrationV16, nativeMigrationV17, nativeMigrationV18] as const;
 export const migrationChecksum = (specification: unknown) => createHash("sha256").update(JSON.stringify(specification)).digest("hex");
 export function quoteSchemaIdentifier(identifier: string) {
   if (!/^[A-Za-z0-9_]{1,64}$/.test(identifier)) throw new NativeMigrationError("Schema identifier must contain 1–64 letters, numbers or underscores.");
@@ -263,7 +264,7 @@ export async function runNativeMigrations(connection: MigrationConnection, datab
         for(const statement of nativeMigrationV15.newTables)await connection.query(statement);
         await verifyNativeSchema(connection,database,nativeMigrationManifest.filter(m=>m.version<=15).flatMap(m=>[...m.statements]));
       }
-      else if(migration.version===16 || migration.version===17){
+      else if(migration.version===16 || migration.version===17 || migration.version===18){
         for(const statement of migration.newTables)await connection.query(statement);
         await verifyNativeSchema(connection,database,nativeMigrationManifest.filter(m=>m.version<=migration.version).flatMap(m=>[...m.statements]));
       }

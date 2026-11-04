@@ -73,7 +73,9 @@
     "test:project:media": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-media.ts",
     "test:project:portal:http": "node scripts/test-project-portal-http.mjs",
     "test:team-preparation:workflow:d1": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-team-preparation-workflow.ts --d1",
-    "test:sites:preparation-origin": "node scripts/test-preparation-origin-http.mjs"
+    "test:sites:preparation-origin": "node scripts/test-preparation-origin-http.mjs",
+    "test:project:votes": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-votes.ts",
+    "test:project:votes:http": "node scripts/test-project-vote-http.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
