@@ -48,16 +48,18 @@ npm run build:native
 - `next/font/google`는 빌드 시 Roboto CSS/폰트 다운로드가 필요하다. 네트워크 제한으로 실패하면 성공으로 간주하지 않는다. 이번 dot 빌드는 캐시된 실제 Roboto 파일을 쓴 환경 전용 오프라인 fixture + Webpack 결과이며, 그 fixture 설정을 NAS에 복사하지 않는다. 같은 fixture의 Turbopack 빌드는 font import-map 오류로 실패했고 동적 로그 경로 NFT 추적 경고도 관찰했다. 실제 NAS 기본 빌드 결과와 구분하며 [하네스 기록](HARNESS_MAP.md#검증-기준선)에 남겼다.
 - 기존 `.env`, `.env.local`, production 환경 파일과 서비스에서 주입한 값의 우선순위를 유지한다. 예제 값으로 덮어쓰거나 새 NextAuth secret을 만들지 않는다. 인증 URL은 기존 NAS HTTPS origin이며 Sites 주소로 바꾸지 않는다.
 
-## MariaDB v1–v9 적용
+## 대상 릴리스 MariaDB migration 적용
 
 실제 운영 DB에 쓰기 전에 [native migration 계약](NATIVE_DATABASE_MIGRATIONS.md)을 읽는다. D1용 `drizzle/*.sql`이나 `db:generate`를 MariaDB에 적용하지 않는다.
 
 1. 아직 서비스를 시작하지 않은 점검 창에서 기존 runtime 설정으로 `npm run db:migrate -- --status`를 실행한다. DB 이름과 존재 여부, 적용/대기 버전, 오류를 확인한다. exit0만으로 준비 완료라고 판단하지 않는다. 이 명령은 ledger/필수 표·컬럼 존재를 읽으며 전체 drift 검증을 수행하지 않는다.
 2. DB 대상이 예상과 다르거나 schema/checksum 오류가 있으면 중단한다. `DB_SCHEMA_USER/DB_SCHEMA_PASSWORD`는 같은 DB 서버/이름에 대한 별도 schema identity다. 미설정 시 runtime 계정으로 자동 대체하지 않는다. 기존의 승인된 보안 설정 경로로 운영자가 구성하며 웹 설정 폼에는 노출·편집하지 않는다.
-3. 쓰기 중지와 백업을 확인한 운영자만 `npm run db:migrate -- --apply`를 실행한다. v1–v9는 새 구조/ledger와 필요한 baseline 기록을 추가한다. 기존 사용자 role·private 원문·ID·파일 bytes를 다른 환경에서 덮어쓰지 않는다. 데이터량에 따라 시간·공간·잠금 비용이 있으므로 NAS에서 따로 확인한다.
-4. `npm run db:migrate -- --status`를 다시 실행해 적용 버전 1–9, pendingVersions 빈 배열, 오류 없음과 16개 관리 표 준비를 확인한다. 관리 표 16개 외에 `schema_migrations` ledger가 별도로 있다. `--apply`는 schema postcondition도 검사한다.
+3. 대상 commit의 `src/shared/server/database-admin/native-migrations.server.ts`가 등록한 `nativeMigrationManifest`와 각 불변 `native-migration-v*.ts` 명세에서 적용 대상을 확인한다. 쓰기 중지와 백업을 확인한 운영자만 `npm run db:migrate -- --apply`를 실행한다. 새 명세의 구조/ledger와 필요한 baseline 기록을 추가하며, 예전 안내의 v1–v9까지만 적용해 최신 기능이 준비됐다고 판단하지 않는다. 기존 사용자 role·private 원문·ID·파일 bytes를 다른 환경에서 덮어쓰지 않는다. 데이터량에 따라 시간·공간·잠금 비용이 있으므로 NAS에서 따로 확인한다.
+4. `npm run db:migrate -- --status`를 다시 실행해 `migrations.appliedVersions`가 대상 릴리스 manifest의 모든 버전을 포함하고 `pendingVersions`가 빈 배열이며 오류가 없는지 확인한다. 출력의 `tables`가 대상 릴리스 readiness의 전체 관리 표를 충족하는지 확인하고, 새 기능 필수 컬럼·제약은 해당 명세와 `--apply`의 schema postcondition으로 확인한다. `schema_migrations` ledger는 별도다. 특정 과거 버전 수나 관리 표 수를 최신 릴리스의 통과 기준으로 고정하지 않는다.
 5. 기존 프로젝트/업무/제출/댓글/첨부·사용자 수와 대표 ID/role/private 내용을 백업 전 기준과 대조한다. v3의 task baseline, v4의 submission revision/event baseline은 새 기록이므로 총 이력 수가 증가할 수 있다. 옛 편집 시각이나 담당 변경을 추측해 생성한 기록은 아니다.
 6. 기존 NAS 서비스 명령으로 `npm run start`를 실행하고 아래 수동 인수를 수행한다. `APP_PORT`를 기존 reverse proxy upstream과 맞추며 인증/네트워크 설정을 자동 변경하지 않는다.
+
+이 절은 OPS-021의 소스·운영자 준비 안내다. 2026-11-03 검토에서 과거 v1–v9/관리표16개 고정 안내를 대상 릴리스 manifest·readiness 기준으로 수정했으며, NAS 접속·MariaDB 실행·migration 적용은 수행하지 않았다.
 
 ## 수동 인수 체크리스트
 

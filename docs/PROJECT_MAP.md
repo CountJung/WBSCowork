@@ -216,3 +216,10 @@ D0–D4의 소스·로컬/compiled 인수와 실제 화면/운영 활성화를 �
 `app/projects/[projectId]/teams/page.tsx`·`[teamId]/preparation/page.tsx`, `src/entities/team-preparation`·`src/features/team-preparation`·`src/widgets/team-preparation`의 식사/레크 준비표를 재사용한다. 기존 Native/D1 migration과 private file IO의 실제 명세가 저장 계약을 소유한다. 현재 역할/파일 계약을 참조하며 실제 route/실행 결과와 계획을 구분한다. 단계/현재 진행은 [TODO](TODO.md)·[MASTER_PLAN](MASTER_PLAN.html#project-portal)을 따른다.
 
 레크레이션 시간표의 순수 날짜/겹침/segment/lane helper는 `src/entities/team-preparation/model/timetable.ts`와 slice index가 소유한다. `src/features/recreation-timetable`의 public index/`ui/RecreationTimetable.tsx`를 기존 `TeamPreparationEditor`·`ProjectPresentation`이 재사용하며 서버/API·문서 normalizer는 변경하지 않는다. 날짜 입력은 편집 form 밖이고 기존 입력·홈3개 요약은 유지한다.
+
+
+## 프로젝트별 기간제 투표
+
+`app/projects/[projectId]/votes/page.tsx`와 상단 프로젝트 메뉴의 ‘프로젝트 투표’ 링크가 `src/widgets/project-vote`의 안건 등록·단일 선택/변경·마감 후 집계를 조립한다. `src/entities/project-vote/model/vote.ts`는 입력/기간·ID·공개 응답 모델을, `api/vote.server.ts`는 현재 프로젝트 scope·DB 시각·생성 receipt/단일 ballot 저장과 익명 집계를 소유한다. `src/features/project-vote`는 fresh viewer·Origin/body 검증을 재사용하는 HTTP 경계이고 `app/api/projects/[projectId]/votes`의 GET/POST 및 `[pollId]/ballot` PUT adapter에 연결한다.
+
+Native v18/Drizzle0021은 새 투표/ballot 두 표만 추가하며 기존 프로젝트·계정·파일 자료를 다시 쓰지 않는다. 저장 명세는 각 migration과 `db/schema.ts`를 따르고 이 경로 지도는 migration 실행·운영 게시 성공 근거가 아니다. [권한/익명 집계 계약](ARCHITECTURE.md#프로젝트별-기간제-투표), [현재 진행](TODO.md#프로젝트별-기간제-투표-prd-068)을 따른다.

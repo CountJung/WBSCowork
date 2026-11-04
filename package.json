@@ -25,8 +25,6 @@
     "test:sites:storage": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-sites-storage.ts",
     "test:sites:http": "node scripts/test-sites-http.mjs",
     "test:sites:browser": "node scripts/test-sites-http.mjs --browser",
-    "test:sites:bug-screenshots": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-bug-screenshots.ts",
-    "test:sites:bug-screenshots:browser": "node scripts/test-bug-screenshots-browser.mjs",
     "test:sites:bugs": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-bug-reports.ts",
     "test:sites:decoder": "node scripts/check-rsc-decoder.mjs",
     "test:sites:quality": "node scripts/test-sites-http.mjs --quality",
@@ -38,6 +36,8 @@
     "build:native": "node --import tsx scripts/run-next.ts build",
     "check:native:entrypoints": "node --conditions=react-server --import tsx --test tests/native-settings-file.test.ts tests/native-entrypoints.test.mjs",
     "test:ui:layout": "node scripts/test-ui-layout.mjs",
+    "test:sites:bug-screenshots": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-bug-screenshots.ts",
+    "test:sites:bug-screenshots:browser": "node scripts/test-bug-screenshots-browser.mjs",
     "test:sites:live": "python3 scripts/test-sites-live.py",
     "diagnose:sites:network": "python3 scripts/test-sites-live.py --diagnose",
     "test:sites:network": "python3 -m unittest discover -s tests -p test_site_network.py -v",
@@ -73,7 +73,9 @@
     "test:project:media": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-media.ts",
     "test:project:portal:http": "node scripts/test-project-portal-http.mjs",
     "test:team-preparation:workflow:d1": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-team-preparation-workflow.ts --d1",
-    "test:sites:preparation-origin": "node scripts/test-preparation-origin-http.mjs"
+    "test:sites:preparation-origin": "node scripts/test-preparation-origin-http.mjs",
+    "test:project:votes": "node --import ./tests/helpers/preload.mjs --experimental-test-module-mocks scripts/test-project-votes.ts",
+    "test:project:votes:http": "node scripts/test-project-vote-http.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
