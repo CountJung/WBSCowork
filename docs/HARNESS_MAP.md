@@ -1,6 +1,6 @@
 # 실행·검증 하네스
 
-이 문서는 **무엇을 어떤 조건에서 검증하고 결과를 어떻게 구분하는가**를 소유한다. 현재 열린 항목은 [TODO](TODO.md), 동작/권한은 [ARCHITECTURE](ARCHITECTURE.md), 과거 고유 실측은 [COMPLETED_LOG](COMPLETED_LOG.md)를 본다. 아래 명령은 실제 package.json/scripts를 기준으로 한다.
+이 문서는 **무엇을 어떤 조건에서 검증하고 결과를 어떻게 구분하는가**를 소유한다. 현재 열린 항목은 [TODO](TODO.md), 동작/권한은 [ARCHITECTURE](ARCHITECTURE.md), 과거 고유 실측은 [COMPLETED_LOG](COMPLETED_LOG.md)를 본다. 아래 명령은 실제 package.json/scripts를 기준으로 한다. 기록은 재실행 명령·최종 기준선·해결에 필요한 원인·미검증 경계로 한정하고, 중간 실행·단순 완료 로그는 누적하지 않는다.
 
 ## 실행 전제
 
@@ -847,20 +847,24 @@ Fresh D1은35표571→586행이다. 업무34표42행 모두 같고 기존 audit5
 
 ### 프로젝트 기간제 투표 구현 검증
 
-2026-11-03 main 기준 `bdcdfd4435b8ebd051293db5c70c079909c71a28`/sites `b2319ba134c396644c69b284114e4712b5ad5d56`에서 PRD068 소스를 구현했다. 채택 정책·기간/익명 집계는 ARCHITECTURE가 소유하고 이번 실제 실행은 아래처럼 구분한다.
+v30 게시 산출물의 최종 검증 기준선이다. 정책은 [투표 계약](ARCHITECTURE.md#프로젝트별-기간제-투표), 소스/배포 식별자는 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유한다.
 
-- 루트의 `npm run test:unit`은347 PASS(action33/unit314), fail0/skip0이며 신규 model4/UI7을 포함한다. KST 날짜 변환·유효성/SSR 오류 표시·실제 radio/생성 UI 계약의 합성 검사이고 실제 브라우저 조작이 아니다.
-- `npm run test:project:votes`는 ephemeral D1에서 최종40 PASS다. 지정 관리자 생성·단일 선택/기간 중 변경·소속 guest 투표·비소속 SU 투표 거부·타 프로젝트/회수 후 거부·마감 전 집계 비노출·마감 후 익명 합계, statement 실행 시 소속/마감 재검사와 동시 요청/저장 실패·actor-bound receipt 등을 확인했다. `.test-artifacts/project-votes/d1.json`과 `d1.log`가 실제 결과를 보존한다.
-- 타입 검사·FSD·변경22파일 scoped lint PASS. 실제 환경 파일을 포함하지 않는 `/workspace/wbs-user-guide-worker` 단계의 Worker build PASS. PLUGIN_TIMINGS·기존 proxy 안내·npm 갱신 notice는 남아 있으며 제품 오류로 추정하거나 숨기지 않는다. Native Next 호환 build도 PASS이며 기존13개 Turbopack 동적 파일시스템 추적 경고가 유지된다. npm notice·experimental module mocks 경고도 기록하며 전체 경고 해소나 실제 NAS 기동으로 확대하지 않는다.
+| 재실행 명령 | 확인 범위·최종 결과 |
+| --- | --- |
+| `npm run test:unit` | 347 PASS(action33/unit314), 실패·skip0. model/SSR·KST 변환 포함, 실제 브라우저 아님 |
+| `npm run test:project:votes` | 합성 D1 40 PASS. 현재 소속/역할·동시 선택 변경·서버 기간·집계 비노출·실패/마감/소속 회수 경합. 0행 쓰기를 성공으로 처리하지 않음 |
+| `npm run test:project:votes:http` | 최종 Worker 74조건/64요청 PASS. HTTP·SSR 인가/Origin·12KiB 제한·집계 경계. 기간 전환은 합성 fixture로 검사 |
+| `npm run test:project:portal:http` / `npm run test:user-guide:http` | 같은 Worker의 기존 포털123조건/176요청·가이드63조건/84요청 PASS. 가이드56페이지/실제20이미지 바이트 확인 |
 
-- `node scripts/test-project-vote-http.mjs`는 같은 안전한 Worker 단계에서74조건/64요청 PASS, `.test-artifacts/project-vote-http/result.json`의 complete=true·browserExecuted=false다. 별도 산출물 비교에서 bundle 불변을 확인했다. entry SHA-256 `de644bfd4a694f4b10b9e66a3d03a5c2bed46de8d3f891b461b441455356f037`을 검사했고 마지막 권한 회수 경합 수정 후 최종 재빌드 산출물에서 새 warn/error 없이 통과했다. 실제 compiled HTTP/API·SSR/RSC의 역할/현재 소속·SU 비소속 관리/투표 구분·예정/진행/마감·동시 단일 ballot·선택 변경·마감 전 집계 비노출/후 집계·Origin/body/invalid 검사를 확인했다. 마감 시점 변경은 로컬 fixture에서만 수행했으며 실제 운영 시간 경계 관측·hydration/키보드·실제 모바일 UI 검증이 아니다.
+타입·FSD·변경 파일 lint와 안전한 별도 단계의 Worker/Next 호환 build PASS. 최종 Worker entry SHA256 `de644bfd4a694f4b10b9e66a3d03a5c2bed46de8d3f891b461b441455356f037`, 검증 전후 bundle 불변을 확인했다. 상세 실행 산출물은 `.test-artifacts/project-votes/` 및 Worker 단계의 `.test-artifacts/project-vote-http/`에 둔다. 기존 Native 동적 파일 추적13경고·Worker PLUGIN_TIMINGS/proxy 안내·npm notice·experimental mocks 경고는 남아 있다. 원본 docs-canon 검사기 미제공으로 저장소 문서 검사/self-test·공백 검사와 내용 검토를 사용했다.
 
-- 같은 불변 compiled Worker의 기존 portal HTTP123조건/176요청 및 guide HTTP63조건/84요청 PASS다. 가이드는 실제20개 이미지 바이트와56페이지를 확인했다. 새 투표 라우트의 서버 회귀와 기존 포털/가이드 회귀의 범위를 중복 합산해 실제 브라우저 인수로 표현하지 않는다.
-- 최종 검토에서 strict 날짜 검증·미확정 DB 오류503·ballot write token/affected-row 판정으로 마감 직전 확정 저장과 불확정 응답을 구분했다. 이어 SU의 소속이 요청 도중 회수됐는데 과거 본인 선택과 요청 선택이 같은 경우에도 zero-write를 성공으로 오판하지 않도록 보완했다. affected0은 성공으로 표시하지 않고 현재 소속 상실404/마감409/충돌409로 구분하며 추가2회귀를 포함한 D1 최종40조건을 통과했다. 이 마지막 소스 수정 후 최종 Worker/Native 재빌드도 PASS이며 기존 경고는 그대로다. 루트가 같은 최종 entry의 투표74/64·portal123/176·guide63/84를 다시 실행해 모두 complete=true와 dist 불변을 확인했으므로 위 entry와 compiled 수치는 이 최종 산출물의 근거다. 현재 역할/소속과 마감 전 집계 비노출 검사는 소스/D1/compiled 근거이며 보안 설정이나 실제 계정 권한을 바꾼 것이 아니다.
+부모의 기존 SU 세션에서 합성 프로젝트 투표·가이드·미디어 열람과500px 가로 넘침 없음은 관측 PASS다. 투표 안건이 없고 계정이 해당 프로젝트의 투표 구성원이 아니어서 실제 투표·선택 변경·마감 결과·다른 역할은 미검증이다. 새 로그인·hydration/콘솔·키보드·실제 휴대폰/touch/Safari도 미검증으로 유지한다. 이 실행기에는 지원 브라우저 제어가 없으며 기존 CONNECT403 제한을 재시도/우회하지 않는다. 부모의 허용 브라우저에서 `/projects/6/votes`, `/guide/member/media`, `/projects/6/media?teamId=5`를 확인하고 관측 범위만 반영한다. QLT032/038의 기존 인수와 새 검증을 합산하지 않는다. OPS021은 NAS 안내를 현재 manifest/pending0/readiness 기준으로 수정한 준비만 완료했으며 NAS/MariaDB 실행은 사용자 담당이다.
 
-QLT032는 기존 v29의 실제20장/500px 관측 인수와 별개로 이번 좁은 화면·콘솔·키보드 새 인수를 아직 수행하지 않았다. QLT038도 기존 SU 한 팀 PNG 인수와 서버 회귀 외 새 역할 로그인/UI 인수는 미실행이다. 이 실행기의 지원 도구에 브라우저 제어가 없고 기존 sandbox/CONNECT403 정책을 바꾸지 않는다. 부모의 허용 브라우저에서 `/guide/team_leader/preparation`, `/guide/member/media`, `/guide/guest/media`, `/projects/6/media?teamId=5`, 새 `/projects/6/votes`를 검토하고 실제 관측한 범위만 후속 기록한다. 실제 역할/소속을 바꿔 인수 계정을 만들지 않는다.
+### version30 기간제 투표 게시와 보존 대조
 
-OPS021은 NAS 안내의 구버전1–9/관리표16개 고정 조건을 현재 릴리스 manifest/appliedVersions·pending0/readiness 기준으로 교체한 준비 개선만 수행했다. CLI의 실제 출력 구조를 읽어 대조했으며 MariaDB/NAS 실행·접속·계정·운영 migration은 수행하지 않았다. 원본 docs-canon 검사기 리소스 읽기 실패/로컬 미제공으로 원본 검사는 미실행이며 저장소 검사/self-test·diff 공백 검사와 별도 내용 검토로 대체한다. 내용 검토는 채택 정책/코드·실제 실행 근거·미검증/게시 대기 경계·고유 이력 보존을 확인했다. 이번 소스 인수는 운영 게시·새 Google 교환·실기기/touch/Safari·기존 R2 원본 바이트 대조를 의미하지 않는다.
+2026-11-04 게시 성공 후 같은 소스597파일/위 Worker와 일치함을 대조했다. D1 0021은 투표2표 추가만 수행했다. 직전35표106행→직후37표106행이며 **기존35표106행 모두 동일**, 새 `project_polls`/`project_poll_ballots`는 각0행이다. 기존 URL·siteID·public policy revision2·auth 연결·환경 revision11·automations[] 유지, 실제 계정/소속·사용자 자료 변경0이다.
+
+운영 도구의 구조화 결과와 보존 대조는 `.test-artifacts/project-votes/publication.json`에 있다. 전체 행 읽기 비교는 복구용 DB 백업이 아니며 지원 backup/restore 도구도 없다. v29 앱으로 복귀해도 추가 schema는 유지하고 자동 down/DROP하지 않는다. R2 원본 바이트·DB 복원은 미실행이며, 실제 브라우저는 위 SU 읽기 관측 범위에 한정한다. PR-filtered workflow 조회[]는 전체 CI 통과 근거가 아니다.
 
 ## 문서 정리 검증
 
