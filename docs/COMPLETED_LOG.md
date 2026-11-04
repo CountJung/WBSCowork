@@ -1,12 +1,12 @@
 # 완료·결정·검증 이력
 
-이 문서는 **끝난 일의 고유 근거와 게시/복구 기록**을 소유한다. 현재 값/열린 일은 [TODO](TODO.md), 규범은 [ARCHITECTURE](ARCHITECTURE.md), 명령/최신 기준선은 [HARNESS_MAP](HARNESS_MAP.md), 운영 절차는 [NAS_UPDATE_GUIDE](NAS_UPDATE_GUIDE.md)에서만 관리한다. 과거 결과는 이번 회차 실행으로 합산하지 않는다.
+이 문서는 **끝난 일의 고유 근거와 게시/복구 기록**을 소유한다. 현재 값/열린 일은 [TODO](TODO.md), 규범은 [ARCHITECTURE](ARCHITECTURE.md), 명령/최신 기준선은 [HARNESS_MAP](HARNESS_MAP.md), 운영 절차는 [NAS_UPDATE_GUIDE](NAS_UPDATE_GUIDE.md)에서만 관리한다. 과거 결과는 이번 회차 실행으로 합산하지 않는다. 이력은 재발 방지 결정·자료 이행·배포/복구 근거처럼 장래 참조 가치가 있는 사실만 남긴다. 일반 완료, 진행 중계, 반복 검증·승인 과정은 항목마다 덧붙이지 않고 Git 이력과 실행 산출물로 확인한다.
 
 ## 완료 색인
 
 | ID/시기 | 원인·결정·완료 범위 |
 | --- | --- |
-| PRD-068 소스/로컬 인수 범위, 2026-11-03 | 프로젝트 기간제 단일선택·익명 집계/기간 중 변경·마감 후 결과, 현재 구성원 투표·지정admin/SU 생성과 additive D1/Native 호환 구현. unit347/D140·exact Worker투표74/64HTTP·기존portal/guide 회귀·양 build/정적 PASS. [실제 실행/경고/한계](HARNESS_MAP.md#프로젝트-기간제-투표-구현-검증). 소스 인수이며 운영 게시/실제 브라우저·NAS 실행 완료가 아님; 현재 다음 행동은 TODO 유지 |
+| PRD-068 · 2026-11-04 | 프로젝트별 기간제 단일선택 투표와 마감 후 익명 집계 구현·v30 게시. 소속 회수·마감 경계의 저장 성공 판정은 write token/변경 행 수로 보장. [검증](HARNESS_MAP.md#프로젝트-기간제-투표-구현-검증), 배포/복구는 아래 원장·남은 실제 인수는 TODO 참조 |
 | QLT-016/029·RPT-015/017, 2026-10-23 | 동시 요청 admission과 Miniflare 원 Response GC의 별개 원인을 재현·최소 수정하고 각 회귀를 완료. 현재 schema 기반 snapshot·양 DB collector와 동일 snapshot DOCX/PPTX의 compiled 인수. [완료·한계](#품질-원인-수정과-digest-snapshot-기반), 남은 UI/NAS·운영은 TODO 유지 |
 | OPS-038, 2026-10-23 | 최초 배포 자동 승인 거부는 보존. 사용자 새 직접 승인 뒤 같은 저장v19의 미실행 확인→1회 배포 재시도 terminal succeeded·active/latest19와 D1 추가3표/기존23표·설정 보존 확인. [승인/배포 근거](HARNESS_MAP.md#version19-승인과-운영-배포), 운영 UI/새 OAuth는 별도 |
 | PRD-058, 2026-10-23 | 기존6종 활동팀의 공통 준비표·서버 식사량·현재 팀 권한·CAS/불변 이력·UI 진입 경로와 양 DB additive 저장 구현, 소스/실DB·실제 Native/Worker compiled HTTP 인수 완료. [구현·게시 구분](#활동팀-공통-준비표-소스-구현), 실제 화면/운영 인수는 QLT-031 유지 |
@@ -131,6 +131,7 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`. 과거 origin은 https://wbs
 | 27 · 2026-10-28 11:40:58.187789(updated_at) | 1747737e649533aee47cc29e35c82289c30dee6d | succeeded, appgdep_6ae1df405d188191b5f45129ba13e9f8. 반환 count-sungjin URL=고정 origin,35표485행 모든 canonical row 동일·설정 불변. 후속 부모의v2 저장/재조회·버전 편집v3 원본 복원/이력 보존 인수 PASS |
 | 28 · 2026-10-28 12:23:29.878304(updated_at) | 707a9f35f20a38b6c32c619e3adbddc7010cadd4 | succeeded, appgdep_6ae1e92fcdf08191a105378815f2a648. 새 명시 승인·반환URL=pin, 업무34표35행/기존audit469행 동일·INFO16 추가·설정 불변. 후속 SU의 한 팀 PNG/탐색 실제 UI 부분 PASS·일반 admin/다른 역할 UI·모바일 잔여 |
 | 29 · 2026-10-29 05:15:45.648621 | 0cc1ee9bb5b862216c402c8c9ec6d68f4b4e0cf5 | succeeded, appgdep_6ae2d67762188191b4c1e72953525ced. 기존URL/siteID/public·업무34표42행/기존audit529행 동일·INFO15 추가·설정 불변. 부모 이미지 가이드 관측 인수 PASS·실기기 등 잔여는 별도 |
+| 30 · 2026-11-04 00:04:45.441860 | 963ebb788a8a6144d15c73a7b56e699a4ed639b3 | succeeded, appgdep_6aea7688c4f48191a7bf23e42a8525a7. fresh기존35표106행 모두 동일·0021 신규투표2표 각0·URL/siteID/public2/auth/env11/automations[] 불변. SU 읽기/500px 부분 관측·실제 투표/역할 인수 잔여 |
 
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
@@ -170,6 +171,9 @@ version27 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_54d5a6e7d9d481
 version28 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_69133f9ca08c8191a3ee3697785e3a25`다. source `707a9f35f20a38b6c32c619e3adbddc7010cadd4`·기능 main77d8d4d와 후속 문서 HEAD를 구분한다. 기존 검토 게이트의 새 승인 해제·배포 시점 자료/설정 대조는 [게시 근거](HARNESS_MAP.md#version28-관리팀-탐색-보완-게시), 후속 SU 실제 미디어 부분 인수와 합성 team5/private media1v2 보존·미검증은 [별도 관측](HARNESS_MAP.md#version28-부모-su-미디어-인수와-합성-자료-보존)을 따른다. 가역 정리 경로가 없어 새 합성 자료를 삭제하지 않는다.
 
 version29 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_21a221a105648191bd01f7da9797462a`다. source `0cc1ee9bb5b862216c402c8c9ec6d68f4b4e0cf5`·기능 maind1175ea와 후속 문서 HEAD를 구분한다. strict 통과와 실제 게시/자료·설정 대조는 [게시 하네스](HARNESS_MAP.md#version29-이미지-가이드-게시), 후속 부모 이미지·키보드·500px 관측 PASS와 미검증 범위는 [실제 브라우저 인수](HARNESS_MAP.md#version29-부모-브라우저-이미지-가이드-인수)를 따른다. 게시 source와 후속 문서 HEAD를 구분하며 문서 동기화로 재게시하지 않는다.
+
+version30 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_9f6f108739608191bd88da692f5b7f7d`다. 저장 archive SHA256 `09a8b848719bb9e4b77fdb72669600e7c87951af37abfe8d8a7afc35902d526b`와 이전 v29 복귀 자료를 보존한다. 구앱 복귀 시 투표용 추가 schema를 자동 삭제하지 않는다. [보존 대조와 백업 한계](HARNESS_MAP.md#version30-기간제-투표-게시와-보존-대조), 후속 문서 HEAD는 게시 source와 구분한다.
+
 
 ### package와 복구 근거
 
