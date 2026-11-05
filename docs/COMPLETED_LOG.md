@@ -33,6 +33,7 @@
 | QLT-018, 2026-10-19 | lg/xl 폭 불일치·수축 메뉴·긴 이름·80px 곱셈 반경을 xl 공통/반응형 두 행/Drawer/nowrap/ellipsis/4px 단위로 수정. baseline6조건30실패 → hydrated6너비48 PASS, 양쪽 build/auth18 통과 |
 | OPS-034 네트워크 하네스 | 기존 proxy/정책 read-only 진단, CONNECT403과 site HTTP403 구분, 익명 GET-only smoke, browser loopback guard와 합성12조건. 플랫폼 host 추가 승인과 실제 적용은 별개; 현 환경 적용 대기 |
 | PRD-045, 2026-10-20 | bug 본문+private screenshot 3×2MiB, preview/remove/실패 초안 유지/detail/refresh, MIME bytes·권한·lease/rollback. 0013/native v9 additive. version12 게시. native 첨부 purge는 QLT-020 미해결 |
+| OPS-041, 2026-11-05 | main/sites의 Next·@next/env·eslint-config-next를16.4.2→16.4.5로 고정하고 lockfile/SWC를 정합화했다. 기본 build 차이와 기존 소스/React/Vinext를 보존. 양 기본 build·정적/381테스트씩 및 Native/compiled Worker 회귀 PASS. 구형 준비표 하네스 실패는 패치 전후 동일 재현·QLT039 잔여, 전체 audit28 잔여 유지. [정확한 명령·한계](HARNESS_MAP.md#nextjs-2026년-11월-보안-패치-검증). 운영 게시/NAS 설치·자료/실제 권한 변경0 |
 | OPS-036, 2026-10-20 | 아래 archive6개 검증 후5개 임시 remote branch atomic 삭제. main/sites2개, 공통 code/schema/test/document와 기본 build 차이 보존. NAS 배포/Sites 재게시 없음 |
 | PRD-047~050/QLT-023, 2026-10-23 | 확정 정책의 단일 팀장·팀 범위 업무·직접 완료와 UI, 기존 자료/제출 필수/private 보존을 구현하고 로컬/합성 인수. [완료 범위](#봉사활동-팀과-직접-완료-인수), 실측은 [하네스](HARNESS_MAP.md#봉사활동-팀장과-직접-완료-검증). 운영 migration/실 Google/게시 미실행 |
 | PRD-046, 2026-10-23 | 사용자 확정: 팀당 팀장 1명, 신규 봉사 업무는 제출 선택/직접 완료, 현재 담당자·해당 팀장·관리자의 직접 완료. 기존 협업/기존 업무 제출 의무와 private 권한은 유지. [결정 근거](#prd-046-봉사활동-정책-확정) |
