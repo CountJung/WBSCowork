@@ -8,6 +8,33 @@
 - main 기본 build는 native Next, sites는 Vinext다. 같은 checkout에서 두 build는 `.next/types`를 공유하므로 병렬 실행하지 않는다. Vinext stub과 기존 Next validator가 충돌하면 `node node_modules/next/dist/bin/next typegen` 후 순차 typecheck한다. 생성 타입/필수 include를 삭제해 통과시키지 않는다.
 - 상태는 PASS/FAIL/미실행/건너뜀/불확실로 나눈다. 날짜·exact SHA/작업 트리·환경/명령·실제 결과·미확인 범위를 함께 기록한다. 로컬/합성·실계정·운영 게시 결과를 섞거나 여러 scope 건수를 합쳐 포괄 검증으로 표현하지 않는다.
 
+## Next.js 2026년 11월 보안 패치 검증
+
+2026-11-05, Node24.19.0/npm11.9.0/Linux 및 loopback 전용 MariaDB11.4. 원격 기준 main `311cf4e0060ea47ae4f829828ab63848a4db54e1`, sites `0616b29d8fb23a93d8bc092c35ceb0ca375c2779`를 각각 격리 worktree에서 확인했다. [공식 11월 공지](https://nextjs.org/blog/november-2026-security-release)의16.x 수정 버전16.4.5와 npm 메타데이터를 대조해 next/@next/env/eslint-config-next를16.4.5로 고정했다. ESLint plugin/SWC도16.4.5이며 React/ReactDOM/RSC19.2.8·Vinext1.0.0-beta.5는 그대로다. 양 lockfile은 SHA256 `64472a450267d99059bf108354ce1d8d71c291d6487a28e0a12a5dabbd7144ee`로 동일하다. 변경된 의존성 node는 Next 계열뿐이다.
+
+| 명령·대상 | 실제 결과 |
+| --- | --- |
+| `npm ci`, `npm ls next @next/env eslint-config-next react react-dom`, 양 branch | PASS. 새 설치·peer tree 유효, Next16.4.5 확인 |
+| `npm run build`, 각 기본값 | main Next16.4.5/Turbopack PASS, sites Vinext/Worker PASS. 별도 배포 없음 |
+| `npm run typecheck`, `npm run lint -- --max-warnings=0`, `npm run check:fsd`, 양 branch | PASS, lint error/warning0·FSD self-test5/위반0 |
+| `npm test -- --require-db`, 양 branch 각각 | action33/unit314/MariaDB visibility34, 총381 PASS·fail/skip0. 새 loopback 합성 DB만 사용 |
+| `npm run check:native:entrypoints`, 양 branch 각각 | 합성 CLI/설정 경계8 PASS |
+| `npm run test:native:home -- --http-only`, main | 최종 Next artifact HTTP/SSR16 PASS. signed/anonymous/다른 사용자별 초기 identity·private/no-store·합성 원본 보존, bundle 전후 불변 |
+| `npm run test:sites:auth`, `npm run test:sites:decoder`, sites | workerd 인증21 PASS, 기존 patched RSC decoder 정적 fingerprint PASS. 실제 Google 교환/공격 테스트 아님 |
+| `npm run test:sites:http`, sites | fresh worktree 최초 실행은 결과 저장 parent 디렉터리 ENOENT로 마지막에 FAIL. `.test-artifacts` 준비 후 같은 bundle·새 ephemeral D1/R2로 재실행266조건 PASS. 실패 로그 보존, 제품 수정 없음 |
+| `npm run test:project:votes:http`, sites | compiled Worker74조건/64요청 PASS, 현재 역할/소속·인가·투표/마감 집계·Origin/private-no-store 회귀 |
+| `npm run test:project:portal:http`, sites | compiled Worker123조건/176요청 PASS. 준비표 저장/불변 이력·공유/재비공개·SU/지정admin/일반역할·권한회수·미디어 업로드/bytes 회귀 |
+| `npm run test:user-guide:http`, sites | compiled Worker63조건/84요청 PASS, 공개 가이드56페이지·이미지20장 bytes 포함 |
+| `npm run test:http:response-lifecycle`, main checkout | loopback Miniflare transport9조건 PASS, Next/운영 네트워크 취약점 전체 증명 아님 |
+
+구형 `npm run test:team-preparation:http`는 첫 익명 SSR assertion에서 FAIL이다. 현재 상위 프로젝트 layout이307와 `/api/auth/signin?callbackUrl=%2Fprojects%2F1001`을 반환하는데 하네스는 팀 상세 callback을 기대한다. 별도 pristine sites HEAD0616b29/Next16.4.2를 `npm ci`→기본 Worker build/typecheck 후 실행해 **같은 status/location/첫 assertion 실패**를 재현했다.16.4.5 패치 회귀로 단정하지 않으며 후속 assertion은 미실행이다. 제품 인가/테스트 기대를 임의로 바꾸지 않고 QLT039에 남겼다. 최신 portal123조건은 별도 하네스의 PASS이며 구형 하네스 전체 PASS로 대체 표시하지 않는다.
+
+공유 lock의 `npm audit --omit=dev --json`은0건(exit0), 전체 `npm audit --json`은28건(high12/moderate15/low1, exit1)이다. 패치 전16.4.2와 후16.4.5의 전체 vulnerability 객체/심각도까지 동일함을 대조했다. Next 공지 반영은 audit 수치가 아니라 공식 수정 버전·설치 tree로 확인한다. Vinext/@vercel/og·Cloudflare plugin/Wrangler/Miniflare·ESLint/Drizzle 하위 의존성 등이 남아 있으며 Vinext가 devDependency라도 Worker runtime 번들에 포함될 수 있으므로 production audit0을 전체 보안 청정으로 표현하지 않는다. scoped image-size override와 기존 warning을 유지하고 무차별 audit fix는 하지 않았다. Native filesystem trace13·Worker proxy/PLUGIN_TIMINGS/정적 분류 안내·experimental module mock·기존 esbuild-kit deprecation/npm notice를 숨기지 않았다.
+
+검증 로그·감사 JSON은 `/workspace/wbs-validation/`의 main/sites별 파일과 baseline 비교 로그에 있고 각 checkout `.test-artifacts/`에 HTTP result/requests/build-provenance를 보존했다. Worker entry SHA256 `77b8d0b7b562da8bc06a256a9d7a54c3443478be30fb68fa5a1e8ebbb5a4dc95`, 전체 Worker snapshot `5d171c56f7db60c98b249c2b4b45075db51ed9837765c0523b2969656ec3651c`와 Native snapshot `add74965ebb797d630a9e178a2e7088b8c9ba033aad0bfa29c8c660a1998480a`는 해당 HTTP 검증 전후 불변이다. count는 scope별이며 중복 합산하지 않는다.
+
+소스 확인에서 Cache Components 활성화/`use cache`·`unstable_cache`·Edge runtime 지정은 발견되지 않았고 현재 가이드 next/image는 unoptimized다. 이는 모든 공격 조건 부재의 증명은 아니며 NAS reverse proxy/실제 설치·운영 Worker bundle 분석과 구분한다. main 기본 native/sites 기본 Worker 차이는 보존했고 GitHub 소스 push는 별도 Sites 공식 source 동기화·게시나 NAS 재설치가 아니다. 이번에는 운영 배포·운영 schema/실제 계정/권한/자료·환경 설정 변경0이다. 실제 Google 로그인·브라우저 수화/렌더·휴대폰/Safari·NAS 설치/실제 reverse proxy 인수·전체 취약점 해소는 미검증이다. docs-canon 원본 검사기는 미제공이므로 저장소 문서 검사/self-test와 내용 검토를 적용한다.
+
 ## 명령 등록부
 
 | 명령 | 목적과 경계 |
