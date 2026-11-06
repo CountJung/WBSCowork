@@ -28,6 +28,8 @@
 
 원격 반영 경계: 자동 승인 검토가 기본 main 직접 push를 거부했다. 포괄적인 안전 업무 요청만으로 기본 브랜치 직접 반영을 명시 승인했다고 볼 수 없다는 사유이며 해당 결합 명령은 실행되지 않았음을 Git status/HEAD로 확인했다. main/sites 반영은 보류하고 별도 검토 branch `codex/wbs-open-items-20261106`에 보존한다. 직접 반영은 정확한 대상에 대한 후속 승인 전 재시도하지 않는다.
 
+이후 사용자가 main 병합·sites 반영 질문에 “기본적으로 매 작업이 끝나면 커밋과 푸시까지해줘 각각 브런치도”라고 새로 지시했다. 이 지침은 검증한 QLT039/040 변경의 main/sites 각각 반영을 승인한 근거이며, 최초 거부를 지우지 않는다. 재확인한 두 원격 tip은 main `aa06fd0`/sites `d9b7965`이고 차이는 의도된 기본 build 명령뿐이었다. main은 검토 commit을 fast-forward로 포함하고 sites는 같은 공통 patch를 선별 반영하며 기본 build 차이를 보존한다. 강제 push·운영 게시·NAS/실제 DB 변경은 승인 범위에 포함하지 않는다. 반영 성공은 최종 원격 ref 확인으로 별도 보고한다.
+
 ## Next.js 2026년 11월 보안 패치 검증
 
 2026-11-05, Node24.19.0/npm11.9.0/Linux 및 loopback 전용 MariaDB11.4. 원격 기준 main `311cf4e0060ea47ae4f829828ab63848a4db54e1`, sites `0616b29d8fb23a93d8bc092c35ceb0ca375c2779`를 각각 격리 worktree에서 확인했다. [공식 11월 공지](https://nextjs.org/blog/november-2026-security-release)의16.x 수정 버전16.4.5와 npm 메타데이터를 대조해 next/@next/env/eslint-config-next를16.4.5로 고정했다. ESLint plugin/SWC도16.4.5이며 React/ReactDOM/RSC19.2.8·Vinext1.0.0-beta.5는 그대로다. 양 lockfile은 SHA256 `64472a450267d99059bf108354ce1d8d71c291d6487a28e0a12a5dabbd7144ee`로 동일하다. 변경된 의존성 node는 Next 계열뿐이다.
