@@ -8,6 +8,26 @@
 - main 기본 build는 native Next, sites는 Vinext다. 같은 checkout에서 두 build는 `.next/types`를 공유하므로 병렬 실행하지 않는다. Vinext stub과 기존 Next validator가 충돌하면 `node node_modules/next/dist/bin/next typegen` 후 순차 typecheck한다. 생성 타입/필수 include를 삭제해 통과시키지 않는다.
 - 상태는 PASS/FAIL/미실행/건너뜀/불확실로 나눈다. 날짜·exact SHA/작업 트리·환경/명령·실제 결과·미확인 범위를 함께 기록한다. 로컬/합성·실계정·운영 게시 결과를 섞거나 여러 scope 건수를 합쳐 포괄 검증으로 표현하지 않는다.
 
+## 외장 WBS 열린 항목 후속 검증
+
+2026-11-06, macOS arm64·Node26.12.1/npm11.20.0. 외장 `/Volumes/Crucial X6/Workspace/MacWorking/WBSCowork`는 `2f6b74d`의 main과 미커밋 `docs/TODO.md`·`docs/HARNESS_MAP.md`를 보존했다. 실행은 별도 `/Users/jsjmac/Documents/Codex/2026-11-06/task-4/WBSCowork`, 최신 main `aa06fd0` + QLT039/040 하네스 patch에서 수행했다. 실제 `.env*`·DB·업로드·계정/보안 설정은 읽거나 복사하지 않았다. 모든 Worker 데이터는 새 ephemeral D1/R2 합성 fixture다.
+
+| 명령·대상 | 실제 결과 |
+| --- | --- |
+| `npm ci --cache /tmp/wbs-npm-cache --no-audit --no-fund`, `npm run build:sites` | PASS, lockfile 변경0·Worker build 완료. 설치 시 기존 esbuild-kit2종 deprecated·npm install-scripts8종 안내, build 시 Vinext route 분류 안내를 관찰. npm 설정/승인 목록 변경0 |
+| `npm run test:team-preparation:http` | 원본의 익명 상세 callback assertion FAIL 재현 후 최종38조건/39요청 PASS. 상위 layout의 정확307·project callback과 API401,6종2날짜 원문 보존, 포털 팀 이름 metadata/비공개 원문 구분, 시간표 첫날·다른날 안내/식사량 표시, CAS/idempotency/409·역할/회수·no-store 검사. 최초 실패 뒤 가려진 후속 기대도 정비. `result.json` complete=true와 bundle 전후 unchanged=true |
+| `npm run test:project:portal:http` | 독립 최신 portal123조건/176요청 PASS. 팀 이름 directory 계약과 private 준비표/미디어·관리자 회수 경계 교차 확인 |
+| `npm run test:team-preparation:workflow:d1` | 별도 합성 D1 workflow211조건 PASS. 서버 권한·저장/불변 이력·SU/지정admin/팀원 경계 유지 |
+| `npm run test:unit` | 최초 action33 PASS·unit308/314 PASS·6 FAIL: Mac `/var`→`/private/var` tmpdir alias 때문에 정상 report fixture를 `checkDirectory`가 거부. `tests/report-storage.test.ts` fixture만 canonical realpath로 변경 후 focused11 PASS, 전체 action33/unit314 PASS·fail/skip0. 실제 report-storage 구현/보안 guard 변경0 |
+| `npm run lint -- --max-warnings=0`, `npm run typecheck`, `npm run check:fsd` | PASS, lint error/warning0·FSD self-test5/위반0 |
+| `node scripts/check-docs.mjs`, `git diff --check` | PASS. 원본 docs-canon 스킬/검사기는 미제공이며 저장소 대체 검사만 실행 |
+
+처음 제한된 shell에서 loopback listen EPERM이 발생한 검사는 해당 프로세스를 종료한 뒤 허용된 테스트 실행으로 재검증했다. Node experimental module mocking 안내는 하네스가 사용하는 기존 실험 API 안내이며 숨기지 않았다. 실행 산출물은 `.test-artifacts/`의 `team-preparation-red.log`, `team-preparation-green.log`, `team-preparation-http/`, `project-portal-http/`, `team-preparation-workflow/`, `report-storage-green.log`, `unit-green.log`에 있다. 합성 보고서 fixture는 기존 테스트 계약대로 보존하고 삭제하지 않았다.
+
+변경은 테스트2파일과 정본 문서뿐이며 `src`/route·권한·schema·runtime 설정은 그대로다. Native build/MariaDB suite·NAS 접속/배포·실제 Google/운영 UI·touch/Safari는 미실행이다. 브라우저 inventory에 기존 WBS 탭은 없고 native app은 Mac 잠금 상태로 접근 불가였다. 추가 로그인/운영 접속이나 제한 우회·운영 게시를 수행하지 않았으며 QLT032/038·PRD068의 실제 인수와 외부 대기 항목은 닫지 않는다.
+
+원격 반영 경계: 자동 승인 검토가 기본 main 직접 push를 거부했다. 포괄적인 안전 업무 요청만으로 기본 브랜치 직접 반영을 명시 승인했다고 볼 수 없다는 사유이며 해당 결합 명령은 실행되지 않았음을 Git status/HEAD로 확인했다. main/sites 반영은 보류하고 별도 검토 branch `codex/wbs-open-items-20261106`에 보존한다. 직접 반영은 정확한 대상에 대한 후속 승인 전 재시도하지 않는다.
+
 ## Next.js 2026년 11월 보안 패치 검증
 
 2026-11-05, Node24.19.0/npm11.9.0/Linux 및 loopback 전용 MariaDB11.4. 원격 기준 main `311cf4e0060ea47ae4f829828ab63848a4db54e1`, sites `0616b29d8fb23a93d8bc092c35ceb0ca375c2779`를 각각 격리 worktree에서 확인했다. [공식 11월 공지](https://nextjs.org/blog/november-2026-security-release)의16.x 수정 버전16.4.5와 npm 메타데이터를 대조해 next/@next/env/eslint-config-next를16.4.5로 고정했다. ESLint plugin/SWC도16.4.5이며 React/ReactDOM/RSC19.2.8·Vinext1.0.0-beta.5는 그대로다. 양 lockfile은 SHA256 `64472a450267d99059bf108354ce1d8d71c291d6487a28e0a12a5dabbd7144ee`로 동일하다. 변경된 의존성 node는 Next 계열뿐이다.
@@ -27,7 +47,7 @@
 | `npm run test:user-guide:http`, sites | compiled Worker63조건/84요청 PASS, 공개 가이드56페이지·이미지20장 bytes 포함 |
 | `npm run test:http:response-lifecycle`, main checkout | loopback Miniflare transport9조건 PASS, Next/운영 네트워크 취약점 전체 증명 아님 |
 
-구형 `npm run test:team-preparation:http`는 첫 익명 SSR assertion에서 FAIL이다. 현재 상위 프로젝트 layout이307와 `/api/auth/signin?callbackUrl=%2Fprojects%2F1001`을 반환하는데 하네스는 팀 상세 callback을 기대한다. 별도 pristine sites HEAD0616b29/Next16.4.2를 `npm ci`→기본 Worker build/typecheck 후 실행해 **같은 status/location/첫 assertion 실패**를 재현했다.16.4.5 패치 회귀로 단정하지 않으며 후속 assertion은 미실행이다. 제품 인가/테스트 기대를 임의로 바꾸지 않고 QLT039에 남겼다. 최신 portal123조건은 별도 하네스의 PASS이며 구형 하네스 전체 PASS로 대체 표시하지 않는다.
+구형 `npm run test:team-preparation:http`는 첫 익명 SSR assertion에서 FAIL이다. 현재 상위 프로젝트 layout이307와 `/api/auth/signin?callbackUrl=%2Fprojects%2F1001`을 반환하는데 하네스는 팀 상세 callback을 기대한다. 별도 pristine sites HEAD0616b29/Next16.4.2를 `npm ci`→기본 Worker build/typecheck 후 실행해 **같은 status/location/첫 assertion 실패**를 재현했다.16.4.5 패치 회귀로 단정하지 않으며 후속 assertion은 미실행이다. 제품 인가/테스트 기대를 임의로 바꾸지 않고 QLT039에 남겼다. 최신 portal123조건은 별도 하네스의 PASS이며 구형 하네스 전체 PASS로 대체 표시하지 않는다. 이 문단은 11월5일 패치 당시 결과이며, QLT039의 후속 하네스 복구·전체 통과는 [11월6일 검증](#외장-wbs-열린-항목-후속-검증)에 있다.
 
 공유 lock의 `npm audit --omit=dev --json`은0건(exit0), 전체 `npm audit --json`은28건(high12/moderate15/low1, exit1)이다. 패치 전16.4.2와 후16.4.5의 전체 vulnerability 객체/심각도까지 동일함을 대조했다. Next 공지 반영은 audit 수치가 아니라 공식 수정 버전·설치 tree로 확인한다. Vinext/@vercel/og·Cloudflare plugin/Wrangler/Miniflare·ESLint/Drizzle 하위 의존성 등이 남아 있으며 Vinext가 devDependency라도 Worker runtime 번들에 포함될 수 있으므로 production audit0을 전체 보안 청정으로 표현하지 않는다. scoped image-size override와 기존 warning을 유지하고 무차별 audit fix는 하지 않았다. Native filesystem trace13·Worker proxy/PLUGIN_TIMINGS/정적 분류 안내·experimental module mock·기존 esbuild-kit deprecation/npm notice를 숨기지 않았다.
 

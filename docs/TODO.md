@@ -2,7 +2,7 @@
 
 이 문서는 **지금 어디까지 왔고 다음 무엇을 해야 하는가**를 소유한다. 단계/완료 게이트는 [MASTER_PLAN](MASTER_PLAN.html), 과거 근거는 [COMPLETED_LOG](COMPLETED_LOG.md), 상세 digest 설계는 [계획](PROJECT_DIGEST_REPORT_PLAN.md)에 있다.
 
-최종 검토: 2026-11-05 · 다음 번호: **QLT-040 / RPT-021 / OPS-042 / PRD-069**
+최종 검토: 2026-11-06 · 다음 번호: **QLT-041 / RPT-021 / OPS-042 / PRD-069**
 
 ## 현재 상태
 
@@ -49,7 +49,6 @@
 | QLT-035 | [!] | P1·F2: full unit302(action33/unit269),backend21/UI SSR14·D1 source91·최종 compiled69조건88요청·호환 build/정적 PASS(범위 중복 합산 금지). 최소 저장/재조회/공유·선택 유무·invalid400·기존 상세/공유 receipt 보존은 합성 인수. 부모의 v25 식단 읽기·상세 toggle/Space·Enter·취소/재열기·360/390/768 CSS 화면 부분 PASS. 실제 submit/최소입력 저장·공유/create·phone touch/Safari는 미검증이며 최소저장/공유 PASS는 로컬 서버 근거와 구분. main/sites 푸시·version25 게시 및 fresh35표537→542행 보존 대조 완료(업무34표/기존 audit504행 동일·INFO5 추가), 기존 표시값/저장v1 보존 관측·운영 저장/권한변경0. NAS/MariaDB 실행은 사용자 담당 | [검증·복구 한계](HARNESS_MAP.md#식단-간소화-구현-검증) |
 | QLT-036 | [!] | P1·T2: pure model14·기존 guide14·full unit316(action33/unit283)·최종 Worker/Native 호환 build·lint/type/FSD PASS(DB 미실행). 최종 SSR31·compiled Worker81조건104요청 PASS, 부모의 실제 day/week/date·겹침/5분/자정·Dialog 키보드/초점/Escape·CSS359/390/768 가로넘침0 부분 PASS. 후속v27 합성 일정 저장/재조회·주간/익일 상세·키보드와 원본 복원 관측 PASS, 저장 실패 QLT037은 해소. 실제 phone/Safari·다른 역할·관측 외 인수는 미검증. 지원 로컬 게이트/양 브랜치 반영·시간표 포함version26 게시 완료, 기존v26 CSS359/390/768 읽기 관측과 이번v27 저장 인수를 구분하고 미관측 화면/역할·기존 주소 라우팅은 별도 확인. NAS/MariaDB 실행 사용자 담당·이미지 전송0 | [검증 경계](HARNESS_MAP.md#레크레이션-시간표-구현-검증) |
 | QLT-038 | [~] | P1 코드/지원 검증 완료: envSU전역·지정admin팀소속 없이 프로젝트 모든팀·팀장ownteam/일반역할/미지정admin 기존정책 유지, authSQL/API 변경0. 확인된 media→prep404 탐색 링크만 gallery로 수정·서버 canManage 기반 빈 미디어 관리CTA/관리카드anchor·읽기전용 안내 보완. SSR4/unit334·D1 prep211/media82/presentation104·compiled123/176·최종 호환 build/정적 PASS. main/sites 반영·version28 게시/대조 완료. 실제 SU(PM0)의 media팀 생성·private PNG 업로드/수정/재조회/바이트 다운로드·관리/홈/활동 링크는 부분 PASS. 일반 admin/다른 계정 UI는 서버 회귀만 통과, 이번 모바일·새OAuth 미검증. 합성 team5/media1v2 보존·가역정리기능/영구삭제 없음 v30 SU 읽기/500px 관측은 [제한된 결과](HARNESS_MAP.md#프로젝트-기간제-투표-구현-검증) 참조. | [실제 역할행렬/한계](HARNESS_MAP.md#프로젝트팀-관리-접근-감사-qlt-038) |
-| QLT-039 | [ ] | 구형 `test:team-preparation:http`의 익명 로그인 callback 기대를 현재 상위 프로젝트 layout 계약에 맞게 정비해야 함. Next16.4.2/16.4.5 양쪽에서 같은307·callback `/projects/1001`로 첫 assertion 실패를 재현했다. 최신 portal123조건/176요청 PASS와 구분하며 인가를 완화하거나 실패를 숨기지 않음 | [재현과 검증 범위](HARNESS_MAP.md#nextjs-2026년-11월-보안-패치-검증) |
 | OPS-021 | [~] | NAS 소스/업데이트 절차 준비: 과거 v1–v9·관리표16개 고정 안내를 대상 릴리스 manifest 전체 적용·pending0/readiness 기준으로 수정. 실제 플랫폼·백업·기본 build·migration 적용·기동·자료/역할/수동 인수는 운영자 담당이며 이번 NAS/MariaDB 실행0. 기존 NFT warning 유지 | [운영 안내](NAS_UPDATE_GUIDE.md) |
 | OPS-031 | [!] | Native bug purge 포함 전체 수명주기/두 isolation-level 경합 검증은 별도 승인 대기. 비파괴16조건·Sites 삭제 완료와 구분 | [완료 범위](COMPLETED_LOG.md#실환경-qa와-삭제-승인-경계) |
 | OPS-032 | [!] | PPTX 하위 image-size2.0.4 scoped override 유지. 2026-11-05 Next16.4.5 패치 후 production audit0, 전체28(high12/moderate15/low1)은 패치 전과 항목까지 동일하며 잔여 검토. Vinext 등 devDependency의 Worker 번들 포함 가능성을 production audit에서 제외하지 말고 별도 분석해야 함. Native trace13경고·실제 NAS 포장 게이트 미확인 | [최신 감사/경계](HARNESS_MAP.md#nextjs-2026년-11월-보안-패치-검증), [과거 보안 근거](COMPLETED_LOG.md#보안-패치와-활성-decoder) |
@@ -69,17 +68,16 @@
 
 ## 즉시 처리 가능 범위 재검토
 
-아래는 2026-10-29 재검토 기록이다. 이후 PRD068 구현·게시를 마쳤으며 위 큐에서 남은 실제 인수만 관리한다. QLT032·QLT038·OPS021은 당시 미실행 외부 게이트를 그대로 보존하고 이번 실제 관측/준비 결과가 있을 때만 갱신한다.
-
-2026-10-29 기준 열린30개를 검토해 이미 구현·게시한 PRD060~063·065~067의 중복 행7개를 완료 색인으로 통합했다. 남은23개는 외부/판단 대기20개와 QLT032·QLT038·OPS021 진행3개다. 새 기능 구현 대상이나 확인된 미수정 코드 결함은 이번 검토에서 발견하지 않았다. 완료된 제품 구현의 근거는 [완료 색인](COMPLETED_LOG.md#완료-색인)에 있고 잔여 인수의 상태는 위 QLT/OPS 행만 관리한다.
+2026-11-06, 외장 원본의 구형 TODO 대신 최신 main의 열린25개를 코드와 대조했다. 즉시 실행 가능한 QLT-039의 준비표 HTTP 하네스를 복구했고, 추가로 발견한 Mac 보고서 저장 테스트 fixture 문제는 QLT-040으로 발급·해결해 [완료 색인](COMPLETED_LOG.md#완료-색인)으로 이관했다. 제품 권한·설정·저장 구현은 바꾸지 않았다. 남은24개는 외부/판단 대기20개와 실제 인수·운영자 준비의 진행4개다. 외장 원본의 미커밋 문서2개는 보존하고 별도 작업 사본에서 검증했다. [실행 근거와 한계](HARNESS_MAP.md#외장-wbs-열린-항목-후속-검증)를 따른다.
 
 | 순서/대상 | 지금 가능한 다음 행동 | 완료에 필요한 외부 조건 |
 | --- | --- | --- |
-| 1 · QLT032 가이드 | 부모의 허용 브라우저에서 가이드 좁은 CSS 화면·콘솔·키보드 관측을 추가하고 실제 결과만 반영 | 실제 휴대폰/touch·Safari·다른 역할 로그인·영상은 해당 기기/인증 세션 필요. 이 실행기에는 지원 브라우저 도구가 없고 기존 sandbox 차단을 우회하지 않음 |
-| 2 · QLT038 역할별 미디어 | 부모 브라우저에서 기존 합성 project6/team5의 gallery·파일·읽기 안내를 관측 | 지정 admin·다른 역할별 기존 인증 세션이 필요하며 실제 계정/소속을 만들어 검증하지 않음. SU 한 팀 PNG는 이미 통과했으므로 반복 생성하지 않음 |
-| 3 · OPS021 NAS | 사용자에게 기존 업데이트·인수 절차 연결 | NAS/MariaDB 실행은 사용자 담당이며 이 작업에서 준비/접속/배포하지 않음 |
+| 1 · PRD068 투표 | 이미 구현·게시한 투표의 실제 선택/변경·기간 경계·마감 집계 인수 | 기존 허용 인증 세션·역할/소속과 합성 검증 대상 필요. 계정/소속을 임의 생성·변경하지 않음 |
+| 2 · QLT032 가이드 | 부모의 허용 브라우저에서 가이드 좁은 CSS 화면·콘솔·키보드 관측을 추가하고 실제 결과만 반영 | 실제 휴대폰/touch·Safari·다른 역할 로그인·영상은 해당 기기/인증 세션 필요. 이번 Mac 브라우저 목록에 기존 WBS 세션이 없었고 native app 표면은 잠금 상태로 접근 불가. 제한을 우회하지 않음 |
+| 3 · QLT038 역할별 미디어 | 부모 브라우저에서 기존 합성 project6/team5의 gallery·파일·읽기 안내를 관측 | 지정 admin·다른 역할별 기존 인증 세션이 필요하며 실제 계정/소속을 만들어 검증하지 않음. SU 한 팀 PNG는 이미 통과했으므로 반복 생성하지 않음 |
+| 4 · OPS021 NAS | 사용자에게 기존 업데이트·인수 절차 연결 | NAS/MariaDB 실행은 사용자 담당이며 이 작업에서 준비/접속/배포하지 않음 |
 
-! 항목의 정책 결정·운영 활성화·보안 검토나 보고서 취소 원인을 추측해 수정하지 않는다. 이번 회차는 문서 정합성 개선이며 앱/배포 산출물 변경이 없어 새 build·운영 재게시가 필요하지 않다. 이전 테스트 통과를 이번 테스트 실행으로 재사용하지 않으며 검토·검사 근거는 [하네스](HARNESS_MAP.md#열린-항목-즉시-처리-범위-재검토)를 따른다.
+! 항목의 정책 결정·운영 활성화·보안 검토나 보고서 취소 원인을 추측해 수정하지 않는다. 이번 회차는 하네스/fixture와 정본 문서만 변경했고 운영 재게시·실제 DB/자료/계정 변경은 하지 않았다. 기존 [문서 재검토 근거](HARNESS_MAP.md#열린-항목-즉시-처리-범위-재검토)는 과거 범위로 유지하며 이번 검사는 위 후속 검증 근거와 구분한다.
 
 ## 첨부 미리보기와 환경 슈퍼관리자
 

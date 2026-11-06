@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
-import { access, link, mkdir, mkdtemp, readFile, readdir, symlink, writeFile } from "node:fs/promises";
+import { access, link, mkdir, mkdtemp, readFile, readdir, realpath, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -17,7 +17,9 @@ const integrity = (value: Uint8Array) => ({ sha256: createHash("sha256").update(
 const key = (format = "docx") => `reports/v1/run-${randomUUID()}/${randomUUID()}.${format}`;
 async function fixture() {
   // Retain all synthetic files, including quarantine copies; no test performs artifact deletion.
-  const base = await mkdtemp(path.join(tmpdir(), "wbs-report-storage-"));
+  // macOS tmpdir has a /var -> /private/var ancestor alias. Valid fixtures
+  // need the canonical path; deliberate symlink rejection cases remain below.
+  const base = await realpath(await mkdtemp(path.join(tmpdir(), "wbs-report-storage-")));
   const root = path.join(base, "reports"), uploads = path.join(base, "uploads");
   await mkdir(root); await mkdir(uploads);
   process.env.REPORT_DIR = root;
