@@ -6,6 +6,8 @@
 
 | ID/시기 | 원인·결정·완료 범위 |
 | --- | --- |
+| QLT-039 · 2026-11-06 | 준비표 HTTP 하네스의 구형 callback·포털 directory metadata·시간표 일간/식단 표시 기대를 현행 계약에 정합화했다. 익명 API401·다른 팀 private sentinel의 SSR/RSC/API 차단을 추가하고 후속 저장/이력·인가 검사를 끝까지 통과했다. 제품 인가 변경·운영 게시 없음. [검증](HARNESS_MAP.md#외장-wbs-열린-항목-후속-검증) |
+| QLT-040 · 2026-11-06 | Mac tmpdir의 `/var` 별칭이 정상 보고서 fixture까지 symlink 거부로 만들던 원인을 수정했다. 합성 fixture만 realpath로 정규화하고 실제 저장소의 symlink/hardlink·무결성·격리/복구 guard를 보존했다. [재현·회귀 범위](HARNESS_MAP.md#외장-wbs-열린-항목-후속-검증) |
 | PRD-068 · 2026-11-04 | 프로젝트별 기간제 단일선택 투표와 마감 후 익명 집계 구현·v30 게시. 소속 회수·마감 경계의 저장 성공 판정은 write token/변경 행 수로 보장. [검증](HARNESS_MAP.md#프로젝트-기간제-투표-구현-검증), 배포/복구는 아래 원장·남은 실제 인수는 TODO 참조 |
 | QLT-016/029·RPT-015/017, 2026-10-23 | 동시 요청 admission과 Miniflare 원 Response GC의 별개 원인을 재현·최소 수정하고 각 회귀를 완료. 현재 schema 기반 snapshot·양 DB collector와 동일 snapshot DOCX/PPTX의 compiled 인수. [완료·한계](#품질-원인-수정과-digest-snapshot-기반), 남은 UI/NAS·운영은 TODO 유지 |
 | OPS-038, 2026-10-23 | 최초 배포 자동 승인 거부는 보존. 사용자 새 직접 승인 뒤 같은 저장v19의 미실행 확인→1회 배포 재시도 terminal succeeded·active/latest19와 D1 추가3표/기존23표·설정 보존 확인. [승인/배포 근거](HARNESS_MAP.md#version19-승인과-운영-배포), 운영 UI/새 OAuth는 별도 |
