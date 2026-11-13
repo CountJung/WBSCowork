@@ -20,8 +20,9 @@ import {
   Toolbar,
   Tooltip,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
-import { useColorScheme } from "@mui/material/styles";
+import { useColorScheme, useTheme } from "@mui/material/styles";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { type MouseEvent, type ReactNode, useCallback, useEffect, useState } from "react";
 import type { AppThemeMode } from "@/src/shared/config/theme";
@@ -88,6 +89,8 @@ function UserGuideIcon() {
 
 export default function AppShell({ appName, authProvidersConfigured, children }: AppShellProps) {
   const pathname = usePathname();
+  const theme = useTheme();
+  const desktopNavigation = useMediaQuery(theme.breakpoints.up("md"));
   const { data: session, status } = useSession();
   const { mode, setMode, systemMode } = useColorScheme();
   const [openedMenuAt, setOpenedMenuAt] = useState<string | null>(null);
@@ -364,11 +367,11 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
       </AppBar>
 
       <Drawer
-        anchor="top"
+        anchor={desktopNavigation ? "left" : "top"}
         keepMounted
         open={mobileNavOpen}
         onClose={closeMobileNav}
-        slotProps={{ paper: { id: "app-navigation", role: "dialog", "aria-modal": true, "aria-labelledby": "app-navigation-title", sx: { width: "100%", maxWidth: "100vw", maxHeight: "88dvh", overflowY: "auto", overscrollBehavior: "contain", borderRadius: "0 0 16px 16px", backgroundColor: "background.paper", "& .MuiButton-root": { minHeight: 44, textAlign: "left", overflowWrap: "anywhere", whiteSpace: "normal", justifyContent: "flex-start" } } } }}
+        slotProps={{ paper: { id: "app-navigation", role: "dialog", "aria-modal": true, "aria-labelledby": "app-navigation-title", sx: { width: { xs: "100%", md: 304 }, maxWidth: "100vw", height: { md: "100dvh" }, maxHeight: { xs: "88dvh", md: "100dvh" }, overflowY: "auto", overscrollBehavior: "contain", borderRadius: { xs: "0 0 16px 16px", md: 0 }, backgroundColor: "background.paper", "& .MuiButton-root": { minHeight: 44, textAlign: "left", overflowWrap: "anywhere", whiteSpace: "normal", justifyContent: "flex-start" } } } }}
       >
         <Stack direction="row" spacing={1} sx={{ position: "sticky", top: 0, zIndex: 1, backgroundColor: "background.paper", p: 2, alignItems: "center", borderBottom: "1px solid", borderColor: "divider" }}>
           <Box sx={{ flex: 1, minWidth: 0 }}><Typography id="app-navigation-title" component="h2" variant="h6" sx={{ overflowWrap: "anywhere" }}>프로젝트와 사이트 메뉴</Typography><Typography variant="caption">메뉴를 선택하거나 바깥을 누르면 닫힙니다.</Typography></Box>

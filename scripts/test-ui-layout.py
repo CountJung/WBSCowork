@@ -27,7 +27,7 @@ with sync_playwright() as p:
         headless=True, chromium_sandbox=True,
         env={**os.environ, 'XDG_CONFIG_HOME': str(config)},
     )
-    for width in ([1699, 1280, 390] if baseline else [1920, 1699, 1440, 1280, 1024, 390]):
+    for width in ([1699, 1280, 390] if baseline else [1920, 1699, 1440, 1280, 1024, 900, 899, 768, 390, 360]):
         cases = [('superuser', 'empty', '/tasks'), ('superuser', 'tasks', '/tasks?projectId=1'),
                  ('superuser', 'admin', '/admin'), ('superuser', 'bugs', '/bugs'),
                  ('superuser', 'review', '/admin/bugs'), ('long', 'long-name', '/tasks?projectId=1')]
@@ -127,23 +127,37 @@ with sync_playwright() as p:
                 check(page.get_by_role('link', name='버그 제보', exact=True).first.is_visible(), f'{label}: missing desktop navigation')
                 if actor in ['admin', 'superuser', 'long'] and not baseline:
                     page.get_by_role('button', name='관리자', exact=True).first.click()
-                    check(page.get_by_role('menuitem', name='버그 리뷰', exact=True).is_visible(), f'{label}: missing admin menu')
+                    check(page.get_by_role('menuitem', name='프로젝트 관리', exact=True).is_visible(), f'{label}: missing project management')
+                    check(page.get_by_role('menuitem', name='버그 리뷰', exact=True).count() == (1 if actor == 'superuser' else 0), f'{label}: incorrect global admin scope')
                     page.keyboard.press('Escape')
-            else:
+            if not baseline:
                 page.get_by_role('button', name='메뉴 열기').click()
                 drawer = page.locator('.MuiDrawer-paper')
                 page.wait_for_function("""() => {
                     const panel=document.querySelector('.MuiDrawer-paper');
-                    return panel && Math.abs(panel.getBoundingClientRect().x) < 1;
+                    return panel && Math.abs(panel.getBoundingClientRect().x) < 1 && Math.abs(panel.getBoundingClientRect().y) < 1 && Math.abs(panel.getBoundingClientRect().width - (innerWidth >= 900 ? 304 : innerWidth)) < 1;
                 }""")
                 check(drawer.get_by_role('link', name='버그 제보', exact=True).is_visible(), f'{label}: missing mobile navigation')
                 if actor in ['admin', 'superuser', 'long']:
-                    check(drawer.get_by_role('link', name='버그 리뷰', exact=True).is_visible(), f'{label}: missing mobile admin navigation')
+                    check(drawer.get_by_role('link', name='프로젝트 관리', exact=True).is_visible(), f'{label}: missing project management')
+                    check(drawer.get_by_role('link', name='버그 리뷰', exact=True).count() == (1 if actor == 'superuser' else 0), f'{label}: incorrect drawer admin scope')
+                bounds = drawer.bounding_box()
+                check(abs(bounds['x']) <= 1 and abs(bounds['y']) <= 1, f'{label}: incorrect drawer origin')
+                check(abs(bounds['width'] - (304 if width >= 900 else width)) <= 1, f'{label}: incorrect drawer width')
+                check(bounds['height'] <= (900 if width >= 900 else page.viewport_size['height'] * .88) + 1, f'{label}: incorrect drawer height')
+                if width == 900 and name == 'tasks':
+                    page.set_viewport_size({'width': 899, 'height': 900})
+                    page.wait_for_function("Math.abs(document.querySelector('.MuiDrawer-paper').getBoundingClientRect().width - 899) < 1")
+                    page.set_viewport_size({'width': 900, 'height': 900})
+                    page.wait_for_function("Math.abs(document.querySelector('.MuiDrawer-paper').getBoundingClientRect().width - 304) < 1")
+                page.keyboard.press('Tab')
+                check(drawer.evaluate('(el) => el.contains(document.activeElement)'), f'{label}: focus escaped drawer')
                 check(drawer.evaluate('(el) => el.scrollWidth <= el.clientWidth + 1'), f'{label}: drawer overflow')
                 check(drawer.evaluate('(el) => el.getBoundingClientRect().right <= innerWidth'), f'{label}: drawer outside viewport')
                 page.screenshot(path=str(output / f'{width}-{name}-drawer.png'), animations='disabled')
                 page.keyboard.press('Escape')
                 drawer.wait_for(state='hidden')
+                check(page.get_by_role('button', name='메뉴 열기').evaluate('(el) => el === document.activeElement'), f'{label}: menu focus not restored')
             if name == 'long-name':
                 chip = page.locator('.MuiChip-root[title]').first
                 if width >= 1200:

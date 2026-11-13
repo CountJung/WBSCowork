@@ -8,6 +8,14 @@
 
 실제 cloud Chrome 기존 SU 데스크톱 읽기와 코드 검토 범위는 [TODO의 검토 근거](TODO.md#검토-근거와-범위)를 따른다. 운영 게시·모바일/다른 역할·새 로그인 검증은 수행하지 않았다. 제안 기능 구현 후 해당 하네스와 실제 인수 범위를 다시 실행해야 한다.
 
+## 데스크톱 좌측 메뉴 PRD-069
+
+2026-11-13 Linux cloud, Node24.22.1/npm11.9.0, sites `7ca7d17` + PRD-069 patch. `npm ci --no-audit --no-fund`, lint(max-warnings=0), typecheck, check:fsd(self-test5/위반0), Worker build, unit(action33/unit314·실패0) PASS. `test-ui-layout.py`는 360/390/768/899/900/1024/1280/1440/1699/1920 폭, desktop304px/mobile전체폭 geometry, 열린900→899→900 resize, Tab·Escape/초점복원을 추가했다. 기존 일반 admin/long fixture의 전역 버그리뷰 기대값을 실제 권한 계약과 맞췄다.
+
+`npm run test:ui:layout`은 Chromium 시작 시 socket EPERM으로 실패해 화면을 한 번도 인수하지 못했다. sandbox/OS 정책을 약화하지 않았다. 별도 loopback 수동 서버 실험도 다른 실행 호출에서 접근되지 않아 종료하고 임시 변경은 제외했다. 이 테스트 실패를 제품 UI 성공이나 전체 회귀 PASS로 표시하지 않는다. 새 기하/초점·외부클릭·경로/BackForward·touch/Safari·다른 역할 화면과 운영 게시가 남았다.
+
+설치·빌드의 기존 esbuild-kit deprecation, npm http-proxy 환경 안내, Vite plugin timing·route 분류, Node experimental module-mocking 안내를 관찰했다. 설정/프록시 변경 없음. 이번 source patch는 AppShell과 로컬 검사·정본뿐이며 계정/권한·schema·운영 데이터 변경0. 문서 링크 검사와 diff 검사는 별도 수행한다.
+
 ## 실행 전제
 
 - lockfile 기반 npm ci와 Node22.12+ 도구체계. 실제 `.env*`는 AI 컨텍스트로 열지 않는다. native CLI가 기존 runtime 설정을 로드하는 동작과 테스트의 합성 환경 주입을 구분한다.
