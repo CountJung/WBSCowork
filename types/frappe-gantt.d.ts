@@ -23,6 +23,7 @@ declare module "frappe-gantt" {
   };
 
   export type GanttOptions = {
+    language?: string;
     view_mode?: "Day" | "Week" | "Month" | "Year";
     view_mode_select?: boolean;
     readonly?: boolean;

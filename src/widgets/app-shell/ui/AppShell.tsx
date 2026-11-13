@@ -247,12 +247,12 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
                   onChange={handleModeChange}
                   size="small"
                   color="primary"
-                  aria-label="theme mode selector"
+                  aria-label="화면 테마 선택"
                   sx={{ display: { xs: "none", md: "inline-flex" } }}
                 >
-                  <ToggleButton value="system">System</ToggleButton>
-                  <ToggleButton value="light">Light</ToggleButton>
-                  <ToggleButton value="dark">Dark</ToggleButton>
+                  <ToggleButton value="system">시스템</ToggleButton>
+                  <ToggleButton value="light">밝게</ToggleButton>
+                  <ToggleButton value="dark">어둡게</ToggleButton>
                 </ToggleButtonGroup>
               </NoSsr>
 
@@ -287,7 +287,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
                 fallback={<Chip label="표시 모드" variant="outlined" size="small" sx={{ display: { xs: "none", sm: "inline-flex", md: "none" } }} />}
               >
                 <Chip
-                  label={`표시 ${effectiveMode}`}
+                  label={`표시 ${effectiveMode === "dark" ? "어둡게" : "밝게"}`}
                   variant="outlined"
                   size="small"
                   sx={{ display: { xs: "none", sm: "inline-flex", md: "none" } }}
@@ -328,7 +328,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
           </Stack></> : null}
           <Divider />
           <Stack spacing={1.25}><Typography variant="body2" color="text.secondary">화면 표시 모드</Typography>
-            <NoSsr><ToggleButtonGroup exclusive value={selectedMode} onChange={handleModeChange} size="small" color="primary" aria-label="mobile theme mode selector" fullWidth sx={{ "& .MuiToggleButton-root": { minHeight: 44 } }}><ToggleButton value="system">System</ToggleButton><ToggleButton value="light">Light</ToggleButton><ToggleButton value="dark">Dark</ToggleButton></ToggleButtonGroup></NoSsr>
+            <NoSsr><ToggleButtonGroup exclusive value={selectedMode} onChange={handleModeChange} size="small" color="primary" aria-label="모바일 화면 테마 선택" fullWidth sx={{ "& .MuiToggleButton-root": { minHeight: 44 } }}><ToggleButton value="system">시스템</ToggleButton><ToggleButton value="light">밝게</ToggleButton><ToggleButton value="dark">어둡게</ToggleButton></ToggleButtonGroup></NoSsr>
           </Stack>
           {status === "authenticated" && session?.user ? <Chip label={sessionChipLabel} title={sessionChipLabel} sx={{ maxWidth: "100%", minWidth: 0, height: "auto", "& .MuiChip-label": { whiteSpace: "normal", overflowWrap: "anywhere", py: 0.5 } }} color={session.user.isSuperuser ? "primary" : "default"} variant={session.user.isSuperuser ? "filled" : "outlined"} /> : null}
           <Box onClick={closeMobileNav} sx={{ display: "flex" }}>{authAction}</Box>

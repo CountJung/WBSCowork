@@ -48,6 +48,7 @@ function escapeHtml(value: string) {
 function createChartOptions(viewMode: ViewMode, taskCount: number, openTask: (taskId: string) => void): GanttOptions {
   return {
     view_mode: viewMode,
+    language: "ko",
     view_mode_select: false,
     readonly: true,
     readonly_dates: true,
@@ -146,6 +147,10 @@ export default function ProjectGanttChart({ project, tasks, dependencies = noDep
           ganttRef.current.update_options(chartOptions);
           ganttRef.current.change_view_mode(viewMode, true);
         }
+
+        // The vendor hard-codes Today even when the date locale is Korean.
+        const todayButton = container.querySelector<HTMLButtonElement>(".today-button");
+        if (todayButton) todayButton.textContent = "오늘";
 
         startTransition(() => {
           setRenderError(null);
@@ -269,15 +274,16 @@ export default function ProjectGanttChart({ project, tasks, dependencies = noDep
             size="small"
             color="primary"
             value={viewMode}
+            aria-label="간트 차트 표시 단위"
             onChange={(_event, value: ViewMode | null) => {
               if (value) {
                 setViewMode(value);
               }
             }}
           >
-            <ToggleButton value="Day">Day</ToggleButton>
-            <ToggleButton value="Week">Week</ToggleButton>
-            <ToggleButton value="Month">Month</ToggleButton>
+            <ToggleButton value="Day">일</ToggleButton>
+            <ToggleButton value="Week">주</ToggleButton>
+            <ToggleButton value="Month">월</ToggleButton>
           </ToggleButtonGroup>
         </Stack>
 

@@ -168,7 +168,7 @@ with sync_playwright() as p:
     check(page.evaluate("document.documentElement.getAttribute('data-mui-color-scheme') === 'dark'"), 'dark system preference applied')
     check(page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), 'dark sample horizontal overflow')
     page.screenshot(path=str(output / '1699-dark.png'))
-    page.get_by_role('button', name='Light', exact=True).first.click()
+    page.get_by_role('button', name='밝게', exact=True).first.click()
     page.wait_for_function("document.documentElement.getAttribute('data-mui-color-scheme') === 'light'")
     context.close()
     browser.close()

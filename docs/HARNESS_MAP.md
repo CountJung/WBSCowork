@@ -948,3 +948,7 @@ v30 게시 산출물의 최종 검증 기준선이다. 정책은 [투표 계약]
 ## 환경 메모
 
 AppleDouble `._*`는 별도 사용자 파일을 임의 삭제하지 말고 lint/types exclude와 기존 Turbopack dev cache 옵션을 유지한다. frappe-gantt CSS는 root layout에서 직접 import한다. native CLI의 APP_PORT/환경 우선순위·protected schema 설정은 기존 코드를 따른다. VS Code launch와 dev:debug는 개발 지원이며 운영 검증을 대신하지 않는다. 실측/의존성 상태를 바꾸려는 경우 해당 source와 exact 환경을 다시 확인한다.
+
+## 한국어 표시 PRD-072
+
+2026-11-13, sites `2a458cf` + PRD-072 patch, 같은 cloud 환경. lint(max-warnings=0)·typecheck·FSD self-test5/위반0·Worker build와 unit(action33/unit314) PASS. vendor 설치본의 language 지원 및 Today 하드코딩을 확인하고 생성/갱신 직후 버튼 표시만 오늘로 보정했다. 내부 enum·상태/권한 라벨 계약은 유지하고 화면 하네스 Light 선택자를 밝게로 갱신했다. UI 시작 제한 때문에 실제 테마 전환·날짜/오늘 이동·작은 화면·접근성·가이드 이미지 일치는 미검증이며 운영 배포하지 않았다. PRD-071은 legacy WBS/포털 권한 차이와 URL 전환 검증이 필요해 미구현 TODO로 남긴다.

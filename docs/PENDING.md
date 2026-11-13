@@ -8,6 +8,7 @@
 
 | ID | 상태 | 남은 일·재개 조건 | 계약/근거 |
 | --- | --- | --- | --- |
+| PRD-072 | [~] | 테마·간트 표시/접근성 label 한국어화 및 vendor Today 보정 구현, 정적·단위·빌드 PASS. 실제 테마·날짜/오늘 이동·360px 넘침·스크린리더·가이드 화면 일치와 게시 인수 대기 | [검증](HARNESS_MAP.md#한국어-표시-prd-072) |
 | QLT-041 | [~] | 활성 경로 함수와 관리자 aria-current 구현·5개 경로 회귀/정적·빌드 PASS. 실제 키보드·접근성 트리/스크린리더 확인 및 게시 대기 | [검증](HARNESS_MAP.md#활성-메뉴-qlt-041) |
 | PRD-070 | [~] | 중복 상단 공통/관리자 메뉴를 Drawer 단일 탐색으로 통합하고 상단 프로젝트 문맥 표시를 유지했다. 소스 검증 완료, 실제 주요 경로·역할·키보드/resize 인수와 운영 게시 미완료 | [검증](HARNESS_MAP.md#탐색-위계-통합-prd-070) |
 | PRD-069 | [~] | 좌측 desktop304px/md900·mobile top 구현, lint/type/FSD/Worker build·unit PASS. Chromium socket EPERM으로 실제 geometry·resize·focus/BackForward 인수 미실행. 운영 게시·다른 역할/실기기 인수 전 허용 브라우저 환경에서 test:ui:layout 재실행 | [이번 검증](HARNESS_MAP.md#데스크톱-좌측-메뉴-prd-069) |
