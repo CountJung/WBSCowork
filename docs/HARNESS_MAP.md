@@ -952,3 +952,11 @@ AppleDouble `._*`는 별도 사용자 파일을 임의 삭제하지 말고 lint/
 ## 한국어 표시 PRD-072
 
 2026-11-13, sites `2a458cf` + PRD-072 patch, 같은 cloud 환경. lint(max-warnings=0)·typecheck·FSD self-test5/위반0·Worker build와 unit(action33/unit314) PASS. vendor 설치본의 language 지원 및 Today 하드코딩을 확인하고 생성/갱신 직후 버튼 표시만 오늘로 보정했다. 내부 enum·상태/권한 라벨 계약은 유지하고 화면 하네스 Light 선택자를 밝게로 갱신했다. UI 시작 제한 때문에 실제 테마 전환·날짜/오늘 이동·작은 화면·접근성·가이드 이미지 일치는 미검증이며 운영 배포하지 않았다. PRD-071은 legacy WBS/포털 권한 차이와 URL 전환 검증이 필요해 미구현 TODO로 남긴다.
+
+## version31 UI 개선 게시와 검증
+
+2026-11-13 사용자 게시 승인 뒤 source3c964f1을 공식 source helper로 동기화하고 같은 입력으로 build·package했다. version31 save와 deployment appgdep_6af7113b5e0c81918871bf8f6b982a97 terminal succeeded(13:31:50UTC)를 확인했다. 기존 public policy revision2, 배포 env revision11, D1 DB/R2 ATTACHMENTS binding을 유지했다. 환경변수·계정 권한·schema 변경을 하지 않았으며 DB 전체행/R2 bytes 전후 대조는 이번에 수행하지 않았다. 배포 성공과 사용자 자료의 전체 동일성은 별개다. 기존 v30을 복귀 참조로 보존하고 자동 rollback은 하지 않았다.
+
+독립 UI 담당의 기존 SU Chrome1331×894 운영 관측: 좌측 Drawer x0/y0/304×894, 문서 가로 넘침0; Tab→닫기, Shift+Tab→마지막 로그아웃, Tab→닫기로 양방향 focus wrap; Escape 닫기 및 메뉴 열기 버튼 focus 복원 PASS. 프로젝트 관리 링크 이동·Drawer 닫힘·/admin/projects에서 프로젝트 관리 하나만 aria-current=page, Back 홈 복귀 PASS. 상단 중복 공통 nav 제거와 테마 시스템/밝게/어둡게·간트 일/주/월/오늘 표시 확인. 화면 표시 확인은 테마/간트 모든 동작 인수와 같지 않다. 다른 폭·모바일 실기기·다른 역할·스크린리더는 미검증이며 PENDING 유지.
+
+같은 Chrome 네이티브 zoom의 CSS887×596에서 Drawer x0/y0/887.33×524.48(88dvh)·가로 넘침0 확인. 열린 메뉴를887→1331→887로 전환해 top/left 재배치와 내부 focus 유지, Escape 복원 PASS. 종료 시zoom100%·메뉴 닫힘으로 복원했다. 이 zoom 관측을 정확한360/390/768/899/900 viewport나 touch/Safari 테스트로 주장하지 않는다. console 표본30개는 chrome-extension metadata 오류이며 전체 앱오류0이라는 주장은 하지 않는다. 사용자 자료 쓰기0, 테마·간트 선택 변경은 수행하지 않았다.

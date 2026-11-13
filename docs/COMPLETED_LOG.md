@@ -142,6 +142,8 @@ Site ID `appgprj_6ac75dba14348191801b002e0f2a0937`. 과거 origin은 https://wbs
 | 29 · 2026-10-29 05:15:45.648621 | 0cc1ee9bb5b862216c402c8c9ec6d68f4b4e0cf5 | succeeded, appgdep_6ae2d67762188191b4c1e72953525ced. 기존URL/siteID/public·업무34표42행/기존audit529행 동일·INFO15 추가·설정 불변. 부모 이미지 가이드 관측 인수 PASS·실기기 등 잔여는 별도 |
 | 30 · 2026-11-04 00:04:45.441860 | 963ebb788a8a6144d15c73a7b56e699a4ed639b3 | succeeded, appgdep_6aea7688c4f48191a7bf23e42a8525a7. fresh기존35표106행 모두 동일·0021 신규투표2표 각0·URL/siteID/public2/auth/env11/automations[] 불변. SU 읽기/500px 부분 관측·실제 투표/역할 인수 잔여 |
 
+| 31 · 2026-11-13 13:31:50.911249 | 3c964f10aa8c6a525732284f97bb2157335c9c68 | succeeded, appgdep_6af7113b5e0c81918871bf8f6b982a97. PRD-069/070·QLT-041·PRD-072, 기존 public policy2/env11/D1·R2 binding 보존. 실제 UI 관측 범위는 [v31 검증](HARNESS_MAP.md#version31-ui-개선-게시와-검증) 참조 |
+
 미기재 version/검사/게시 성공을 번호 연속성으로 추정하지 않는다. version12 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_18e1378ab8f48191a6697fc282cd9022`다. 이후 확인한 version13 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_6377df9172908191b570ff1702181a8f`이며 source b249c4d에 QLT-021이 포함된다. 문서 편집이 새 게시를 수행한 것은 아니다.
 
 version14 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_d5ff1c027aec8191a156027e98bc5df9`다. 코드 checkpoint는 GitHub main `82a8777a6ffe636c99366c81722fa9941836b2a7` / sites `41059c82c37d7de718a3e61b414d4ab0331e6c5a`이며 정상 atomic push 후 원격 SHA를 확인했다. 기본 build 차이만 보존했고 동일 sites 소스를 별도 Sites source repository의 main에 반영한 뒤 저장·게시했다. 문서만 갱신하는 후속 commit은 앱 재게시 근거가 아니다.
@@ -183,6 +185,8 @@ version29 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_21a221a1056481
 
 version30 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_9f6f108739608191bd88da692f5b7f7d`다. 저장 archive SHA256 `09a8b848719bb9e4b77fdb72669600e7c87951af37abfe8d8a7afc35902d526b`와 이전 v29 복귀 자료를 보존한다. 구앱 복귀 시 투표용 추가 schema를 자동 삭제하지 않는다. [보존 대조와 백업 한계](HARNESS_MAP.md#version30-기간제-투표-게시와-보존-대조), 후속 문서 HEAD는 게시 source와 구분한다.
 
+
+version31 ID는 `appgprj_6ac75dba14348191801b002e0f2a0937~appgver_043d803bc3f081919681b683c7c3e266`이다. 공식 helper로 GitHub sites source3c964f1을 동기화·build·package했다. 입력 tar SHA256 `8fd893b544681b1a550fa5af7b7ef5146f53fdb6314f63f50fa932860be6092d`, 저장 서비스 archive500files/9,287,680bytes·content hash `ae754cc0e6d1c97f303bed80c86087d6265013d14a4e5fb945d30335f9105989`는 서로 구분한다. PRD-071은 미구현이며 이번 게시에 없다. 후속 문서 커밋은 게시 source가 아니다.
 
 ### package와 복구 근거
 

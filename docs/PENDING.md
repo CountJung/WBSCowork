@@ -8,10 +8,10 @@
 
 | ID | 상태 | 남은 일·재개 조건 | 계약/근거 |
 | --- | --- | --- | --- |
-| PRD-072 | [~] | 테마·간트 표시/접근성 label 한국어화 및 vendor Today 보정 구현, 정적·단위·빌드 PASS. 실제 테마·날짜/오늘 이동·360px 넘침·스크린리더·가이드 화면 일치와 게시 인수 대기 | [검증](HARNESS_MAP.md#한국어-표시-prd-072) |
-| QLT-041 | [~] | 활성 경로 함수와 관리자 aria-current 구현·5개 경로 회귀/정적·빌드 PASS. 실제 키보드·접근성 트리/스크린리더 확인 및 게시 대기 | [검증](HARNESS_MAP.md#활성-메뉴-qlt-041) |
-| PRD-070 | [~] | 중복 상단 공통/관리자 메뉴를 Drawer 단일 탐색으로 통합하고 상단 프로젝트 문맥 표시를 유지했다. 소스 검증 완료, 실제 주요 경로·역할·키보드/resize 인수와 운영 게시 미완료 | [검증](HARNESS_MAP.md#탐색-위계-통합-prd-070) |
-| PRD-069 | [~] | 좌측 desktop304px/md900·mobile top 구현, lint/type/FSD/Worker build·unit PASS. Chromium socket EPERM으로 실제 geometry·resize·focus/BackForward 인수 미실행. 운영 게시·다른 역할/실기기 인수 전 허용 브라우저 환경에서 test:ui:layout 재실행 | [이번 검증](HARNESS_MAP.md#데스크톱-좌측-메뉴-prd-069) |
+| PRD-072 | [~] | v31 SU 테마 시스템/밝게/어둡게·간트 일/주/월/오늘 표시 확인. 실제 테마·날짜/오늘 이동·좁은 폭·스크린리더·가이드 이미지 일치 인수 잔여 | [v31 관측](HARNESS_MAP.md#version31-ui-개선-게시와-검증) |
+| QLT-041 | [~] | v31 SU /admin/projects에서 프로젝트 관리만 aria-current=page 확인. 다른 관리자 하위 경로·스크린리더·다른 역할 실제 인수 잔여. 순수 경로5개/정적·빌드 PASS | [v31 관측](HARNESS_MAP.md#version31-ui-개선-게시와-검증) |
+| PRD-070 | [~] | v31 SU 데스크톱 상단 중복 nav 제거·프로젝트 관리 이동/Back 관측 PASS. zoom887px top 재배치도 PASS. 다른 주요 경로·역할·정확 좁은 viewport 인수 잔여 | [v31 관측](HARNESS_MAP.md#version31-ui-개선-게시와-검증) |
+| PRD-069 | [~] | v31 게시 및 SU1331px 좌측304px·양방향 focus wrap·Escape/복원·링크/Back 및 zoom887↔1331 열린 top/left 전환 PASS. 정확899/900 경계·360/390/768·실제 touch/Safari·다른 역할 인수 잔여. 로컬 Chromium EPERM은 해결하지 않음 | [v31 관측](HARNESS_MAP.md#version31-ui-개선-게시와-검증) |
 | PRD-068 | [~] | 구현·로컬 인수·v30 게시/보존 확인 완료. 남은 일: 실제 로그인 브라우저의 투표/선택 변경/마감 결과, 역할별 접근과 모바일·키보드·오류 흐름 인수. 미실행 범위를 완료 처리하지 않음 | [요구·완료 조건](#프로젝트별-기간제-투표-prd-068) |
 | QLT-013 | [!] | runtime/schema credential 코드 분리는 완료. 실제 최소권한 계정의 DML 허용·DDL/ledger 거부는 운영자 승인/대상 확인 후 검증 | [Native 운영](NATIVE_DATABASE_MIGRATIONS.md) |
 | QLT-015 | [!] | 플랫폼 검토로 차단된 두 cleanup runner 정지/재개 경합은 미실행. 허용 범위가 달라지기 전 우회·재시도하지 않음 | [검증 한계](HARNESS_MAP.md#검증-기준선) |
