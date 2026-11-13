@@ -97,7 +97,7 @@ v3 실제 검증: exact `72a9b39`에서 native48, migration unit13, lint/types/F
 
 `native-migration-v10.ts`와 별도 `drizzle/0014_volunteer_workspace.sql`은 기존 migration/checksum을 보존하고 프로젝트 유형/workspace CAS, 프로젝트 참여자·활동팀·팀 소속·명단 event, 업무의 팀 연결/완료 모드를 추가한다. 기존 프로젝트는 업무 협업, 신규/기존 업무는 제출 필수·팀 미지정 기본값을 유지하며 계정 역할·원문/private·제출/검토 이력을 재작성하지 않는다. 같은 프로젝트의 팀 소속은 복합 FK로 제한하고 Native postcondition은 독립 단일 FK를 동일한 복합 FK로 오인하지 않는다.
 
-v10 도입 시점은 관리자 전용 저장 기반이었다. 후속 v11의 단일 팀장·완료 실행과 해당 기능 인수는 [TODO](TODO.md#봉사활동-확장-작업)에 남는다. 새 코드 사용 전 운영자가 백업/쓰기 중지·명시 승인과 기존 schema identity 절차로 적용해야 하며 이번 로컬 작업에서는 운영/NAS/Sites migration을 실행하지 않는다.
+v10 도입 시점은 관리자 전용 저장 기반이었다. 후속 v11의 단일 팀장·완료 실행과 해당 기능 인수는 [완료 근거](COMPLETED_LOG.md#봉사활동-팀과-직접-완료-인수)에 남는다. 새 코드 사용 전 운영자가 백업/쓰기 중지·명시 승인과 기존 schema identity 절차로 적용해야 하며 이번 로컬 작업에서는 운영/NAS/Sites migration을 실행하지 않는다.
 
 새 격리 자료의 fresh/existing additive·재실행·보존·관계 무결성 검증 방법과 실제 결과는 [HARNESS_MAP](HARNESS_MAP.md#봉사활동-저장-기반과-auth-import-검증)이 소유한다. 자동 down이나 과거 명세 변경으로 되돌리지 않는다.
 
@@ -111,7 +111,7 @@ v10 도입 시점은 관리자 전용 저장 기반이었다. 후속 v11의 단�
 
 `native-migration-v12.ts`와 별도 `drizzle/0016_project_access_mode.sql`은 `projects.access_mode`와 허용 mode CHECK만 추가한다. 기본 `legacy_authenticated`는 기존 인증 읽기를 보존하며 자동 소속/계정 역할 부여나 자료 재작성은 없다. 실제 `members_only` 전환은 SU의 최신 영향 미리보기·확인과 workspace CAS를 거친 별도 작업이다. admin 관리 범위 축소는 애플리케이션 인가 정책으로 적용하며 기존 읽기 보존과 구분한다. 이전 명세/checksum과 원문/버전·파일·완료 이력은 보존한다.
 
-적용·검증 상태는 [TODO](TODO.md#ux-재설계와-프로젝트-바인딩)와 [하네스](HARNESS_MAP.md#ux-바인딩-구현과-회귀-검증)가 소유한다. 이 소스 설명은 운영/NAS migration 실행이나 실제 구성원 소속 변경을 뜻하지 않는다. 운영 적용과 복구는 기존 백업·schema identity·명시 적용 절차를 따르며 소속 제한을 활성화한 뒤 구형 전역 관리자 앱으로 writable rollback하면 새 접근 정책을 우회할 수 있으므로 forward fix를 우선한다.
+적용·검증 상태는 [완료 근거](COMPLETED_LOG.md#ux와-프로젝트-바인딩-구현)와 [하네스](HARNESS_MAP.md#ux-바인딩-구현과-회귀-검증)가 소유한다. 이 소스 설명은 운영/NAS migration 실행이나 실제 구성원 소속 변경을 뜻하지 않는다. 운영 적용과 복구는 기존 백업·schema identity·명시 적용 절차를 따르며 소속 제한을 활성화한 뒤 구형 전역 관리자 앱으로 writable rollback하면 새 접근 정책을 우회할 수 있으므로 forward fix를 우선한다.
 
 
 ## Native 첨부 격리 v13·보고서 ledger v14 준비

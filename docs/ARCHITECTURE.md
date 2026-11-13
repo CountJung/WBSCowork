@@ -219,7 +219,7 @@ account 파기 기능은 현재 없으며 향후 author cascade 전에 선택 �
 
 ## 봉사활동 확장 계획
 
-사용자가 확정한 정책에 따라 저장 기반·팀 범위 업무 관리·직접 완료와 사용자 화면을 구현한다. 구현과 최종 인수 상태는 [TODO](TODO.md#봉사활동-확장-작업), 실제 검증은 [HARNESS_MAP](HARNESS_MAP.md#봉사활동-팀장과-직접-완료-검증)가 소유한다. 운영 반영·실제 계정 권한 변경 여부는 [TODO](TODO.md#현재-상태)와 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유하며 이 설계 설명이 권한 변경 승인은 아니다. 제품 범위는 [PRODUCT_SPEC](PRODUCT_SPEC.md#제외-및-후속-범위), 단계/게이트는 [MASTER_PLAN](MASTER_PLAN.html#volunteering)를 따른다.
+사용자가 확정한 정책에 따라 저장 기반·팀 범위 업무 관리·직접 완료와 사용자 화면을 구현한다. 구현과 최종 인수 상태는 [완료 근거](COMPLETED_LOG.md#봉사활동-팀과-직접-완료-인수), 실제 검증은 [HARNESS_MAP](HARNESS_MAP.md#봉사활동-팀장과-직접-완료-검증)가 소유한다. 운영 반영·실제 계정 권한 변경 여부는 [TODO](TODO.md#현재-범위)와 [게시 원장](COMPLETED_LOG.md#sites-게시-원장)이 소유하며 이 설계 설명이 권한 변경 승인은 아니다. 제품 범위는 [PRODUCT_SPEC](PRODUCT_SPEC.md#제외-및-후속-범위), 단계/게이트는 [MASTER_PLAN](MASTER_PLAN.html#volunteering)를 따른다.
 
 ### 모델과 호환성
 
@@ -255,7 +255,7 @@ meal의 canonical JSON은 meal/people/amount nullable, unit/notes 빈문자열, 
 
 준비표/presentation/media의 browser mutation은 공통 `src/shared/server/request-origin` guard를 쓴다. Native는 기존 서버 `NEXTAUTH_URL` origin, 미설정 시 request.url fallback을 유지한다. Worker는 fetch 최초 request.url origin을 별도 불변 ALS context에 보관하고 `sites/public-origin.json`의 같은 project_id/확인된 origin 한 개와 build의 `.openai/hosting.json` project ID 일치를 검사한다. ingress는 이 고정 공개 origin 또는 기존 명시 canonical에 해당해야 하며 Origin 헤더는 해당 ingress와 exact 일치해야 한다. old/new 교차·임의 Host/XFH·suffix/unknown origin을 신뢰하지 않고 metadata/context 누락·오류는 fail-closed다. env/OAuth·계정/권한 설정을 바꾸지 않는다. 공개 호스트가 다시 달라지면 같은 site의 get_site 근거로 metadata를 갱신하고 build/forgery 회귀 후 게시하며 자동 Host 신뢰나 구 guard 복귀로 복구하지 않는다. Native NextRequest의 localhost 정규화와 실제 공개 origin을 구분해 정상127.0.0.1 요청을 거부하던 문제를 보완했다. JSON 문서는64KiB, version/token envelope를 포함한 요청은66KiB로 bounded read한다.
 
-저장은 version 기반 optimistic CAS와 actor에 결합된 UUID 재시도 token/SHA-256 내용 fingerprint로 원자적 현재값·immutable revision을 남긴다. 같은 요청의 중복 저장과 오래된 편집 덮어쓰기를 막고 과거 이력을 보존한다. 삭제 endpoint는 추가하지 않으며 표에서 행을 제외하는 새 version도 과거 revision을 지우지 않는다. Native v15와 D1 0018은 현재표·revision표2개만 additive로 추가하고 기존 migration/checksum을 보존한다. Native MariaDB/main과 D1/sites의 같은 논리 저장 모델을 지원하되 이번 범위는 로컬 합성 검증·커밋/푸시이며 운영 migration·게시·NAS·실제 자료/계정 권한 변경은 하지 않는다. 현재 진행/완료 조건은 [TODO](TODO.md#열린-항목)가 소유한다.
+저장은 version 기반 optimistic CAS와 actor에 결합된 UUID 재시도 token/SHA-256 내용 fingerprint로 원자적 현재값·immutable revision을 남긴다. 같은 요청의 중복 저장과 오래된 편집 덮어쓰기를 막고 과거 이력을 보존한다. 삭제 endpoint는 추가하지 않으며 표에서 행을 제외하는 새 version도 과거 revision을 지우지 않는다. Native v15와 D1 0018은 현재표·revision표2개만 additive로 추가하고 기존 migration/checksum을 보존한다. Native MariaDB/main과 D1/sites의 같은 논리 저장 모델을 지원하되 이번 범위는 로컬 합성 검증·커밋/푸시이며 운영 migration·게시·NAS·실제 자료/계정 권한 변경은 하지 않는다. 남은 인수 조건은 [검증·대기](PENDING.md#대기-항목)가 소유한다.
 
 ### 레크레이션 시간표 표시 계약
 
@@ -273,7 +273,7 @@ PRD-067은 기존 recreation 문서의 date/time/durationMinutes/order를 읽는
 
 ## UX 정보 계층과 프로젝트 바인딩 계획
 
-PRD-051~055/QLT-024의 확정 설계와 **현재 소스 계약**이다. 운영 반영은 TODO/게시 원장의 확인 결과와 구분한다. 범위는 [PRODUCT_SPEC](PRODUCT_SPEC.md#제외-및-후속-범위), 단계는 [MASTER_PLAN](MASTER_PLAN.html#ux-binding), 현재 큐는 [TODO](TODO.md#ux-재설계와-프로젝트-바인딩), 근거/검증 범위는 [HARNESS_MAP](HARNESS_MAP.md#ux-바인딩-설계-검토와-후속-인수)을 따른다. 기존 PRD-047~050/QLT-023을 다시 미완료로 만들지 않고 그 모델·권한/검증 기반을 재사용한다.
+PRD-051~055/QLT-024의 확정 설계와 **현재 소스 계약**이다. 운영 반영은 TODO/게시 원장의 확인 결과와 구분한다. 범위는 [PRODUCT_SPEC](PRODUCT_SPEC.md#제외-및-후속-범위), 단계는 [MASTER_PLAN](MASTER_PLAN.html#ux-binding), 완료 범위는 [완료 근거](COMPLETED_LOG.md#ux와-프로젝트-바인딩-구현), 근거/검증 범위는 [HARNESS_MAP](HARNESS_MAP.md#ux-바인딩-설계-검토와-후속-인수)을 따른다. 기존 PRD-047~050/QLT-023을 다시 미완료로 만들지 않고 그 모델·권한/검증 기반을 재사용한다.
 
 ### 변경 근거와 표시 계층
 
@@ -393,4 +393,4 @@ PRD-068은 기존 프로젝트 포털의 현재 신원·소속/관리 SQL guard�
 
 보수적 MVP에서는 안건·선택지·기간을 생성 후 수정/삭제하는 UI/API를 제공하지 않는다. DB가 각 SQL statement를 실행하는 UTC 시각과 명시된 시작/종료를 비교해 시작 포함·종료 제외 기간에만 단일 선택을 저장/변경한다. API는 offset을 명시한 ISO 시각을 UTC로 정규화하고 종료가 현재보다 미래인 안건만 생성한다. 화면의 시작/마감 입력은 KST(UTC+9)임을 명시해 브라우저 locale/서버 시간대에 따라 의미가 달라지지 않게 한다. 수동 목록 재조회가 서버의 현재 단계·본인 선택·마감 후 집계를 갱신한다. 클라이언트 시간·표시 상태를 인가나 마감 판정 근거로 삼지 않으며 현재 DB 신원/소속과 project/poll 상위 관계를 쓰기 시점에도 재검사한다. 소속 회수 후 다음 읽기·투표 요청은 거부하되 이미 저장된 표를 자동 삭제/무효화하지 않고 집계에 보존한다. 기존 WBS/private 자료·투표 이력을 자동 삭제하거나 공개 전환하지 않는다.
 
-정확한 저장/라우트 위치는 [프로젝트 지도](PROJECT_MAP.md), 현재 진행과 남은 정책/검증은 [TODO](TODO.md#프로젝트별-기간제-투표-prd-068), 실제 명령·결과는 [검증 정본](HARNESS_MAP.md)이 소유한다. Native/MariaDB 호환 구현과 Sites/D1 실행 검증을 구분하며 NAS 실행은 사용자 담당이다.
+정확한 저장/라우트 위치는 [프로젝트 지도](PROJECT_MAP.md), 현재 진행과 남은 정책/검증은 [검증·대기](PENDING.md#프로젝트별-기간제-투표-prd-068), 실제 명령·결과는 [검증 정본](HARNESS_MAP.md)이 소유한다. Native/MariaDB 호환 구현과 Sites/D1 실행 검증을 구분하며 NAS 실행은 사용자 담당이다.
