@@ -78,8 +78,6 @@ with sync_playwright() as p:
                     page.screenshot(path=str(output / 'session-failure.png'))
                     print(json.dumps({'errors': errors, 'text': page.locator('body').inner_text()[:1200]}, ensure_ascii=False), flush=True)
                     raise
-            if width >= 900:
-                page.get_by_role('navigation', name='주 메뉴').wait_for() if not baseline else None
             page.evaluate('document.fonts.ready')
             label = f'{width}/{name}'
             geometry = page.evaluate('''() => {
@@ -123,13 +121,7 @@ with sync_playwright() as p:
                 check(not brand['clipped'], f'{label}: clipped brand {brand["text"]}')
             check(all(radius <= 24 for radius in geometry['cards']), f'{label}: inflated panel radius')
             check(not geometry['splitWords'], f'{label}: Korean words split across lines {geometry["splitWords"]}')
-            if width >= 900:
-                check(page.get_by_role('link', name='버그 제보', exact=True).first.is_visible(), f'{label}: missing desktop navigation')
-                if actor in ['admin', 'superuser', 'long'] and not baseline:
-                    page.get_by_role('button', name='관리자', exact=True).first.click()
-                    check(page.get_by_role('menuitem', name='프로젝트 관리', exact=True).is_visible(), f'{label}: missing project management')
-                    check(page.get_by_role('menuitem', name='버그 리뷰', exact=True).count() == (1 if actor == 'superuser' else 0), f'{label}: incorrect global admin scope')
-                    page.keyboard.press('Escape')
+            check(page.get_by_role('button', name='메뉴 열기').is_visible(), f'{label}: missing navigation entry')
             if not baseline:
                 page.get_by_role('button', name='메뉴 열기').click()
                 drawer = page.locator('.MuiDrawer-paper')
@@ -137,7 +129,7 @@ with sync_playwright() as p:
                     const panel=document.querySelector('.MuiDrawer-paper');
                     return panel && Math.abs(panel.getBoundingClientRect().x) < 1 && Math.abs(panel.getBoundingClientRect().y) < 1 && Math.abs(panel.getBoundingClientRect().width - (innerWidth >= 900 ? 304 : innerWidth)) < 1;
                 }""")
-                check(drawer.get_by_role('link', name='버그 제보', exact=True).is_visible(), f'{label}: missing mobile navigation')
+                check(drawer.get_by_role('link', name='버그 제보', exact=True).is_visible(), f'{label}: missing site navigation')
                 if actor in ['admin', 'superuser', 'long']:
                     check(drawer.get_by_role('link', name='프로젝트 관리', exact=True).is_visible(), f'{label}: missing project management')
                     check(drawer.get_by_role('link', name='버그 리뷰', exact=True).count() == (1 if actor == 'superuser' else 0), f'{label}: incorrect drawer admin scope')

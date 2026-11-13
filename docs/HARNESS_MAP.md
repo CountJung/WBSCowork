@@ -16,6 +16,10 @@
 
 설치·빌드의 기존 esbuild-kit deprecation, npm http-proxy 환경 안내, Vite plugin timing·route 분류, Node experimental module-mocking 안내를 관찰했다. 설정/프록시 변경 없음. 이번 source patch는 AppShell과 로컬 검사·정본뿐이며 계정/권한·schema·운영 데이터 변경0. 문서 링크 검사와 diff 검사는 별도 수행한다.
 
+## 탐색 위계 통합 PRD-070
+
+2026-11-13, 앞선 PRD-069과 같은 Linux/Node 환경, sites `9e3e7ec` + PRD-070 patch. AppShell의 상단 중복 nav·admin dropdown 제거, 문맥 안내 추가, 기존 drawer 링크/권한 조건은 보존했다. lint(max-warnings=0)·typecheck·FSD(self-test5/위반0)·Worker build 및 unit(action33/unit314·실패0) PASS. 별도 정적 대조에서 6개 navigation 정의와 링크가 원본과 동일하고 중복 surface만 제거됨을 확인했다. 화면 하네스는 모든 폭의 햄버거와 동일 Drawer를 검사하도록 갱신했다. 독립 UI 검토는 코드 수준이며 앞선 Chromium socket EPERM 환경이 그대로이므로 실제 UI 검증을 새 PASS로 주장하지 않는다. 운영 게시·실계정 변경0. 원격 반영과 실제 인수는 별개다.
+
 ## 실행 전제
 
 - lockfile 기반 npm ci와 Node22.12+ 도구체계. 실제 `.env*`는 AI 컨텍스트로 열지 않는다. native CLI가 기존 runtime 설정을 로드하는 동작과 테스트의 합성 환경 주입을 구분한다.

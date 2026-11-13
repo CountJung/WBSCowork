@@ -11,8 +11,6 @@ import {
   Divider,
   Drawer,
   IconButton,
-  Menu,
-  MenuItem,
   NoSsr,
   Stack,
   ToggleButton,
@@ -107,14 +105,11 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
     window.addEventListener("popstate", closeMobileNav);
     return () => window.removeEventListener("popstate", closeMobileNav);
   }, [closeMobileNav]);
-  const [adminMenuAnchorEl, setAdminMenuAnchorEl] = useState<null | HTMLElement>(null);
   const navItems = [...defaultNavItems, taskNavItem, { href: "/my-work", label: "내 업무" }, {href:"/search",label:"검색"}, {href:"/notifications",label:"알림"}, {href:"/bugs",label:"버그 제보"}];
-  const adminMenuOpen = Boolean(adminMenuAnchorEl);
   const isSuperuser = Boolean(session?.user?.isSuperuser);
   const isAdminRole = session?.user?.role === "admin";
   const hasAdminAccess = isSuperuser || isAdminRole;
   const currentAdminNavItems = isSuperuser ? superuserAdminNavItems : adminRoleNavItems;
-  const isAdminRouteActive = hasAdminAccess && isActivePath(pathname, "/admin");
   const isPrivacyRouteActive = isActivePath(pathname, "/privacy");
   const isGuideRouteActive = isActivePath(pathname, "/guide");
 
@@ -138,13 +133,6 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
     setMode(value);
   }
 
-  function openAdminMenu(event: MouseEvent<HTMLElement>) {
-    setAdminMenuAnchorEl(event.currentTarget);
-  }
-
-  function closeAdminMenu() {
-    setAdminMenuAnchorEl(null);
-  }
 
   const authAction =
     status === "authenticated" && session?.user ? (
@@ -220,63 +208,12 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
               </Stack>
             </Stack>
 
-            <Stack component="nav" aria-label="주 메뉴" direction="row" spacing={1.25} sx={{
-              alignItems: "center",
-              justifyContent: "center",
-              display: { xs: "none", md: "flex" },
-              gridRow: { md: 2, xl: 1 },
-              gridColumn: { md: "1 / -1", xl: 2 },
-              "& .MuiButton-root": { whiteSpace: "nowrap", flexShrink: 0 },
-            }}>
-              {navItems.map((item) => {
-                const active = isActivePath(pathname, item.href);
-
-                return (
-                  <Button
-                    key={item.href}
-                    component={Link}
-                    href={item.href}
-                    variant={active ? "contained" : "text"}
-                    color={active ? "primary" : "inherit"}
-                  >
-                    {item.label}
-                  </Button>
-                );
-              })}
-
-              {hasAdminAccess ? (
-                <>
-                  <Button
-                    aria-controls={adminMenuOpen ? "admin-navigation-menu" : undefined}
-                    aria-expanded={adminMenuOpen ? "true" : undefined}
-                    aria-haspopup="menu"
-                    color={isAdminRouteActive ? "primary" : "inherit"}
-                    onClick={openAdminMenu}
-                    variant={isAdminRouteActive ? "contained" : "text"}
-                  >
-                    관리자
-                  </Button>
-                  <Menu
-                    anchorEl={adminMenuAnchorEl}
-                    id="admin-navigation-menu"
-                    onClose={closeAdminMenu}
-                    open={adminMenuOpen}
-                  >
-                    {currentAdminNavItems.map((item) => (
-                      <MenuItem
-                        key={item.href}
-                        component={Link}
-                        href={item.href}
-                        onClick={closeAdminMenu}
-                        selected={isActivePath(pathname, item.href)}
-                      >
-                        {item.label}
-                      </MenuItem>
-                    ))}
-                  </Menu>
-                </>
-              ) : null}
-            </Stack>
+            <Box sx={{ display: { xs: "none", md: "block" }, minWidth: 0, gridRow: { md: 2, xl: 1 }, gridColumn: { md: "1 / -1", xl: 2 } }}>
+              <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: "anywhere" }}>
+                {activeScope ? `현재 프로젝트 · ${activeScope.title}` : "사이트 공통"}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">왼쪽 메뉴에서 프로젝트·사이트·관리 기능으로 이동</Typography>
+            </Box>
 
             <Stack direction="row" spacing={1.25} sx={{
               alignItems: "center",

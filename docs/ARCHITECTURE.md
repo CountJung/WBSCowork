@@ -329,7 +329,7 @@ guest도 명단에 포함될 수 있지만 읽기 전용이며 팀장 후보 자
 
 ## 화면 구조
 
-theme의 Container 기본은 xl(1536px), 긴 글 privacy/bug detail은 md다. AppShell은 상단 햄버거로 기본 닫힌 Drawer를 연다. md(900px) 이상은 좌측304px/full100dvh, 미만은 상단 전체폭/max88dvh이며 내부 scroll·sticky 닫기를 유지한다. 선택/경로 이탈/popstate 시 닫고 outside/Escape·focus 복원은 MUI 기본 동작을 유지한다. 프로젝트의 고정 aside 대신 현재 프로젝트/전환 링크와 전체폭 본문을 사용한다. `scoped-navigation`에는 서버가 승인한 링크만 등록하고 정확한 root 또는 `/` 하위 경로 일치·token별 cleanup으로 다른 프로젝트 메뉴가 남지 않게 한다. 이는 서버 권한을 부여하지 않는다. 메뉴 링크의 prefetch는 끄되 보고서 미리보기 취소 원인을 해결했다고 해석하지 않는다. 상단 탐색 메뉴의 nowrap/비수축과 이름 칩 ellipsis+전체 title은 유지하되 선택 메뉴의 `MuiMenuItem`은 viewport 안에서 긴 이름을 줄바꿈한다. 한국어 keep-all/긴 문자열 anywhere를 적용한다. shape.borderRadius는4px 단위이며 sx 숫자는 배수다. 업무 집중/복귀 맥락과 간트 내부 가로 스크롤을 보존한다. 개요·작업 화면은 간트를 중심으로 배치하며 light/dark 모두 선택 카드·중첩 패널·업로드 상태의 대비를 유지한다. 공통 SubmitButton의 pending 표시는 서버 중복 방지·인가를 대신하지 않는다.
+theme의 Container 기본은 xl(1536px), 긴 글 privacy/bug detail은 md다. AppShell은 상단 햄버거로 기본 닫힌 Drawer를 연다. md(900px) 이상은 좌측304px/full100dvh, 미만은 상단 전체폭/max88dvh이며 내부 scroll·sticky 닫기를 유지한다. 선택/경로 이탈/popstate 시 닫고 outside/Escape·focus 복원은 MUI 기본 동작을 유지한다. 프로젝트의 고정 aside 대신 현재 프로젝트/전환 링크와 전체폭 본문을 사용한다. `scoped-navigation`에는 서버가 승인한 링크만 등록하고 정확한 root 또는 `/` 하위 경로 일치·token별 cleanup으로 다른 프로젝트 메뉴가 남지 않게 한다. 이는 서버 권한을 부여하지 않는다. 메뉴 링크의 prefetch는 끄되 보고서 미리보기 취소 원인을 해결했다고 해석하지 않는다. 상단 중복 탐색은 제거하고 프로젝트 문맥 안내를 남긴다. 현재 프로젝트→사이트 공통→관리자 그룹의 단일 Drawer 탐색과 이름 칩 ellipsis+전체 title을 유지하며 긴 링크는 viewport 안에서 줄바꿈한다. 한국어 keep-all/긴 문자열 anywhere를 적용한다. shape.borderRadius는4px 단위이며 sx 숫자는 배수다. 업무 집중/복귀 맥락과 간트 내부 가로 스크롤을 보존한다. 개요·작업 화면은 간트를 중심으로 배치하며 light/dark 모두 선택 카드·중첩 패널·업로드 상태의 대비를 유지한다. 공통 SubmitButton의 pending 표시는 서버 중복 방지·인가를 대신하지 않는다.
 
 ## 결정 색인
 
