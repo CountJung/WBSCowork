@@ -27,6 +27,8 @@ import type { AppThemeMode } from "@/src/shared/config/theme";
 import { getUserRoleLabel } from "@/src/entities/user";
 import { ScopedNavigationContext, isNavigationScopeActive, type ScopedNavigation } from "@/src/shared/ui/scoped-navigation";
 
+import { isActiveNavigationPath as isActivePath } from "../model/navigation";
+
 type AppShellProps = {
   appName: string;
   authProvidersConfigured: boolean;
@@ -58,13 +60,6 @@ const adminRoleNavItems: NavItem[] = [
   { href: "/admin/projects", label: "프로젝트 관리" },
 ];
 
-function isActivePath(currentPath: string, href: string) {
-  if (href === "/") {
-    return currentPath === href;
-  }
-
-  return currentPath === href || currentPath.startsWith(`${href}/`);
-}
 
 function PrivacyGuideIcon() {
   return (
@@ -329,7 +324,7 @@ export default function AppShell({ appName, authProvidersConfigured, children }:
           </Stack>
           {hasAdminAccess ? <><Divider /><Stack component="nav" aria-label="관리자 메뉴" spacing={1}>
             <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 700 }}>관리자</Typography>
-            {currentAdminNavItems.map(item => <Button key={item.href} component={Link} prefetch={false} href={item.href} onClick={closeMobileNav} variant={isActivePath(pathname, item.href) ? "contained" : "outlined"}>{item.label}</Button>)}
+            {currentAdminNavItems.map(item => <Button key={item.href} component={Link} prefetch={false} href={item.href} onClick={closeMobileNav} variant={isActivePath(pathname, item.href) ? "contained" : "outlined"} aria-current={isActivePath(pathname, item.href) ? "page" : undefined}>{item.label}</Button>)}
           </Stack></> : null}
           <Divider />
           <Stack spacing={1.25}><Typography variant="body2" color="text.secondary">화면 표시 모드</Typography>
