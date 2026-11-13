@@ -44,6 +44,10 @@
 - 삭제 전 고유 근거와 복구 정보를 해당 정본에 통합하고 Git 원본 commit/path를 남긴다. 미추적 사용자 자료는 정리 대상이 아니다. docs 링크·읽기 경로·필수 역할·명령은 `node scripts/check-docs.mjs`로 확인한다.
 - 개인 docs-canon 스킬이 제공되는 환경에서는 해당 SKILL.md를 읽고 구현·검증 담당과 문서 담당의 범위를 나눈다. 원본 형식 검사와 내용 검토를 구분하고, 스킬/검사기 미제공 시 대체 검사만 수행했다고 밝힌다. 앞선 간소화 회차의 원본 미실행 근거는 COMPLETED_LOG가 보존한다. 외부 프로젝트 규칙을 대신 가져오지 않는다.
 
+## 전문 검토 역할
+
+UI/UX 검토는 [WBS UI/UX 전문가](.github/agents/wbs-uiux.agent.md)를 사용한다. 화면/코드 근거·수용 기준은 검토 담당이, 구현/코드 검증은 구현 담당이, 정본 갱신은 문서 담당이 맡는다. 전문 역할 설정만으로 기능 구현·운영 배포를 승인하지 않는다.
+
 ## 도구별 안내
 
 TypeScript/Next/UI 작업은 `.github/instructions/nextjs-stack.instructions.md`, 품질 게이트는 `.github/instructions/quality-gates.instructions.md`를 경로별로 읽는다. digest 작업은 `.github/skills/wbs-project-digest-report/SKILL.md`를 읽는다. 작업 범위·권한·DB 영향을 기록할 때는 [기존 작업 템플릿](tasks/TASK_TEMPLATE.md)을 사용한다. 이 파일들이 행동 규칙을 복제하면 이 진입점과 책임 정본으로 합친다.

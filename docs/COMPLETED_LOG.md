@@ -6,6 +6,7 @@
 
 | ID/시기 | 원인·결정·완료 범위 |
 | --- | --- |
+| 2026-11-13 · UI/UX 역할 | `.github/agents/wbs-uiux.agent.md`에 탐색·반응형·접근성 검토 책임과 근거/수용 기준 인계 계약을 마련했다. AGENTS에 진입 경로를 연결했으며 제품 UI를 구현하거나 배포한 작업은 아니다. 문서 링크·내용 검토만 적용한다. |
 | QLT-039 · 2026-11-06 | 준비표 HTTP 하네스의 구형 callback·포털 directory metadata·시간표 일간/식단 표시 기대를 현행 계약에 정합화했다. 익명 API401·다른 팀 private sentinel의 SSR/RSC/API 차단을 추가하고 후속 저장/이력·인가 검사를 끝까지 통과했다. 제품 인가 변경·운영 게시 없음. [검증](HARNESS_MAP.md#외장-wbs-열린-항목-후속-검증) |
 | QLT-040 · 2026-11-06 | Mac tmpdir의 `/var` 별칭이 정상 보고서 fixture까지 symlink 거부로 만들던 원인을 수정했다. 합성 fixture만 realpath로 정규화하고 실제 저장소의 symlink/hardlink·무결성·격리/복구 guard를 보존했다. [재현·회귀 범위](HARNESS_MAP.md#외장-wbs-열린-항목-후속-검증) |
 | PRD-068 · 2026-11-04 | 프로젝트별 기간제 단일선택 투표와 마감 후 익명 집계 구현·v30 게시. 소속 회수·마감 경계의 저장 성공 판정은 write token/변경 행 수로 보장. [검증](HARNESS_MAP.md#프로젝트-기간제-투표-구현-검증), 배포/복구는 아래 원장·남은 실제 인수는 TODO 참조 |
